@@ -97,12 +97,12 @@ func (b *BaseObject) ReadPortable(reader serialization.PortableReader) {
 func main() {
 	// create the configuration
 	config := hazelcast.NewConfig()
-	config.SerializationConfig.PortableVersion = 1
-	config.SerializationConfig.AddPortableFactory(&MyPortableFactory{})
+	config.Serialization.PortableVersion = 1
+	config.Serialization.AddPortableFactory(&MyPortableFactory{})
 	classDefinition := serialization.NewClassDefinition(1, 1, 1)
 	classDefinition.AddStringField("name")
 	classDefinition.AddInt32Field("age")
-	config.SerializationConfig.AddClassDefinition(classDefinition)
+	config.Serialization.AddClassDefinition(classDefinition)
 
 	// start the client with the given configuration
 	client, err := hazelcast.StartNewClientWithConfig(config)

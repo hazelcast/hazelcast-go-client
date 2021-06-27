@@ -215,7 +215,7 @@ func (s *Set) Size(ctx context.Context) (int, error) {
 
 func (s *Set) addListener(ctx context.Context, includeValue bool, handler SetItemNotifiedHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
-	addRequest := codec.EncodeSetAddListenerRequest(s.name, includeValue, s.config.ClusterConfig.SmartRouting)
+	addRequest := codec.EncodeSetAddListenerRequest(s.name, includeValue, s.config.Cluster.SmartRouting)
 	removeRequest := codec.EncodeSetRemoveListenerRequest(s.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		codec.HandleSetAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {

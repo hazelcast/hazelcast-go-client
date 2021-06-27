@@ -39,9 +39,9 @@ func makeKeyValue(i int) (key string, value string) {
 
 func getClient() *hazelcast.Client {
 	config := hazelcast.NewConfig()
-	config.LoggerConfig.Level = loggingLevel
-	config.ClusterConfig.Name = clusterName
-	cc := &config.ClusterConfig.HazelcastCloudConfig
+	config.Logger.Level = loggingLevel
+	config.Cluster.Name = clusterName
+	cc := &config.Cluster.HazelcastCloudConfig
 	cc.Enabled = true
 	cc.Token = token
 	client, err := hazelcast.StartNewClientWithConfig(config)

@@ -32,20 +32,22 @@ type Service struct {
 	SerializationConfig *pubserialization.Config
 	registry            map[int32]pubserialization.Serializer
 	nameToID            map[string]int32
+	customSerializers   map[reflect.Type]pubserialization.Serializer
 }
 
-func NewService(serializationConfig *pubserialization.Config) (*Service, error) {
+func NewService(config *pubserialization.Config) (*Service, error) {
 	v1 := Service{
-		SerializationConfig: serializationConfig,
+		SerializationConfig: config,
 		nameToID:            make(map[string]int32),
 		registry:            make(map[int32]pubserialization.Serializer),
+		customSerializers:   config.CustomSerializers(),
 	}
 	err := v1.registerDefaultSerializers()
 	if err != nil {
 		return nil, err
 	}
-	v1.registerCustomSerializers(serializationConfig.CustomSerializers)
-	v1.registerGlobalSerializer(serializationConfig.GlobalSerializer)
+	v1.registerCustomSerializers(config.CustomSerializers())
+	v1.registerGlobalSerializer(config.GlobalSerializer())
 	return &v1, nil
 }
 
@@ -62,7 +64,7 @@ func (s *Service) ToData(object interface{}) (r *Data, err error) {
 		return serData, nil
 	}
 	// initial size is kept minimal (head_data_offset + long_size), since it'll grow on demand
-	dataOutput := NewPositionalObjectDataOutput(16, s, s.SerializationConfig.BigEndian)
+	dataOutput := NewPositionalObjectDataOutput(16, s, !s.SerializationConfig.LittleEndian)
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
 		return nil, err
@@ -94,7 +96,7 @@ func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 	if !ok {
 		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 	}
-	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, s.SerializationConfig.BigEndian)
+	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, !s.SerializationConfig.LittleEndian)
 	return serializer.Read(dataInput), nil
 }
 
@@ -174,11 +176,11 @@ func (s *Service) registerDefaultSerializers() error {
 	if err != nil {
 		return err
 	}
-	portableSerializer, err := NewPortableSerializer(s, s.SerializationConfig.PortableFactories, s.SerializationConfig.PortableVersion)
+	portableSerializer, err := NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
 	if err != nil {
 		return err
 	}
-	s.registerClassDefinitions(portableSerializer, s.SerializationConfig.ClassDefinitions)
+	s.registerClassDefinitions(portableSerializer, s.SerializationConfig.ClassDefinitions())
 	if err = s.registerSerializer(portableSerializer); err != nil {
 		return err
 	}
@@ -242,7 +244,7 @@ func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Seri
 }
 
 func (s *Service) lookUpCustomSerializer(obj interface{}) pubserialization.Serializer {
-	for key, val := range s.SerializationConfig.CustomSerializers {
+	for key, val := range s.customSerializers {
 		if key.Kind() == reflect.Interface {
 			if reflect.TypeOf(obj).Implements(key) {
 				return val
@@ -257,13 +259,13 @@ func (s *Service) lookUpCustomSerializer(obj interface{}) pubserialization.Seria
 }
 
 func (s *Service) lookUpGlobalSerializer() pubserialization.Serializer {
-	return s.SerializationConfig.GlobalSerializer
+	return s.SerializationConfig.GlobalSerializer()
 }
 
 func (s *Service) registerIdentifiedFactories() error {
 	factories := make(map[int32]pubserialization.IdentifiedDataSerializableFactory)
 	fs := map[int32]pubserialization.IdentifiedDataSerializableFactory{}
-	for _, f := range s.SerializationConfig.IdentifiedDataSerializableFactories {
+	for _, f := range s.SerializationConfig.IdentifiedDataSerializableFactories() {
 		fid := f.FactoryID()
 		if _, ok := fs[fid]; ok {
 			return hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)

@@ -140,7 +140,7 @@ func createClient(configPath string) *hazelcast.Client {
 			log.Fatal(err)
 		}
 	}
-	config.SerializationConfig.AddIdentifiedDataSerializableFactory(&Factory{})
+	config.Serialization.AddIdentifiedDataSerializableFactory(&Factory{})
 	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {
 		log.Fatal(err)

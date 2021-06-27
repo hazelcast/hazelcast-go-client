@@ -24,8 +24,8 @@ In order to activate it, set the cluster name, enable Hazelcast Cloud discovery 
 Here is an example:
 
 	config := hazelcast.NewConfig()
-	config.ClusterConfig.Name = "MY-CLUSTER-NAME"
-	cc := &config.ClusterConfig.HazelcastCloudConfig
+	config.Cluster.Name = "MY-CLUSTER-NAME"
+	cc := &config.Cluster.HazelcastCloudConfig
 	cc.Enabled = true
 	cc.Token = "MY-CLUSTER-TOKEN"
 	client, err := hazelcast.StartNewClientWithConfig(config)
@@ -48,7 +48,7 @@ Hazelcast Go client has a built-in mechanism to use public IP addresses instead 
 You can enable this feature by setting config.DiscoveryConfig.UsePublicIP to true and specifying the adddress of at least one member:
 
 	config := hazelcast.NewConfig()
-	cc := &config.ClusterConfig
+	cc := &config.Cluster
 	cc.SetAddress("30.40.50.60:5701")
 	cc.DiscoveryConfig.UsePublicIP = true
 
@@ -80,12 +80,12 @@ Collecting Statistics
 
 Hazelcast Management Center can monitor your clients if client-side statistics are enabled.
 
-You can enable statistics by setting config.StatsConfig.Enabled to true.
-Optionally, the period of statistics collection can be set using config.StatsConfig.Period setting.
+You can enable statistics by setting config.Stats.Enabled to true.
+Optionally, the period of statistics collection can be set using config.Stats.Period setting.
 
 	config := hazelcast.NewConfig()
-	config.StatsConfig.Enabled = true
-	config.StatsConfig.Period = 1 * time.Second
+	config.Stats.Enabled = true
+	config.Stats.Period = 1 * time.Second
 	client, err := hazelcast.StartNewClientWithConfig(config)
 */
 package hazelcast

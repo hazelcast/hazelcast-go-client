@@ -33,18 +33,18 @@ type Config struct {
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
 	Labels              []string `json:",omitempty"`
 	ClientName          string   `json:",omitempty"`
-	LoggerConfig        logger.Config
-	SerializationConfig serialization.Config
-	ClusterConfig       cluster.Config
-	StatsConfig         StatsConfig
+	Logger              logger.Config
+	Serialization       serialization.Config
+	Cluster             cluster.Config
+	Stats               StatsConfig
 }
 
 func NewConfig() Config {
 	config := Config{
-		ClusterConfig:       cluster.NewConfig(),
-		SerializationConfig: serialization.NewConfig(),
-		LoggerConfig:        logger.NewConfig(),
-		StatsConfig:         newStatsConfig(),
+		Cluster:             cluster.NewConfig(),
+		Serialization:       serialization.NewConfig(),
+		Logger:              logger.NewConfig(),
+		Stats:               newStatsConfig(),
 		lifecycleListeners:  map[types.UUID]LifecycleStateChangeHandler{},
 		membershipListeners: map[types.UUID]cluster.MembershipStateChangeHandler{},
 	}
@@ -86,12 +86,12 @@ func (c Config) Clone() Config {
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
 	return Config{
-		ClientName:          c.ClientName,
-		Labels:              newLabels,
-		ClusterConfig:       c.ClusterConfig.Clone(),
-		SerializationConfig: c.SerializationConfig.Clone(),
-		LoggerConfig:        c.LoggerConfig.Clone(),
-		StatsConfig:         c.StatsConfig.clone(),
+		ClientName:    c.ClientName,
+		Labels:        newLabels,
+		Cluster:       c.Cluster.Clone(),
+		Serialization: c.Serialization.Clone(),
+		Logger:        c.Logger.Clone(),
+		Stats:         c.Stats.clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -100,16 +100,16 @@ func (c Config) Clone() Config {
 }
 
 func (c Config) Validate() error {
-	if err := c.ClusterConfig.Validate(); err != nil {
+	if err := c.Cluster.Validate(); err != nil {
 		return err
 	}
-	if err := c.SerializationConfig.Validate(); err != nil {
+	if err := c.Serialization.Validate(); err != nil {
 		return err
 	}
-	if err := c.LoggerConfig.Validate(); err != nil {
+	if err := c.Logger.Validate(); err != nil {
 		return err
 	}
-	if err := c.StatsConfig.Validate(); err != nil {
+	if err := c.Stats.Validate(); err != nil {
 		return err
 	}
 	return nil

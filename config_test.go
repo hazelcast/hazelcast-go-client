@@ -27,15 +27,15 @@ import (
 
 func TestDefaultConfig(t *testing.T) {
 	config := hazelcast.NewConfig()
-	assert.Equal(t, config.LoggerConfig.Level, logger.InfoLevel)
-	assert.Equal(t, config.ClusterConfig.Name, "dev")
-	assert.Equal(t, config.ClusterConfig.Addrs, []string{"127.0.0.1:5701"})
+	assert.Equal(t, config.Logger.Level, logger.InfoLevel)
+	assert.Equal(t, config.Cluster.Name, "dev")
+	assert.Equal(t, config.Cluster.Addrs, []string{"127.0.0.1:5701"})
 }
 
 func TestNewConfig(t *testing.T) {
 	config := hazelcast.NewConfig()
-	if err := config.ClusterConfig.SetAddress("192.168.1.2"); err != nil {
+	if err := config.Cluster.SetAddress("192.168.1.2"); err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []string{"192.168.1.2"}, config.ClusterConfig.Addrs)
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Addrs)
 }

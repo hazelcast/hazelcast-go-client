@@ -807,7 +807,7 @@ func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bo
 		}
 	}
 	subscriptionID := types.NewUUID()
-	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue, m.config.ClusterConfig.SmartRouting)
+	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue, m.config.Cluster.SmartRouting)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
@@ -934,12 +934,12 @@ func (m *Map) makeListenerRequest(keyData, predicateData *iserialization.Data, f
 		if predicateData != nil {
 			return codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, smart)
 		} else {
-			return codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
+			return codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.config.Cluster.SmartRouting)
 		}
 	} else if predicateData != nil {
-		return codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.config.ClusterConfig.SmartRouting)
+		return codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.config.Cluster.SmartRouting)
 	} else {
-		return codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.config.ClusterConfig.SmartRouting)
+		return codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.config.Cluster.SmartRouting)
 	}
 }
 

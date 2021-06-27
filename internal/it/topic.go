@@ -48,7 +48,7 @@ func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallba
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
-		config.ClusterConfig.SmartRouting = smart
+		config.Cluster.SmartRouting = smart
 		client, tp = getClientTopicWithConfig(makeName(), &config)
 		defer func() {
 			if err := tp.Destroy(context.Background()); err != nil {

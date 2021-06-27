@@ -89,7 +89,7 @@ func (t *Topic) RemoveListener(ctx context.Context, subscriptionID types.UUID) e
 
 func (t *Topic) addListener(ctx context.Context, handler TopicMessageHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
-	addRequest := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.ClusterConfig.SmartRouting)
+	addRequest := codec.EncodeTopicAddMessageListenerRequest(t.name, t.config.Cluster.SmartRouting)
 	removeRequest := codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		codec.HandleTopicAddMessageListener(msg, func(itemData *iserialization.Data, publishTime int64, uuid types.UUID) {

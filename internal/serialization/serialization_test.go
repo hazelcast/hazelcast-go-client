@@ -48,9 +48,7 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 
 func TestSerializationService_ToData(t *testing.T) {
 	var expected int32 = 5
-	c := &serialization.Config{
-		BigEndian: true,
-	}
+	c := &serialization.Config{}
 	service, err := iserialization.NewService(c)
 	if err != nil {
 		t.Fatal(err)
@@ -165,11 +163,8 @@ func TestCustomSerializer(t *testing.T) {
 	m := &musician{"Furkan", "Şenharputlu"}
 	p := &painter{"Leonardo", "da Vinci"}
 	customSerializer := &CustomArtistSerializer{}
-	config := &serialization.Config{
-		BigEndian:         true,
-		CustomSerializers: map[reflect.Type]serialization.Serializer{},
-	}
-	config.CustomSerializers[reflect.TypeOf((*artist)(nil)).Elem()] = customSerializer
+	config := &serialization.Config{}
+	config.AddCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
 	service := MustValue(iserialization.NewService(config)).(*iserialization.Service)
 	data := MustValue(service.ToData(m)).(*iserialization.Data)
 	ret := MustValue(service.ToObject(data))
@@ -183,10 +178,8 @@ func TestCustomSerializer(t *testing.T) {
 
 func TestGlobalSerializer(t *testing.T) {
 	obj := &customObject{ID: 10, Person: "Furkan Şenharputlu"}
-	config := &serialization.Config{
-		BigEndian:        true,
-		GlobalSerializer: &GlobalSerializer{},
-	}
+	config := &serialization.Config{}
+	config.SetGlobalSerializer(&GlobalSerializer{})
 	service, _ := iserialization.NewService(config)
 	data, _ := service.ToData(obj)
 	ret, _ := service.ToObject(data)
@@ -254,7 +247,7 @@ func TestGobSerializer(t *testing.T) {
 	var strings = []string{w1, w2, w3}
 	expected := &fake2{Bool: aBoolean, B: aByte, C: aChar, D: aDouble, S: aShort, F: aFloat, I: anInt, L: aLong, Str: aString,
 		Bools: bools, Bytes: bytes, Chars: chars, Doubles: doubles, Shorts: shorts, Floats: floats, Ints: ints, Longs: longs, Strings: strings}
-	service, err := iserialization.NewService(&serialization.Config{BigEndian: true})
+	service, err := iserialization.NewService(&serialization.Config{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +267,7 @@ func TestGobSerializer(t *testing.T) {
 
 func TestInt64SerializerWithInt(t *testing.T) {
 	var id = 15
-	config := &serialization.Config{BigEndian: true}
+	config := &serialization.Config{}
 	service, _ := iserialization.NewService(config)
 	data, _ := service.ToData(id)
 	ret, _ := service.ToObject(data)
@@ -286,7 +279,7 @@ func TestInt64SerializerWithInt(t *testing.T) {
 
 func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	var ids = []int{15, 10, 20, 12, 35}
-	config := &serialization.Config{BigEndian: true}
+	config := &serialization.Config{}
 	service, _ := iserialization.NewService(config)
 	data, _ := service.ToData(ids)
 	ret, _ := service.ToObject(data)
@@ -303,7 +296,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 
 func TestSerializeData(t *testing.T) {
 	data := iserialization.NewData([]byte{10, 20, 0, 30, 5, 7, 6})
-	config := &serialization.Config{BigEndian: true}
+	config := &serialization.Config{}
 	service, _ := iserialization.NewService(config)
 	serializedData, _ := service.ToData(data)
 	if !reflect.DeepEqual(data, serializedData) {
@@ -312,8 +305,8 @@ func TestSerializeData(t *testing.T) {
 }
 
 func TestUndefinedDataDeserialization(t *testing.T) {
-	s, _ := iserialization.NewService(&serialization.Config{BigEndian: true})
-	dataOutput := iserialization.NewPositionalObjectDataOutput(1, s, s.SerializationConfig.BigEndian)
+	s, _ := iserialization.NewService(&serialization.Config{})
+	dataOutput := iserialization.NewPositionalObjectDataOutput(1, s, !s.SerializationConfig.LittleEndian)
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
 	dataOutput.WriteString("Furkan")
