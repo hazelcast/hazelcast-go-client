@@ -112,12 +112,10 @@ func (*student3) Version() int32 {
 	return 1
 }
 
-func (s *student3) WritePortable(writer serialization.PortableWriter) error {
-	return nil
+func (s *student3) WritePortable(writer serialization.PortableWriter) {
 }
 
-func (s *student3) ReadPortable(reader serialization.PortableReader) error {
-	return nil
+func (s *student3) ReadPortable(reader serialization.PortableReader) {
 }
 
 func TestPortableSerializer(t *testing.T) {
