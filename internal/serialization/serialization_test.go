@@ -164,7 +164,7 @@ func TestCustomSerializer(t *testing.T) {
 	p := &painter{"Leonardo", "da Vinci"}
 	customSerializer := &CustomArtistSerializer{}
 	config := &serialization.Config{}
-	config.AddCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
+	config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
 	service := MustValue(iserialization.NewService(config)).(*iserialization.Service)
 	data := MustValue(service.ToData(m)).(*iserialization.Data)
 	ret := MustValue(service.ToObject(data))

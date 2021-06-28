@@ -90,9 +90,9 @@ func (b *Config) PortableFactories() []PortableFactory {
 	return fs
 }
 
-// AddCustomSerializer adds a customer serializer for the given type.
+// SetCustomSerializer adds a customer serializer for the given type.
 // custom serializers is a map of object types and corresponding custom serializers.
-func (b *Config) AddCustomSerializer(t reflect.Type, serializer Serializer) error {
+func (b *Config) SetCustomSerializer(t reflect.Type, serializer Serializer) error {
 	b.ensureCustomSerializers()
 	if serializer.ID() <= 0 {
 		return errors.New("serializerID must be positive")
