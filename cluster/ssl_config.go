@@ -31,7 +31,7 @@ import (
 // SSLConfig has tls.Config embedded in it so that users can set any field of tls config as they wish.
 type SSLConfig struct {
 	tlsConfig *tls.Config
-	Enabled   bool
+	Enabled   bool `json:",omitempty"`
 }
 
 func (c *SSLConfig) Clone() SSLConfig {

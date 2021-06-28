@@ -17,7 +17,7 @@
 package cluster
 
 type DiscoveryConfig struct {
-	UsePublicIP bool
+	UsePublicIP bool `json:",omitempty"`
 }
 
 func (c DiscoveryConfig) Clone() DiscoveryConfig {

@@ -17,8 +17,8 @@
 package cluster
 
 type HazelcastCloudConfig struct {
-	Token   string
-	Enabled bool
+	Token   string `json:",omitempty"`
+	Enabled bool   `json:",omitempty"`
 }
 
 func (h HazelcastCloudConfig) Clone() HazelcastCloudConfig {

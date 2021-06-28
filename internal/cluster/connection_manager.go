@@ -445,7 +445,7 @@ func (m *ConnectionManager) createAuthenticationRequest(creds *security.Username
 }
 
 func (m *ConnectionManager) heartbeat() {
-	ticker := time.NewTicker(m.clusterConfig.HeartbeatInterval)
+	ticker := time.NewTicker(time.Duration(m.clusterConfig.HeartbeatInterval))
 	for {
 		select {
 		case <-m.doneCh:

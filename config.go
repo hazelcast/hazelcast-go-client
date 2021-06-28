@@ -30,12 +30,12 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	Labels              []string `json:",omitempty"`
-	ClientName          string   `json:",omitempty"`
-	Logger              logger.Config
-	Serialization       serialization.Config
-	Cluster             cluster.Config
-	Stats               StatsConfig
+	Labels              []string             `json:",omitempty"`
+	ClientName          string               `json:",omitempty"`
+	Logger              logger.Config        `json:",omitempty"`
+	Serialization       serialization.Config `json:",omitempty"`
+	Cluster             cluster.Config       `json:",omitempty"`
+	Stats               StatsConfig          `json:",omitempty"`
 }
 
 func NewConfig() Config {
@@ -119,9 +119,9 @@ func (c *Config) ensureMembershipListeners() {
 // StatsConfig contains configuration for Management Center.
 type StatsConfig struct {
 	// Enabled enables collecting statistics.
-	Enabled bool
+	Enabled bool `json:",omitempty"`
 	// Period is the period of statistics collection.
-	Period time.Duration
+	Period types.Duration `json:",omitempty"`
 }
 
 func (c StatsConfig) clone() StatsConfig {
@@ -130,7 +130,7 @@ func (c StatsConfig) clone() StatsConfig {
 
 func (c StatsConfig) Validate() error {
 	if c.Period <= 0 {
-		c.Period = 3 * time.Second
+		c.Period = types.Duration(3 * time.Second)
 	}
 	return nil
 }

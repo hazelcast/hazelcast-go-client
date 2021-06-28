@@ -38,7 +38,7 @@ const (
 )
 
 type Config struct {
-	Level Level
+	Level Level `json:",omitempty"`
 }
 
 func (c Config) Clone() Config {

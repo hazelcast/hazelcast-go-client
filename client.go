@@ -401,7 +401,7 @@ func (c *Client) subscribeUserEvents() {
 }
 
 func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCredentials {
-	securityConfig := config.Cluster.SecurityConfig
+	securityConfig := config.Cluster.Security
 	return security.NewUsernamePasswordCredentials(securityConfig.Username, securityConfig.Password)
 }
 
@@ -472,7 +472,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 			invocationFactory,
 			c.eventDispatcher,
 			c.logger,
-			config.Stats.Period,
+			time.Duration(config.Stats.Period),
 			c.name)
 	}
 	c.connectionManager = connectionManager
@@ -484,8 +484,8 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 }
 
 func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
-	if config.HazelcastCloudConfig.Enabled {
-		dc := cloud.NewDiscoveryClient(&config.HazelcastCloudConfig, logger)
+	if config.HazelcastCloud.Enabled {
+		dc := cloud.NewDiscoveryClient(&config.HazelcastCloud, logger)
 		nodes, err := dc.DiscoverNodes(ctx)
 		if err != nil {
 			return nil, nil, err
@@ -497,7 +497,7 @@ func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger 
 		return pr, cloud.NewAddressTranslator(dc, nodes), nil
 	}
 	pr := icluster.NewDefaultAddressProvider(config)
-	if config.DiscoveryConfig.UsePublicIP {
+	if config.Discovery.UsePublicIP {
 		return pr, icluster.NewDefaultPublicAddressTranslator(), nil
 	}
 	return pr, icluster.NewDefaultAddressTranslator(), nil

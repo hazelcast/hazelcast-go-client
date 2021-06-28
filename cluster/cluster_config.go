@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -29,36 +30,36 @@ const (
 )
 
 type Config struct {
-	SecurityConfig       SecurityConfig
-	SSLConfig            SSLConfig
-	Name                 string
-	HazelcastCloudConfig HazelcastCloudConfig
-	Address              []string
-	InvocationTimeout    time.Duration
-	HeartbeatInterval    time.Duration
-	HeartbeatTimeout     time.Duration
-	ConnectionTimeout    time.Duration
-	DiscoveryConfig      DiscoveryConfig
-	RedoOperation        bool
-	Unisocket            bool
+	Security          SecurityConfig       `json:",omitempty"`
+	SSL               SSLConfig            `json:",omitempty"`
+	Name              string               `json:",omitempty"`
+	HazelcastCloud    HazelcastCloudConfig `json:",omitempty"`
+	Address           []string             `json:",omitempty"`
+	InvocationTimeout types.Duration       `json:",omitempty"`
+	HeartbeatInterval types.Duration       `json:",omitempty"`
+	HeartbeatTimeout  types.Duration       `json:",omitempty"`
+	ConnectionTimeout types.Duration       `json:",omitempty"`
+	Discovery         DiscoveryConfig      `json:",omitempty"`
+	RedoOperation     bool                 `json:",omitempty"`
+	Unisocket         bool                 `json:",omitempty"`
 }
 
 func (c *Config) Clone() Config {
 	addrs := make([]string, len(c.Address))
 	copy(addrs, c.Address)
 	return Config{
-		Name:                 c.Name,
-		Address:              addrs,
-		Unisocket:            c.Unisocket,
-		ConnectionTimeout:    c.ConnectionTimeout,
-		HeartbeatInterval:    c.HeartbeatInterval,
-		HeartbeatTimeout:     c.HeartbeatTimeout,
-		InvocationTimeout:    c.InvocationTimeout,
-		RedoOperation:        c.RedoOperation,
-		SecurityConfig:       c.SecurityConfig.Clone(),
-		SSLConfig:            c.SSLConfig.Clone(),
-		HazelcastCloudConfig: c.HazelcastCloudConfig.Clone(),
-		DiscoveryConfig:      c.DiscoveryConfig.Clone(),
+		Name:              c.Name,
+		Address:           addrs,
+		Unisocket:         c.Unisocket,
+		ConnectionTimeout: c.ConnectionTimeout,
+		HeartbeatInterval: c.HeartbeatInterval,
+		HeartbeatTimeout:  c.HeartbeatTimeout,
+		InvocationTimeout: c.InvocationTimeout,
+		RedoOperation:     c.RedoOperation,
+		Security:          c.Security.Clone(),
+		SSL:               c.SSL.Clone(),
+		HazelcastCloud:    c.HazelcastCloud.Clone(),
+		Discovery:         c.Discovery.Clone(),
 	}
 }
 
@@ -76,27 +77,27 @@ func (c *Config) Validate() error {
 		}
 	}
 	if c.ConnectionTimeout <= 0 {
-		c.ConnectionTimeout = 5 * time.Second
+		c.ConnectionTimeout = types.Duration(5 * time.Second)
 	}
 	if c.HeartbeatInterval <= 0 {
-		c.HeartbeatInterval = 5 * time.Second
+		c.HeartbeatInterval = types.Duration(5 * time.Second)
 	}
 	if c.HeartbeatTimeout <= 0 {
-		c.HeartbeatTimeout = 60 * time.Second
+		c.HeartbeatTimeout = types.Duration(60 * time.Second)
 	}
 	if c.InvocationTimeout <= 0 {
-		c.InvocationTimeout = 120 * time.Second
+		c.InvocationTimeout = types.Duration(120 * time.Second)
 	}
-	if err := c.SecurityConfig.Validate(); err != nil {
+	if err := c.Security.Validate(); err != nil {
 		return err
 	}
-	if err := c.SSLConfig.Validate(); err != nil {
+	if err := c.SSL.Validate(); err != nil {
 		return err
 	}
-	if err := c.HazelcastCloudConfig.Validate(); err != nil {
+	if err := c.HazelcastCloud.Validate(); err != nil {
 		return err
 	}
-	if err := c.DiscoveryConfig.Validate(); err != nil {
+	if err := c.Discovery.Validate(); err != nil {
 		return err
 	}
 	return nil

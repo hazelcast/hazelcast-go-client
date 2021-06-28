@@ -292,8 +292,8 @@ func (c TestCluster) DefaultConfig() hz.Config {
 		panic(err)
 	}
 	if SSLEnabled() {
-		config.Cluster.SSLConfig.Enabled = true
-		config.Cluster.SSLConfig.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+		config.Cluster.SSL.Enabled = true
+		config.Cluster.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 	return config
 }
