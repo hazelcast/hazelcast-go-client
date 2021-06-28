@@ -23,44 +23,33 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
+const (
+	defaultName    = "dev"
+	defaultAddress = "127.0.0.1:5701"
+)
+
 type Config struct {
 	SecurityConfig       SecurityConfig
 	SSLConfig            SSLConfig
 	Name                 string
 	HazelcastCloudConfig HazelcastCloudConfig
-	Addrs                []string
+	Address              []string
 	InvocationTimeout    time.Duration
 	HeartbeatInterval    time.Duration
 	HeartbeatTimeout     time.Duration
 	ConnectionTimeout    time.Duration
 	DiscoveryConfig      DiscoveryConfig
 	RedoOperation        bool
-	SmartRouting         bool
-}
-
-func NewConfig() Config {
-	return Config{
-		Name:                 "dev",
-		Addrs:                []string{"127.0.0.1:5701"},
-		SmartRouting:         true,
-		ConnectionTimeout:    5 * time.Second,
-		HeartbeatInterval:    5 * time.Second,
-		HeartbeatTimeout:     60 * time.Second,
-		InvocationTimeout:    120 * time.Second,
-		SecurityConfig:       NewSecurityConfig(),
-		SSLConfig:            NewSSLConfig(),
-		HazelcastCloudConfig: NewHazelcastCloudConfig(),
-		DiscoveryConfig:      NewDiscoveryConfig(),
-	}
+	Unisocket            bool
 }
 
 func (c *Config) Clone() Config {
-	addrs := make([]string, len(c.Addrs))
-	copy(addrs, c.Addrs)
+	addrs := make([]string, len(c.Address))
+	copy(addrs, c.Address)
 	return Config{
 		Name:                 c.Name,
-		Addrs:                addrs,
-		SmartRouting:         c.SmartRouting,
+		Address:              addrs,
+		Unisocket:            c.Unisocket,
 		ConnectionTimeout:    c.ConnectionTimeout,
 		HeartbeatInterval:    c.HeartbeatInterval,
 		HeartbeatTimeout:     c.HeartbeatTimeout,
@@ -75,24 +64,28 @@ func (c *Config) Clone() Config {
 
 func (c *Config) Validate() error {
 	if c.Name == "" {
-		return ErrConfigInvalidClusterName
+		c.Name = defaultName
 	}
-	for _, addr := range c.Addrs {
-		if err := checkAddress(addr); err != nil {
-			return fmt.Errorf("invalid address %s: %w", addr, err)
+	if len(c.Address) == 0 {
+		c.Address = []string{defaultAddress}
+	} else {
+		for _, addr := range c.Address {
+			if err := checkAddress(addr); err != nil {
+				return fmt.Errorf("invalid address %s: %w", addr, err)
+			}
 		}
 	}
-	if c.ConnectionTimeout < 0 {
-		return ErrConfigInvalidConnectionTimeout
+	if c.ConnectionTimeout <= 0 {
+		c.ConnectionTimeout = 5 * time.Second
 	}
-	if c.HeartbeatInterval < 0 {
-		return ErrConfigInvalidHeartbeatInterval
+	if c.HeartbeatInterval <= 0 {
+		c.HeartbeatInterval = 5 * time.Second
 	}
-	if c.HeartbeatTimeout < 0 {
-		return ErrConfigInvalidHeartbeatTimeout
+	if c.HeartbeatTimeout <= 0 {
+		c.HeartbeatTimeout = 60 * time.Second
 	}
-	if c.InvocationTimeout < 0 {
-		return ErrConfigInvalidInvocationTimeout
+	if c.InvocationTimeout <= 0 {
+		c.InvocationTimeout = 120 * time.Second
 	}
 	if err := c.SecurityConfig.Validate(); err != nil {
 		return err
@@ -117,7 +110,7 @@ func (c *Config) SetAddress(addrs ...string) error {
 			return fmt.Errorf("invalid address %s: %w", addr, err)
 		}
 	}
-	c.Addrs = addrs
+	c.Address = addrs
 	return nil
 }
 

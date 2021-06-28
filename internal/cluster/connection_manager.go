@@ -166,7 +166,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(),
-		smartRouting:         bundle.ClusterConfig.SmartRouting,
+		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
 		startCh:              make(chan struct{}, 1),

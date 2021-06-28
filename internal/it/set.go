@@ -53,7 +53,7 @@ func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCall
 		if configCallback != nil {
 			configCallback(&config)
 		}
-		config.Cluster.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		client, s = GetClientSetWithConfig(makeName(), &config)
 		defer func() {
 			if err := s.Destroy(context.Background()); err != nil {

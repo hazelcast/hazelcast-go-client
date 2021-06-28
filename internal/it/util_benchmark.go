@@ -43,7 +43,7 @@ func BenchmarkerWithConfigBuilder(b *testing.B, configCallback func(*hz.Config),
 			configCallback(&config)
 		}
 		config.Logger.Level = logger.ErrorLevel
-		config.Cluster.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		b.ResetTimer()
 		f(b, &config)
 	}
@@ -134,7 +134,7 @@ func getMap(mapName string, configCallback func(*hz.Config), smart bool) (*hz.Cl
 	if configCallback != nil {
 		configCallback(&config)
 	}
-	config.Cluster.SmartRouting = smart
+	config.Cluster.Unisocket = !smart
 	config.Logger.Level = logger.ErrorLevel
 	return GetClientMapWithConfig(mapName, &config)
 }

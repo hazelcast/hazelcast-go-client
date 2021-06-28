@@ -49,7 +49,7 @@ func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configC
 		if configCallback != nil {
 			configCallback(&config)
 		}
-		config.Cluster.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		client, q = getClientQueueWithConfig(queueName(), &config)
 		defer func() {
 			if err := q.Destroy(context.Background()); err != nil {

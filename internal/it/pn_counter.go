@@ -47,7 +47,7 @@ func PNCounterTesterWithConfigAndName(t *testing.T, makeName func() string, conf
 		if configCallback != nil {
 			configCallback(&config)
 		}
-		config.Cluster.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		client, pn = GetClientPNCounterWithConfig(makeName(), &config)
 		defer func() {
 			if err := pn.Destroy(context.Background()); err != nil {

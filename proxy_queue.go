@@ -301,7 +301,7 @@ func (q *Queue) add(ctx context.Context, value interface{}, timeout int64) (bool
 
 func (q *Queue) addListener(ctx context.Context, includeValue bool, handler QueueItemNotifiedHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
-	addRequest := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.config.Cluster.SmartRouting)
+	addRequest := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.smart)
 	removeRequest := codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		codec.HandleQueueAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {

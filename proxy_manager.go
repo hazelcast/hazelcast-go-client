@@ -101,7 +101,7 @@ func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounte
 }
 
 func (m *proxyManager) addDistributedObjectEventListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
-	request := codec.EncodeClientAddDistributedObjectListenerRequest(m.serviceBundle.Config.Cluster.SmartRouting)
+	request := codec.EncodeClientAddDistributedObjectListenerRequest(!m.serviceBundle.Config.Cluster.Unisocket)
 	subscriptionID := types.NewUUID()
 	removeRequest := codec.EncodeClientRemoveDistributedObjectListenerRequest(subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {

@@ -5,10 +5,6 @@ type SecurityConfig struct {
 	Password string
 }
 
-func NewSecurityConfig() SecurityConfig {
-	return SecurityConfig{}
-}
-
 func (c SecurityConfig) Clone() SecurityConfig {
 	return SecurityConfig{
 		Username: c.Username,
@@ -16,6 +12,6 @@ func (c SecurityConfig) Clone() SecurityConfig {
 	}
 }
 
-func (c SecurityConfig) Validate() error {
+func (c *SecurityConfig) Validate() error {
 	return nil
 }

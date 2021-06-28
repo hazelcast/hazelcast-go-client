@@ -21,10 +21,6 @@ type HazelcastCloudConfig struct {
 	Enabled bool
 }
 
-func NewHazelcastCloudConfig() HazelcastCloudConfig {
-	return HazelcastCloudConfig{}
-}
-
 func (h HazelcastCloudConfig) Clone() HazelcastCloudConfig {
 	return h
 }

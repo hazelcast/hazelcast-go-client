@@ -454,7 +454,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		removeCh,
 		c.eventDispatcher,
 		c.logger,
-		config.Cluster.SmartRouting)
+		!config.Cluster.Unisocket)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
 		RemoveCh:             removeCh,

@@ -17,7 +17,9 @@
 package hazelcast_test
 
 import (
+	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -26,16 +28,65 @@ import (
 )
 
 func TestDefaultConfig(t *testing.T) {
-	config := hazelcast.NewConfig()
-	assert.Equal(t, config.Logger.Level, logger.InfoLevel)
-	assert.Equal(t, config.Cluster.Name, "dev")
-	assert.Equal(t, config.Cluster.Addrs, []string{"127.0.0.1:5701"})
+	config := hazelcast.Config{}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	checkDefault(t, &config)
 }
 
-func TestNewConfig(t *testing.T) {
+func TestNewConfig_SetAddress(t *testing.T) {
 	config := hazelcast.NewConfig()
 	if err := config.Cluster.SetAddress("192.168.1.2"); err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Addrs)
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Address)
+}
+
+func TestJSONConfig_Default(t *testing.T) {
+	var config hazelcast.Config
+	if err := json.Unmarshal([]byte("{}"), &config); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	checkDefault(t, &config)
+}
+
+func TestJSONConfig(t *testing.T) {
+	var config hazelcast.Config
+	text := `
+{
+	"Cluster": {
+		"Name": "foo",
+		"HeartbeatInterval": "10s"
+	},
+	"Logger": {
+		"Level": "error"
+	}
+}
+`
+	if err := json.Unmarshal([]byte(text), &config); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, "foo", config.Cluster.Name)
+	assert.Equal(t, 10*time.Second, config.Cluster.HeartbeatInterval)
+	assert.Equal(t, logger.Level("error"), config.Logger.Level)
+}
+
+func checkDefault(t *testing.T, c *hazelcast.Config) {
+	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
+	assert.Equal(t, "dev", c.Cluster.Name)
+	assert.Equal(t, []string{"127.0.0.1:5701"}, c.Cluster.Address)
+	assert.Equal(t, 5*time.Second, c.Cluster.ConnectionTimeout)
+	assert.Equal(t, 5*time.Second, c.Cluster.HeartbeatInterval)
+	assert.Equal(t, 60*time.Second, c.Cluster.HeartbeatTimeout)
+	assert.Equal(t, 120*time.Second, c.Cluster.InvocationTimeout)
+	assert.Equal(t, false, c.Cluster.Unisocket)
+	assert.NotNil(t, c.Cluster.SSLConfig.TLSConfig())
+
 }

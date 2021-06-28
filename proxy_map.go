@@ -807,7 +807,7 @@ func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bo
 		}
 	}
 	subscriptionID := types.NewUUID()
-	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue, m.config.Cluster.SmartRouting)
+	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
@@ -929,18 +929,17 @@ func (m *Map) tryLock(ctx context.Context, key interface{}, lease int64, timeout
 	}
 }
 
-func (m *Map) makeListenerRequest(keyData, predicateData *iserialization.Data, flags int32, includeValue bool, smart bool) *proto.ClientMessage {
+func (m *Map) makeListenerRequest(keyData, predicateData *iserialization.Data, flags int32, includeValue bool) *proto.ClientMessage {
 	if keyData != nil {
 		if predicateData != nil {
-			return codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, smart)
-		} else {
-			return codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.config.Cluster.SmartRouting)
+			return codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, m.smart)
 		}
-	} else if predicateData != nil {
-		return codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.config.Cluster.SmartRouting)
-	} else {
-		return codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.config.Cluster.SmartRouting)
+		return codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.smart)
 	}
+	if predicateData != nil {
+		return codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.smart)
+	}
+	return codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smart)
 }
 
 func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {

@@ -35,11 +35,8 @@ type Config struct {
 	LittleEndian bool `json:",omitempty"`
 }
 
-func NewConfig() Config {
-	return Config{}
-}
-
-func (c Config) Clone() Config {
+func (c *Config) Clone() Config {
+	c.ensureCustomSerializers()
 	idFactories := make([]IdentifiedDataSerializableFactory, len(c.identifiedDataSerializableFactories))
 	copy(idFactories, c.identifiedDataSerializableFactories)
 	pFactories := make([]PortableFactory, len(c.portableFactories))
@@ -96,9 +93,7 @@ func (b *Config) PortableFactories() []PortableFactory {
 // AddCustomSerializer adds a customer serializer for the given type.
 // custom serializers is a map of object types and corresponding custom serializers.
 func (b *Config) AddCustomSerializer(t reflect.Type, serializer Serializer) error {
-	if b.customSerializers == nil {
-		b.customSerializers = map[reflect.Type]Serializer{}
-	}
+	b.ensureCustomSerializers()
 	if serializer.ID() <= 0 {
 		return errors.New("serializerID must be positive")
 	}
@@ -109,11 +104,10 @@ func (b *Config) AddCustomSerializer(t reflect.Type, serializer Serializer) erro
 // CustomSerializers returns a copy of custom serializers.
 // custom serializers is a map of object types and corresponding custom serializers.
 func (b *Config) CustomSerializers() map[reflect.Type]Serializer {
+	b.ensureCustomSerializers()
 	sers := map[reflect.Type]Serializer{}
-	if b.customSerializers != nil {
-		for k, v := range b.customSerializers {
-			sers[k] = v
-		}
+	for k, v := range b.customSerializers {
+		sers[k] = v
 	}
 	return sers
 }
@@ -142,4 +136,10 @@ func (b *Config) SetGlobalSerializer(serializer Serializer) {
 // Global serializer is the serializer that will be used if no other serializer is applicable.
 func (b *Config) GlobalSerializer() Serializer {
 	return b.globalSerializer
+}
+
+func (b *Config) ensureCustomSerializers() {
+	if b.customSerializers == nil {
+		b.customSerializers = map[reflect.Type]Serializer{}
+	}
 }

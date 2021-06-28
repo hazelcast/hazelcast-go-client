@@ -34,11 +34,8 @@ type SSLConfig struct {
 	Enabled   bool
 }
 
-func NewSSLConfig() SSLConfig {
-	return SSLConfig{tlsConfig: &tls.Config{}}
-}
-
 func (c *SSLConfig) Clone() SSLConfig {
+	c.ensureTLSConfig()
 	return SSLConfig{
 		Enabled:   c.Enabled,
 		tlsConfig: c.tlsConfig.Clone(),
@@ -46,9 +43,7 @@ func (c *SSLConfig) Clone() SSLConfig {
 }
 
 func (c *SSLConfig) Validate() error {
-	if c.Enabled && c.tlsConfig == nil {
-		return fmt.Errorf("TLS configuration cannot be nil")
-	}
+	c.ensureTLSConfig()
 	return nil
 }
 
@@ -59,11 +54,13 @@ func (c *SSLConfig) SetTLSConfig(tlsConfig *tls.Config) {
 
 // TLSConfig returns the clone of internal TLS configuration.
 func (c *SSLConfig) TLSConfig() *tls.Config {
+	c.ensureTLSConfig()
 	return c.tlsConfig.Clone()
 }
 
 // SetCAPath sets CA file path.
 func (c *SSLConfig) SetCAPath(path string) error {
+	c.ensureTLSConfig()
 	// XXX: what happens if the path is loaded multiple times?
 	// load CA cert
 	if caCert, err := ioutil.ReadFile(path); err != nil {
@@ -88,6 +85,7 @@ func (c *SSLConfig) SetCAPath(path string) error {
 // For mutual authentication at least one client certificate should be added.
 // It returns an error if any of files cannot be loaded.
 func (c *SSLConfig) AddClientCertAndKeyPath(clientCertPath string, clientPrivateKeyPath string) error {
+	c.ensureTLSConfig()
 	if cert, err := tls.LoadX509KeyPair(clientCertPath, clientPrivateKeyPath); err != nil {
 		return fmt.Errorf("loading key pair: %w", err)
 	} else {
@@ -106,6 +104,7 @@ func (c *SSLConfig) AddClientCertAndKeyPath(clientCertPath string, clientPrivate
 // For mutual authentication at least one client certificate should be added.
 // It returns an error if any of files cannot be loaded.
 func (c *SSLConfig) AddClientCertAndEncryptedKeyPath(certPath string, privateKeyPath string, password string) error {
+	c.ensureTLSConfig()
 	var certPEMBlock, privatePEM, der []byte
 	var privKey *rsa.PrivateKey
 	var cert tls.Certificate
@@ -129,4 +128,10 @@ func (c *SSLConfig) AddClientCertAndEncryptedKeyPath(certPath string, privateKey
 	}
 	c.tlsConfig.Certificates = append(c.tlsConfig.Certificates, cert)
 	return nil
+}
+
+func (c *SSLConfig) ensureTLSConfig() {
+	if c.tlsConfig == nil {
+		c.tlsConfig = &tls.Config{}
+	}
 }

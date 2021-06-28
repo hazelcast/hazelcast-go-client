@@ -52,7 +52,7 @@ func MapTesterWithConfigAndName(t *testing.T, makeMapName func() string, configC
 		if configCallback != nil {
 			configCallback(&config)
 		}
-		config.Cluster.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		client, m = GetClientMapWithConfig(makeMapName(), &config)
 		defer func() {
 			if err := m.Destroy(context.Background()); err != nil {

@@ -81,7 +81,7 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 			logLevel = logger.TraceLevel
 		}
 		config.Logger.Level = logLevel
-		config.Cluster.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		client := MustClient(hz.StartNewClientWithConfig(config))
 		defer func() {
 			if err := client.Shutdown(); err != nil {

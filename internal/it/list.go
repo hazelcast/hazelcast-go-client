@@ -49,7 +49,7 @@ func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallbac
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
-		config.Cluster.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		client, l = getClientListWithConfig(listName(), &config)
 		defer func() {
 			if err := l.Destroy(context.Background()); err != nil {

@@ -76,7 +76,7 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 		clusterService:    bundle.ClusterService,
 		logger:            bundle.Logger,
 		cb:                cbr,
-		smart:             bundle.Config.SmartRouting,
+		smart:             !bundle.Config.Unisocket,
 	}
 }
 
