@@ -17,55 +17,14 @@
 package hzerrors
 
 type ServerError struct {
-	className      string
-	message        string
-	causeClassName string
-	stackTrace     []StackTraceElement
-	errorCode      int32
-	causeErrorCode int32
-}
-
-// NewServerErrorImpl
-// experimental
-func NewServerErrorImpl(errorCode int32, className string, message string, stackTrace []StackTraceElement, causeErrorCode int32, causeClassName string) ServerError {
-	return ServerError{
-		errorCode:      errorCode,
-		className:      className,
-		message:        message,
-		stackTrace:     stackTrace,
-		causeErrorCode: causeErrorCode,
-		causeClassName: causeClassName,
-	}
+	ClassName      string
+	Message        string
+	CauseClassName string
+	StackTrace     []StackTraceElement
+	ErrorCode      int32
+	CauseErrorCode int32
 }
 
 func (e *ServerError) Error() string {
-	return e.message
-}
-
-func (e *ServerError) ErrorCode() int32 {
-	return e.errorCode
-}
-
-func (e *ServerError) ClassName() string {
-	return e.className
-}
-
-func (e *ServerError) Message() string {
-	return e.message
-}
-
-func (e *ServerError) StackTrace() []StackTraceElement {
-	stackTrace := make([]StackTraceElement, len(e.stackTrace))
-	for i, v := range e.stackTrace {
-		stackTrace[i] = v
-	}
-	return stackTrace
-}
-
-func (e *ServerError) CauseErrorCode() int32 {
-	return e.causeErrorCode
-}
-
-func (e *ServerError) CauseClassName() string {
-	return e.causeClassName
+	return e.Message
 }

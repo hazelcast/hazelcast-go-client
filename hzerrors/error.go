@@ -31,7 +31,7 @@ var (
 
 // HazelcastError is the general error interface.
 type HazelcastError interface {
-	// Error returns the error message.
+	// Error returns the error Message.
 	Error() string
 
 	// Cause returns the cause of error.
@@ -45,7 +45,7 @@ type HazelcastError interface {
 type HazelcastErrorType struct {
 	cause   error
 	message string // cause is the cause error.
-	// message is the error message.
+	// Message is the error Message.
 }
 
 // Error returns the error message.
@@ -279,11 +279,11 @@ type StackTraceElement interface {
 
 func NewHazelcastError(err *ServerError) HazelcastError {
 	sb := strings.Builder{}
-	for _, trace := range err.StackTrace() {
+	for _, trace := range err.StackTrace {
 		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(), trace.LineNumber()))
 	}
-	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName(), err.Message(), sb.String())
-	switch errorCode(err.ErrorCode()) {
+	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName, err.Message, sb.String())
+	switch errorCode(err.ErrorCode) {
 	case errorCodeAuthentication:
 		return NewHazelcastAuthenticationError(message, err)
 	case errorCodeHazelcastInstanceNotActive:
@@ -302,4 +302,12 @@ func NewHazelcastError(err *ServerError) HazelcastError {
 		return NewHazelcastIllegalArgumentError(message, err)
 	}
 	return NewHazelcastErrorType(message, err)
+}
+
+type IndexValidationError struct {
+	Err error
+}
+
+func (ic IndexValidationError) Error() string {
+	return ic.Err.Error()
 }

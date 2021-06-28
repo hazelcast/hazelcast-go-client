@@ -728,7 +728,7 @@ func DecodeError(msg *proto.ClientMessage) *hzerrors.ServerError {
 		return nil
 	}
 	holder := errorHolders[0]
-	err := hzerrors.NewServerErrorImpl(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
+	err := NewServerError(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
 	return &err
 }
 
@@ -825,4 +825,17 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 	clientMessage.AddFrame(initialFrame)
 	EncodeString(clientMessage, host)
 	clientMessage.AddFrame(proto.EndFrame.Copy())
+}
+
+// NewServerError
+// experimental
+func NewServerError(errorCode int32, className string, message string, stackTrace []hzerrors.StackTraceElement, causeErrorCode int32, causeClassName string) hzerrors.ServerError {
+	return hzerrors.ServerError{
+		ErrorCode:      errorCode,
+		ClassName:      className,
+		Message:        message,
+		StackTrace:     stackTrace,
+		CauseErrorCode: causeErrorCode,
+		CauseClassName: causeClassName,
+	}
 }
