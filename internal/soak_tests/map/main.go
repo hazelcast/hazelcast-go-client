@@ -151,8 +151,8 @@ func createClient(configPath string) *hazelcast.Client {
 func run(ctx context.Context, m *hazelcast.Map, st *Stats) {
 	var err error
 	for {
-		key := fmt.Sprintf(strconv.Itoa(rand.Intn(entryCount)))
-		value := fmt.Sprintf(strconv.Itoa(rand.Intn(entryCount)))
+		key := strconv.Itoa(rand.Intn(entryCount))
+		value := strconv.Itoa(rand.Intn(entryCount))
 		op := rand.Intn(100)
 		if op < 30 {
 			_, err = m.Get(ctx, key)
@@ -212,7 +212,7 @@ func main() {
 			}
 		}
 	}(ctx, sts)
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	select {
 	case <-ctx.Done():
