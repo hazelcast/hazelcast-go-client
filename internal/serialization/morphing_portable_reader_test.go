@@ -810,7 +810,7 @@ func TestMorphingPortableReader_ReadStringWithIncompatibleClassChangeError(t *te
 func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 	var expectedRet = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{}
-	config.AddPortableFactory(&portableFactory1{})
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
@@ -834,7 +834,7 @@ func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
 	var value serialization.Portable = &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	var expectedRet serialization.Portable
 	config := &serialization.Config{}
-	config.AddPortableFactory(&portableFactory1{})
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
@@ -1381,7 +1381,7 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 		&student{id: 11, age: 20, name: "Jack Purcell"},
 	}
 	config := &serialization.Config{}
-	config.AddPortableFactory(&portableFactory1{})
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
@@ -1410,7 +1410,7 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 	}
 	var expectedRet []serialization.Portable
 	config := &serialization.Config{}
-	config.AddPortableFactory(&portableFactory1{})
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
@@ -1456,7 +1456,7 @@ func TestNewMorphingPortableReader(t *testing.T) {
 	t.SkipNow()
 	s := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{}
-	config.AddPortableFactory(&portableFactory1{})
+	config.SetPortableFactories(&portableFactory1{})
 	service, err := NewService(config)
 	if err != nil {
 		t.Fatal(err)

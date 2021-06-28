@@ -98,11 +98,11 @@ func main() {
 	// create the configuration
 	config := hazelcast.NewConfig()
 	config.Serialization.PortableVersion = 1
-	config.Serialization.AddPortableFactory(&MyPortableFactory{})
+	config.Serialization.SetPortableFactories(&MyPortableFactory{})
 	classDefinition := serialization.NewClassDefinition(1, 1, 1)
 	classDefinition.AddStringField("name")
 	classDefinition.AddInt32Field("age")
-	config.Serialization.AddClassDefinition(classDefinition)
+	config.Serialization.SetClassDefinitions(classDefinition)
 
 	// start the client with the given configuration
 	client, err := hazelcast.StartNewClientWithConfig(config)

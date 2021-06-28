@@ -62,24 +62,24 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// AddIdentifiedDataSerializableFactory adds an identified data serializable factory.
-// identified data serializable factories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
-func (b *Config) AddIdentifiedDataSerializableFactory(factory IdentifiedDataSerializableFactory) {
-	b.identifiedDataSerializableFactories = append(b.identifiedDataSerializableFactories, factory)
+// SetIdentifiedDataSerializableFactories adds zore or more identified data serializable factories.
+// Identified data serializable factories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
+func (b *Config) SetIdentifiedDataSerializableFactories(factories ...IdentifiedDataSerializableFactory) {
+	b.identifiedDataSerializableFactories = append(b.identifiedDataSerializableFactories, factories...)
 }
 
 // IdentifiedDataSerializableFactories returns a copy of identified data serializable factories.
-// identified data serializable factories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
+// Identified data serializable factories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
 func (b *Config) IdentifiedDataSerializableFactories() []IdentifiedDataSerializableFactory {
 	fs := make([]IdentifiedDataSerializableFactory, len(b.identifiedDataSerializableFactories))
 	copy(fs, b.identifiedDataSerializableFactories)
 	return fs
 }
 
-// AddPortableFactory adds a portable factory.
-// portable factories is a map of factory IDs and corresponding Portable factories.
-func (b *Config) AddPortableFactory(factory PortableFactory) {
-	b.portableFactories = append(b.portableFactories, factory)
+// SetPortableFactories adds zero or more portable factories.
+// Portable factories is a map of factory IDs and corresponding Portable factories.
+func (b *Config) SetPortableFactories(factories ...PortableFactory) {
+	b.portableFactories = append(b.portableFactories, factories...)
 }
 
 // PortableFactories returns a copy of portable factories
@@ -112,10 +112,9 @@ func (b *Config) CustomSerializers() map[reflect.Type]Serializer {
 	return sers
 }
 
-// AddClassDefinition adds a class definition.
-// class definitions contains classDefinitions for portable structs.
-func (b *Config) AddClassDefinition(definition *ClassDefinition) {
-	b.classDefinitions = append(b.classDefinitions, definition)
+// SetClassDefinitions adds zore or more class definitions for portable factories.
+func (b *Config) SetClassDefinitions(definitions ...*ClassDefinition) {
+	b.classDefinitions = append(b.classDefinitions, definitions...)
 }
 
 // ClassDefinitions returns a copy of class definitions.

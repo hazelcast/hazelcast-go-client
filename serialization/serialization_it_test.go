@@ -30,7 +30,7 @@ import (
 
 func TestPortableSerialize(t *testing.T) {
 	it.MapTesterWithConfig(t, func(config *hz.Config) {
-		config.Serialization.AddPortableFactory(&portableFactory{})
+		config.Serialization.SetPortableFactories(&portableFactory{})
 	}, func(t *testing.T, m *hz.Map) {
 		target := newEmployee("Ford Prefect", 33, true)
 		it.Must(m.Set(context.Background(), "ford", target))
