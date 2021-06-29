@@ -25,21 +25,15 @@ const (
 	StackTraceElementCodecLineNumberInitialFrameSize = StackTraceElementCodecLineNumberFieldOffset + proto.IntSizeInBytes
 )
 
-/*
-type stacktraceelementCodec struct {}
-
-var StackTraceElementCodec stacktraceelementCodec
-*/
-
 func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceElement hzerrors.StackTraceElement) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, StackTraceElementCodecLineNumberInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset, int32(stackTraceElement.LineNumber()))
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset, int32(stackTraceElement.LineNumber))
 	clientMessage.AddFrame(initialFrame)
 
-	EncodeString(clientMessage, stackTraceElement.ClassName())
-	EncodeString(clientMessage, stackTraceElement.MethodName())
-	CodecUtil.EncodeNullableForString(clientMessage, stackTraceElement.FileName())
+	EncodeString(clientMessage, stackTraceElement.ClassName)
+	EncodeString(clientMessage, stackTraceElement.MethodName)
+	CodecUtil.EncodeNullableForString(clientMessage, stackTraceElement.FileName)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }

@@ -717,7 +717,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 	return string(frameIterator.Next().Content)
 }
 
-func DecodeError(msg *proto.ClientMessage) *hzerrors.ServerError {
+func DecodeError(msg *proto.ClientMessage) (hzerrors.ServerError, bool) {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
 	errorHolders := []proto.ErrorHolder{}
@@ -725,11 +725,11 @@ func DecodeError(msg *proto.ClientMessage) *hzerrors.ServerError {
 		errorHolders = append(errorHolders, DecodeErrorHolder(frameIterator))
 	})
 	if len(errorHolders) == 0 {
-		return nil
+		return hzerrors.ServerError{}, false
 	}
 	holder := errorHolders[0]
-	err := NewServerError(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
-	return &err
+	err := NewServerError(holder.ErrorCode, holder.ClassName, holder.Message, holder.StackTraceElements, 0, "")
+	return err, true
 }
 
 func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {

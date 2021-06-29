@@ -23,8 +23,13 @@ type ServerError struct {
 	StackTrace     []StackTraceElement
 	ErrorCode      int32
 	CauseErrorCode int32
+	Err            error
 }
 
-func (e *ServerError) Error() string {
+func (e ServerError) Error() string {
 	return e.Message
+}
+
+func (e ServerError) Unwrap() error {
+	return e.Err
 }

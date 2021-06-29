@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hzerrors
+package cluster
 
 type errorCode int32
 

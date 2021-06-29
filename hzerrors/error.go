@@ -18,8 +18,6 @@ package hzerrors
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 )
 
 var (
@@ -27,7 +25,22 @@ var (
 	ErrClientNotAllowedInCluster = errors.New("client not allowed in cluster")
 	ErrAddressNotFound           = errors.New("address not found")
 	ErrConfigInvalidStatsPeriod  = errors.New("invalid stats period")
+
+	ErrAuthentication = errors.New("authentication")
 )
+
+type HzError struct {
+	Message string
+	Cause   error
+}
+
+func (e HzError) Error() string {
+	return e.Message
+}
+
+func (e HzError) Unwrap() error {
+	return e.Cause
+}
 
 // HazelcastError is the general error interface.
 type HazelcastError interface {
@@ -255,53 +268,17 @@ func NewHazelcastClientServiceNotFoundError(message string, cause error) *Hazelc
 }
 
 // StackTraceElement contains stacktrace information for server side exception.
-type StackTraceElement interface {
-	// ClassName returns the fully qualified name of the class containing
-	// the execution point represented by the stack trace element.
-	ClassName() string
-
-	// MethodName returns the name of the method containing the execution point
-	// represented by this stack trace element.
-	MethodName() string
-
-	// FileName returns the name of the file containing the execution point
-	// represented by the stack trace element, or nil if
-	// this information is unavailable.
-	FileName() string
-
-	// LineNumber returns the line number of the source line containing the
-	// execution point represented by this stack trace element, or
-	// a negative number if this information is unavailable. A value
-	// of -2 indicates that the method containing the execution point
-	// is a native method.
-	LineNumber() int32
-}
-
-func NewHazelcastError(err *ServerError) HazelcastError {
-	sb := strings.Builder{}
-	for _, trace := range err.StackTrace {
-		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName(), trace.MethodName(), trace.FileName(), trace.LineNumber()))
-	}
-	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName, err.Message, sb.String())
-	switch errorCode(err.ErrorCode) {
-	case errorCodeAuthentication:
-		return NewHazelcastAuthenticationError(message, err)
-	case errorCodeHazelcastInstanceNotActive:
-		return NewHazelcastInstanceNotActiveError(message, err)
-	case errorCodeHazelcastSerialization:
-		return NewHazelcastSerializationError(message, err)
-	case errorCodeTargetDisconnected:
-		return NewHazelcastTargetDisconnectedError(message, err)
-	case errorCodeTargetNotMember:
-		return NewHazelcastTargetNotMemberError(message, err)
-	case errorCodeUnsupportedOperation:
-		return NewHazelcastUnsupportedOperationError(message, err)
-	case errorCodeConsistencyLostException:
-		return NewHazelcastConsistencyLostError(message, err)
-	case errorCodeIllegalArgument:
-		return NewHazelcastIllegalArgumentError(message, err)
-	}
-	return NewHazelcastErrorType(message, err)
+type StackTraceElement struct {
+	// ClassName is the fully qualified name of the class containing the execution point represented by the stack trace element.
+	ClassName string
+	// MethodName is the name of the method containing the execution point represented by this stack trace element.
+	MethodName string
+	// FileName returns the name of the file containing the execution point represented by the stack trace element,
+	FileName string
+	// LineNumber returns the line number of the source line containing the execution point represented by this stack trace element,
+	// or a negative number if this information is unavailable
+	// A value of -2 indicates that the method containing the execution point is a native method.
+	LineNumber int32
 }
 
 type IndexValidationError struct {

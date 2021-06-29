@@ -24,6 +24,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -215,7 +216,10 @@ func (c *Connection) socketReadLoop() {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
 				if clientMessage.Type() == messageTypeException {
-					clientMessage.Err = hzerrors.NewHazelcastError(codec.DecodeError(clientMessage))
+					if err, ok := codec.DecodeError(clientMessage); ok {
+						clientMessage.Err = NewHazelcastError(err)
+					}
+
 				}
 				c.responseCh <- clientMessage
 				clientMessageReader.ResetMessage()
@@ -283,4 +287,36 @@ func positiveDurationOrMax(duration time.Duration) time.Duration {
 		return duration
 	}
 	return time.Duration(math.MaxInt64)
+}
+
+func WrapServerError(err hzerrors.ServerError, internalErr error) hzerrors.ServerError {
+	err.Err = internalErr
+	return err
+}
+
+func NewHazelcastError(err hzerrors.ServerError) error {
+	sb := strings.Builder{}
+	for _, trace := range err.StackTrace {
+		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
+	}
+	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName, err.Message, sb.String())
+	switch errorCode(err.ErrorCode) {
+	case errorCodeAuthentication:
+		return fmt.Errorf("%s: %w", message, WrapServerError(err, hzerrors.ErrAuthentication))
+	case errorCodeHazelcastInstanceNotActive:
+		return hzerrors.NewHazelcastInstanceNotActiveError(message, err)
+	case errorCodeHazelcastSerialization:
+		return hzerrors.NewHazelcastSerializationError(message, err)
+	case errorCodeTargetDisconnected:
+		return hzerrors.NewHazelcastTargetDisconnectedError(message, err)
+	case errorCodeTargetNotMember:
+		return hzerrors.NewHazelcastTargetNotMemberError(message, err)
+	case errorCodeUnsupportedOperation:
+		return hzerrors.NewHazelcastUnsupportedOperationError(message, err)
+	case errorCodeConsistencyLostException:
+		return hzerrors.NewHazelcastConsistencyLostError(message, err)
+	case errorCodeIllegalArgument:
+		return hzerrors.NewHazelcastIllegalArgumentError(message, err)
+	}
+	return hzerrors.NewHazelcastErrorType(message, err)
 }
