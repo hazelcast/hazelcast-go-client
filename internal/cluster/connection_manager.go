@@ -554,7 +554,7 @@ func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address)
 	m.addrs = append(m.addrs, addr)
 }
 
-// RemoveConnection removes a connection and returns true if there are no more addrToConn left.
+// RemoveConnection removes a connection and returns the number of remaining connections.
 func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	m.mu.Lock()
 	var remaining int
@@ -599,7 +599,12 @@ func (m *connectionMap) RandomConn() *Connection {
 	if len(m.addrs) == 0 {
 		return nil
 	}
-	addr := m.lb.OneOf(m.addrs)
+	var addr pubcluster.Address
+	if len(m.addrs) == 1 {
+		addr = m.addrs[0]
+	} else {
+		addr = m.lb.OneOf(m.addrs)
+	}
 	conn := m.addrToConn[addr]
 	if conn != nil {
 		return conn
@@ -668,8 +673,9 @@ func (m *connectionMap) removeAddr(addr pubcluster.Address) {
 	for i, a := range m.addrs {
 		if a.Equal(addr) {
 			// note that this changes the order of addresses
-			m.addrs[len(m.addrs)-1] = m.addrs[i]
+			m.addrs[i] = m.addrs[len(m.addrs)-1]
 			m.addrs = m.addrs[:len(m.addrs)-1]
+			break
 		}
 	}
 }
