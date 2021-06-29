@@ -414,12 +414,13 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 			return fmt.Sprintf("opened connection to: %s", connAddr)
 		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
+		return nil
 	case credentialsFailed:
-		return hzerrors.NewHazelcastAuthenticationError("invalid credentials", nil)
+		return fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication)
 	case serializationVersionMismatch:
-		return hzerrors.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
+		return fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication)
 	}
-	return nil
+	return hzerrors.ErrAuthentication
 }
 
 func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {

@@ -26,7 +26,7 @@ var (
 	ErrAddressNotFound           = errors.New("address not found")
 	ErrConfigInvalidStatsPeriod  = errors.New("invalid stats period")
 
-	ErrAuthentication = errors.New("authentication")
+	ErrAuthentication = errors.New("authentication error")
 )
 
 type HzError struct {
