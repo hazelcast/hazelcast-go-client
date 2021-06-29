@@ -67,6 +67,5 @@ func NewRandomLoadBalancer() *RandomLoadBalancer {
 // OneOf selects a random address from the given list and returns it
 func (lb *RandomLoadBalancer) OneOf(addrs []Address) Address {
 	r := rand.Rand(*lb)
-	index := (&r).Intn(len(addrs))
-	return addrs[index]
+	return addrs[r.Intn(len(addrs))]
 }
