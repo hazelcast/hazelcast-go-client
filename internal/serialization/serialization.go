@@ -77,9 +77,7 @@ func (s *Service) ToData(object interface{}) (r *Data, err error) {
 }
 
 // ToObject deserializes the given Data to an object.
-// It can safely be called on an object that is already deserialized. In that case, that instance
-// is returned.
-// If this is called with nil, nil is returned.
+// nil is returned if called with nil.
 func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -91,9 +89,6 @@ func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 		return nil, nil
 	}
 	typeID := data.Type()
-	if typeID == 0 {
-		return data, nil
-	}
 	serializer := s.lookupBuiltinDeserializer(typeID)
 	if serializer == nil {
 		serializer, ok = s.registry[typeID]
