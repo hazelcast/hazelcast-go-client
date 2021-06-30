@@ -43,32 +43,6 @@ func (l Level) String() string {
 	return string(l)
 }
 
-func (l *Level) UnmarshalText(b []byte) error {
-	switch string(b) {
-	case "":
-		fallthrough
-	case "off":
-		*l = OffLevel
-	case "error":
-		*l = ErrorLevel
-	case "warn":
-		*l = WarnLevel
-	case "info":
-		*l = InfoLevel
-	case "debug":
-		*l = DebugLevel
-	case "trace":
-		*l = TraceLevel
-	default:
-		return fmt.Errorf("invalid log level: %s", string(b))
-	}
-	return nil
-}
-
-func (l *Level) MarshalText() ([]byte, error) {
-	return []byte(l.String()), nil
-}
-
 type Config struct {
 	Level Level `json:",omitempty"`
 }
