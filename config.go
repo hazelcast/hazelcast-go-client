@@ -128,7 +128,7 @@ func (c StatsConfig) clone() StatsConfig {
 	return c
 }
 
-func (c StatsConfig) Validate() error {
+func (c *StatsConfig) Validate() error {
 	if c.Period <= 0 {
 		c.Period = types.Duration(3 * time.Second)
 	}

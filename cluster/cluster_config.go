@@ -30,6 +30,7 @@ const (
 )
 
 type Config struct {
+	loadBalancer      LoadBalancer
 	Security          SecurityConfig       `json:",omitempty"`
 	SSL               SSLConfig            `json:",omitempty"`
 	Name              string               `json:",omitempty"`
@@ -56,6 +57,7 @@ func (c *Config) Clone() Config {
 		HeartbeatTimeout:  c.HeartbeatTimeout,
 		InvocationTimeout: c.InvocationTimeout,
 		RedoOperation:     c.RedoOperation,
+		loadBalancer:      c.loadBalancer,
 		Security:          c.Security.Clone(),
 		SSL:               c.SSL.Clone(),
 		HazelcastCloud:    c.HazelcastCloud.Clone(),
@@ -113,6 +115,17 @@ func (c *Config) SetAddress(addrs ...string) error {
 	}
 	c.Address = addrs
 	return nil
+}
+
+// SetLoadBalancer sets the load balancer for the cluster.
+// If load balancer is nil, the default load balancer is used.
+func (c *Config) SetLoadBalancer(lb LoadBalancer) {
+	c.loadBalancer = lb
+}
+
+// LoadBalancer returns the load balancer.
+func (c *Config) LoadBalancer() LoadBalancer {
+	return c.loadBalancer
 }
 
 func checkAddress(addr string) error {

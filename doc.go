@@ -17,6 +17,22 @@
 /*
 Package hazelcast provides the Hazelcast Go client.
 
+Configuring Load Balancer
+
+Load balancer configuration allows you to specify which cluster address to send next operation.
+
+If smart client mode is used, only the operations that are not key-based are routed to the member that is returned by the load balancer.
+Load balancer is ignored for unisocket mode.
+
+The default load balancer is the RoundRobinLoadBalancer, which picks the next address in order among the provided addresses.
+The other built-in load balancer is RandomLoadBalancer.
+You can also write a custom load balancer by implementing LoadBalancer.
+
+Use config.ClusterConfig.SetLoadBalancer to set the load balancer:
+
+	config := NewConfig()
+	config.ClusterConfig.SetLoadBalancer(cluster.NewRandomLoadBalancer())
+
 Hazelcast Cloud Discovery
 
 Hazelcast Go client can discover and connect to Hazelcast clusters running on Hazelcast Cloud https://cloud.hazelcast.com.
