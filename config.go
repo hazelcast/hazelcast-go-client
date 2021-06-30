@@ -130,7 +130,7 @@ func (c StatsConfig) clone() StatsConfig {
 
 func (c *StatsConfig) Validate() error {
 	if c.Period <= 0 {
-		c.Period = types.Duration(3 * time.Second)
+		c.Period = types.Duration(5 * time.Second)
 	}
 	return nil
 }
