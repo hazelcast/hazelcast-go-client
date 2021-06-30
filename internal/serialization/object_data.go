@@ -267,10 +267,14 @@ func (o *ObjectDataOutput) WriteStringArray(v []string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteBytes(v string) {
-	for _, char := range v {
-		o.WriteByte(uint8(char))
-	}
+func (o *ObjectDataOutput) WriteStringBytes(v string) {
+	o.EnsureAvailable(ByteSizeInBytes * len(v))
+	o.position += int32(copy(o.buffer[o.position:], v))
+}
+
+func (o *ObjectDataOutput) WriteRawBytes(b []byte) {
+	o.EnsureAvailable(ByteSizeInBytes * len(b))
+	o.position += int32(copy(o.buffer[o.position:], b))
 }
 
 //// ObjectDataInput ////

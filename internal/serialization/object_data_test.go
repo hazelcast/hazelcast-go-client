@@ -17,6 +17,7 @@
 package serialization
 
 import (
+	"encoding/binary"
 	"reflect"
 	"testing"
 
@@ -216,8 +217,11 @@ func TestObjectDataInput_ReadString2(t *testing.T) {
 
 func TestObjectDataInput_ReadObject(t *testing.T) {
 	conf := &serialization.Config{}
-	service, _ := NewService(conf)
-	o := NewObjectDataOutput(500, service, false)
+	service, err := NewService(conf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	var a = 6.739
 	var b byte = 125
 	var c int32 = 13
@@ -228,6 +232,8 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 	var h = []int64{123, 25, 83, 8, -23, -47, 51, 0}
 	var j = []float32{12.4, 25.5, 1.24, 3.44, 12.57, 0}
 	var k = []float64{12.45675333444, 25.55677, 1.243232, 3.444666, 12.572424, 0}
+
+	o := NewObjectDataOutput(500, service, false)
 	o.WriteObject(a)
 	o.WriteObject(b)
 	o.WriteObject(c)
@@ -237,10 +243,8 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 	o.WriteObject(g)
 	o.WriteObject(h)
 	o.WriteObject(j)
-	o.WriteObject(k)
 
 	i := NewObjectDataInput(o.buffer, 0, service, false)
-
 	retA := i.ReadObject()
 	retB := i.ReadObject()
 	retC := i.ReadObject()
@@ -257,6 +261,29 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 		!reflect.DeepEqual(h, retH) || !reflect.DeepEqual(j, retJ) || !reflect.DeepEqual(k, retK) {
 		t.Error("There is a problem in WriteObject() or ReadObject()!")
 	}
+}
+
+func TestObjectDataInput_ReadObject_UnknownTypeID(t *testing.T) {
+	defer func() {
+		const target = "unknown type ID: -120"
+		if err := recover(); err == nil {
+			t.Fatal("should have failed")
+		} else if err != target {
+			t.Fatalf("%v != %s", err, target)
+		}
+	}()
+	conf := &serialization.Config{}
+	service, err := NewService(conf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	o := NewObjectDataOutput(500, service, false)
+	raw := make([]byte, 4)
+	typeID := -120
+	binary.LittleEndian.PutUint32(raw, uint32(typeID))
+	o.WriteRawBytes(raw)
+	i := NewObjectDataInput(o.buffer, 0, service, false)
+	i.ReadObject()
 }
 
 func TestObjectDataInput_ReadByteArray(t *testing.T) {
