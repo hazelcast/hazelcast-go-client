@@ -24,6 +24,7 @@ import (
 )
 
 type Config struct {
+	loadBalancer         LoadBalancer
 	SecurityConfig       SecurityConfig
 	SSLConfig            SSLConfig
 	Name                 string
@@ -66,6 +67,7 @@ func (c *Config) Clone() Config {
 		HeartbeatTimeout:     c.HeartbeatTimeout,
 		InvocationTimeout:    c.InvocationTimeout,
 		RedoOperation:        c.RedoOperation,
+		loadBalancer:         c.loadBalancer,
 		SecurityConfig:       c.SecurityConfig.Clone(),
 		SSLConfig:            c.SSLConfig.Clone(),
 		HazelcastCloudConfig: c.HazelcastCloudConfig.Clone(),
@@ -119,6 +121,17 @@ func (c *Config) SetAddress(addrs ...string) error {
 	}
 	c.Addrs = addrs
 	return nil
+}
+
+// SetLoadBalancer sets the load balancer for the cluster.
+// If load balancer is nil, the default load balancer is used.
+func (c *Config) SetLoadBalancer(lb LoadBalancer) {
+	c.loadBalancer = lb
+}
+
+// LoadBalancer returns the load balancer.
+func (c *Config) LoadBalancer() LoadBalancer {
+	return c.loadBalancer
 }
 
 func checkAddress(addr string) error {

@@ -16,12 +16,12 @@
 # limitations under the License.
 #
 
-# Starts Hazelcast Remote Controller
+# Starts Soak Tester
 #
 # Usage:
-#   Start with default Hazelcast version : ./rc.sh start
-#   Start with given Hazelcast version   : HZ_VERSION=4.3 ./rc.sh start
-#   Stop                                 : ./rc.sh stop
+#   Start with default Hazelcast version : ./soak.sh start
+#   Start with given Hazelcast version   : HZ_VERSION=4.3 ./soak.sh start
+#   Stop                                 : ./soak.sh stop
 
 # Exit immediately on error.
 set -e
@@ -52,19 +52,12 @@ download () {
   if [ -f "$jar_path" ]; then
       log_info "$jar_path already exists, skipping download."
   else
-      log_info "Downloading: $jar_path ($artifact) from: $repo"
+      log_info "Downloading: $jar_path ($artifact)"
       mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Ddest="$jar_path"
       if [ $? -ne 0 ]; then
-          log_fatal "Failed downloading $jar_path ($artifact) from: $repo"
+          log_fatal "Failed downloading $jar_path ($artifact) from $repo"
       fi
   fi
-}
-
-downloadRC () {
-  local jar_path="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar"
-  local artifact="com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION}"
-  download "$SNAPSHOT_REPO" "$jar_path" "$artifact"
-  classpath="$classpath:$jar_path"
 }
 
 downloadTests () {
@@ -95,12 +88,12 @@ downloadTestsEnterprise () {
   classpath="$classpath:$jar_path"
 }
 
-startRC () {
+startSoak () {
   if [ -f "$PID_FILE" ]; then
-    log_fatal "PID file $PID_FILE exists. Is there an another instance of Hazelcast Remote Controller running?"
+    log_fatal "PID file $PID_FILE exists. Is there an another instance of soak tester running?"
   fi
 
-  if [[ "${HZ_VERSION}" == *-SNAPSHOT ]]
+  if [ "${HZ_VERSION}" = "*-SNAPSHOT" ]
   then
     repo=${SNAPSHOT_REPO}
     enterprise_repo=${ENTERPRISE_SNAPSHOT_REPO}
@@ -110,10 +103,8 @@ startRC () {
   fi
 
   classpath=""
-  java_opts="-Dhazelcast.phone.home.enabled=false com.hazelcast.remotecontroller.Main --use-simple-server"
+  java_opts="-Djava.net.preferIPv4Stack=true com.hazelcast.core.server.HazelcastMemberStarter"
 
-  # Download Remote Controller
-  downloadRC
   # Download Hazelcast Community jars
   downloadTests
   downloadHazelcast
@@ -127,14 +118,14 @@ startRC () {
 
   java_opts="-cp ${classpath} $java_opts"
 
-  log_info "Starting Remote Controller in the background..."
-  log_info "Run '$0 stop' to stop the controller."
+  log_info "Starting Hazelcast in the background..."
+  log_info "Run '$0 stop' to stop the soak tester."
   java $java_opts &
   pid=$!
   echo "$pid" > "$PID_FILE"
 }
 
-stopRC () {
+stopTester () {
   if [ -f "$PID_FILE" ]; then
     pid=$(cat "$PID_FILE")
     log_info "Stopping $pid ..."
@@ -144,16 +135,15 @@ stopRC () {
 }
 
 help () {
-  echo "Usage: ./rc.sh [start|stop]"
+  echo "Usage: $0 [start|stop]"
   exit 1
 }
 
 TIMESTAMP_FMT="+%Y-%m-%d %H:%M:%S"
-PID_FILE="test.pid"
+PID_FILE="hz.pid"
 HZ_VERSION="${HZ_VERSION:-4.2}"
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
 HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
-HAZELCAST_RC_VERSION="0.8-SNAPSHOT"
 SNAPSHOT_REPO="https://oss.sonatype.org/content/repositories/snapshots"
 RELEASE_REPO="http://repo1.maven.apache.org/maven2"
 ENTERPRISE_RELEASE_REPO="https://repository.hazelcast.com/release/"
@@ -161,10 +151,10 @@ ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
 
 case "${1:-}" in
   start)
-    startRC
+    startSoak
     ;;
   stop)
-    stopRC
+    stopTester
     ;;
   *)
     help

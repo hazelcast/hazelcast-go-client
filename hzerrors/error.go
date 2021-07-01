@@ -303,3 +303,11 @@ func NewHazelcastError(err *ServerError) HazelcastError {
 	}
 	return NewHazelcastErrorType(message, err)
 }
+
+type IndexValidationError struct {
+	Err error
+}
+
+func (ic IndexValidationError) Error() string {
+	return ic.Err.Error()
+}
