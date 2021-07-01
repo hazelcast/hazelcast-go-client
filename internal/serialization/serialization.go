@@ -46,7 +46,8 @@ func NewService(serializationConfig *pubserialization.Config) (*Service, error) 
 	if err != nil {
 		return nil, err
 	}
-	if err = s.registerDefaultSerializers(); err != nil {
+	s.registerClassDefinitions(s.portableSerializer, s.SerializationConfig.ClassDefinitions)
+	if err = s.registerIdentifiedFactories(); err != nil {
 		return nil, err
 	}
 	s.registerCustomSerializers(serializationConfig.CustomSerializers)
@@ -206,24 +207,6 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return javaArrayListSerializer
 	case TypeGobSerialization:
 		return gobSerializer
-	}
-	return nil
-}
-
-func (s *Service) registerDefaultSerializers() error {
-	if err := s.registerIdentifiedFactories(); err != nil {
-		return err
-	}
-	portableSerializer, err := NewPortableSerializer(s, s.SerializationConfig.PortableFactories, s.SerializationConfig.PortableVersion)
-	if err != nil {
-		return err
-	}
-	s.registerClassDefinitions(portableSerializer, s.SerializationConfig.ClassDefinitions)
-	if err = s.registerSerializer(portableSerializer); err != nil {
-		return err
-	}
-	if err = s.registerSerializer(gobSerializer); err != nil {
-		return err
 	}
 	return nil
 }
