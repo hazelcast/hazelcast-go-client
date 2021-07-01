@@ -268,8 +268,14 @@ func (o *ObjectDataOutput) WriteStringArray(v []string) {
 }
 
 func (o *ObjectDataOutput) WriteStringBytes(v string) {
-	o.EnsureAvailable(ByteSizeInBytes * len(v))
-	o.position += int32(copy(o.buffer[o.position:], v))
+	rv := []rune(v)
+	runeCount := len(rv)
+	o.EnsureAvailable(ByteSizeInBytes * runeCount)
+	pos := int(o.position)
+	for i, r := range rv {
+		o.buffer[pos+i] = byte(r)
+	}
+	o.position += int32(runeCount)
 }
 
 func (o *ObjectDataOutput) WriteRawBytes(b []byte) {
