@@ -268,7 +268,11 @@ func (o *ObjectDataOutput) WriteStringArray(v []string) {
 }
 
 func (o *ObjectDataOutput) WriteStringBytes(v string) {
-	rv := []rune(v)
+	o.writeStringBytes([]rune(v))
+}
+
+func (o *ObjectDataOutput) writeStringBytes(rv []rune) {
+	// See: https://github.com/hazelcast/hazelcast/issues/17955#issuecomment-778152424
 	runeCount := len(rv)
 	o.EnsureAvailable(ByteSizeInBytes * runeCount)
 	pos := int(o.position)
