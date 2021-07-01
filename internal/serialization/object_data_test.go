@@ -243,6 +243,7 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 	o.WriteObject(g)
 	o.WriteObject(h)
 	o.WriteObject(j)
+	o.WriteObject(k)
 
 	i := NewObjectDataInput(o.buffer, 0, service, false)
 	retA := i.ReadObject()
