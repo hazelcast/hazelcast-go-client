@@ -19,11 +19,13 @@ package serialization
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
-	"strconv"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // Service serializes user objects to Data and back to Object.
@@ -31,22 +33,26 @@ import (
 type Service struct {
 	SerializationConfig *pubserialization.Config
 	registry            map[int32]pubserialization.Serializer
-	nameToID            map[string]int32
+	portableSerializer  *PortableSerializer
 }
 
 func NewService(serializationConfig *pubserialization.Config) (*Service, error) {
-	v1 := Service{
+	var err error
+	s := &Service{
 		SerializationConfig: serializationConfig,
-		nameToID:            make(map[string]int32),
 		registry:            make(map[int32]pubserialization.Serializer),
 	}
-	err := v1.registerDefaultSerializers()
+	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories, s.SerializationConfig.PortableVersion)
 	if err != nil {
 		return nil, err
 	}
-	v1.registerCustomSerializers(serializationConfig.CustomSerializers)
-	v1.registerGlobalSerializer(serializationConfig.GlobalSerializer)
-	return &v1, nil
+	s.registerClassDefinitions(s.portableSerializer, s.SerializationConfig.ClassDefinitions)
+	if err = s.registerIdentifiedFactories(); err != nil {
+		return nil, err
+	}
+	s.registerCustomSerializers(serializationConfig.CustomSerializers)
+	s.registerGlobalSerializer(serializationConfig.GlobalSerializer)
+	return s, nil
 }
 
 // ToData serializes an object to a Data.
@@ -74,25 +80,24 @@ func (s *Service) ToData(object interface{}) (r *Data, err error) {
 }
 
 // ToObject deserializes the given Data to an object.
-// It can safely be called on an object that is already deserialized. In that case, that instance
-// is returned.
-// If this is called with nil, nil is returned.
+// nil is returned if called with nil.
 func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
 		}
 	}()
+	var ok bool
 	if data == nil {
 		return nil, nil
 	}
 	typeID := data.Type()
-	if typeID == 0 {
-		return data, nil
-	}
-	serializer, ok := s.registry[typeID]
-	if !ok {
-		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
+	serializer := s.lookupBuiltinDeserializer(typeID)
+	if serializer == nil {
+		serializer, ok = s.registry[typeID]
+		if !ok {
+			return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
+		}
 	}
 	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, s.SerializationConfig.BigEndian)
 	return serializer.Read(dataInput), nil
@@ -108,88 +113,109 @@ func (s *Service) WriteObject(output pubserialization.DataOutput, object interfa
 }
 
 func (s *Service) ReadObject(input pubserialization.DataInput) interface{} {
-	serializerID := input.ReadInt32()
-	serializer := s.registry[serializerID]
-	return serializer.Read(input)
+	typeID := input.ReadInt32()
+	if serializer := s.lookupBuiltinDeserializer(typeID); serializer != nil {
+		return serializer.Read(input)
+	}
+	if serializer := s.registry[typeID]; serializer != nil {
+		return serializer.Read(input)
+	}
+	panic(fmt.Sprintf("unknown type ID: %d", typeID))
 }
 
 func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serializer, error) {
-	var serializer pubserialization.Serializer
-	if obj == nil {
-		serializer = s.registry[s.nameToID["nil"]]
+	if serializer := s.LookUpDefaultSerializer(obj); serializer != nil {
+		return serializer, nil
 	}
-	if serializer == nil {
-		serializer = s.LookUpDefaultSerializer(obj)
+	if serializer := s.lookUpCustomSerializer(obj); serializer != nil {
+		return serializer, nil
 	}
-	if serializer == nil {
-		serializer = s.lookUpCustomSerializer(obj)
+	if serializer := s.lookUpGlobalSerializer(); serializer != nil {
+		return serializer, nil
 	}
-	if serializer == nil {
-		serializer = s.lookUpGlobalSerializer()
-	}
-	if serializer == nil {
-		serializer = s.registry[s.nameToID["!gob"]]
-	}
-	if serializer == nil {
-		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable serializer for %v", obj), nil)
-	}
-	return serializer, nil
+	// keeping the error in the result for future behavior change
+	return gobSerializer, nil
 }
 
-func (s *Service) registerDefaultSerializers() error {
-	sers := []struct {
-		s pubserialization.Serializer
-		l string
-		i int32
-	}{
-		{l: "uint8", i: ConstantTypeByte, s: &ByteSerializer{}},
-		{l: "bool", i: ConstantTypeBool, s: &BoolSerializer{}},
-		{l: "uint16", i: ConstantTypeUInteger16, s: &UInteger16Serializer{}},
-		{l: "int16", i: ConstantTypeInteger16, s: &Integer16Serializer{}},
-		{l: "int32", i: ConstantTypeInteger32, s: &Integer32Serializer{}},
-		{l: "int64", i: ConstantTypeInteger64, s: &Integer64Serializer{}},
-		{l: "float32", i: ConstantTypeFloat32, s: &Float32Serializer{}},
-		{l: "float64", i: ConstantTypeFloat64, s: &Float64Serializer{}},
-		{l: "string", i: ConstantTypeString, s: &StringSerializer{}},
-		{l: "nil", i: ConstantTypeNil, s: &NilSerializer{}},
-		{l: "[]uint8", i: ConstantTypeByteArray, s: &ByteArraySerializer{}},
-		{l: "[]bool", i: ConstantTypeBoolArray, s: &BoolArraySerializer{}},
-		{l: "[]uint16", i: ConstantTypeUInteger16Array, s: &UInteger16ArraySerializer{}},
-		{l: "[]int16", i: ConstantTypeInteger16Array, s: &Integer16ArraySerializer{}},
-		{l: "[]int32", i: ConstantTypeInteger32Array, s: &Integer32ArraySerializer{}},
-		{l: "[]int64", i: ConstantTypeInteger64Array, s: &Integer64ArraySerializer{}},
-		{l: "[]float32", i: ConstantTypeFloat32Array, s: &Float32ArraySerializer{}},
-		{l: "[]float64", i: ConstantTypeFloat64Array, s: &Float64ArraySerializer{}},
-		{l: "[]string", i: ConstantTypeStringArray, s: &StringArraySerializer{}},
-		{l: "serialization.JSON", i: JSONSerializationType, s: &JSONValueSerializer{}},
-		{l: "!gob", i: GoGobSerializationType, s: &GobSerializer{}},
+func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
+	serializer := s.lookupBuiltinSerializer(obj)
+	if serializer != nil {
+		return serializer
 	}
-	for _, ser := range sers {
-		if err := s.registerSerializer(ser.s); err != nil {
-			return err
-		}
-		s.nameToID[ser.l] = ser.i
+	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
+		return identifedDataSerializableSerializer
 	}
-	err := s.registerIdentifiedFactories()
-	if err != nil {
-		return err
+	if _, ok := obj.(pubserialization.Portable); ok {
+		return s.portableSerializer
 	}
-	portableSerializer, err := NewPortableSerializer(s, s.SerializationConfig.PortableFactories, s.SerializationConfig.PortableVersion)
-	if err != nil {
-		return err
-	}
-	s.registerClassDefinitions(portableSerializer, s.SerializationConfig.ClassDefinitions)
-	if err = s.registerSerializer(portableSerializer); err != nil {
-		return err
-	}
-	s.nameToID["!portable"] = ConstantTypePortable
 	return nil
+}
 
+func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Serializer {
+	switch typeID {
+	case TypeNil:
+		return nilSerializer
+	case TypePortable:
+		return s.portableSerializer
+	case TypeDataSerializable:
+		return identifedDataSerializableSerializer
+	case TypeBool:
+		return boolSerializer
+	case TypeString:
+		return stringSerializer
+	case TypeByte:
+		return uint8Serializer
+	case TypeUInt16:
+		return uint16Serializer
+	case TypeInt16:
+		return int16Serializer
+	case TypeInt32:
+		return int32Serializer
+	case TypeInt64:
+		return int64Serializer
+	case TypeFloat32:
+		return float32Serializer
+	case TypeFloat64:
+		return float64Serializer
+	case TypeBoolArray:
+		return boolArraySerializer
+	case TypeStringArray:
+		return stringArraySerializer
+	case TypeByteArray:
+		return uint8ArraySerializer
+	case TypeUInt16Array:
+		return uint16ArraySerializer
+	case TypeInt16Array:
+		return int16ArraySerializer
+	case TypeInt32Array:
+		return int32ArraySerializer
+	case TypeInt64Array:
+		return int64ArraySerializer
+	case TypeFloat32Array:
+		return float32ArraySerializer
+	case TypeFloat64Array:
+		return float64ArraySerializer
+	case TypeUUID:
+		return uuidSerializer
+	case TypeJavaDate:
+		return javaDateSerializer
+	case TypeJavaBigInteger:
+		return javaBigIntSerializer
+	case TypeJSONSerialization:
+		return jsonSerializer
+	case TypeJavaArrayList:
+		return javaArrayListSerializer
+	case TypeGobSerialization:
+		return gobSerializer
+	}
+	return nil
 }
 
 func (s *Service) registerCustomSerializers(customSerializers map[reflect.Type]pubserialization.Serializer) {
 	for _, customSerializer := range customSerializers {
-		s.registerSerializer(customSerializer)
+		if err := s.registerSerializer(customSerializer); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -201,43 +227,19 @@ func (s *Service) registerSerializer(serializer pubserialization.Serializer) err
 	return nil
 }
 
-func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
-	classDefinitions []*pubserialization.ClassDefinition) {
-	for _, cd := range classDefinitions {
-		portableSerializer.portableContext.RegisterClassDefinition(cd)
+func (s *Service) registerClassDefinitions(serializer *PortableSerializer, classDefs []*pubserialization.ClassDefinition) {
+	for _, cd := range classDefs {
+		if err := serializer.portableContext.RegisterClassDefinition(cd); err != nil {
+			panic(err)
+		}
 	}
 }
 
 func (s *Service) registerGlobalSerializer(globalSerializer pubserialization.Serializer) {
 	if globalSerializer != nil {
-		s.registerSerializer(globalSerializer)
-	}
-}
-
-func (s *Service) getIDByObject(obj interface{}) (int32, bool) {
-	typ := reflect.TypeOf(obj).String()
-	if typ == "int" || typ == "[]int" {
-		typ = typ + strconv.Itoa(64)
-	}
-	if val, ok := s.nameToID[typ]; ok {
-		return val, true
-	}
-	return 0, false
-}
-
-func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
-	var serializer pubserialization.Serializer
-	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
-		return s.registry[s.nameToID["identified"]]
-	}
-	if _, ok := obj.(pubserialization.Portable); ok {
-		return s.registry[s.nameToID["!portable"]]
-	}
-	if id, found := s.getIDByObject(obj); !found {
-		return nil
-	} else {
-		serializer = s.registry[id]
-		return serializer
+		if err := s.registerSerializer(globalSerializer); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -273,7 +275,62 @@ func (s *Service) registerIdentifiedFactories() error {
 	if err := s.registerSerializer(NewIdentifiedDataSerializableSerializer(factories)); err != nil {
 		return err
 	}
-	s.nameToID["identified"] = ConstantTypeDataSerializable
+	return nil
+}
+
+func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Serializer {
+	switch obj.(type) {
+	case nil:
+		return nilSerializer
+	case bool:
+		return boolSerializer
+	case string:
+		return stringSerializer
+	case uint8:
+		return uint8Serializer
+	case uint16:
+		return uint16Serializer
+	case int:
+		return intSerializer
+	case int16:
+		return int16Serializer
+	case int32:
+		return int32Serializer
+	case int64:
+		return int64Serializer
+	case float32:
+		return float32Serializer
+	case float64:
+		return float64Serializer
+	case []bool:
+		return boolArraySerializer
+	case []string:
+		return stringArraySerializer
+	case []uint8:
+		return uint8ArraySerializer
+	case []uint16:
+		return uint16ArraySerializer
+	case []int:
+		return int64ArraySerializer
+	case []int16:
+		return int16ArraySerializer
+	case []int32:
+		return int32ArraySerializer
+	case []int64:
+		return int64ArraySerializer
+	case []float32:
+		return float32ArraySerializer
+	case []float64:
+		return float64ArraySerializer
+	case types.UUID:
+		return uuidSerializer
+	case time.Time:
+		return javaDateSerializer
+	case *big.Int:
+		return javaBigIntSerializer
+	case pubserialization.JSON:
+		return jsonSerializer
+	}
 	return nil
 }
 
@@ -287,3 +344,31 @@ func makeError(rec interface{}) error {
 		return fmt.Errorf("%v", rec)
 	}
 }
+
+var nilSerializer = &NilSerializer{}
+var boolSerializer = &BoolSerializer{}
+var identifedDataSerializableSerializer = &IdentifiedDataSerializableSerializer{}
+var stringSerializer = &StringSerializer{}
+var uint8Serializer = &ByteSerializer{}
+var uint16Serializer = &UInt16Serializer{}
+var intSerializer = &IntSerializer{}
+var int16Serializer = &Int16Serializer{}
+var int32Serializer = &Int32Serializer{}
+var int64Serializer = &Int64Serializer{}
+var float32Serializer = &Float32Serializer{}
+var float64Serializer = &Float64Serializer{}
+var boolArraySerializer = &BoolArraySerializer{}
+var stringArraySerializer = &StringArraySerializer{}
+var uint8ArraySerializer = &ByteArraySerializer{}
+var uint16ArraySerializer = &UInt16ArraySerializer{}
+var int16ArraySerializer = &Int16ArraySerializer{}
+var int32ArraySerializer = &Int32ArraySerializer{}
+var int64ArraySerializer = &Int64ArraySerializer{}
+var float32ArraySerializer = &Float32ArraySerializer{}
+var float64ArraySerializer = &Float64ArraySerializer{}
+var uuidSerializer = &UUIDSerializer{}
+var jsonSerializer = &JSONValueSerializer{}
+var javaDateSerializer = &JavaDateSerializer{}
+var javaBigIntSerializer = &JavaBigIntegerSerializer{}
+var javaArrayListSerializer = &JavaArrayListSerializer{}
+var gobSerializer = &GobSerializer{}

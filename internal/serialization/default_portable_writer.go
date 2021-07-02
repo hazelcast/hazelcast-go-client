@@ -188,8 +188,9 @@ func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) 
 	}
 	pos := pw.output.Position()
 	pw.output.PWriteInt32(pw.offset+field.Index*Int32SizeInBytes, pos)
-	pw.output.WriteInt16(int16(len(fieldName)))
-	pw.output.WriteBytes(fieldName)
+	runes := []rune(fieldName)
+	pw.output.WriteInt16(int16(len(runes)))
+	pw.output.writeStringBytes(runes)
 	pw.output.WriteByte(byte(fieldType))
 }
 

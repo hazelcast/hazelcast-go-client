@@ -112,12 +112,10 @@ func (*student3) Version() int32 {
 	return 1
 }
 
-func (s *student3) WritePortable(writer serialization.PortableWriter) error {
-	return nil
+func (s *student3) WritePortable(writer serialization.PortableWriter) {
 }
 
-func (s *student3) ReadPortable(reader serialization.PortableReader) error {
-	return nil
+func (s *student3) ReadPortable(reader serialization.PortableReader) {
 }
 
 func TestPortableSerializer(t *testing.T) {
@@ -143,7 +141,10 @@ func TestPortableSerializer_NoFactory(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectedRet := &student3{}
-	data, _ := service.ToData(expectedRet)
+	data, err := service.ToData(expectedRet)
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, err = service.ToObject(data)
 	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
 		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
