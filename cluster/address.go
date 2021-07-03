@@ -29,3 +29,7 @@ func NewAddress(host string, port int32) Address {
 func (a Address) String() string {
 	return string(a)
 }
+
+func (a Address) Equal(b Address) bool {
+	return string(a) == string(b)
+}

@@ -17,8 +17,11 @@
 package serialization
 
 import (
+	"log"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -485,4 +488,23 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 		ret6 != nil || ret7 != nil || ret8 != nil || ret9 != nil || ret10 != nil {
 		t.Errorf("ReadPortable() returns %v expected %v", ret, expectedRet)
 	}
+}
+
+func TestDefaultPortableReader_ReadString_NonASCIIFieldName(t *testing.T) {
+	// See: https://github.com/hazelcast/hazelcast/issues/17955#issuecomment-778152424
+	service, err := NewService(&serialization.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	o := NewPositionalObjectDataOutput(0, service, false)
+	cd := serialization.NewClassDefinition(2, 1, 3)
+	if err = cd.AddStringField("şerıalızatıon"); err != nil {
+		t.Fatal(err)
+	}
+	pw := NewDefaultPortableWriter(nil, o, cd)
+	pw.WriteString("şerıalızatıon", "foo")
+	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
+	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
+	ret := pr.ReadString("şerıalızatıon")
+	assert.Equal(t, "foo", ret)
 }

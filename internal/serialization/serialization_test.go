@@ -322,11 +322,32 @@ func TestIntSerializer(t *testing.T) {
 func TestSerializeData(t *testing.T) {
 	data := iserialization.NewData([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := &serialization.Config{BigEndian: true}
-	service, _ := iserialization.NewService(config)
-	serializedData, _ := service.ToData(data)
+	service := mustSerializationService(iserialization.NewService(config))
+	serializedData, err := service.ToData(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(data, serializedData) {
 		t.Error("Data type should not be serialized")
 	}
+}
+
+func TestSerializeRune(t *testing.T) {
+	config := &serialization.Config{
+		BigEndian:        true,
+		GlobalSerializer: &PanicingGlobalSerializer{},
+	}
+	ss := mustSerializationService(iserialization.NewService(config))
+	var target rune = 0x2318
+	data, err := ss.ToData(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := ss.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, target, value)
 }
 
 func TestUndefinedDataDeserialization(t *testing.T) {

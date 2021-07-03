@@ -34,7 +34,7 @@ import (
 
 func TestSerializationImprovements_1_UTFString(t *testing.T) {
 	ss := mustSerializationService(iserialization.NewService(&serialization.Config{BigEndian: true}))
-	target := `😭‍😭‍😭‍` // \x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60
+	target := "\x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60" // 😭‍😭‍😭
 	data, err := ss.ToData(target)
 	if err != nil {
 		t.Fatal(err)

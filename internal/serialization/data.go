@@ -49,7 +49,7 @@ func (d *Data) Buffer() []byte {
 
 func (d *Data) Type() int32 {
 	if d.TotalSize() == 0 {
-		return 0
+		return TypeNil
 	}
 	return int32(binary.BigEndian.Uint32(d.Payload[typeOffset:]))
 }

@@ -32,7 +32,7 @@ import (
 // of tls config as they wish. SSL config also has some helpers such as SetCaPath, AddClientCertAndKeyPath to
 // make configuration easier for users.
 type SSLConfig struct {
-	TLSConfig *tls.Config
+	TLSConfig *tls.Config `json:"-"`
 	Enabled   bool
 }
 

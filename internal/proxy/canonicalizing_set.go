@@ -34,7 +34,7 @@ func (a AggregateFactory) Create(id int32) serialization.IdentifiedDataSerializa
 }
 
 func (a AggregateFactory) FactoryID() int32 {
-	panic("implement me")
+	return internal.AggregateFactoryID
 }
 
 type AggCanonicalizingSet []interface{}

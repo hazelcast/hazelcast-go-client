@@ -31,6 +31,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -311,6 +312,7 @@ func TestMap_GetKeySet(t *testing.T) {
 		}
 	})
 }
+
 func TestMap_GetKeySetWithPredicate(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetKeySet := []interface{}{serialization.JSON(`{"a": 15}`)}
@@ -508,7 +510,7 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 		if err := m.AddIndexWithConfig(context.Background(), indexConfig); err == nil {
 			t.Fatalf("should have failed")
 		} else {
-			vErr := &hz.IndexValidationError{}
+			vErr := &hzerrors.IndexValidationError{}
 			if !errors.As(err, &vErr) {
 				t.Fatalf("should have returned an index validation error")
 			}
