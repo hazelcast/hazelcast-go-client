@@ -31,8 +31,8 @@ const employeeClassID = int32(1)
 const employeeFactoryID = int32(4)
 
 type employee struct {
-	age  int32
 	name string
+	age  int32
 }
 
 func (*employee) FactoryID() int32 {
@@ -77,7 +77,7 @@ func (e *employee) WriteData(output serialization.DataOutput) {
 }
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
-	var employee1 = &employee{22, "Furkan Şenharputlu"}
+	var employee1 = &employee{age: 22, name: "Furkan Şenharputlu"}
 	c := serialization.NewConfig()
 	c.AddIdentifiedDataSerializableFactory(&factory{})
 	service, err := iserialization.NewService(&c)
@@ -96,7 +96,7 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 }
 
 func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
-	c := &employee{38, "Jack"}
+	c := &employee{age: 38, name: "Jack"}
 	config := serialization.NewConfig()
 	config.AddIdentifiedDataSerializableFactory(&nullFactory{})
 	service, err := iserialization.NewService(&config)
