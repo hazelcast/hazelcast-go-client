@@ -267,10 +267,24 @@ func (o *ObjectDataOutput) WriteStringArray(v []string) {
 	}
 }
 
-func (o *ObjectDataOutput) WriteBytes(v string) {
-	for _, char := range v {
-		o.WriteByte(uint8(char))
+func (o *ObjectDataOutput) WriteStringBytes(v string) {
+	o.writeStringBytes([]rune(v))
+}
+
+func (o *ObjectDataOutput) writeStringBytes(rv []rune) {
+	// See: https://github.com/hazelcast/hazelcast/issues/17955#issuecomment-778152424
+	runeCount := len(rv)
+	o.EnsureAvailable(ByteSizeInBytes * runeCount)
+	pos := int(o.position)
+	for i, r := range rv {
+		o.buffer[pos+i] = byte(r)
 	}
+	o.position += int32(runeCount)
+}
+
+func (o *ObjectDataOutput) WriteRawBytes(b []byte) {
+	o.EnsureAvailable(ByteSizeInBytes * len(b))
+	o.position += int32(copy(o.buffer[o.position:], b))
 }
 
 //// ObjectDataInput ////

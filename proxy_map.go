@@ -1006,13 +1006,13 @@ func validateAndNormalizeIndexConfig(ic *types.IndexConfig) error {
 	}
 	attrs := attrSet.Attrs()
 	if len(attrs) == 0 {
-		return &hzerrors.IndexValidationError{errors.New("index must have at least one attribute")}
+		return &hzerrors.IndexValidationError{Err: errors.New("index must have at least one attribute")}
 	}
 	if len(attrs) > maxIndexAttributes {
-		return &hzerrors.IndexValidationError{fmt.Errorf("index cannot have more than %d attributes", maxIndexAttributes)}
+		return &hzerrors.IndexValidationError{Err: fmt.Errorf("index cannot have more than %d attributes", maxIndexAttributes)}
 	}
 	if ic.Type == types.IndexTypeBitmap && len(attrs) > 1 {
-		return &hzerrors.IndexValidationError{errors.New("composite bitmap indexes are not supported")}
+		return &hzerrors.IndexValidationError{Err: errors.New("composite bitmap indexes are not supported")}
 	}
 	ic.Attributes = attrs
 	return nil
@@ -1028,19 +1028,19 @@ func newAttributeSet() attributeSet {
 
 func (as attributeSet) Add(attr string) error {
 	if attr == "" {
-		return &hzerrors.IndexValidationError{errors.New("attribute name cannot be not empty")}
+		return &hzerrors.IndexValidationError{Err: errors.New("attribute name cannot be not empty")}
 	}
 	if strings.HasSuffix(attr, ".") {
-		return &hzerrors.IndexValidationError{fmt.Errorf("attribute name cannot end with dot: %s", attr)}
+		return &hzerrors.IndexValidationError{Err: fmt.Errorf("attribute name cannot end with dot: %s", attr)}
 	}
 	if strings.HasPrefix(attr, "this.") {
 		attr = strings.Replace(attr, "this.", "", 1)
 		if attr == "" {
-			return &hzerrors.IndexValidationError{errors.New("attribute name cannot be 'this.'")}
+			return &hzerrors.IndexValidationError{Err: errors.New("attribute name cannot be 'this.'")}
 		}
 	}
 	if _, ok := as.attrs[attr]; ok {
-		return &hzerrors.IndexValidationError{fmt.Errorf("duplicate attribute name not allowed: %s", attr)}
+		return &hzerrors.IndexValidationError{Err: fmt.Errorf("duplicate attribute name not allowed: %s", attr)}
 	}
 	as.attrs[attr] = struct{}{}
 	return nil
