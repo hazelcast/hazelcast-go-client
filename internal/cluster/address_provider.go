@@ -38,7 +38,7 @@ func ParseAddress(addr string) (pubcluster.Address, error) {
 	return pubcluster.Address(addr), nil
 }
 
-func NewDefaultAddressProvider(networkConfig *pubcluster.Config) *DefaultAddressProvider {
+func NewDefaultAddressProvider(networkConfig *pubcluster.NetworkConfig) *DefaultAddressProvider {
 	var err error
 	addresses := make([]pubcluster.Address, len(networkConfig.Address))
 	for i, addr := range networkConfig.Address {

@@ -17,6 +17,26 @@
 /*
 Package hazelcast provides the Hazelcast Go client.
 
+Full Configuration
+
+Here is the full configuration with default values:
+
+
+
+	{
+		"Logger":{},
+		"Serialization":{},
+		"Cluster":{
+			"Security":{},
+			"HazelcastCloud":{},
+			"Discovery":{},
+			"Network":{
+				"SSL":{}
+			}
+		},
+		"Stats":{}
+	}
+
 Configuring Load Balancer
 
 Load balancer configuration allows you to specify which cluster address to send next operation.

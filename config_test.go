@@ -17,9 +17,12 @@
 package hazelcast_test
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 
 	"github.com/stretchr/testify/assert"
 
@@ -38,10 +41,10 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestNewConfig_SetAddress(t *testing.T) {
 	config := hazelcast.NewConfig()
-	if err := config.Cluster.SetAddress("192.168.1.2"); err != nil {
+	if err := config.Cluster.Network.SetAddress("192.168.1.2"); err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Address)
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Address)
 }
 
 func TestUnMarshalDefaultJSONConfig(t *testing.T) {
@@ -60,11 +63,13 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	text := `
 {
 	"Cluster": {
-		"Name": "foo",	
-		"ConnectionTimeout": "20s",
+		"Name": "foo",
 		"HeartbeatInterval": "10s",
 		"HeartbeatTimeout": "15s",
-		"InvocationTimeout": "25s"
+		"InvocationTimeout": "25s",
+		"Network": {
+			"ConnectionTimeout": "20s"
+		}
 	},
 	"Logger": {
 		"Level": "error"
@@ -83,7 +88,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	}
 	assert.Equal(t, "foo", config.Cluster.Name)
 	assert.Equal(t, logger.Level("error"), config.Logger.Level)
-	assert.Equal(t, types.Duration(20*time.Second), config.Cluster.ConnectionTimeout)
+	assert.Equal(t, types.Duration(20*time.Second), config.Cluster.Network.ConnectionTimeout)
 	assert.Equal(t, types.Duration(10*time.Second), config.Cluster.HeartbeatInterval)
 	assert.Equal(t, types.Duration(15*time.Second), config.Cluster.HeartbeatTimeout)
 	assert.Equal(t, types.Duration(25*time.Second), config.Cluster.InvocationTimeout)
@@ -97,19 +102,51 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{},"SSL":{},"HazelcastCloud":{},"Discovery":{}},"Stats":{}}`
+	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{},"HazelcastCloud":{},"Discovery":{},"Network":{"SSL":{}}},"Stats":{}}`
 	assert.Equal(t, target, string(b))
+}
+
+func TestFullConfig(t *testing.T) {
+	config := hazelcast.Config{}
+	config.ClientName = ""
+	config.SetLabels()
+
+	cc := &config.Cluster
+	cc.Name = "dev"
+	cc.HeartbeatTimeout = types.Duration(5 * time.Second)
+	cc.HeartbeatInterval = types.Duration(60 * time.Second)
+	cc.InvocationTimeout = types.Duration(120 * time.Second)
+	cc.RedoOperation = false
+	cc.Unisocket = false
+	cc.SetLoadBalancer(cluster.NewRoundRobinLoadBalancer())
+
+	cc.Network.SetAddress("127.0.0.1:5701")
+	cc.Network.SSL.Enabled = true
+	cc.Network.SSL.SetTLSConfig(&tls.Config{})
+	cc.Network.ConnectionTimeout = types.Duration(5 * time.Second)
+
+	cc.Security.Username = ""
+	cc.Security.Password = ""
+
+	sc := &config.Serialization
+	sc.PortableVersion = 0
+	sc.LittleEndian = false
+
+	stc := &config.Stats
+	stc.Enabled = false
+	stc.Period = types.Duration(5 * time.Second)
+
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
 	assert.Equal(t, "dev", c.Cluster.Name)
-	assert.Equal(t, []string{"127.0.0.1:5701"}, c.Cluster.Address)
-	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.ConnectionTimeout)
+	assert.Equal(t, []string{"127.0.0.1:5701"}, c.Cluster.Network.Address)
+	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.Network.ConnectionTimeout)
 	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.HeartbeatInterval)
 	assert.Equal(t, types.Duration(60*time.Second), c.Cluster.HeartbeatTimeout)
 	assert.Equal(t, types.Duration(120*time.Second), c.Cluster.InvocationTimeout)
 	assert.Equal(t, false, c.Cluster.Unisocket)
-	assert.NotNil(t, c.Cluster.SSL.TLSConfig())
+	assert.NotNil(t, c.Cluster.Network.SSL.TLSConfig())
 
 }

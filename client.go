@@ -496,7 +496,7 @@ func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger 
 		}
 		return pr, cloud.NewAddressTranslator(dc, nodes), nil
 	}
-	pr := icluster.NewDefaultAddressProvider(config)
+	pr := icluster.NewDefaultAddressProvider(&config.Network)
 	if config.Discovery.UsePublicIP {
 		return pr, icluster.NewDefaultPublicAddressTranslator(), nil
 	}
