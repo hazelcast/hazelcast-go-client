@@ -18,6 +18,7 @@ package hazelcast_test
 
 import (
 	"encoding/json"
+	"sort"
 	"testing"
 	"time"
 
@@ -98,7 +99,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{},"HazelcastCloud":{},"Discovery":{},"Network":{"SSL":{}}},"Stats":{}}`
-	assert.Equal(t, target, string(b))
+	assertStringEquivalent(t, target, string(b))
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {
@@ -133,4 +134,17 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 
 	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
 
+}
+
+func assertStringEquivalent(t *testing.T, s1, s2 string) {
+	assert.Equal(t, len(s1), len(s2))
+	s1sl := []byte(s1)
+	s2sl := []byte(s2)
+	sort.Slice(s1sl, func(i, j int) bool {
+		return s1sl[i] < s1sl[j]
+	})
+	sort.Slice(s2sl, func(i, j int) bool {
+		return s2sl[i] < s2sl[j]
+	})
+	assert.Equal(t, s1sl, s2sl)
 }
