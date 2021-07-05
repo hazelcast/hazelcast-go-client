@@ -17,12 +17,9 @@
 package hazelcast_test
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"testing"
 	"time"
-
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 
 	"github.com/stretchr/testify/assert"
 
@@ -41,9 +38,7 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestNewConfig_SetAddress(t *testing.T) {
 	config := hazelcast.NewConfig()
-	if err := config.Cluster.Network.SetAddress("192.168.1.2"); err != nil {
-		t.Fatal(err)
-	}
+	config.Cluster.Network.SetAddress("192.168.1.2")
 	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Address)
 }
 
@@ -106,47 +101,36 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	assert.Equal(t, target, string(b))
 }
 
-func TestFullConfig(t *testing.T) {
-	config := hazelcast.Config{}
-	config.ClientName = ""
-	config.SetLabels()
-
-	cc := &config.Cluster
-	cc.Name = "dev"
-	cc.HeartbeatTimeout = types.Duration(5 * time.Second)
-	cc.HeartbeatInterval = types.Duration(60 * time.Second)
-	cc.InvocationTimeout = types.Duration(120 * time.Second)
-	cc.RedoOperation = false
-	cc.Unisocket = false
-	cc.SetLoadBalancer(cluster.NewRoundRobinLoadBalancer())
-
-	cc.Network.SetAddress("127.0.0.1:5701")
-	cc.Network.SSL.Enabled = true
-	cc.Network.SSL.SetTLSConfig(&tls.Config{})
-	cc.Network.ConnectionTimeout = types.Duration(5 * time.Second)
-
-	cc.Security.Username = ""
-	cc.Security.Password = ""
-
-	sc := &config.Serialization
-	sc.PortableVersion = 0
-	sc.LittleEndian = false
-
-	stc := &config.Stats
-	stc.Enabled = false
-	stc.Period = types.Duration(5 * time.Second)
-
-}
-
 func checkDefault(t *testing.T, c *hazelcast.Config) {
-	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
+	assert.Equal(t, "", c.ClientName)
+	assert.Equal(t, []string(nil), c.Labels)
+
 	assert.Equal(t, "dev", c.Cluster.Name)
-	assert.Equal(t, []string{"127.0.0.1:5701"}, c.Cluster.Network.Address)
-	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.Network.ConnectionTimeout)
 	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.HeartbeatInterval)
 	assert.Equal(t, types.Duration(60*time.Second), c.Cluster.HeartbeatTimeout)
 	assert.Equal(t, types.Duration(120*time.Second), c.Cluster.InvocationTimeout)
 	assert.Equal(t, false, c.Cluster.Unisocket)
+	assert.Equal(t, false, c.Cluster.RedoOperation)
+
+	assert.Equal(t, []string{"127.0.0.1:5701"}, c.Cluster.Network.Address)
+	assert.Equal(t, false, c.Cluster.Network.SSL.Enabled)
 	assert.NotNil(t, c.Cluster.Network.SSL.TLSConfig())
+	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.Network.ConnectionTimeout)
+
+	assert.Equal(t, "", c.Cluster.Security.Username)
+	assert.Equal(t, "", c.Cluster.Security.Password)
+
+	assert.Equal(t, false, c.Cluster.Discovery.UsePublicIP)
+
+	assert.Equal(t, false, c.Cluster.HazelcastCloud.Enabled)
+	assert.Equal(t, "", c.Cluster.HazelcastCloud.Token)
+
+	assert.Equal(t, int32(0), c.Serialization.PortableVersion)
+	assert.Equal(t, false, c.Serialization.LittleEndian)
+
+	assert.Equal(t, false, c.Stats.Enabled)
+	assert.Equal(t, types.Duration(5*time.Second), c.Stats.Period)
+
+	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
 
 }

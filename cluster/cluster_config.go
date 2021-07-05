@@ -29,11 +29,11 @@ type Config struct {
 	Security          SecurityConfig       `json:",omitempty"`
 	Name              string               `json:",omitempty"`
 	HazelcastCloud    HazelcastCloudConfig `json:",omitempty"`
+	Network           NetworkConfig        `json:",omitempty"`
 	InvocationTimeout types.Duration       `json:",omitempty"`
 	HeartbeatInterval types.Duration       `json:",omitempty"`
 	HeartbeatTimeout  types.Duration       `json:",omitempty"`
 	Discovery         DiscoveryConfig      `json:",omitempty"`
-	Network           NetworkConfig        `json:",omitempty"`
 	RedoOperation     bool                 `json:",omitempty"`
 	Unisocket         bool                 `json:",omitempty"`
 }

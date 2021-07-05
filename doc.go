@@ -19,23 +19,44 @@ Package hazelcast provides the Hazelcast Go client.
 
 Full Configuration
 
-Here is the full configuration with default values:
+Here are all configuration items with their default values:
 
+	config := hazelcast.Config{}
+	config.ClientName = ""
+	config.SetLabels()
 
+	cc := &config.Cluster
+	cc.Name = "dev"
+	cc.HeartbeatTimeout = types.Duration(5 * time.Second)
+	cc.HeartbeatInterval = types.Duration(60 * time.Second)
+	cc.InvocationTimeout = types.Duration(120 * time.Second)
+	cc.RedoOperation = false
+	cc.Unisocket = false
+	cc.SetLoadBalancer(cluster.NewRoundRobinLoadBalancer())
 
-	{
-		"Logger":{},
-		"Serialization":{},
-		"Cluster":{
-			"Security":{},
-			"HazelcastCloud":{},
-			"Discovery":{},
-			"Network":{
-				"SSL":{}
-			}
-		},
-		"Stats":{}
-	}
+	cc.Network.SetAddress("127.0.0.1:5701")
+	cc.Network.SSL.Enabled = true
+	cc.Network.SSL.SetTLSConfig(&tls.Config{})
+	cc.Network.ConnectionTimeout = types.Duration(5 * time.Second)
+
+	cc.Security.Username = ""
+	cc.Security.Password = ""
+
+	cc.Discovery.UsePublicIP = false
+
+	cc.HazelcastCloud.Enabled = false
+	cc.HazelcastCloud.Token = ""
+
+	sc := &config.Serialization
+	sc.PortableVersion = 0
+	sc.LittleEndian = false
+
+	stc := &config.Stats
+	stc.Enabled = false
+	stc.Period = types.Duration(5 * time.Second)
+
+	config.Logger.Level = logger.InfoLevel
+
 
 Configuring Load Balancer
 
