@@ -68,10 +68,17 @@ func (u UUID) Default() bool {
 	return u.mostSigBits == 0 && u.leastSigBits == 0
 }
 
+func (u UUID) ExtractInto(b []byte) {
+	if len(b) < 16 {
+		panic("uuid: slice of size 16 is required")
+	}
+	binary.BigEndian.PutUint64(b[0:8], u.mostSigBits)
+	binary.BigEndian.PutUint64(b[8:16], u.leastSigBits)
+}
+
 func (u UUID) asString() string {
 	data := make([]byte, 16)
-	binary.BigEndian.PutUint64(data[0:8], u.mostSigBits)
-	binary.BigEndian.PutUint64(data[8:16], u.leastSigBits)
+	u.ExtractInto(data)
 	dst := make([]byte, 36)
 	hex.Encode(dst, data[:4])
 	dst[8] = '-'

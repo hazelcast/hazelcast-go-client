@@ -1,4 +1,4 @@
-// +build noos
+// build +noos
 
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
@@ -30,9 +30,7 @@ func Example() {
 	// Create the configuration
 	config := hazelcast.Config{}
 	config.Cluster.Name = "my-cluster"
-	if err := config.Cluster.SetAddress("192.168.1.42:5000", "192.168.1.42:5001"); err != nil {
-		log.Fatal(err)
-	}
+	config.Cluster.Network.SetAddress("192.168.1.42:5000", "192.168.1.42:5001")
 	// Start the client with the configuration provider.
 	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {

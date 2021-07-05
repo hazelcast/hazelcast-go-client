@@ -44,7 +44,7 @@ func NewPortableSerializer(service *Service, factories []serialization.PortableF
 }
 
 func (ps *PortableSerializer) ID() int32 {
-	return ConstantTypePortable
+	return TypePortable
 }
 
 func (ps *PortableSerializer) Read(input serialization.DataInput) interface{} {

@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -165,11 +166,11 @@ func TestCustomSerializer(t *testing.T) {
 	customSerializer := &CustomArtistSerializer{}
 	config := &serialization.Config{}
 	config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
-	service := MustValue(iserialization.NewService(config)).(*iserialization.Service)
-	data := MustValue(service.ToData(m)).(*iserialization.Data)
-	ret := MustValue(service.ToObject(data))
-	data2 := MustValue(service.ToData(p)).(*iserialization.Data)
-	ret2 := MustValue(service.ToObject(data2))
+	service := mustValue(iserialization.NewService(config)).(*iserialization.Service)
+	data := mustValue(service.ToData(m)).(*iserialization.Data)
+	ret := mustValue(service.ToObject(data))
+	data2 := mustValue(service.ToData(p)).(*iserialization.Data)
+	ret2 := mustValue(service.ToObject(data2))
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
 		t.Error("custom serialization failed")
@@ -268,22 +269,18 @@ func TestGobSerializer(t *testing.T) {
 func TestInt64SerializerWithInt(t *testing.T) {
 	var id = 15
 	config := &serialization.Config{}
-	service, _ := iserialization.NewService(config)
-	data, _ := service.ToData(id)
-	ret, _ := service.ToObject(data)
-
-	if !reflect.DeepEqual(int64(id), ret) {
-		t.Error("int type serialization failed")
-	}
+	service := mustSerializationService(iserialization.NewService(config))
+	data := mustData(service.ToData(id))
+	ret := mustValue(service.ToObject(data))
+	assert.Equal(t, int64(id), ret)
 }
 
 func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	var ids = []int{15, 10, 20, 12, 35}
 	config := &serialization.Config{}
-	service, _ := iserialization.NewService(config)
-	data, _ := service.ToData(ids)
-	ret, _ := service.ToObject(data)
-
+	service := mustSerializationService(iserialization.NewService(config))
+	data := mustData(service.ToData(ids))
+	ret := mustValue(service.ToObject(data))
 	var ids64 = make([]int64, 5)
 	for k := 0; k < 5; k++ {
 		ids64[k] = int64(ids[k])
@@ -294,14 +291,53 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	}
 }
 
+func TestDefaultSerializerWithUInt(t *testing.T) {
+	// XXX: This test succeeds even though uint is not a builtin serializer,
+	// since the value is serialized with the default serialzer.
+	// This is wrong!
+	var id = uint(15)
+	config := &serialization.Config{}
+	service := mustSerializationService(iserialization.NewService(config))
+	data := mustData(service.ToData(id))
+	ret := mustValue(service.ToObject(data))
+	assert.Equal(t, id, ret)
+}
+
+func TestIntSerializer(t *testing.T) {
+	var id = 15
+	config := &serialization.Config{}
+	service := mustSerializationService(iserialization.NewService(config))
+	data := mustData(service.ToData(id))
+	ret := mustValue(service.ToObject(data))
+	assert.Equal(t, int64(id), ret)
+}
+
 func TestSerializeData(t *testing.T) {
 	data := iserialization.NewData([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := &serialization.Config{}
-	service, _ := iserialization.NewService(config)
-	serializedData, _ := service.ToData(data)
+	service := mustSerializationService(iserialization.NewService(config))
+	serializedData, err := service.ToData(data)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(data, serializedData) {
 		t.Error("Data type should not be serialized")
 	}
+}
+
+func TestSerializeRune(t *testing.T) {
+	config := &serialization.Config{}
+	ss := mustSerializationService(iserialization.NewService(config))
+	var target rune = 0x2318
+	data, err := ss.ToData(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := ss.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, target, value)
 }
 
 func TestUndefinedDataDeserialization(t *testing.T) {
@@ -315,10 +351,17 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	require.Errorf(t, err, "err should not be nil")
 }
 
-// MustValue returns value if err is nil, otherwise it panics.
-func MustValue(value interface{}, err error) interface{} {
+// mustValue returns value if err is nil, otherwise it panics.
+func mustValue(value interface{}, err error) interface{} {
 	if err != nil {
 		panic(err)
 	}
 	return value
+}
+
+func mustData(value interface{}, err error) *iserialization.Data {
+	if err != nil {
+		panic(err)
+	}
+	return value.(*iserialization.Data)
 }
