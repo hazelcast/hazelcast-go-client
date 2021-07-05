@@ -154,6 +154,7 @@ func TestReplicatedMap_IsEmptySize(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.MustValue(m.Put(context.Background(), "k2", "v2"))
 		it.MustValue(m.Put(context.Background(), "k3", "v3"))
+		time.Sleep(1 * time.Second)
 		if value, err := m.IsEmpty(context.Background()); err != nil {
 			t.Fatal(err)
 		} else if value {
