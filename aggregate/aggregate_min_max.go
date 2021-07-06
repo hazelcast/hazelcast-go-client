@@ -69,34 +69,6 @@ func (a aggMin) String() string {
 	return makeString("Min", a.attrPath)
 }
 
-type aggMinBy struct {
-	attrPath string
-}
-
-func (a aggMinBy) FactoryID() int32 {
-	return internal.AggregateFactoryID
-}
-
-func (a aggMinBy) ClassID() (classID int32) {
-	return 18
-}
-
-func (a aggMinBy) WriteData(output serialization.DataOutput) {
-	writeAttrPath(output, a.attrPath)
-	// member side, not used in client
-	output.WriteObject(nil)
-}
-
-func (a *aggMinBy) ReadData(input serialization.DataInput) {
-	a.attrPath = input.ReadString()
-	// member side, not used in client
-	input.ReadObject()
-}
-
-func (a aggMinBy) String() string {
-	return makeString("MinBy", a.attrPath)
-}
-
 type aggMax struct {
 	attrPath string
 }

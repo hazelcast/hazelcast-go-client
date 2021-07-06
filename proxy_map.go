@@ -1034,7 +1034,7 @@ func (m *Map) aggregate(ctx context.Context, req *proto.ClientMessage, decoder f
 	if err != nil {
 		return nil, err
 	}
-	// if this is a canonicalizing set return a slice of interface[}
+	// if this is a canonicalizing dereference it
 	cs, ok := obj.(*iproxy.AggCanonicalizingSet)
 	if ok {
 		return *cs, nil

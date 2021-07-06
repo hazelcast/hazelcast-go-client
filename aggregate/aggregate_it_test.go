@@ -130,6 +130,22 @@ func TestDoubleAverageAll(t *testing.T) {
 	})
 }
 
+func TestDoubleAverageAll_Mixed(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10.4))
+		it.MustValue(m.Put(ctx, "k2", int64(25)))
+		result, err := m.Aggregate(ctx, aggregate.DoubleAverageAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, float64(17.7), result)
+	})
+}
+
 func TestDoubleSum(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
@@ -159,6 +175,22 @@ func TestDoubleSumAll(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, float64(35), result)
+	})
+}
+
+func TestDoubleSumAll_Mixed(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10.4))
+		it.MustValue(m.Put(ctx, "k2", int64(25)))
+		result, err := m.Aggregate(ctx, aggregate.DoubleSumAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, float64(35.4), result)
 	})
 }
 
