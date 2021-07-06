@@ -28,7 +28,7 @@ import (
 type portableFactory1 struct {
 }
 
-func (*portableFactory1) Create(classID int32) serialization.Portable {
+func (portableFactory1) Create(classID int32) serialization.Portable {
 	if classID == 1 {
 		return &student{}
 	} else if classID == 2 {
@@ -37,7 +37,21 @@ func (*portableFactory1) Create(classID int32) serialization.Portable {
 	return nil
 }
 
-func (*portableFactory1) FactoryID() int32 {
+func (portableFactory1) FactoryID() int32 {
+	return 2
+}
+
+type portableFactory2 struct {
+}
+
+func (portableFactory2) Create(classID int32) serialization.Portable {
+	if classID == 1 {
+		return &student2{}
+	}
+	return nil
+}
+
+func (portableFactory2) FactoryID() int32 {
 	return 2
 }
 

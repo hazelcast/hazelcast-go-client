@@ -24,6 +24,8 @@ import (
 	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func Example() {
@@ -100,4 +102,29 @@ func ExamplePNCounter() {
 	}
 	fmt.Println(value)
 	// Output: 42
+}
+
+func ExampleMap_Aggregate() {
+	// Create the Hazelcast client.
+	client, err := hazelcast.StartNewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx := context.Background()
+	myMap, err := client.GetMap(ctx, "my-map")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = myMap.Set(ctx, "k1", serialization.JSON(`{"A": "foo", "B": 10}`)); err != nil {
+		log.Fatal(err)
+	}
+	if err = myMap.Set(ctx, "k2", serialization.JSON(`{"A": "bar", "B": 30}`)); err != nil {
+		log.Fatal(err)
+	}
+	result, err := myMap.Aggregate(ctx, aggregate.LongSum("B"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result)
+	// Output: 40
 }

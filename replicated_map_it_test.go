@@ -50,6 +50,7 @@ func TestReplicatedMap_Clear(t *testing.T) {
 	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put(context.Background(), "key", targetValue))
+		time.Sleep(1 * time.Second)
 		if ok := it.MustBool(m.ContainsKey(context.Background(), "key")); !ok {
 			t.Fatalf("key not found")
 		}

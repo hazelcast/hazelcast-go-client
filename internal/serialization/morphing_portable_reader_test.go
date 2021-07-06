@@ -21,6 +21,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	hzerrors "github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -1453,10 +1455,9 @@ func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeErro
 }
 
 func TestNewMorphingPortableReader(t *testing.T) {
-	t.SkipNow()
 	s := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{}
-	config.SetPortableFactories(&portableFactory1{})
+	config.SetPortableFactories(&portableFactory2{})
 	service, err := NewService(config)
 	if err != nil {
 		t.Fatal(err)
@@ -1465,15 +1466,17 @@ func TestNewMorphingPortableReader(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service.SerializationConfig.PortableVersion = 1
+	config.PortableVersion = 1
+	service, err = NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
 	expectedRet := &student2{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	ret, err := service.ToObject(data)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(expectedRet, ret) {
-		t.Error("MorphingPortableReader failed")
-	}
+	assert.Equal(t, expectedRet, ret)
 }
 
 func captureErr(f func()) (err error) {

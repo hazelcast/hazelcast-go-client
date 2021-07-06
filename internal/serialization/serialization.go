@@ -19,11 +19,12 @@ package serialization
 import (
 	"errors"
 	"fmt"
-	"math/big"
 	"reflect"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -31,10 +32,11 @@ import (
 // Service serializes user objects to Data and back to Object.
 // Data is the internal representation of binary Data in Hazelcast.
 type Service struct {
-	SerializationConfig *pubserialization.Config
-	registry            map[int32]pubserialization.Serializer
-	portableSerializer  *PortableSerializer
-	customSerializers   map[reflect.Type]pubserialization.Serializer
+	SerializationConfig  *pubserialization.Config
+	registry             map[int32]pubserialization.Serializer
+	portableSerializer   *PortableSerializer
+	identifiedSerializer *IdentifiedDataSerializableSerializer
+	customSerializers    map[reflect.Type]pubserialization.Serializer
 }
 
 func NewService(config *pubserialization.Config) (*Service, error) {
@@ -49,11 +51,11 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 		return nil, err
 	}
 	s.registerClassDefinitions(s.portableSerializer, s.SerializationConfig.ClassDefinitions())
+	s.registerCustomSerializers(config.CustomSerializers())
+	s.registerGlobalSerializer(config.GlobalSerializer())
 	if err = s.registerIdentifiedFactories(); err != nil {
 		return nil, err
 	}
-	s.registerCustomSerializers(config.CustomSerializers())
-	s.registerGlobalSerializer(config.GlobalSerializer())
 	return s, nil
 }
 
@@ -145,7 +147,7 @@ func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Seri
 		return serializer
 	}
 	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
-		return identifedDataSerializableSerializer
+		return s.identifiedSerializer
 	}
 	if _, ok := obj.(pubserialization.Portable); ok {
 		return s.portableSerializer
@@ -160,7 +162,7 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 	case TypePortable:
 		return s.portableSerializer
 	case TypeDataSerializable:
-		return identifedDataSerializableSerializer
+		return s.identifiedSerializer
 	case TypeBool:
 		return boolSerializer
 	case TypeString:
@@ -201,8 +203,6 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return uuidSerializer
 	case TypeJavaDate:
 		return javaDateSerializer
-	case TypeJavaBigInteger:
-		return javaBigIntSerializer
 	case TypeJSONSerialization:
 		return jsonSerializer
 	case TypeJavaArrayList:
@@ -265,8 +265,9 @@ func (s *Service) lookUpGlobalSerializer() pubserialization.Serializer {
 }
 
 func (s *Service) registerIdentifiedFactories() error {
-	factories := make(map[int32]pubserialization.IdentifiedDataSerializableFactory)
-	fs := map[int32]pubserialization.IdentifiedDataSerializableFactory{}
+	fs := map[int32]pubserialization.IdentifiedDataSerializableFactory{
+		internal.AggregateFactoryID: &proxy.AggregateFactory{},
+	}
 	for _, f := range s.SerializationConfig.IdentifiedDataSerializableFactories() {
 		fid := f.FactoryID()
 		if _, ok := fs[fid]; ok {
@@ -274,7 +275,8 @@ func (s *Service) registerIdentifiedFactories() error {
 		}
 		fs[fid] = f
 	}
-	if err := s.registerSerializer(NewIdentifiedDataSerializableSerializer(factories)); err != nil {
+	s.identifiedSerializer = NewIdentifiedDataSerializableSerializer(fs)
+	if err := s.registerSerializer(s.identifiedSerializer); err != nil {
 		return err
 	}
 	return nil
@@ -328,8 +330,6 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return uuidSerializer
 	case time.Time:
 		return javaDateSerializer
-	case *big.Int:
-		return javaBigIntSerializer
 	case pubserialization.JSON:
 		return jsonSerializer
 	}
@@ -349,7 +349,6 @@ func makeError(rec interface{}) error {
 
 var nilSerializer = &NilSerializer{}
 var boolSerializer = &BoolSerializer{}
-var identifedDataSerializableSerializer = &IdentifiedDataSerializableSerializer{}
 var stringSerializer = &StringSerializer{}
 var uint8Serializer = &ByteSerializer{}
 var uint16Serializer = &UInt16Serializer{}
@@ -371,6 +370,5 @@ var float64ArraySerializer = &Float64ArraySerializer{}
 var uuidSerializer = &UUIDSerializer{}
 var jsonSerializer = &JSONValueSerializer{}
 var javaDateSerializer = &JavaDateSerializer{}
-var javaBigIntSerializer = &JavaBigIntegerSerializer{}
 var javaArrayListSerializer = &JavaArrayListSerializer{}
 var gobSerializer = &GobSerializer{}

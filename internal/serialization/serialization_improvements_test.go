@@ -19,7 +19,6 @@ package serialization_test
 import (
 	"encoding/binary"
 	"math"
-	"math/big"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -34,7 +33,7 @@ import (
 
 func TestSerializationImprovements_1_UTFString(t *testing.T) {
 	ss := mustSerializationService(iserialization.NewService(&serialization.Config{}))
-	target := `😭‍😭‍😭‍` // \x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60
+	target := "\x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60" // 😭‍😭‍😭
 	data, err := ss.ToData(target)
 	if err != nil {
 		t.Fatal(err)
@@ -80,23 +79,6 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
 	ss := mustSerializationService(iserialization.NewService(config))
 	target := time.Date(2021, 2, 1, 9, 1, 15, 11000, time.Local)
-	data, err := ss.ToData(target)
-	if err != nil {
-		t.Fatal(err)
-	}
-	value, err := ss.ToObject(data)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, target, value)
-
-}
-
-func TestSerializationImprovements_BigInt(t *testing.T) {
-	config := &serialization.Config{}
-	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
-	ss := mustSerializationService(iserialization.NewService(config))
-	target := big.NewInt(1024)
 	data, err := ss.ToData(target)
 	if err != nil {
 		t.Fatal(err)
