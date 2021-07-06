@@ -19,7 +19,6 @@ package serialization
 import (
 	"errors"
 	"fmt"
-	"math/big"
 	"reflect"
 	"time"
 
@@ -202,8 +201,6 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return uuidSerializer
 	case TypeJavaDate:
 		return javaDateSerializer
-	case TypeJavaBigInteger:
-		return javaBigIntSerializer
 	case TypeJSONSerialization:
 		return jsonSerializer
 	case TypeJavaArrayList:
@@ -331,8 +328,6 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return uuidSerializer
 	case time.Time:
 		return javaDateSerializer
-	case *big.Int:
-		return javaBigIntSerializer
 	case pubserialization.JSON:
 		return jsonSerializer
 	}
@@ -373,6 +368,5 @@ var float64ArraySerializer = &Float64ArraySerializer{}
 var uuidSerializer = &UUIDSerializer{}
 var jsonSerializer = &JSONValueSerializer{}
 var javaDateSerializer = &JavaDateSerializer{}
-var javaBigIntSerializer = &JavaBigIntegerSerializer{}
 var javaArrayListSerializer = &JavaArrayListSerializer{}
 var gobSerializer = &GobSerializer{}
