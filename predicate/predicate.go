@@ -28,13 +28,3 @@ type Predicate interface {
 	serialization.IdentifiedDataSerializable
 	fmt.Stringer
 }
-
-type PagingPredicate interface {
-	Predicate
-	Reset()
-	NextPage()
-	PreviousPage()
-	Page() int
-	SetPage(page int)
-	PageSize() int
-}

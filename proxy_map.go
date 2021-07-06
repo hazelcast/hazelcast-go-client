@@ -23,11 +23,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -80,6 +82,31 @@ func (m *Map) AddInterceptor(ctx context.Context, interceptor interface{}) (stri
 			return codec.DecodeMapAddInterceptorResponse(response), nil
 		}
 	}
+}
+
+// Aggregate runs the given aggregator and returns the result.
+func (m *Map) Aggregate(ctx context.Context, agg aggregate.Aggregator) (interface{}, error) {
+	aggData, err := m.validateAndSerializeAggregate(agg)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapAggregateRequest(m.name, aggData)
+	return m.aggregate(ctx, request, codec.DecodeMapAggregateResponse)
+}
+
+// AggregateWithPredicate runs the given aggregator and returns the result.
+// The result is filtered with the given predicate.
+func (m *Map) AggregateWithPredicate(ctx context.Context, agg aggregate.Aggregator, pred predicate.Predicate) (interface{}, error) {
+	aggData, err := m.validateAndSerializeAggregate(agg)
+	if err != nil {
+		return nil, err
+	}
+	predData, err := m.validateAndSerializePredicate(pred)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapAggregateWithPredicateRequest(m.name, aggData, predData)
+	return m.aggregate(ctx, request, codec.DecodeMapAggregateWithPredicateResponse)
 }
 
 // Clear deletes all entries one by one and fires related events
@@ -221,7 +248,7 @@ func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, e
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	partitionToKeys := map[int32][]*iserialization.Data{}
+	partitionToKeys := map[int32][]*serialization.Data{}
 	ps := m.proxy.partitionService
 	for _, key := range keys {
 		if keyData, err := m.validateAndSerialize(key); err != nil {
@@ -237,7 +264,7 @@ func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, e
 	}
 	result := make([]types.Entry, 0, len(keys))
 	// create futures
-	f := func(partitionID int32, keys []*iserialization.Data) cb.Future {
+	f := func(partitionID int32, keys []*serialization.Data) cb.Future {
 		request := codec.EncodeMapGetAllRequest(m.name, keys)
 		return m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 			if attempt > 0 {
@@ -258,9 +285,9 @@ func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, e
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
-				if key, err = m.convertToObject(pair.Key().(*iserialization.Data)); err != nil {
+				if key, err = m.convertToObject(pair.Key().(*serialization.Data)); err != nil {
 					return nil, err
-				} else if value, err = m.convertToObject(pair.Value().(*iserialization.Data)); err != nil {
+				} else if value, err = m.convertToObject(pair.Value().(*serialization.Data)); err != nil {
 					return nil, err
 				}
 				result = append(result, types.NewEntry(key, value))
@@ -310,11 +337,11 @@ func (m *Map) GetEntryView(ctx context.Context, key interface{}) (*types.SimpleE
 				return nil, nil
 			}
 			// XXX: creating a new SimpleEntryView here in order to convert key, data and use maxIdle
-			deserializedKey, err := m.convertToObject(ev.Key.(*iserialization.Data))
+			deserializedKey, err := m.convertToObject(ev.Key.(*serialization.Data))
 			if err != nil {
 				return nil, err
 			}
-			deserializedValue, err := m.convertToObject(ev.Value.(*iserialization.Data))
+			deserializedValue, err := m.convertToObject(ev.Value.(*serialization.Data))
 			if err != nil {
 				return nil, err
 			}
@@ -795,8 +822,8 @@ func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error
 
 func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
-	var keyData *iserialization.Data
-	var predicateData *iserialization.Data
+	var keyData *serialization.Data
+	var predicateData *serialization.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
 			return types.UUID{}, err
@@ -825,7 +852,7 @@ func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interfa
 	if len(keys) == 0 {
 		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
 	} else {
-		keyDatas := make([]*iserialization.Data, 0, len(keys))
+		keyDatas := make([]*serialization.Data, 0, len(keys))
 		for _, key := range keys {
 			if keyData, err := m.convertToData(key); err != nil {
 				return err
@@ -930,7 +957,7 @@ func (m *Map) tryLock(ctx context.Context, key interface{}, lease int64, timeout
 	}
 }
 
-func (m *Map) makeListenerRequest(keyData, predicateData *iserialization.Data, flags int32, includeValue bool, smart bool) *proto.ClientMessage {
+func (m *Map) makeListenerRequest(keyData, predicateData *serialization.Data, flags int32, includeValue bool, smart bool) *proto.ClientMessage {
 	if keyData != nil {
 		if predicateData != nil {
 			return codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, smart)
@@ -944,7 +971,7 @@ func (m *Map) makeListenerRequest(keyData, predicateData *iserialization.Data, f
 	}
 }
 
-func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {
+func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *serialization.Data, handler entryNotifiedHandler) {
 	if keyData != nil {
 		if predicateData != nil {
 			codec.HandleMapAddEntryListenerToKeyWithPredicate(msg, handler)
@@ -995,6 +1022,24 @@ func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (in
 			return codec.DecodeMapTryRemoveResponse(response), nil
 		}
 	}
+}
+
+func (m *Map) aggregate(ctx context.Context, req *proto.ClientMessage, decoder func(message *proto.ClientMessage) *serialization.Data) (interface{}, error) {
+	resp, err := m.invokeOnRandomTarget(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+	data := decoder(resp)
+	obj, err := m.convertToObject(data)
+	if err != nil {
+		return nil, err
+	}
+	// if this is a canonicalizing dereference it
+	cs, ok := obj.(*iproxy.AggCanonicalizingSet)
+	if ok {
+		return *cs, nil
+	}
+	return obj, nil
 }
 
 func validateAndNormalizeIndexConfig(ic *types.IndexConfig) error {
