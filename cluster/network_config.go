@@ -28,25 +28,25 @@ const defaultAddress = "127.0.0.1:5701"
 
 type NetworkConfig struct {
 	SSL               SSLConfig      `json:",omitempty"`
-	Address           []string       `json:",omitempty"`
+	Addresses         []string       `json:",omitempty"`
 	ConnectionTimeout types.Duration `json:",omitempty"`
 }
 
 func (c *NetworkConfig) Clone() NetworkConfig {
-	addrs := make([]string, len(c.Address))
-	copy(addrs, c.Address)
+	addrs := make([]string, len(c.Addresses))
+	copy(addrs, c.Addresses)
 	return NetworkConfig{
-		Address:           addrs,
+		Addresses:         addrs,
 		ConnectionTimeout: c.ConnectionTimeout,
 		SSL:               c.SSL.Clone(),
 	}
 }
 
 func (c *NetworkConfig) Validate() error {
-	if len(c.Address) == 0 {
-		c.Address = []string{defaultAddress}
+	if len(c.Addresses) == 0 {
+		c.Addresses = []string{defaultAddress}
 	} else {
-		for _, addr := range c.Address {
+		for _, addr := range c.Addresses {
 			if err := checkAddress(addr); err != nil {
 				return fmt.Errorf("invalid address %s: %w", addr, err)
 			}
@@ -58,10 +58,10 @@ func (c *NetworkConfig) Validate() error {
 	return nil
 }
 
-// SetAddress sets the candidate address list that client will use to establish initial connection.
+// SetAddresses sets the candidate address list that client will use to establish initial connection.
 // Other members of the cluster will be discovered when the client starts.
-func (c *NetworkConfig) SetAddress(addrs ...string) {
-	c.Address = addrs
+func (c *NetworkConfig) SetAddresses(addrs ...string) {
+	c.Addresses = addrs
 }
 
 func checkAddress(addr string) error {

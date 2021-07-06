@@ -39,8 +39,8 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestNewConfig_SetAddress(t *testing.T) {
 	config := hazelcast.NewConfig()
-	config.Cluster.Network.SetAddress("192.168.1.2")
-	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Address)
+	config.Cluster.Network.SetAddresses("192.168.1.2")
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 }
 
 func TestUnMarshalDefaultJSONConfig(t *testing.T) {
@@ -113,7 +113,7 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, false, c.Cluster.Unisocket)
 	assert.Equal(t, false, c.Cluster.RedoOperation)
 
-	assert.Equal(t, []string{"127.0.0.1:5701"}, c.Cluster.Network.Address)
+	assert.Equal(t, []string{"127.0.0.1:5701"}, c.Cluster.Network.Addresses)
 	assert.Equal(t, false, c.Cluster.Network.SSL.Enabled)
 	assert.NotNil(t, c.Cluster.Network.SSL.TLSConfig())
 	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.Network.ConnectionTimeout)

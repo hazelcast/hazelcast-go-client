@@ -30,7 +30,7 @@ func Example() {
 	// Create the configuration
 	config := hazelcast.Config{}
 	config.Cluster.Name = "my-cluster"
-	config.Cluster.Network.SetAddress("192.168.1.42:5000", "192.168.1.42:5001")
+	config.Cluster.Network.SetAddresses("192.168.1.42:5000", "192.168.1.42:5001")
 	// Start the client with the configuration provider.
 	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {

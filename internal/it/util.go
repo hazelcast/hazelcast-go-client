@@ -288,7 +288,7 @@ func (c TestCluster) Shutdown() {
 func (c TestCluster) DefaultConfig() hz.Config {
 	config := hz.NewConfig()
 	config.Cluster.Name = c.clusterID
-	config.Cluster.Network.SetAddress("localhost:7701")
+	config.Cluster.Network.SetAddresses("localhost:7701")
 	if SSLEnabled() {
 		config.Cluster.Network.SSL.Enabled = true
 		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})

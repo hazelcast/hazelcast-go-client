@@ -34,7 +34,7 @@ Here are all configuration items with their default values:
 	cc.Unisocket = false
 	cc.SetLoadBalancer(cluster.NewRoundRobinLoadBalancer())
 
-	cc.Network.SetAddress("127.0.0.1:5701")
+	cc.Network.SetAddresses("127.0.0.1:5701")
 	cc.Network.SSL.Enabled = true
 	cc.Network.SSL.SetTLSConfig(&tls.Config{})
 	cc.Network.ConnectionTimeout = types.Duration(5 * time.Second)
@@ -106,7 +106,7 @@ You can enable this feature by setting config.Discovery.UsePublicIP to true and 
 
 	config := hazelcast.NewConfig()
 	cc := &config.Cluster
-	cc.SetAddress("30.40.50.60:5701")
+	cc.SetAddresses("30.40.50.60:5701")
 	cc.Discovery.UsePublicIP = true
 
 For more details on member-side configuration, refer to the Discovery SPI section in the Hazelcast IMDG Reference Manual.
