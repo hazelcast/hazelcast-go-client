@@ -1,4 +1,4 @@
-// build +noos
+// +build noos
 
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
