@@ -17,18 +17,30 @@
 package aggregate
 
 import (
-	"fmt"
-
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// DoubleAverage returns the average of values of the given attribute.
+// Note that this function may not work as expected for Hazelcast versions prior to 5.0.
 func DoubleAverage(attr string) *aggDoubleAverage {
 	return &aggDoubleAverage{attrPath: attr}
 }
 
+// DoubleAverageAll returns the average of all values of the given attribute.
+func DoubleAverageAll() *aggDoubleAverage {
+	return &aggDoubleAverage{attrPath: ""}
+}
+
+// DoubleSum returns the sum of values of the given attribute.
+// Note that this function may not work as expected for Hazelcast versions prior to 5.0.
 func DoubleSum(attr string) *aggDoubleSum {
 	return &aggDoubleSum{attrPath: attr}
+}
+
+// DoubleSumAll returns the sum of all values of the given attribute.
+func DoubleSumAll() *aggDoubleSum {
+	return &aggDoubleSum{attrPath: ""}
 }
 
 type aggDoubleAverage struct {
@@ -44,7 +56,7 @@ func (a aggDoubleAverage) ClassID() (classID int32) {
 }
 
 func (a aggDoubleAverage) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side, not used in client
 	output.WriteFloat64(0)
 	output.WriteInt64(0)
@@ -58,7 +70,7 @@ func (a *aggDoubleAverage) ReadData(input serialization.DataInput) {
 }
 
 func (a aggDoubleAverage) String() string {
-	return fmt.Sprintf("DoubleAverage(%s)", a.attrPath)
+	return makeString("DoubleAverage", a.attrPath)
 }
 
 type aggDoubleSum struct {
@@ -74,7 +86,7 @@ func (a aggDoubleSum) ClassID() (classID int32) {
 }
 
 func (a aggDoubleSum) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side, not used in client
 	output.WriteFloat64(0)
 }
@@ -86,5 +98,5 @@ func (a *aggDoubleSum) ReadData(input serialization.DataInput) {
 }
 
 func (a aggDoubleSum) String() string {
-	return fmt.Sprintf("DoubleSum(%s)", a.attrPath)
+	return makeString("DoubleSum", a.attrPath)
 }

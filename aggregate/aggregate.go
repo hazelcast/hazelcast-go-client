@@ -22,7 +22,24 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+const nilArrayLength = -1
+
 type Aggregator interface {
 	serialization.IdentifiedDataSerializable
 	fmt.Stringer
+}
+
+func writeAttrPath(output serialization.DataOutput, attrPath string) {
+	if attrPath == "" {
+		output.WriteInt32(nilArrayLength)
+	} else {
+		output.WriteString(attrPath)
+	}
+}
+
+func makeString(name, attrPath string) string {
+	if attrPath == "" {
+		return fmt.Sprintf("%s()", name)
+	}
+	return fmt.Sprintf("%s(%s)", name, attrPath)
 }

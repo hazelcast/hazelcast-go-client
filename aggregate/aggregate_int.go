@@ -17,18 +17,30 @@
 package aggregate
 
 import (
-	"fmt"
-
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// IntAverage returns the average of values of the given attribute.
+// Note that this function may not work as expected for Hazelcast versions prior to 5.0.
 func IntAverage(attr string) *aggIntAverage {
 	return &aggIntAverage{attrPath: attr}
 }
 
+// IntAverageAll returns the average of all values of the given attribute.
+func IntAverageAll() *aggIntAverage {
+	return &aggIntAverage{attrPath: ""}
+}
+
+// IntSum returns the sum of values of the given attribute.
+// Note that this function may not work as expected for Hazelcast versions prior to 5.0.
 func IntSum(attr string) *aggIntSum {
 	return &aggIntSum{attrPath: attr}
+}
+
+// IntSumAll returns the sum of all values of the given attribute.
+func IntSumAll() *aggIntSum {
+	return &aggIntSum{attrPath: ""}
 }
 
 type aggIntAverage struct {
@@ -44,7 +56,7 @@ func (a aggIntAverage) ClassID() (classID int32) {
 }
 
 func (a aggIntAverage) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side, not used in client
 	output.WriteInt64(0)
 	output.WriteInt64(0)
@@ -58,7 +70,7 @@ func (a *aggIntAverage) ReadData(input serialization.DataInput) {
 }
 
 func (a aggIntAverage) String() string {
-	return fmt.Sprintf("IntAverage(%s)", a.attrPath)
+	return makeString("IntAverage", a.attrPath)
 }
 
 type aggIntSum struct {
@@ -74,7 +86,7 @@ func (a aggIntSum) ClassID() (classID int32) {
 }
 
 func (a aggIntSum) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side, not used in client
 	output.WriteInt64(0)
 }
@@ -86,5 +98,5 @@ func (a *aggIntSum) ReadData(input serialization.DataInput) {
 }
 
 func (a aggIntSum) String() string {
-	return fmt.Sprintf("IntSum(%s)", a.attrPath)
+	return makeString("IntSum", a.attrPath)
 }

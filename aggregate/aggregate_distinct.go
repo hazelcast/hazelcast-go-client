@@ -17,14 +17,18 @@
 package aggregate
 
 import (
-	"fmt"
-
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// DistinctValues returns the number of distinct values which has the given attribute.
 func DistinctValues(attr string) *aggDistinct {
 	return &aggDistinct{attrPath: attr}
+}
+
+// DistinctValuesAll returns all distinct values.
+func DistinctValuesAll() *aggDistinct {
+	return &aggDistinct{attrPath: ""}
 }
 
 type aggDistinct struct {
@@ -40,7 +44,7 @@ func (a aggDistinct) ClassID() (classID int32) {
 }
 
 func (a aggDistinct) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side field, not used in client
 	output.WriteInt64(0)
 }
@@ -52,5 +56,5 @@ func (a *aggDistinct) ReadData(input serialization.DataInput) {
 }
 
 func (a aggDistinct) String() string {
-	return fmt.Sprintf("DistinctValues(%s)", a.attrPath)
+	return makeString("DistinctValues", a.attrPath)
 }

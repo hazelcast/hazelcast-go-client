@@ -36,11 +36,30 @@ func TestCount(t *testing.T) {
 		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
 		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
 		it.MustValue(m.Put(ctx, "k3", &it.SamplePortable{A: "zoo", B: 30}))
+		it.MustValue(m.Put(ctx, "k3", 123))
 		result, err := m.Aggregate(ctx, aggregate.Count("B"))
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(3), result)
+	})
+}
+
+func TestCountAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
+		it.MustValue(m.Put(ctx, "k3", &it.SamplePortable{A: "zoo", B: 30}))
+		it.MustValue(m.Put(ctx, "k4", 123))
+		result, err := m.Aggregate(ctx, aggregate.CountAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(4), result)
 	})
 }
 
@@ -62,6 +81,24 @@ func TestDistinctValues(t *testing.T) {
 	})
 }
 
+func TestDistinctValuesAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
+		it.MustValue(m.Put(ctx, "k3", &it.SamplePortable{A: "zoo", B: 30}))
+		result, err := m.Aggregate(ctx, aggregate.DistinctValuesAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		target := []interface{}{&it.SamplePortable{A: "foo", B: 10}, &it.SamplePortable{A: "bar", B: 30}, &it.SamplePortable{A: "zoo", B: 30}}
+		assert.ElementsMatch(t, target, result)
+	})
+}
+
 func TestDoubleAverage(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
@@ -71,6 +108,22 @@ func TestDoubleAverage(t *testing.T) {
 		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
 		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 25}))
 		result, err := m.Aggregate(ctx, aggregate.DoubleAverage("B"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, float64(17.5), result)
+	})
+}
+
+func TestDoubleAverageAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 25))
+		result, err := m.Aggregate(ctx, aggregate.DoubleAverageAll())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -94,6 +147,22 @@ func TestDoubleSum(t *testing.T) {
 	})
 }
 
+func TestDoubleSumAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 25))
+		result, err := m.Aggregate(ctx, aggregate.DoubleSumAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, float64(35), result)
+	})
+}
+
 func TestLongAverage(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
@@ -103,6 +172,22 @@ func TestLongAverage(t *testing.T) {
 		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
 		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 25}))
 		result, err := m.Aggregate(ctx, aggregate.LongAverage("B"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, float64(17.5), result)
+	})
+}
+
+func TestLongAverageAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 25))
+		result, err := m.Aggregate(ctx, aggregate.LongAverageAll())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -126,6 +211,22 @@ func TestLongSum(t *testing.T) {
 	})
 }
 
+func TestLongSumAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 25))
+		result, err := m.Aggregate(ctx, aggregate.LongSumAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(35), result)
+	})
+}
+
 func TestIntAverage(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
@@ -142,6 +243,22 @@ func TestIntAverage(t *testing.T) {
 	})
 }
 
+func TestIntAverageAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 25))
+		result, err := m.Aggregate(ctx, aggregate.IntAverageAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, float64(17.5), result)
+	})
+}
+
 func TestIntSum(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
@@ -151,6 +268,22 @@ func TestIntSum(t *testing.T) {
 		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
 		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 25}))
 		result, err := m.Aggregate(ctx, aggregate.IntSum("B"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(35), result)
+	})
+}
+
+func TestIntSumAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 25))
+		result, err := m.Aggregate(ctx, aggregate.IntSumAll())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -175,6 +308,23 @@ func TestMin(t *testing.T) {
 	})
 }
 
+func TestMinAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 30))
+		it.MustValue(m.Put(ctx, "k3", 30))
+		result, err := m.Aggregate(ctx, aggregate.MinAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(10), result)
+	})
+}
+
 func TestMax(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
@@ -189,5 +339,22 @@ func TestMax(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int32(30), result)
+	})
+}
+
+func TestMaxAll(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", 10))
+		it.MustValue(m.Put(ctx, "k2", 30))
+		it.MustValue(m.Put(ctx, "k3", 30))
+		result, err := m.Aggregate(ctx, aggregate.MaxAll())
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(30), result)
 	})
 }

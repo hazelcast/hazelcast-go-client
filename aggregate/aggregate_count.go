@@ -17,14 +17,19 @@
 package aggregate
 
 import (
-	"fmt"
-
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// Count returns the number of values which includes the given attribute.
+// Note that this function may not work as expected for Hazelcast versions prior to 5.0.
 func Count(attr string) *aggCount {
 	return &aggCount{attrPath: attr}
+}
+
+// CountAll returns the number of all values.
+func CountAll() *aggCount {
+	return &aggCount{attrPath: ""}
 }
 
 type aggCount struct {
@@ -40,7 +45,7 @@ func (a aggCount) ClassID() (classID int32) {
 }
 
 func (a aggCount) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side field, not used in client
 	output.WriteInt64(0)
 }
@@ -52,5 +57,5 @@ func (a *aggCount) ReadData(input serialization.DataInput) {
 }
 
 func (a aggCount) String() string {
-	return fmt.Sprintf("Count(%s)", a.attrPath)
+	return makeString("Count", a.attrPath)
 }

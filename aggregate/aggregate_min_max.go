@@ -17,18 +17,28 @@
 package aggregate
 
 import (
-	"fmt"
-
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// Min returns the minimum of the values corresponding to the given attribute.
 func Min(attr string) *aggMin {
 	return &aggMin{attrPath: attr}
 }
 
+// MinAll returns the minimum of all values.
+func MinAll() *aggMin {
+	return &aggMin{attrPath: ""}
+}
+
+// Max returns the maximum of the values corresponding to the given attribute.
 func Max(attr string) *aggMax {
 	return &aggMax{attrPath: attr}
+}
+
+// MaxAll returns the maximum of all values.
+func MaxAll() *aggMax {
+	return &aggMax{attrPath: ""}
 }
 
 type aggMin struct {
@@ -44,7 +54,7 @@ func (a aggMin) ClassID() (classID int32) {
 }
 
 func (a aggMin) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side, not used in client
 	output.WriteObject(nil)
 }
@@ -56,7 +66,35 @@ func (a *aggMin) ReadData(input serialization.DataInput) {
 }
 
 func (a aggMin) String() string {
-	return fmt.Sprintf("Min(%s)", a.attrPath)
+	return makeString("Min", a.attrPath)
+}
+
+type aggMinBy struct {
+	attrPath string
+}
+
+func (a aggMinBy) FactoryID() int32 {
+	return internal.AggregateFactoryID
+}
+
+func (a aggMinBy) ClassID() (classID int32) {
+	return 18
+}
+
+func (a aggMinBy) WriteData(output serialization.DataOutput) {
+	writeAttrPath(output, a.attrPath)
+	// member side, not used in client
+	output.WriteObject(nil)
+}
+
+func (a *aggMinBy) ReadData(input serialization.DataInput) {
+	a.attrPath = input.ReadString()
+	// member side, not used in client
+	input.ReadObject()
+}
+
+func (a aggMinBy) String() string {
+	return makeString("MinBy", a.attrPath)
 }
 
 type aggMax struct {
@@ -72,7 +110,7 @@ func (a aggMax) ClassID() (classID int32) {
 }
 
 func (a aggMax) WriteData(output serialization.DataOutput) {
-	output.WriteString(a.attrPath)
+	writeAttrPath(output, a.attrPath)
 	// member side, not used in client
 	output.WriteObject(nil)
 }
@@ -84,5 +122,5 @@ func (a *aggMax) ReadData(input serialization.DataInput) {
 }
 
 func (a aggMax) String() string {
-	return fmt.Sprintf("Max(%s)", a.attrPath)
+	return makeString("Max", a.attrPath)
 }
