@@ -72,7 +72,7 @@ You can also write a custom load balancer by implementing LoadBalancer.
 Use config.ClusterConfig.SetLoadBalancer to set the load balancer:
 
 	config := NewConfig()
-	config.ClusterConfig.SetLoadBalancer(cluster.NewRandomLoadBalancer())
+	config.Cluster.SetLoadBalancer(cluster.NewRandomLoadBalancer())
 
 Hazelcast Cloud Discovery
 
