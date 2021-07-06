@@ -36,7 +36,6 @@ func TestCount(t *testing.T) {
 		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
 		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
 		it.MustValue(m.Put(ctx, "k3", &it.SamplePortable{A: "zoo", B: 30}))
-		it.MustValue(m.Put(ctx, "k3", 123))
 		result, err := m.Aggregate(ctx, aggregate.Count("B"))
 		if err != nil {
 			t.Fatal(err)
