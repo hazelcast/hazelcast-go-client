@@ -358,7 +358,7 @@ func (l *List) GetAll(ctx context.Context) ([]interface{}, error) {
 
 func (l *List) addListener(ctx context.Context, includeValue bool, handler ListItemNotifiedHandler) (types.UUID, error) {
 	subscriptionID := types.NewUUID()
-	addRequest := codec.EncodeListAddListenerRequest(l.name, includeValue, l.config.ClusterConfig.SmartRouting)
+	addRequest := codec.EncodeListAddListenerRequest(l.name, includeValue, l.smart)
 	removeRequest := codec.EncodeListRemoveListenerRequest(l.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		codec.HandleListAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {

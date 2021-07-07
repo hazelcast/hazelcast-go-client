@@ -17,109 +17,68 @@
 package cluster
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-type Config struct {
-	loadBalancer         LoadBalancer
-	SecurityConfig       SecurityConfig
-	SSLConfig            SSLConfig
-	Name                 string
-	HazelcastCloudConfig HazelcastCloudConfig
-	Addrs                []string
-	InvocationTimeout    time.Duration
-	HeartbeatInterval    time.Duration
-	HeartbeatTimeout     time.Duration
-	ConnectionTimeout    time.Duration
-	DiscoveryConfig      DiscoveryConfig
-	RedoOperation        bool
-	SmartRouting         bool
-}
+const defaultName = "dev"
 
-func NewConfig() Config {
-	return Config{
-		Name:                 "dev",
-		Addrs:                []string{"127.0.0.1:5701"},
-		SmartRouting:         true,
-		ConnectionTimeout:    5 * time.Second,
-		HeartbeatInterval:    5 * time.Second,
-		HeartbeatTimeout:     60 * time.Second,
-		InvocationTimeout:    120 * time.Second,
-		SecurityConfig:       NewSecurityConfig(),
-		SSLConfig:            NewSSLConfig(),
-		HazelcastCloudConfig: NewHazelcastCloudConfig(),
-		DiscoveryConfig:      NewDiscoveryConfig(),
-	}
+type Config struct {
+	loadBalancer      LoadBalancer
+	Security          SecurityConfig  `json:",omitempty"`
+	Name              string          `json:",omitempty"`
+	Cloud             CloudConfig     `json:",omitempty"`
+	Network           NetworkConfig   `json:",omitempty"`
+	InvocationTimeout types.Duration  `json:",omitempty"`
+	HeartbeatInterval types.Duration  `json:",omitempty"`
+	HeartbeatTimeout  types.Duration  `json:",omitempty"`
+	Discovery         DiscoveryConfig `json:",omitempty"`
+	RedoOperation     bool            `json:",omitempty"`
+	Unisocket         bool            `json:",omitempty"`
 }
 
 func (c *Config) Clone() Config {
-	addrs := make([]string, len(c.Addrs))
-	copy(addrs, c.Addrs)
 	return Config{
-		Name:                 c.Name,
-		Addrs:                addrs,
-		SmartRouting:         c.SmartRouting,
-		ConnectionTimeout:    c.ConnectionTimeout,
-		HeartbeatInterval:    c.HeartbeatInterval,
-		HeartbeatTimeout:     c.HeartbeatTimeout,
-		InvocationTimeout:    c.InvocationTimeout,
-		RedoOperation:        c.RedoOperation,
-		loadBalancer:         c.loadBalancer,
-		SecurityConfig:       c.SecurityConfig.Clone(),
-		SSLConfig:            c.SSLConfig.Clone(),
-		HazelcastCloudConfig: c.HazelcastCloudConfig.Clone(),
-		DiscoveryConfig:      c.DiscoveryConfig.Clone(),
+		Name:              c.Name,
+		Unisocket:         c.Unisocket,
+		HeartbeatInterval: c.HeartbeatInterval,
+		HeartbeatTimeout:  c.HeartbeatTimeout,
+		InvocationTimeout: c.InvocationTimeout,
+		RedoOperation:     c.RedoOperation,
+		loadBalancer:      c.loadBalancer,
+		Security:          c.Security.Clone(),
+		Cloud:             c.Cloud.Clone(),
+		Discovery:         c.Discovery.Clone(),
+		Network:           c.Network.Clone(),
 	}
 }
 
 func (c *Config) Validate() error {
 	if c.Name == "" {
-		return ErrConfigInvalidClusterName
+		c.Name = defaultName
 	}
-	for _, addr := range c.Addrs {
-		if err := checkAddress(addr); err != nil {
-			return fmt.Errorf("invalid address %s: %w", addr, err)
-		}
+	if c.HeartbeatInterval <= 0 {
+		c.HeartbeatInterval = types.Duration(5 * time.Second)
 	}
-	if c.ConnectionTimeout < 0 {
-		return ErrConfigInvalidConnectionTimeout
+	if c.HeartbeatTimeout <= 0 {
+		c.HeartbeatTimeout = types.Duration(60 * time.Second)
 	}
-	if c.HeartbeatInterval < 0 {
-		return ErrConfigInvalidHeartbeatInterval
+	if c.InvocationTimeout <= 0 {
+		c.InvocationTimeout = types.Duration(120 * time.Second)
 	}
-	if c.HeartbeatTimeout < 0 {
-		return ErrConfigInvalidHeartbeatTimeout
-	}
-	if c.InvocationTimeout < 0 {
-		return ErrConfigInvalidInvocationTimeout
-	}
-	if err := c.SecurityConfig.Validate(); err != nil {
+	if err := c.Security.Validate(); err != nil {
 		return err
 	}
-	if err := c.SSLConfig.Validate(); err != nil {
+	if err := c.Cloud.Validate(); err != nil {
 		return err
 	}
-	if err := c.HazelcastCloudConfig.Validate(); err != nil {
+	if err := c.Discovery.Validate(); err != nil {
 		return err
 	}
-	if err := c.DiscoveryConfig.Validate(); err != nil {
+	if err := c.Network.Validate(); err != nil {
 		return err
 	}
-	return nil
-}
-
-// SetAddress sets the candidate address list that client will use to establish initial connection.
-// Other members of the cluster will be discovered when the client starts.
-func (c *Config) SetAddress(addrs ...string) error {
-	for _, addr := range addrs {
-		if err := checkAddress(addr); err != nil {
-			return fmt.Errorf("invalid address %s: %w", addr, err)
-		}
-	}
-	c.Addrs = addrs
 	return nil
 }
 
@@ -132,9 +91,4 @@ func (c *Config) SetLoadBalancer(lb LoadBalancer) {
 // LoadBalancer returns the load balancer.
 func (c *Config) LoadBalancer() LoadBalancer {
 	return c.loadBalancer
-}
-
-func checkAddress(addr string) error {
-	_, _, err := internal.ParseAddr(addr)
-	return err
 }

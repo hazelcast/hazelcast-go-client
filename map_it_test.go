@@ -401,7 +401,7 @@ func TestMap_GetEntrySet(t *testing.T) {
 
 func TestMap_GetEntrySetWithPredicateUsingPortable(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		okValue := "foo-Ğİ"
@@ -677,7 +677,7 @@ func TestMap_IsEmptySize(t *testing.T) {
 
 func TestMap_RemoveAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		entries := []types.Entry{
@@ -812,7 +812,7 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 
 func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		const totalCallCount = int32(100)
@@ -842,7 +842,7 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 
 func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
@@ -878,7 +878,7 @@ func TestMap_Destroy(t *testing.T) {
 
 func TestMap_Aggregate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -909,7 +909,7 @@ func TestMap_Aggregate_2(t *testing.T) {
 
 func TestMap_AggregateWithPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -31,24 +30,16 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	Labels              []string `json:",omitempty"`
-	ClientName          string   `json:",omitempty"`
-	LoggerConfig        logger.Config
-	SerializationConfig serialization.Config
-	ClusterConfig       cluster.Config
-	StatsConfig         StatsConfig
+	Labels              []string             `json:",omitempty"`
+	ClientName          string               `json:",omitempty"`
+	Logger              logger.Config        `json:",omitempty"`
+	Serialization       serialization.Config `json:",omitempty"`
+	Cluster             cluster.Config       `json:",omitempty"`
+	Stats               StatsConfig          `json:",omitempty"`
 }
 
 func NewConfig() Config {
-	config := Config{
-		ClusterConfig:       cluster.NewConfig(),
-		SerializationConfig: serialization.NewConfig(),
-		LoggerConfig:        logger.NewConfig(),
-		StatsConfig:         newStatsConfig(),
-		lifecycleListeners:  map[types.UUID]LifecycleStateChangeHandler{},
-		membershipListeners: map[types.UUID]cluster.MembershipStateChangeHandler{},
-	}
-	return config
+	return Config{}
 }
 
 // AddLifecycleListener adds a lifecycle listener.
@@ -56,9 +47,7 @@ func NewConfig() Config {
 // Use the returned subscription ID to remove the listener.
 // The handler must not block.
 func (c *Config) AddLifecycleListener(handler LifecycleStateChangeHandler) types.UUID {
-	if c.lifecycleListeners == nil {
-		c.lifecycleListeners = map[types.UUID]LifecycleStateChangeHandler{}
-	}
+	c.ensureLifecycleListeners()
 	id := types.NewUUID()
 	c.lifecycleListeners[id] = handler
 	return id
@@ -68,9 +57,7 @@ func (c *Config) AddLifecycleListener(handler LifecycleStateChangeHandler) types
 // The listener is attached to the client before the client starts, so all membership events can be received.
 // Use the returned subscription ID to remove the listener.
 func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHandler) types.UUID {
-	if c.membershipListeners == nil {
-		c.membershipListeners = map[types.UUID]cluster.MembershipStateChangeHandler{}
-	}
+	c.ensureMembershipListeners()
 	id := types.NewUUID()
 	c.membershipListeners[id] = handler
 	return id
@@ -82,16 +69,18 @@ func (c *Config) SetLabels(labels ...string) {
 	c.Labels = labels
 }
 
-func (c Config) Clone() Config {
+func (c *Config) Clone() Config {
+	c.ensureLifecycleListeners()
+	c.ensureMembershipListeners()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
 	return Config{
-		ClientName:          c.ClientName,
-		Labels:              newLabels,
-		ClusterConfig:       c.ClusterConfig.Clone(),
-		SerializationConfig: c.SerializationConfig.Clone(),
-		LoggerConfig:        c.LoggerConfig.Clone(),
-		StatsConfig:         c.StatsConfig.clone(),
+		ClientName:    c.ClientName,
+		Labels:        newLabels,
+		Cluster:       c.Cluster.Clone(),
+		Serialization: c.Serialization.Clone(),
+		Logger:        c.Logger.Clone(),
+		Stats:         c.Stats.clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -99,44 +88,49 @@ func (c Config) Clone() Config {
 	}
 }
 
-func (c Config) Validate() error {
-	if err := c.ClusterConfig.Validate(); err != nil {
+func (c *Config) Validate() error {
+	if err := c.Cluster.Validate(); err != nil {
 		return err
 	}
-	if err := c.SerializationConfig.Validate(); err != nil {
+	if err := c.Serialization.Validate(); err != nil {
 		return err
 	}
-	if err := c.LoggerConfig.Validate(); err != nil {
+	if err := c.Logger.Validate(); err != nil {
 		return err
 	}
-	if err := c.StatsConfig.Validate(); err != nil {
+	if err := c.Stats.Validate(); err != nil {
 		return err
 	}
 	return nil
 }
 
+func (c *Config) ensureLifecycleListeners() {
+	if c.lifecycleListeners == nil {
+		c.lifecycleListeners = map[types.UUID]LifecycleStateChangeHandler{}
+	}
+}
+
+func (c *Config) ensureMembershipListeners() {
+	if c.membershipListeners == nil {
+		c.membershipListeners = map[types.UUID]cluster.MembershipStateChangeHandler{}
+	}
+}
+
 // StatsConfig contains configuration for Management Center.
 type StatsConfig struct {
 	// Enabled enables collecting statistics.
-	Enabled bool
+	Enabled bool `json:",omitempty"`
 	// Period is the period of statistics collection.
-	Period time.Duration
-}
-
-func newStatsConfig() StatsConfig {
-	return StatsConfig{
-		Enabled: false,
-		Period:  3 * time.Second,
-	}
+	Period types.Duration `json:",omitempty"`
 }
 
 func (c StatsConfig) clone() StatsConfig {
 	return c
 }
 
-func (c StatsConfig) Validate() error {
-	if c.Enabled && c.Period <= 0 {
-		return hzerrors.ErrConfigInvalidStatsPeriod
+func (c *StatsConfig) Validate() error {
+	if c.Period <= 0 {
+		c.Period = types.Duration(5 * time.Second)
 	}
 	return nil
 }

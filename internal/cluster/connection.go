@@ -109,17 +109,17 @@ func (c *Connection) sendProtocolStarter() error {
 }
 
 func (c *Connection) createSocket(clusterCfg *pubcluster.Config, address pubcluster.Address) (net.Conn, error) {
-	conTimeout := positiveDurationOrMax(clusterCfg.ConnectionTimeout)
+	conTimeout := positiveDurationOrMax(time.Duration(clusterCfg.Network.ConnectionTimeout))
 	if socket, err := c.dialToAddressWithTimeout(address, conTimeout); err != nil {
 		return nil, err
 	} else {
-		if !c.clusterConfig.SSLConfig.Enabled {
+		if !c.clusterConfig.Network.SSL.Enabled {
 			return socket, err
 		}
 		c.logger.Debug(func() string {
 			return fmt.Sprintf("%d: SSL is enabled for connection", c.connectionID)
 		})
-		tlsCon := tls.Client(socket, c.clusterConfig.SSLConfig.TLSConfig)
+		tlsCon := tls.Client(socket, c.clusterConfig.Network.SSL.TLSConfig())
 		if err = tlsCon.Handshake(); err != nil {
 			return nil, err
 		}

@@ -32,7 +32,7 @@ import (
 // See: https://hazelcast.atlassian.net/wiki/spaces/IMDG/pages/1650294837/Hazelcast+Serialization+Improvements
 
 func TestSerializationImprovements_1_UTFString(t *testing.T) {
-	ss := mustSerializationService(iserialization.NewService(&serialization.Config{BigEndian: true}))
+	ss := mustSerializationService(iserialization.NewService(&serialization.Config{}))
 	target := "\x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60" // 😭‍😭‍😭
 	data, err := ss.ToData(target)
 	if err != nil {
@@ -46,7 +46,7 @@ func TestSerializationImprovements_1_UTFString(t *testing.T) {
 }
 
 func TestSerializationImprovements_2_StringLength(t *testing.T) {
-	ss := mustSerializationService(iserialization.NewService(&serialization.Config{BigEndian: true}))
+	ss := mustSerializationService(iserialization.NewService(&serialization.Config{}))
 	// the following text has 23 bytes but have 8 Unicode runes.
 	text := "\x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60"
 	assert.Equal(t, 8, utf8.RuneCountInString(text))
@@ -59,10 +59,8 @@ func TestSerializationImprovements_2_StringLength(t *testing.T) {
 }
 
 func TestSerializationImprovements_4_UUID(t *testing.T) {
-	config := &serialization.Config{
-		BigEndian:        true,
-		GlobalSerializer: &PanicingGlobalSerializer{},
-	}
+	config := &serialization.Config{}
+	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
 	ss := mustSerializationService(iserialization.NewService(config))
 	target := types.NewUUIDWith(math.MaxUint64, math.MaxUint64)
 	data, err := ss.ToData(target)
@@ -77,10 +75,8 @@ func TestSerializationImprovements_4_UUID(t *testing.T) {
 }
 
 func TestSerializationImprovements_JavaDate(t *testing.T) {
-	config := &serialization.Config{
-		BigEndian:        true,
-		GlobalSerializer: &PanicingGlobalSerializer{},
-	}
+	config := &serialization.Config{}
+	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
 	ss := mustSerializationService(iserialization.NewService(config))
 	target := time.Date(2021, 2, 1, 9, 1, 15, 11000, time.Local)
 	data, err := ss.ToData(target)
@@ -102,8 +98,7 @@ func mustSerializationService(ss *iserialization.Service, err error) *iserializa
 	return ss
 }
 
-type PanicingGlobalSerializer struct {
-}
+type PanicingGlobalSerializer struct{}
 
 func (p PanicingGlobalSerializer) ID() (id int32) {
 	return 1000

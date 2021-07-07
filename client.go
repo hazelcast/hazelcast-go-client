@@ -111,25 +111,25 @@ func newClient(config Config) (*Client, error) {
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
 	}
-	logLevel, err := ilogger.GetLogLevel(config.LoggerConfig.Level)
+	logLevel, err := ilogger.GetLogLevel(config.Logger.Level)
 	if err != nil {
 		return nil, err
 	}
 	clientLogger := ilogger.NewWithLevel(logLevel)
 	// TODO: Move addrProviderTranslator to createComponents
 	// Not doing that right now, because of the event dispatchers.
-	addrProvider, addrTranslator, err := addrProviderTranslator(context.Background(), &config.ClusterConfig, clientLogger)
+	addrProvider, addrTranslator, err := addrProviderTranslator(context.Background(), &config.Cluster, clientLogger)
 	if err != nil {
 		return nil, err
 	}
-	serializationService, err := serialization.NewService(&config.SerializationConfig)
+	serializationService, err := serialization.NewService(&config.Serialization)
 	if err != nil {
 		return nil, err
 	}
 	clientLogger.Trace(func() string { return fmt.Sprintf("creating new client: %s", name) })
 	c := &Client{
 		name:                    name,
-		clusterConfig:           &config.ClusterConfig,
+		clusterConfig:           &config.Cluster,
 		serializationService:    serializationService,
 		eventDispatcher:         event.NewDispatchService(),
 		userEventDispatcher:     event.NewDispatchService(),
@@ -401,8 +401,8 @@ func (c *Client) subscribeUserEvents() {
 }
 
 func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCredentials {
-	securityConfig := config.ClusterConfig.SecurityConfig
-	return security.NewUsernamePasswordCredentials(securityConfig.Username, securityConfig.Password)
+	securityConfig := config.Cluster.Security
+	return security.NewUsernamePasswordCredentials(securityConfig.Credentials.Username, securityConfig.Credentials.Password)
 }
 
 func (c *Client) createComponents(config *Config, addrProvider icluster.AddressProvider, addrTranslator icluster.AddressTranslator) {
@@ -414,7 +414,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		EventDispatcher: c.eventDispatcher,
 		Logger:          c.logger,
 	})
-	invocationFactory := icluster.NewConnectionInvocationFactory(&config.ClusterConfig)
+	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
 	clusterService := icluster.NewService(icluster.CreationBundle{
 		AddrProvider:      addrProvider,
 		RequestCh:         requestCh,
@@ -422,7 +422,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		EventDispatcher:   c.eventDispatcher,
 		PartitionService:  partitionService,
 		Logger:            c.logger,
-		Config:            &config.ClusterConfig,
+		Config:            &config.Cluster,
 		AddressTranslator: addrTranslator,
 	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
@@ -434,7 +434,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		SerializationService: c.serializationService,
 		EventDispatcher:      c.eventDispatcher,
 		InvocationFactory:    invocationFactory,
-		ClusterConfig:        &config.ClusterConfig,
+		ClusterConfig:        &config.Cluster,
 		Credentials:          credentials,
 		ClientName:           c.name,
 		AddrTranslator:       addrTranslator,
@@ -444,7 +444,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
 		Logger:            c.logger,
-		Config:            &config.ClusterConfig,
+		Config:            &config.Cluster,
 	})
 	invocationService := invocation.NewService(requestCh, responseCh, removeCh, invocationHandler, c.logger)
 	listenerBinder := icluster.NewConnectionListenerBinder(
@@ -454,7 +454,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		removeCh,
 		c.eventDispatcher,
 		c.logger,
-		config.ClusterConfig.SmartRouting)
+		!config.Cluster.Unisocket)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
 		RemoveCh:             removeCh,
@@ -466,13 +466,13 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		ListenerBinder:       listenerBinder,
 		Logger:               c.logger,
 	}
-	if config.StatsConfig.Enabled {
+	if config.Stats.Enabled {
 		c.statsService = stats.NewService(
 			requestCh,
 			invocationFactory,
 			c.eventDispatcher,
 			c.logger,
-			config.StatsConfig.Period,
+			time.Duration(config.Stats.Period),
 			c.name)
 	}
 	c.connectionManager = connectionManager
@@ -484,8 +484,8 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 }
 
 func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
-	if config.HazelcastCloudConfig.Enabled {
-		dc := cloud.NewDiscoveryClient(&config.HazelcastCloudConfig, logger)
+	if config.Cloud.Enabled {
+		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		nodes, err := dc.DiscoverNodes(ctx)
 		if err != nil {
 			return nil, nil, err
@@ -496,8 +496,8 @@ func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger 
 		}
 		return pr, cloud.NewAddressTranslator(dc, nodes), nil
 	}
-	pr := icluster.NewDefaultAddressProvider(config)
-	if config.DiscoveryConfig.UsePublicIP {
+	pr := icluster.NewDefaultAddressProvider(&config.Network)
+	if config.Discovery.UsePublicIP {
 		return pr, icluster.NewDefaultPublicAddressTranslator(), nil
 	}
 	return pr, icluster.NewDefaultAddressTranslator(), nil

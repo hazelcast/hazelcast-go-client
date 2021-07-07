@@ -170,7 +170,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(lb),
-		smartRouting:         bundle.ClusterConfig.SmartRouting,
+		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
 		doneCh:               make(chan struct{}, 1),
 		startCh:              make(chan struct{}, 1),
@@ -449,7 +449,7 @@ func (m *ConnectionManager) createAuthenticationRequest(creds *security.Username
 }
 
 func (m *ConnectionManager) heartbeat() {
-	ticker := time.NewTicker(m.clusterConfig.HeartbeatInterval)
+	ticker := time.NewTicker(time.Duration(m.clusterConfig.HeartbeatInterval))
 	for {
 		select {
 		case <-m.doneCh:

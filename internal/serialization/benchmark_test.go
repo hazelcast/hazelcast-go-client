@@ -23,7 +23,7 @@ import (
 )
 
 func BenchmarkService_LookUpDefaultSerializer(b *testing.B) {
-	s, err := NewService(&pubserialization.Config{BigEndian: true})
+	s, err := NewService(&pubserialization.Config{})
 	if err != nil {
 		panic(err)
 	}

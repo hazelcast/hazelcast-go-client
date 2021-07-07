@@ -33,7 +33,7 @@ type ConnectionInvocationFactory struct {
 
 func NewConnectionInvocationFactory(config *pubcluster.Config) *ConnectionInvocationFactory {
 	return &ConnectionInvocationFactory{
-		invocationTimeout: config.InvocationTimeout,
+		invocationTimeout: time.Duration(config.InvocationTimeout),
 		redoOperation:     config.RedoOperation,
 	}
 }
