@@ -24,13 +24,13 @@ import (
 	"io"
 	"math"
 	"net"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -168,7 +168,7 @@ func (c *Connection) socketWriteLoop() {
 			if err != nil {
 				c.logger.Errorf("write error: %w", err)
 				request = request.Copy()
-				request.Err = hzerrors.NewHazelcastIOError("writing message", err)
+				request.Err = ihzerrors.NewIOError("writing message", err)
 				c.responseCh <- request
 				c.close(err)
 			} else {
@@ -216,8 +216,8 @@ func (c *Connection) socketReadLoop() {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
 				if clientMessage.Type() == messageTypeException {
-					if err, ok := codec.DecodeError(clientMessage); ok {
-						clientMessage.Err = NewHazelcastError(err)
+					if err := codec.DecodeError(clientMessage); err != nil {
+						clientMessage.Err = wrapError(err)
 					}
 
 				}
@@ -289,34 +289,29 @@ func positiveDurationOrMax(duration time.Duration) time.Duration {
 	return time.Duration(math.MaxInt64)
 }
 
-func WrapServerError(err hzerrors.ServerError, internalErr error) hzerrors.ServerError {
-	err.Err = internalErr
-	return err
+func wrapError(err *ihzerrors.ServerError) error {
+	targetErr := convertErrorCodeToError(errorCode(err.ErrorCode))
+	return ihzerrors.NewClientError(err.String(), err, targetErr)
 }
 
-func NewHazelcastError(err hzerrors.ServerError) error {
-	sb := strings.Builder{}
-	for _, trace := range err.StackTrace {
-		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
-	}
-	message := fmt.Sprintf("got exception from server:\n %s: %s\n %s", err.ClassName, err.Message, sb.String())
-	switch errorCode(err.ErrorCode) {
+func convertErrorCodeToError(code errorCode) error {
+	switch code {
 	case errorCodeAuthentication:
-		return fmt.Errorf("%s: %w", message, WrapServerError(err, hzerrors.ErrAuthentication))
+		return hzerrors.ErrAuthentication
 	case errorCodeHazelcastInstanceNotActive:
-		return hzerrors.NewHazelcastInstanceNotActiveError(message, err)
+		return hzerrors.ErrInstanceNotActive
 	case errorCodeHazelcastSerialization:
-		return hzerrors.NewHazelcastSerializationError(message, err)
+		return hzerrors.ErrSerialization
 	case errorCodeTargetDisconnected:
-		return hzerrors.NewHazelcastTargetDisconnectedError(message, err)
+		return hzerrors.ErrTargetDisconnected
 	case errorCodeTargetNotMember:
-		return hzerrors.NewHazelcastTargetNotMemberError(message, err)
+		return hzerrors.ErrTargetNotMember
 	case errorCodeUnsupportedOperation:
-		return hzerrors.NewHazelcastUnsupportedOperationError(message, err)
+		return hzerrors.ErrUnsupportedOperation
 	case errorCodeConsistencyLostException:
-		return hzerrors.NewHazelcastConsistencyLostError(message, err)
+		return hzerrors.ErrConsistencyLost
 	case errorCodeIllegalArgument:
-		return hzerrors.NewHazelcastIllegalArgumentError(message, err)
+		return hzerrors.ErrIllegalArgument
 	}
-	return hzerrors.NewHazelcastErrorType(message, err)
+	return nil
 }

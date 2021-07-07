@@ -16,7 +16,7 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -25,7 +25,7 @@ const (
 	StackTraceElementCodecLineNumberInitialFrameSize = StackTraceElementCodecLineNumberFieldOffset + proto.IntSizeInBytes
 )
 
-func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceElement hzerrors.StackTraceElement) {
+func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceElement ihzerrors.StackTraceElement) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, StackTraceElementCodecLineNumberInitialFrameSize))
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset, int32(stackTraceElement.LineNumber))
@@ -38,7 +38,7 @@ func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceEleme
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeStackTraceElement(frameIterator *proto.ForwardFrameIterator) hzerrors.StackTraceElement {
+func DecodeStackTraceElement(frameIterator *proto.ForwardFrameIterator) ihzerrors.StackTraceElement {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()

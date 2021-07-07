@@ -42,6 +42,5 @@ func TestClassDefinitionAddDuplicateField(t *testing.T) {
 	if err == nil {
 		t.Fatalf("should have failed")
 	}
-	var e *hzerrors.HazelcastIllegalArgumentError
-	assert.True(t, errors.As(err, &e))
+	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
 }

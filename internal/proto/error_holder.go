@@ -16,7 +16,7 @@
 
 package proto
 
-import "github.com/hazelcast/hazelcast-go-client/hzerrors"
+import "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 
 type ErrorHolder struct {
 	ClassName          string

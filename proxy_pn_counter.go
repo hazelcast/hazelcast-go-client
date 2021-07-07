@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -153,7 +154,7 @@ func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) 
 			target = pn.clusterService.RandomDataMemberExcluding(excluded)
 		}
 		if target == nil {
-			return nil, nil, hzerrors.NewHazelcastNoDataMemberInClusterError("no data members in cluster", nil)
+			return nil, nil, ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMemberInCluster)
 		}
 		pn.target = target
 	}

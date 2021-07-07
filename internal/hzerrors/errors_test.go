@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
-package hzerrors
+package hzerrors_test
 
-type ServerError struct {
-	ClassName      string
-	Message        string
-	CauseClassName string
-	StackTrace     []StackTraceElement
-	ErrorCode      int32
-	CauseErrorCode int32
-	Err            error
-}
+import (
+	"errors"
+	"os"
+	"testing"
 
-func (e ServerError) Error() string {
-	return e.Message
-}
+	"github.com/stretchr/testify/assert"
 
-func (e ServerError) Unwrap() error {
-	return e.Err
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+)
+
+func TestClientError_Is(t *testing.T) {
+	err := ihzerrors.NewIOError("some io error", &os.PathError{
+		Op:   "Open",
+		Path: "/foo/bar",
+		Err:  os.ErrNotExist,
+	})
+	assert.True(t, errors.Is(err, hzerrors.ErrIO))
+	assert.Equal(t, "some io error: Open /foo/bar: file does not exist", err.Error())
+	var pathErr *os.PathError
+	assert.True(t, errors.As(err, &pathErr))
 }

@@ -152,14 +152,10 @@ func (i *Impl) CanRetry(err error) bool {
 		}
 	*/
 
-	var ioError *hzerrors.HazelcastIOError
-	var instanceNotActiveError *hzerrors.HazelcastInstanceNotActiveError
-	if errors.As(err, &ioError) || errors.As(err, &instanceNotActiveError) {
+	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrInstanceNotActive) {
 		return true
 	}
-
-	var targetDisconnectedError *hzerrors.HazelcastTargetDisconnectedError
-	if errors.As(err, &targetDisconnectedError) {
+	if errors.Is(err, hzerrors.ErrTargetDisconnected) {
 		return i.Request().Retryable || i.redoOperation
 	}
 	return false

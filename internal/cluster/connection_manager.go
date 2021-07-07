@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -356,7 +357,7 @@ func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubc
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection(addr)
 	if err := conn.start(m.clusterConfig, addr); err != nil {
-		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
+		return nil, ihzerrors.NewTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn); err != nil {
 		conn.close(nil)
 		return nil, err

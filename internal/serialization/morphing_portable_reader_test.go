@@ -70,9 +70,8 @@ func TestMorphingPortableReader_ReadByteWithIncompatibleClassChangeError(t *test
 		mpr := NewMorphingPortableReader(nil, i, classDef)
 		mpr.ReadByte("type")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadByte() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadByte() should return error type hzerror.ErrSerialization")
 	}
 }
 
@@ -121,9 +120,8 @@ func TestMorphingPortableReader_ReadBoolWithIncompatibleClassChangeError(t *test
 		mpr := NewMorphingPortableReader(nil, i, classDef)
 		mpr.ReadBool("type")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadBool() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadBool() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -173,9 +171,8 @@ func TestMorphingPortableReader_ReadUInt16WithIncompatibleClassChangeError(t *te
 		pr := NewMorphingPortableReader(nil, i, classDef)
 		pr.ReadUInt16("char")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadUInt16() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadUInt16() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -241,9 +238,8 @@ func TestMorphingPortableReader_ReadInt16WithIncompatibleClassChangeError(t *tes
 		mpr := NewMorphingPortableReader(nil, i, classDef)
 		mpr.ReadInt16("age")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadInt16() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadInt16() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -343,9 +339,8 @@ func TestMorphingPortableReader_ReadInt32WithIncompatibleClassChangeError(t *tes
 		mpr := NewMorphingPortableReader(nil, i, classDef)
 		mpr.ReadInt32("age")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadInt32() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadInt32() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -466,9 +461,8 @@ func TestMorphingPortableReader_ReadInt64WithIncompatibleClassChangeError(t *tes
 		mpr := NewMorphingPortableReader(nil, i, classDef)
 		mpr.ReadInt64("age")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadInt64() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadInt64() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -589,9 +583,8 @@ func TestMorphingPortableReader_ReadFloat32WithIncompatibleClassChangeError(t *t
 		mpr := NewMorphingPortableReader(nil, i, classDef)
 		mpr.ReadFloat32("age")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadFloat32() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadFloat32() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -746,9 +739,8 @@ func TestMorphingPortableReader_ReadFloat64WithIncompatibleClassChangeError(t *t
 		mpr := NewMorphingPortableReader(nil, i, classDef)
 		mpr.ReadFloat64("age")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadFloat64() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadFloat64() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -801,9 +793,8 @@ func TestMorphingPortableReader_ReadStringWithIncompatibleClassChangeError(t *te
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadString("engineer")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadString() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadString() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -869,9 +860,8 @@ func TestMorphingPortableReader_ReadPortableWithIncompatibleClassChangeError(t *
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadPortable("engineer")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadPortable() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadPortable() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -925,9 +915,8 @@ func TestMorphingPortableReader_ReadByteArrayWithIncompatibleClassChangeError(t 
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadByteArray("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadByteArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadByteArray() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -979,9 +968,8 @@ func TestMorphingPortableReader_ReadBoolArrayWithIncompatibleClassChangeError(t 
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadBoolArray("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadBoolArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadBoolArray() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1036,9 +1024,8 @@ func TestMorphingPortableReader_ReadUInt16ArrayWithIncompatibleClassChangeError(
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadUInt16Array("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadUInt16Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadUInt16Array() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1093,9 +1080,8 @@ func TestMorphingPortableReader_ReadInt16ArrayWithIncompatibleClassChangeError(t
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadInt16Array("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadInt16Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadInt16Array() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1150,9 +1136,8 @@ func TestMorphingPortableReader_ReadInt32ArrayWithIncompatibleClassChangeError(t
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadInt32Array("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadInt32Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadInt32Array() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1202,9 +1187,8 @@ func TestMorphingPortableReader_ReadInt64ArrayWithIncompatibleClassChangeError(t
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadInt64Array("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadInt64Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadInt64Array() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1258,9 +1242,8 @@ func TestMorphingPortableReader_ReadFloat32ArrayWithIncompatibleClassChangeError
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadFloat32Array("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadFloat32Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadFloat32Array() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1314,9 +1297,8 @@ func TestMorphingPortableReader_ReadFloat64ArrayWithIncompatibleClassChangeError
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadFloat64Array("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadFloat64Array() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadFloat64Array() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1371,9 +1353,8 @@ func TestMorphingPortableReader_ReadStringArrayWithIncompatibleClassChangeError(
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadStringArray("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadStringArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadStringArray() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 
@@ -1450,9 +1431,8 @@ func TestMorphingPortableReader_ReadPortableArrayWithIncompatibleClassChangeErro
 		mpr := NewMorphingPortableReader(nil, i, pw.classDefinition)
 		mpr.ReadPortableArray("types")
 	})
-	var serErr *hzerrors.HazelcastSerializationError
-	if !errors.As(err, &serErr) {
-		t.Errorf("ReadPortableArray() should return error type *hzerror.HazelcastSerializationError but it returns: %s", reflect.TypeOf(err))
+	if !errors.Is(err, hzerrors.ErrSerialization) {
+		t.Errorf("ReadPortableArray() should return error type hzerror.ErrSerialization but it returns: %s", reflect.TypeOf(err))
 	}
 }
 

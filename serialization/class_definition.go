@@ -17,7 +17,7 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 // ClassDefinition defines a class schema for Portable structs.
@@ -39,7 +39,7 @@ func NewClassDefinition(factoryID int32, classID int32, version int32) *ClassDef
 
 func (cd *ClassDefinition) AddField(definition FieldDefinition) error {
 	if _, ok := cd.Fields[definition.Name]; ok {
-		return hzerrors.NewHazelcastIllegalArgumentError("duplicate field definition", nil)
+		return ihzerrors.NewIllegalArgumentError("duplicate field definition")
 	}
 	cd.Fields[definition.Name] = definition
 	return nil
@@ -83,7 +83,7 @@ func (cd *ClassDefinition) AddStringField(fieldName string) error {
 
 func (cd *ClassDefinition) AddPortableField(fieldName string, def *ClassDefinition) error {
 	if def.ClassID == 0 {
-		return hzerrors.NewHazelcastIllegalArgumentError("portable class ID cannot be zero", nil)
+		return ihzerrors.NewIllegalArgumentError("portable class ID cannot be zero")
 	}
 	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
 }
@@ -126,7 +126,7 @@ func (cd *ClassDefinition) AddFloat64ArrayField(fieldName string) error {
 
 func (cd *ClassDefinition) AddPortableArrayField(fieldName string, def *ClassDefinition) error {
 	if def.ClassID == 0 {
-		return hzerrors.NewHazelcastIllegalArgumentError("Portable class ID cannot be zero", nil)
+		return ihzerrors.NewIllegalArgumentError("portable class ID cannot be zero")
 	}
 	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
 }
