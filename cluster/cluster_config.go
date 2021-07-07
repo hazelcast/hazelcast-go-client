@@ -26,16 +26,16 @@ const defaultName = "dev"
 
 type Config struct {
 	loadBalancer      LoadBalancer
-	Security          SecurityConfig       `json:",omitempty"`
-	Name              string               `json:",omitempty"`
-	HazelcastCloud    HazelcastCloudConfig `json:",omitempty"`
-	Network           NetworkConfig        `json:",omitempty"`
-	InvocationTimeout types.Duration       `json:",omitempty"`
-	HeartbeatInterval types.Duration       `json:",omitempty"`
-	HeartbeatTimeout  types.Duration       `json:",omitempty"`
-	Discovery         DiscoveryConfig      `json:",omitempty"`
-	RedoOperation     bool                 `json:",omitempty"`
-	Unisocket         bool                 `json:",omitempty"`
+	Security          SecurityConfig  `json:",omitempty"`
+	Name              string          `json:",omitempty"`
+	Cloud             CloudConfig     `json:",omitempty"`
+	Network           NetworkConfig   `json:",omitempty"`
+	InvocationTimeout types.Duration  `json:",omitempty"`
+	HeartbeatInterval types.Duration  `json:",omitempty"`
+	HeartbeatTimeout  types.Duration  `json:",omitempty"`
+	Discovery         DiscoveryConfig `json:",omitempty"`
+	RedoOperation     bool            `json:",omitempty"`
+	Unisocket         bool            `json:",omitempty"`
 }
 
 func (c *Config) Clone() Config {
@@ -48,7 +48,7 @@ func (c *Config) Clone() Config {
 		RedoOperation:     c.RedoOperation,
 		loadBalancer:      c.loadBalancer,
 		Security:          c.Security.Clone(),
-		HazelcastCloud:    c.HazelcastCloud.Clone(),
+		Cloud:             c.Cloud.Clone(),
 		Discovery:         c.Discovery.Clone(),
 		Network:           c.Network.Clone(),
 	}
@@ -70,7 +70,7 @@ func (c *Config) Validate() error {
 	if err := c.Security.Validate(); err != nil {
 		return err
 	}
-	if err := c.HazelcastCloud.Validate(); err != nil {
+	if err := c.Cloud.Validate(); err != nil {
 		return err
 	}
 	if err := c.Discovery.Validate(); err != nil {

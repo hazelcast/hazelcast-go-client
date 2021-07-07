@@ -98,7 +98,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{},"HazelcastCloud":{},"Discovery":{},"Network":{"SSL":{}}},"Stats":{}}`
+	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"SSL":{}}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 
@@ -118,13 +118,13 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.NotNil(t, c.Cluster.Network.SSL.TLSConfig())
 	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.Network.ConnectionTimeout)
 
-	assert.Equal(t, "", c.Cluster.Security.Username)
-	assert.Equal(t, "", c.Cluster.Security.Password)
+	assert.Equal(t, "", c.Cluster.Security.Credentials.Username)
+	assert.Equal(t, "", c.Cluster.Security.Credentials.Password)
 
 	assert.Equal(t, false, c.Cluster.Discovery.UsePublicIP)
 
-	assert.Equal(t, false, c.Cluster.HazelcastCloud.Enabled)
-	assert.Equal(t, "", c.Cluster.HazelcastCloud.Token)
+	assert.Equal(t, false, c.Cluster.Cloud.Enabled)
+	assert.Equal(t, "", c.Cluster.Cloud.Token)
 
 	assert.Equal(t, int32(0), c.Serialization.PortableVersion)
 	assert.Equal(t, false, c.Serialization.LittleEndian)

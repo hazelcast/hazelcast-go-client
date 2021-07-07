@@ -36,7 +36,7 @@ type DiscoveryClient struct {
 	token      string
 }
 
-func NewDiscoveryClient(config *cluster.HazelcastCloudConfig, logger logger.Logger) *DiscoveryClient {
+func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.Logger) *DiscoveryClient {
 	return &DiscoveryClient{
 		token:      config.Token,
 		httpClient: rest.NewHTTPClient(),

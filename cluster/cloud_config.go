@@ -16,15 +16,15 @@
 
 package cluster
 
-type HazelcastCloudConfig struct {
+type CloudConfig struct {
 	Token   string `json:",omitempty"`
 	Enabled bool   `json:",omitempty"`
 }
 
-func (h HazelcastCloudConfig) Clone() HazelcastCloudConfig {
+func (h CloudConfig) Clone() CloudConfig {
 	return h
 }
 
-func (h HazelcastCloudConfig) Validate() error {
+func (h CloudConfig) Validate() error {
 	return nil
 }

@@ -402,7 +402,7 @@ func (c *Client) subscribeUserEvents() {
 
 func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCredentials {
 	securityConfig := config.Cluster.Security
-	return security.NewUsernamePasswordCredentials(securityConfig.Username, securityConfig.Password)
+	return security.NewUsernamePasswordCredentials(securityConfig.Credentials.Username, securityConfig.Credentials.Password)
 }
 
 func (c *Client) createComponents(config *Config, addrProvider icluster.AddressProvider, addrTranslator icluster.AddressTranslator) {
@@ -484,8 +484,8 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 }
 
 func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
-	if config.HazelcastCloud.Enabled {
-		dc := cloud.NewDiscoveryClient(&config.HazelcastCloud, logger)
+	if config.Cloud.Enabled {
+		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		nodes, err := dc.DiscoverNodes(ctx)
 		if err != nil {
 			return nil, nil, err

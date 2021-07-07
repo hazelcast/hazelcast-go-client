@@ -41,7 +41,7 @@ func getClient() *hazelcast.Client {
 	config := hazelcast.NewConfig()
 	config.Logger.Level = loggingLevel
 	config.Cluster.Name = clusterName
-	cc := &config.Cluster.HazelcastCloud
+	cc := &config.Cluster.Cloud
 	cc.Enabled = true
 	cc.Token = token
 	client, err := hazelcast.StartNewClientWithConfig(config)

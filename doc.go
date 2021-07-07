@@ -39,13 +39,13 @@ Here are all configuration items with their default values:
 	cc.Network.SSL.SetTLSConfig(&tls.Config{})
 	cc.Network.ConnectionTimeout = types.Duration(5 * time.Second)
 
-	cc.Security.Username = ""
-	cc.Security.Password = ""
+	cc.Security.Credentials.Username = ""
+	cc.Security.Credentials.Password = ""
 
 	cc.Discovery.UsePublicIP = false
 
-	cc.HazelcastCloud.Enabled = false
-	cc.HazelcastCloud.Token = ""
+	cc.Cloud.Enabled = false
+	cc.Cloud.Token = ""
 
 	sc := &config.Serialization
 	sc.PortableVersion = 0
@@ -82,7 +82,7 @@ Here is an example:
 
 	config := hazelcast.NewConfig()
 	config.Cluster.Name = "MY-CLUSTER-NAME"
-	cc := &config.Cluster.HazelcastCloud
+	cc := &config.Cluster.Cloud
 	cc.Enabled = true
 	cc.Token = "MY-CLUSTER-TOKEN"
 	client, err := hazelcast.StartNewClientWithConfig(config)
