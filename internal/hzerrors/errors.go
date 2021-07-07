@@ -71,9 +71,9 @@ func (e *ServerError) String() string {
 }
 
 type ClientError struct {
-	Message    string
 	WrappedErr error
 	Err        error
+	Message    string
 }
 
 func NewClientError(msg string, wrapped, err error) *ClientError {
