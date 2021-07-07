@@ -19,5 +19,10 @@ package proto
 import "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 
 func NewStackTraceElement(className, methodName, fileName string, lineNumber int32) hzerrors.StackTraceElement {
-	return hzerrors.StackTraceElement{className, methodName, fileName, lineNumber}
+	return hzerrors.StackTraceElement{
+		ClassName:  className,
+		MethodName: methodName,
+		FileName:   fileName,
+		LineNumber: lineNumber,
+	}
 }
