@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 type Config struct {
@@ -77,24 +78,24 @@ func (c *Config) Clone() Config {
 
 func (c *Config) Validate() error {
 	if c.Name == "" {
-		return ErrConfigInvalidClusterName
+		return ihzerrors.NewIllegalArgumentError("invalid cluster name", nil)
 	}
 	for _, addr := range c.Addrs {
 		if err := checkAddress(addr); err != nil {
-			return fmt.Errorf("invalid address %s: %w", addr, err)
+			return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid address %s", addr), err)
 		}
 	}
 	if c.ConnectionTimeout < 0 {
-		return ErrConfigInvalidConnectionTimeout
+		return ihzerrors.NewIllegalArgumentError("invalid connection timeout", nil)
 	}
 	if c.HeartbeatInterval < 0 {
-		return ErrConfigInvalidHeartbeatInterval
+		return ihzerrors.NewIllegalArgumentError("invalid heartbeat interval", nil)
 	}
 	if c.HeartbeatTimeout < 0 {
-		return ErrConfigInvalidHeartbeatTimeout
+		return ihzerrors.NewIllegalArgumentError("invalid heartbeat timeout", nil)
 	}
 	if c.InvocationTimeout < 0 {
-		return ErrConfigInvalidInvocationTimeout
+		return ihzerrors.NewIllegalArgumentError("invalid invocation timeout", nil)
 	}
 	if err := c.SecurityConfig.Validate(); err != nil {
 		return err

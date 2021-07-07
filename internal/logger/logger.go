@@ -72,7 +72,7 @@ func isValidLogLevel(logLevel publogger.Level) bool {
 // GetLogLevel returns the corresponding log level with the given string if it exists, otherwise returns an error.
 func GetLogLevel(logLevel publogger.Level) (int, error) {
 	if !isValidLogLevel(logLevel) {
-		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no log level found for %s", logLevel))
+		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no log level found for %s", logLevel), nil)
 	}
 	return nameToLevel[logLevel], nil
 }

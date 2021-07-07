@@ -175,7 +175,7 @@ func (p *proxy) Destroy(ctx context.Context) error {
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
 	if nilutil.IsNil(arg1) {
-		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed")
+		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	return p.serializationService.ToData(arg1)
 }
@@ -183,7 +183,7 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, er
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
-		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed")
+		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
 	if err != nil {
@@ -196,7 +196,7 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, arg3Data *iserialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
-		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed")
+		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
 	if err != nil {
@@ -212,7 +212,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 
 func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data *iserialization.Data, err error) {
 	if nilutil.IsNil(agg) {
-		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil")
+		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(agg)
 	return
@@ -220,7 +220,7 @@ func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Dat
 
 func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data *iserialization.Data, err error) {
 	if nilutil.IsNil(pred) {
-		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil")
+		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(pred)
 	return

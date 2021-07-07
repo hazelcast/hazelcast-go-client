@@ -17,6 +17,7 @@
 package cluster_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -24,22 +25,27 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 func TestConfig_Validate(t *testing.T) {
 	testCases := []struct {
-		err    error
+		msg    string
 		config cluster.Config
 	}{
-		{config: cluster.Config{}, err: cluster.ErrConfigInvalidClusterName},
-		{config: cluster.Config{Name: "x", ConnectionTimeout: -10 * time.Second}, err: cluster.ErrConfigInvalidConnectionTimeout},
-		{config: cluster.Config{Name: "x", HeartbeatInterval: -10 * time.Second}, err: cluster.ErrConfigInvalidHeartbeatInterval},
-		{config: cluster.Config{Name: "x", HeartbeatTimeout: -10 * time.Second}, err: cluster.ErrConfigInvalidHeartbeatTimeout},
-		{config: cluster.Config{Name: "x", InvocationTimeout: -10 * time.Second}, err: cluster.ErrConfigInvalidInvocationTimeout},
+		{config: cluster.Config{}, msg: "invalid cluster name: illegal argument error"},
+		{config: cluster.Config{Name: "x", ConnectionTimeout: -10 * time.Second}, msg: "invalid connection timeout: illegal argument error"},
+		{config: cluster.Config{Name: "x", HeartbeatInterval: -10 * time.Second}, msg: "invalid heartbeat interval: illegal argument error"},
+		{config: cluster.Config{Name: "x", HeartbeatTimeout: -10 * time.Second}, msg: "invalid heartbeat timeout: illegal argument error"},
+		{config: cluster.Config{Name: "x", InvocationTimeout: -10 * time.Second}, msg: "invalid invocation timeout: illegal argument error"},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("validate %d", i), func(t *testing.T) {
-			assert.Equal(t, tc.err, tc.config.Validate())
+			err := tc.config.Validate()
+			if !errors.Is(err, hzerrors.ErrIllegalArgument) {
+				t.Fatalf("expected illegal argument error")
+			}
+			assert.Equal(t, tc.msg, err.Error())
 		})
 	}
 	t.Run("validate address", func(t *testing.T) {

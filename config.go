@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -136,7 +136,7 @@ func (c StatsConfig) clone() StatsConfig {
 
 func (c StatsConfig) Validate() error {
 	if c.Enabled && c.Period <= 0 {
-		return hzerrors.ErrConfigInvalidStatsPeriod
+		return ihzerrors.NewIllegalArgumentError("invalid stats period", nil)
 	}
 	return nil
 }

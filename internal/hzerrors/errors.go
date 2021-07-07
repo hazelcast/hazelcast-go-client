@@ -111,8 +111,8 @@ func (e ClientError) Is(target error) bool {
 	return errors.Is(target, e.Err)
 }
 
-func NewIllegalArgumentError(msg string) *ClientError {
-	return NewClientError(msg, nil, hzerrors.ErrIllegalArgument)
+func NewIllegalArgumentError(msg string, err error) *ClientError {
+	return NewClientError(msg, err, hzerrors.ErrIllegalArgument)
 }
 
 func NewSerializationError(msg string, err error) *ClientError {

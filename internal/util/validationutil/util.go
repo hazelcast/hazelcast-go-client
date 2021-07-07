@@ -25,10 +25,10 @@ import (
 
 func ValidateAsNonNegativeInt32(n int) (int32, error) {
 	if n < 0 {
-		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("non-negative integer number expected: %d", n))
+		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("non-negative integer number expected: %d", n), nil)
 	}
 	if n > math.MaxInt32 {
-		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("signed 32-bit integer number expected: %d", n))
+		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("signed 32-bit integer number expected: %d", n), nil)
 	}
 	return int32(n), nil
 }

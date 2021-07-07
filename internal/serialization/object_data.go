@@ -317,7 +317,7 @@ func (i *ObjectDataInput) Available() int32 {
 
 func (i *ObjectDataInput) AssertAvailable(k int) {
 	if i.position < 0 {
-		panic(ihzerrors.NewIllegalArgumentError(fmt.Sprintf("negative pos: %v", i.position)))
+		panic(ihzerrors.NewIllegalArgumentError(fmt.Sprintf("negative pos: %v", i.position), nil))
 	}
 	if len(i.buffer) < int(i.position)+k {
 		panic(ihzerrors.NewEOFError(fmt.Sprintf("cannot read %v bytes", k)))

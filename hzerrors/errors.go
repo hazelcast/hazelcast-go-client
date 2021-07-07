@@ -21,8 +21,8 @@ import "errors"
 var (
 	ErrClientOffline             = errors.New("client offline")
 	ErrClientNotAllowedInCluster = errors.New("client not allowed in cluster")
+	ErrClientNotActive           = errors.New("client not active error")
 	ErrAddressNotFound           = errors.New("address not found")
-	ErrConfigInvalidStatsPeriod  = errors.New("invalid stats period")
 
 	// ErrAuthentication is returned when there is an Authentication failure, e.g., credentials from client is not valid.
 	ErrAuthentication    = errors.New("authentication error")

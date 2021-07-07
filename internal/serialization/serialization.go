@@ -17,7 +17,6 @@
 package serialization
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -339,7 +338,7 @@ func makeError(rec interface{}) error {
 	case error:
 		return v
 	case string:
-		return errors.New(v)
+		return ihzerrors.NewSerializationError(v, nil)
 	default:
 		return fmt.Errorf("%v", rec)
 	}
