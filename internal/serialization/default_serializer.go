@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"math/big"
 	"reflect"
 	"time"
 
@@ -390,27 +389,6 @@ func (JavaDateSerializer) Read(input serialization.DataInput) interface{} {
 func (JavaDateSerializer) Write(output serialization.DataOutput, i interface{}) {
 	t := i.(time.Time)
 	output.WriteInt64(t.UnixNano() / 1000)
-}
-
-type JavaBigIntegerSerializer struct{}
-
-func (JavaBigIntegerSerializer) ID() int32 {
-	return TypeJavaBigInteger
-}
-
-func (JavaBigIntegerSerializer) Read(input serialization.DataInput) interface{} {
-	arr := input.ReadByteArray()
-	if arr == nil {
-		return nil
-	}
-	b := big.NewInt(0)
-	b.SetBytes(arr)
-	return b
-}
-
-func (JavaBigIntegerSerializer) Write(output serialization.DataOutput, i interface{}) {
-	b := i.(*big.Int)
-	output.WriteByteArray(b.Bytes())
 }
 
 type JavaClassSerializer struct{}
