@@ -42,7 +42,7 @@ var (
 	ErrEntryProcessor                   = errors.New("entry processor error")
 	ErrExecution                        = errors.New("execution error")
 	ErrHazelcast                        = errors.New("hazelcast error")
-	ErrHazelcastInstanceNotActive       = retryable("hazelcast instance not active error")
+	ErrHazelcastInstanceNotActive       = errors.New("hazelcast instance not active error")
 	ErrHazelcastOverLoad                = errors.New("hazelcast overload error")
 	ErrHazelcastSerialization           = errors.New("hazelcast serialization error")
 	ErrIO                               = errors.New("io error")
