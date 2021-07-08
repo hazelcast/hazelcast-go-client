@@ -42,9 +42,10 @@ import (
 )
 
 const (
-	authenticated = iota
-	credentialsFailed
-	serializationVersionMismatch
+	authenticated                = 0
+	credentialsFailed            = 1
+	serializationVersionMismatch = 2
+	notAllowedInCluster          = 3
 )
 
 const (
@@ -424,6 +425,8 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		return fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication)
 	case serializationVersionMismatch:
 		return fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication)
+	case notAllowedInCluster:
+		return hzerrors.ErrClientNotAllowedInCluster
 	}
 	return hzerrors.ErrAuthentication
 }
