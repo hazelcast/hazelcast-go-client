@@ -331,16 +331,18 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 	if len(seedAddrs) == 0 {
 		return "", cb.WrapNonRetryableError(errors.New("no seed addresses"))
 	}
+	var conn *Connection
+	var err error
 	for _, addr := range seedAddrs {
-		if conn, err := m.ensureConnection(ctx, addr); err != nil {
+		if conn, err = m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-		} else if err := m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+		} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
 			return "", err
 		} else {
 			return addr, nil
 		}
 	}
-	return "", errors.New("cannot connect to any address in the cluster")
+	return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
 }
 
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
