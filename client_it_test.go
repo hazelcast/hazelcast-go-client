@@ -132,8 +132,8 @@ func TestClient_Shutdown(t *testing.T) {
 		if err := client.Shutdown(); err != nil {
 			t.Fatal(err)
 		}
-		if err := client.Shutdown(); err == nil {
-			t.Fatalf("shutting down second time should return an error")
+		if err := client.Shutdown(); err != nil {
+			t.Fatalf("shutting down second time should not return an error")
 		}
 	})
 }
