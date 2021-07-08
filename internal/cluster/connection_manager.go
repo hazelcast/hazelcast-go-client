@@ -302,7 +302,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 		m.logger.Debug(func() string { return "ConnectionManager.handleConnectionClosed: no connections left" })
 		return
 	}
-	respawnConnection := e.Err != nil
+	var respawnConnection bool
 	if err := e.Err; err != nil {
 		m.logger.Debug(func() string { return fmt.Sprintf("respawning connection, since: %s", err.Error()) })
 		respawnConnection = true
