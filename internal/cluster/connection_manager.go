@@ -426,7 +426,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 	case serializationVersionMismatch:
 		return fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication)
 	case notAllowedInCluster:
-		return hzerrors.ErrClientNotAllowedInCluster
+		return cb.WrapNonRetryableError(hzerrors.ErrClientNotAllowedInCluster)
 	}
 	return hzerrors.ErrAuthentication
 }
