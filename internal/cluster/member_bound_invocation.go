@@ -25,38 +25,32 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-type ConnectionBoundInvocation struct {
+type MemberBoundInvocation struct {
 	*invocation.Impl
-	boundConnection *Connection
+	memberUUID types.UUID
 }
 
-func newConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address,
-	connection *Connection, deadline time.Time, redoOperation bool) *ConnectionBoundInvocation {
-	return &ConnectionBoundInvocation{
-		Impl:            invocation.NewImpl(clientMessage, partitionID, address, deadline, redoOperation),
-		boundConnection: connection,
-	}
+func NewMemberBoundInvocation(msg *proto.ClientMessage, member *pubcluster.MemberInfo, deadline time.Time, redoOperation bool) *MemberBoundInvocation {
+	inv := invocation.NewImpl(msg, -1, member.Address, deadline, redoOperation)
+	return &MemberBoundInvocation{Impl: inv, memberUUID: member.UUID}
 }
 
-func (i *ConnectionBoundInvocation) Connection() *Connection {
-	return i.boundConnection
-}
-
-func (i *ConnectionBoundInvocation) SetEventHandler(handler proto.ClientMessageHandler) {
-	i.Impl.SetEventHandler(handler)
-}
-
-func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
+func (i *MemberBoundInvocation) CanRetry(err error) bool {
 	var nonRetryableError *cb.NonRetryableError
 	if errors.As(err, &nonRetryableError) {
 		return false
 	}
-	/* corresponds to Java client's
-	   if (isBindToSingleConnection() && (t instanceof IOException || t instanceof TargetDisconnectedException)) {
-	       return false;
-	   }
-	*/
-	return !(errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrTargetDisconnected))
+	if errors.Is(err, hzerrors.ErrTargetNotMember) {
+		return false
+	}
+	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrHazelcastInstanceNotActive) {
+		return true
+	}
+	if errors.Is(err, hzerrors.ErrTargetDisconnected) {
+		return i.Request().Retryable || i.Impl.RedoOperation
+	}
+	return false
 }

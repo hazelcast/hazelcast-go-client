@@ -19,14 +19,17 @@ package cluster_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestConnectionBoundInvocation_CanRetry(t *testing.T) {
@@ -42,10 +45,43 @@ func TestConnectionBoundInvocation_CanRetry(t *testing.T) {
 		t.FailNow()
 	}
 	ioErr := ihzerrors.NewIOError("foo", nil)
-	if !assert.True(t, inv.CanRetry(ioErr)) {
+	if !assert.False(t, inv.CanRetry(ioErr)) {
 		t.FailNow()
 	}
 	targetDisconnectedErr := ihzerrors.NewTargetDisconnectedError("foo", nil)
+	if !assert.False(t, inv.CanRetry(targetDisconnectedErr)) {
+		t.FailNow()
+	}
+}
+
+func TestMemberBoundInvocation_CanRetry(t *testing.T) {
+	msg := proto.NewClientMessage(proto.NewFrame(make([]byte, 64)))
+	mi := &pubcluster.MemberInfo{Address: "", UUID: types.NewUUID()}
+	inv := icluster.NewMemberBoundInvocation(msg, mi, time.Now().Add(10*time.Second), false)
+	err := errors.New("foo")
+	targetDisconnectedErr := ihzerrors.NewTargetDisconnectedError("foo", nil)
+	targetNotMemberErr := ihzerrors.NewClientError("target not member", nil, hzerrors.ErrTargetNotMember)
+	noRetries := []error{err, cb.WrapNonRetryableError(err), targetDisconnectedErr, targetNotMemberErr}
+	for _, e := range noRetries {
+		if !assert.False(t, inv.CanRetry(e)) {
+			t.FailNow()
+		}
+	}
+	inv = icluster.NewMemberBoundInvocation(msg, mi, time.Now().Add(10*time.Second), true)
+	if !assert.True(t, inv.CanRetry(targetDisconnectedErr)) {
+		t.FailNow()
+	}
+	ioErr := ihzerrors.NewIOError("foo", nil)
+	instNotActiveErr := ihzerrors.NewInstanceNotActiveError("foo")
+	yesRetries := []error{ioErr, instNotActiveErr}
+	for _, e := range yesRetries {
+		if !assert.True(t, inv.CanRetry(e)) {
+			t.FailNow()
+		}
+	}
+	msg = proto.NewClientMessage(proto.NewFrame(make([]byte, 64)))
+	msg.SetRetryable(true)
+	inv = icluster.NewMemberBoundInvocation(msg, mi, time.Now().Add(10*time.Second), false)
 	if !assert.True(t, inv.CanRetry(targetDisconnectedErr)) {
 		t.FailNow()
 	}

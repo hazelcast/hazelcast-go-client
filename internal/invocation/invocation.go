@@ -56,7 +56,7 @@ type Impl struct {
 	address       pubcluster.Address
 	completed     int32
 	partitionID   int32
-	redoOperation bool
+	RedoOperation bool
 }
 
 func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address, deadline time.Time, redoOperation bool) *Impl {
@@ -66,7 +66,7 @@ func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address pubc
 		request:       clientMessage,
 		response:      make(chan *proto.ClientMessage, 1),
 		deadline:      deadline,
-		redoOperation: redoOperation,
+		RedoOperation: redoOperation,
 	}
 }
 
@@ -140,23 +140,11 @@ func (i *Impl) CanRetry(err error) bool {
 	if errors.As(err, &nonRetryableError) {
 		return false
 	}
-
-	// TODO: Check the following condition when invoke on member is implemented
-	/*
-		var targetNotMemberError *hzerror.HazelcastTargetNotMemberError
-		if (uuid != null && t instanceof TargetNotMemberException) {
-			//when invocation send to a specific member
-			//if target is no longer a member, we should not retry
-			//note that this exception could come from the server
-			return false;
-		}
-	*/
-
 	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrHazelcastInstanceNotActive) {
 		return true
 	}
 	if errors.Is(err, hzerrors.ErrTargetDisconnected) {
-		return i.Request().Retryable || i.redoOperation
+		return i.Request().Retryable || i.RedoOperation
 	}
 	return false
 }
