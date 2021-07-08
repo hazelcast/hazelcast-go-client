@@ -224,7 +224,7 @@ func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, 
 
 func (s *DispatchService) unsubscribe(eventName string, subscriptionID int64) {
 	s.logger.Trace(func() string {
-		return fmt.Sprintf("event.DispatchService.unscubribe: %s, %d", eventName, subscriptionID)
+		return fmt.Sprintf("event.DispatchService.unsubscribe: %s, %d", eventName, subscriptionID)
 	})
 	if handlers, ok := s.syncSubscriptions[eventName]; ok {
 		for sid := range handlers {

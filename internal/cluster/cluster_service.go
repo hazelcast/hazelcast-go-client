@@ -254,12 +254,6 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	return
 }
 
-func (m *membersMap) Reset() {
-	m.membersMu.Lock()
-	m.reset()
-	m.membersMu.Unlock()
-}
-
 func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 	m.membersMu.RLock()
 	member := m.members[uuid]
