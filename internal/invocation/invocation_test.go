@@ -23,6 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -46,7 +47,20 @@ func TestImpl_CanRetry(t *testing.T) {
 	}
 	ioErr := ihzerrors.NewIOError("foo", nil)
 	instNotActiveErr := ihzerrors.NewInstanceNotActiveError("foo")
-	yesRetries := []error{ioErr, instNotActiveErr}
+	callerNotMemberErr := ihzerrors.NewClientError("err", nil, hzerrors.ErrCallerNotMember)
+	yesRetries := []error{ioErr, instNotActiveErr, callerNotMemberErr}
+	yesRetries = append(yesRetries,
+		hzerrors.ErrCallerNotMember,
+		hzerrors.ErrHazelcastInstanceNotActive,
+		hzerrors.ErrMemberLeft,
+		hzerrors.ErrPartitionMigrating,
+		hzerrors.ErrRetryableHazelcast,
+		hzerrors.ErrRetryableIO,
+		hzerrors.ErrTargetNotMember,
+		hzerrors.ErrWrongTarget,
+		hzerrors.ErrTargetNotReplicaException,
+		hzerrors.ErrCannotReplicateException,
+	)
 	for _, e := range yesRetries {
 		if !assert.True(t, inv.CanRetry(e)) {
 			t.FailNow()

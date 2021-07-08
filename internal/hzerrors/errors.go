@@ -109,6 +109,13 @@ func (e ClientError) Is(target error) bool {
 	return errors.Is(target, e.Err)
 }
 
+func (c ClientError) IsRetryable() bool {
+	// c.Err is supposed to be a concrete error
+	// we don't want to unwrap it, so it's OK to do a type check
+	_, ok := c.Err.(*hzerrors.RetryableError)
+	return ok
+}
+
 func NewIllegalArgumentError(msg string, err error) *ClientError {
 	return NewClientError(msg, err, hzerrors.ErrIllegalArgument)
 }

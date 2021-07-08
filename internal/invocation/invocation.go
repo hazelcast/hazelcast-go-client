@@ -25,6 +25,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -140,8 +141,21 @@ func (i *Impl) CanRetry(err error) bool {
 	if errors.As(err, &nonRetryableError) {
 		return false
 	}
+	return i.MaybeCanRetry(err)
+}
+
+func (i *Impl) MaybeCanRetry(err error) bool {
 	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrHazelcastInstanceNotActive) {
 		return true
+	}
+	// check whether the error is retryable
+	if _, ok := err.(*hzerrors.RetryableError); ok {
+		return true
+	}
+	if c, ok := err.(*ihzerrors.ClientError); ok {
+		if c.IsRetryable() {
+			return true
+		}
 	}
 	if errors.Is(err, hzerrors.ErrTargetDisconnected) {
 		return i.Request().Retryable || i.RedoOperation
