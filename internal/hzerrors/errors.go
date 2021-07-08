@@ -47,14 +47,12 @@ type ServerError struct {
 	CauseErrorCode int32
 }
 
-func NewServerError(errorCode int32, className string, message string, stackTrace []StackTraceElement, causeErrorCode int32, causeClassName string) *ServerError {
+func NewServerError(errorCode int32, className string, message string, stackTrace []StackTraceElement) *ServerError {
 	return &ServerError{
-		ErrorCode:      errorCode,
-		ClassName:      className,
-		Message:        message,
-		StackTrace:     stackTrace,
-		CauseErrorCode: causeErrorCode,
-		CauseClassName: causeClassName,
+		ErrorCode:  errorCode,
+		ClassName:  className,
+		Message:    message,
+		StackTrace: stackTrace,
 	}
 }
 

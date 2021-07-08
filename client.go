@@ -227,7 +227,7 @@ func (c *Client) start() error {
 // Shutdown disconnects the client from the cluster.
 func (c *Client) Shutdown() error {
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
-		return hzerrors.ErrClientNotActive
+		return nil
 	}
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
