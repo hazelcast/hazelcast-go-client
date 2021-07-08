@@ -25,32 +25,34 @@ import (
 const defaultName = "dev"
 
 type Config struct {
-	loadBalancer      LoadBalancer
-	Security          SecurityConfig  `json:",omitempty"`
-	Name              string          `json:",omitempty"`
-	Cloud             CloudConfig     `json:",omitempty"`
-	Network           NetworkConfig   `json:",omitempty"`
-	InvocationTimeout types.Duration  `json:",omitempty"`
-	HeartbeatInterval types.Duration  `json:",omitempty"`
-	HeartbeatTimeout  types.Duration  `json:",omitempty"`
-	Discovery         DiscoveryConfig `json:",omitempty"`
-	RedoOperation     bool            `json:",omitempty"`
-	Unisocket         bool            `json:",omitempty"`
+	loadBalancer       LoadBalancer
+	Security           SecurityConfig
+	Name               string `json:",omitempty"`
+	Cloud              CloudConfig
+	Network            NetworkConfig
+	InvocationTimeout  types.Duration `json:",omitempty"`
+	HeartbeatInterval  types.Duration `json:",omitempty"`
+	HeartbeatTimeout   types.Duration `json:",omitempty"`
+	Discovery          DiscoveryConfig
+	ConnectionStrategy ConnectionStrategyConfig
+	RedoOperation      bool `json:",omitempty"`
+	Unisocket          bool `json:",omitempty"`
 }
 
 func (c *Config) Clone() Config {
 	return Config{
-		Name:              c.Name,
-		Unisocket:         c.Unisocket,
-		HeartbeatInterval: c.HeartbeatInterval,
-		HeartbeatTimeout:  c.HeartbeatTimeout,
-		InvocationTimeout: c.InvocationTimeout,
-		RedoOperation:     c.RedoOperation,
-		loadBalancer:      c.loadBalancer,
-		Security:          c.Security.Clone(),
-		Cloud:             c.Cloud.Clone(),
-		Discovery:         c.Discovery.Clone(),
-		Network:           c.Network.Clone(),
+		Name:               c.Name,
+		Unisocket:          c.Unisocket,
+		HeartbeatInterval:  c.HeartbeatInterval,
+		HeartbeatTimeout:   c.HeartbeatTimeout,
+		InvocationTimeout:  c.InvocationTimeout,
+		RedoOperation:      c.RedoOperation,
+		loadBalancer:       c.loadBalancer,
+		Security:           c.Security.Clone(),
+		Cloud:              c.Cloud.Clone(),
+		Discovery:          c.Discovery.Clone(),
+		ConnectionStrategy: c.ConnectionStrategy.Clone(),
+		Network:            c.Network.Clone(),
 	}
 }
 
@@ -77,6 +79,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.Network.Validate(); err != nil {
+		return err
+	}
+	if err := c.ConnectionStrategy.Validate(); err != nil {
 		return err
 	}
 	return nil

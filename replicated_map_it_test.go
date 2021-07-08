@@ -94,7 +94,7 @@ func TestReplicatedMap_GetEntrySet(t *testing.T) {
 			types.NewEntry("k2", "v2"),
 			types.NewEntry("k3", "v3"),
 		}
-		if err := m.PutAll(context.Background(), target); err != nil {
+		if err := m.PutAll(context.Background(), target...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)

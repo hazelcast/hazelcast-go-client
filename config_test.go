@@ -98,7 +98,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"SSL":{}}},"Stats":{}}`
+	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"SSL":{}},"ConnectionStrategy":{"Retry":{}}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 
@@ -125,6 +125,14 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 
 	assert.Equal(t, false, c.Cluster.Cloud.Enabled)
 	assert.Equal(t, "", c.Cluster.Cloud.Token)
+
+	assert.Equal(t, false, c.Cluster.ConnectionStrategy.DisableReconnect)
+	cr := &c.Cluster.ConnectionStrategy.Retry
+	assert.Equal(t, types.Duration(9223372036854775807), cr.ConnectTimeout)
+	assert.Equal(t, types.Duration(1*time.Second), cr.InitialBackoff)
+	assert.Equal(t, types.Duration(30*time.Second), cr.MaxBackoff)
+	assert.Equal(t, 1.05, cr.Multiplier)
+	assert.Equal(t, 0.0, cr.Jitter)
 
 	assert.Equal(t, int32(0), c.Serialization.PortableVersion)
 	assert.Equal(t, false, c.Serialization.LittleEndian)

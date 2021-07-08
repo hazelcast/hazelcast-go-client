@@ -199,7 +199,7 @@ func (m *ReplicatedMap) Put(ctx context.Context, key interface{}, value interfac
 // PutAll copies all of the mappings from the specified map to this map.
 // No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
 // while others are not.
-func (m *ReplicatedMap) PutAll(ctx context.Context, keyValuePairs []types.Entry) error {
+func (m *ReplicatedMap) PutAll(ctx context.Context, keyValuePairs ...types.Entry) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
