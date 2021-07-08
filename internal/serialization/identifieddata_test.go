@@ -78,9 +78,9 @@ func (e *employee) WriteData(output serialization.DataOutput) {
 
 func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	var employee1 = &employee{age: 22, name: "Furkan Şenharputlu"}
-	c := serialization.NewConfig()
-	c.AddIdentifiedDataSerializableFactory(&factory{})
-	service, err := iserialization.NewService(&c)
+	c := &serialization.Config{}
+	c.SetIdentifiedDataSerializableFactories(&factory{})
+	service, err := iserialization.NewService(c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,14 +96,14 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 }
 
 func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
-	c := &employee{age: 38, name: "Jack"}
-	config := serialization.NewConfig()
-	config.AddIdentifiedDataSerializableFactory(&nullFactory{})
-	service, err := iserialization.NewService(&config)
+	e := &employee{age: 38, name: "Jack"}
+	c := &serialization.Config{}
+	c.SetIdentifiedDataSerializableFactories(&nullFactory{})
+	service, err := iserialization.NewService(c)
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := service.ToData(c)
+	data, err := service.ToData(e)
 	if err != nil {
 		t.Fatal(err)
 	}

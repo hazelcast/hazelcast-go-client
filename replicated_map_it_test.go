@@ -230,7 +230,7 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testi
 	// Skipping, since predicates are not supported with portable and JSON values
 	t.SkipNow()
 	configCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.ReplicatedMapTesterWithConfig(t, configCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)
@@ -256,7 +256,7 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventToKeyAndPredicate(t *t
 	// Skipping, since predicates are not supported with portable and JSON values
 	t.SkipNow()
 	configCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.ReplicatedMapTesterWithConfig(t, configCallback, func(t *testing.T, m *hz.ReplicatedMap) {
 		handlerCalled := int32(0)

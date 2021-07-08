@@ -24,75 +24,122 @@ import (
 
 // Config contains the serialization configuration of a Hazelcast instance.
 type Config struct {
-	// GlobalSerializer is the serializer that will be used if no other serializer is applicable.
-	GlobalSerializer Serializer `json:"-"`
-	// CustomSerializers is a map of object types and corresponding custom serializers.
-	CustomSerializers map[reflect.Type]Serializer `json:"-"`
-	// IdentifiedDataSerializableFactories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
-	IdentifiedDataSerializableFactories []IdentifiedDataSerializableFactory `json:"-"`
-	// PortableFactories is a map of factory IDs and corresponding Portable factories.
-	PortableFactories []PortableFactory `json:"-"`
-	// ClassDefinitions contains ClassDefinitions for portable structs.
-	ClassDefinitions []*ClassDefinition `json:"-"`
-	PortableVersion  int32
+	globalSerializer                    Serializer
+	customSerializers                   map[reflect.Type]Serializer
+	identifiedDataSerializableFactories []IdentifiedDataSerializableFactory
+	portableFactories                   []PortableFactory
+	classDefinitions                    []*ClassDefinition
 	// PortableVersion will be used to differentiate two versions of the same struct that have changes on the struct,
 	// like adding/removing a field or changing a type of a field.
-	// BigEndian is the Little Endinan byte order bool. If false, it is Big Endian.
-	BigEndian bool
+	PortableVersion int32 `json:",omitempty"`
+	// LittleEndian sets byte order to Little Endian. Default is false.
+	LittleEndian bool `json:",omitempty"`
 }
 
-func NewConfig() Config {
-	return Config{
-		BigEndian:         true,
-		CustomSerializers: map[reflect.Type]Serializer{},
-	}
-}
-
-func (c Config) Clone() Config {
-	idFactories := make([]IdentifiedDataSerializableFactory, len(c.IdentifiedDataSerializableFactories))
-	copy(idFactories, c.IdentifiedDataSerializableFactories)
-	pFactories := make([]PortableFactory, len(c.PortableFactories))
-	copy(pFactories, c.PortableFactories)
-	defs := make([]*ClassDefinition, len(c.ClassDefinitions))
-	copy(defs, c.ClassDefinitions)
+func (c *Config) Clone() Config {
+	c.ensureCustomSerializers()
+	idFactories := make([]IdentifiedDataSerializableFactory, len(c.identifiedDataSerializableFactories))
+	copy(idFactories, c.identifiedDataSerializableFactories)
+	pFactories := make([]PortableFactory, len(c.portableFactories))
+	copy(pFactories, c.portableFactories)
+	defs := make([]*ClassDefinition, len(c.classDefinitions))
+	copy(defs, c.classDefinitions)
 	serializers := map[reflect.Type]Serializer{}
-	for k, v := range c.CustomSerializers {
+	for k, v := range c.customSerializers {
 		serializers[k] = v
 	}
 	return Config{
-		BigEndian:                           c.BigEndian,
-		IdentifiedDataSerializableFactories: idFactories,
-		PortableFactories:                   pFactories,
+		LittleEndian:                        c.LittleEndian,
+		identifiedDataSerializableFactories: idFactories,
+		portableFactories:                   pFactories,
 		PortableVersion:                     c.PortableVersion,
-		CustomSerializers:                   serializers,
-		GlobalSerializer:                    c.GlobalSerializer,
-		ClassDefinitions:                    defs,
+		customSerializers:                   serializers,
+		globalSerializer:                    c.globalSerializer,
+		classDefinitions:                    defs,
 	}
 }
 
-func (c Config) Validate() error {
+func (c *Config) Validate() error {
 	return nil
 }
 
-// AddIdentifiedDataSerializableFactory adds an identified data serializable factory.
-func (b *Config) AddIdentifiedDataSerializableFactory(factory IdentifiedDataSerializableFactory) {
-	b.IdentifiedDataSerializableFactories = append(b.IdentifiedDataSerializableFactories, factory)
+// SetIdentifiedDataSerializableFactories adds zore or more identified data serializable factories.
+// Identified data serializable factories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
+func (b *Config) SetIdentifiedDataSerializableFactories(factories ...IdentifiedDataSerializableFactory) {
+	b.identifiedDataSerializableFactories = append(b.identifiedDataSerializableFactories, factories...)
 }
 
-// AddPortableFactory adds a portable factory.
-func (b *Config) AddPortableFactory(factory PortableFactory) {
-	b.PortableFactories = append(b.PortableFactories, factory)
+// IdentifiedDataSerializableFactories returns a copy of identified data serializable factories.
+// Identified data serializable factories is a map of factory IDs and corresponding IdentifiedDataSerializable factories.
+func (b *Config) IdentifiedDataSerializableFactories() []IdentifiedDataSerializableFactory {
+	fs := make([]IdentifiedDataSerializableFactory, len(b.identifiedDataSerializableFactories))
+	copy(fs, b.identifiedDataSerializableFactories)
+	return fs
 }
 
-// AddCustomSerializer adds a customer serializer for the given type.
-func (b *Config) AddCustomSerializer(t reflect.Type, serializer Serializer) error {
+// SetPortableFactories adds zero or more portable factories.
+// Portable factories is a map of factory IDs and corresponding Portable factories.
+func (b *Config) SetPortableFactories(factories ...PortableFactory) {
+	b.portableFactories = append(b.portableFactories, factories...)
+}
+
+// PortableFactories returns a copy of portable factories
+// portable factories is a map of factory IDs and corresponding Portable factories.
+func (b *Config) PortableFactories() []PortableFactory {
+	fs := make([]PortableFactory, len(b.portableFactories))
+	copy(fs, b.portableFactories)
+	return fs
+}
+
+// SetCustomSerializer adds a customer serializer for the given type.
+// custom serializers is a map of object types and corresponding custom serializers.
+func (b *Config) SetCustomSerializer(t reflect.Type, serializer Serializer) error {
+	b.ensureCustomSerializers()
 	if serializer.ID() <= 0 {
 		return ihzerrors.NewIllegalArgumentError("serializerID must be positive", nil)
 	}
-	b.CustomSerializers[t] = serializer
+	b.customSerializers[t] = serializer
 	return nil
 }
 
-func (b *Config) AddClassDefinition(definition *ClassDefinition) {
-	b.ClassDefinitions = append(b.ClassDefinitions, definition)
+// CustomSerializers returns a copy of custom serializers.
+// custom serializers is a map of object types and corresponding custom serializers.
+func (b *Config) CustomSerializers() map[reflect.Type]Serializer {
+	b.ensureCustomSerializers()
+	sers := map[reflect.Type]Serializer{}
+	for k, v := range b.customSerializers {
+		sers[k] = v
+	}
+	return sers
+}
+
+// SetClassDefinitions adds zore or more class definitions for portable factories.
+func (b *Config) SetClassDefinitions(definitions ...*ClassDefinition) {
+	b.classDefinitions = append(b.classDefinitions, definitions...)
+}
+
+// ClassDefinitions returns a copy of class definitions.
+// class definitions contains classDefinitions for portable structs.
+func (b *Config) ClassDefinitions() []*ClassDefinition {
+	cds := make([]*ClassDefinition, len(b.classDefinitions))
+	copy(cds, b.classDefinitions)
+	return cds
+}
+
+// SetGlobalSerializer sets the global serializer.
+// Global serializer is the serializer that will be used if no other serializer is applicable.
+func (b *Config) SetGlobalSerializer(serializer Serializer) {
+	b.globalSerializer = serializer
+}
+
+// GlobalSerializer returns the global serializer.
+// Global serializer is the serializer that will be used if no other serializer is applicable.
+func (b *Config) GlobalSerializer() Serializer {
+	return b.globalSerializer
+}
+
+func (b *Config) ensureCustomSerializers() {
+	if b.customSerializers == nil {
+		b.customSerializers = map[reflect.Type]Serializer{}
+	}
 }

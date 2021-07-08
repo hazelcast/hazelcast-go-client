@@ -14,32 +14,27 @@
  * limitations under the License.
  */
 
-package cluster
+package types
 
-type SecurityConfig struct {
-	Credentials CredentialsConfig
+import (
+	"time"
+)
+
+type Duration time.Duration
+
+func (d Duration) String() string {
+	return time.Duration(d).String()
 }
 
-func (c SecurityConfig) Clone() SecurityConfig {
-	return c
+func (d Duration) MarshalText() ([]byte, error) {
+	return []byte(d.String()), nil
 }
 
-func (c *SecurityConfig) Validate() error {
-	return nil
-}
-
-type CredentialsConfig struct {
-	Username string `json:",omitempty"`
-	Password string `json:",omitempty"`
-}
-
-func (c CredentialsConfig) Clone() CredentialsConfig {
-	return CredentialsConfig{
-		Username: c.Username,
-		Password: c.Password,
+func (d *Duration) UnmarshalText(b []byte) error {
+	dur, err := time.ParseDuration(string(b))
+	if err != nil {
+		return err
 	}
-}
-
-func (c CredentialsConfig) Validate() error {
+	*d = Duration(dur)
 	return nil
 }

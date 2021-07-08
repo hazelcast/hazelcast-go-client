@@ -29,7 +29,7 @@ import (
 
 func TestCount(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -46,7 +46,7 @@ func TestCount(t *testing.T) {
 
 func TestCountAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -64,7 +64,7 @@ func TestCountAll(t *testing.T) {
 
 func TestDistinctValues(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -82,7 +82,7 @@ func TestDistinctValues(t *testing.T) {
 
 func TestDistinctValuesAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -100,7 +100,7 @@ func TestDistinctValuesAll(t *testing.T) {
 
 func TestDoubleAverage(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -116,7 +116,7 @@ func TestDoubleAverage(t *testing.T) {
 
 func TestDoubleAverageAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -132,7 +132,7 @@ func TestDoubleAverageAll(t *testing.T) {
 
 func TestDoubleAverageAll_Mixed(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -148,7 +148,7 @@ func TestDoubleAverageAll_Mixed(t *testing.T) {
 
 func TestDoubleSum(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -164,7 +164,7 @@ func TestDoubleSum(t *testing.T) {
 
 func TestDoubleSumAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -180,7 +180,7 @@ func TestDoubleSumAll(t *testing.T) {
 
 func TestDoubleSumAll_Mixed(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -196,7 +196,7 @@ func TestDoubleSumAll_Mixed(t *testing.T) {
 
 func TestLongAverage(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -212,7 +212,7 @@ func TestLongAverage(t *testing.T) {
 
 func TestLongAverageAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -228,7 +228,7 @@ func TestLongAverageAll(t *testing.T) {
 
 func TestLongSum(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -244,7 +244,7 @@ func TestLongSum(t *testing.T) {
 
 func TestLongSumAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -260,7 +260,7 @@ func TestLongSumAll(t *testing.T) {
 
 func TestIntAverage(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -276,7 +276,7 @@ func TestIntAverage(t *testing.T) {
 
 func TestIntAverageAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -292,7 +292,7 @@ func TestIntAverageAll(t *testing.T) {
 
 func TestIntSum(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -308,7 +308,7 @@ func TestIntSum(t *testing.T) {
 
 func TestIntSumAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -324,7 +324,7 @@ func TestIntSumAll(t *testing.T) {
 
 func TestMin(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -341,7 +341,7 @@ func TestMin(t *testing.T) {
 
 func TestMinAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -358,7 +358,7 @@ func TestMinAll(t *testing.T) {
 
 func TestMax(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
@@ -375,7 +375,7 @@ func TestMax(t *testing.T) {
 
 func TestMaxAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()

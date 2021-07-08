@@ -1,5 +1,3 @@
-// +build noos
-
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
@@ -16,6 +14,8 @@
  * limitations under the License.
  */
 
+// +build noos
+
 package hazelcast_test
 
 import (
@@ -30,11 +30,9 @@ import (
 
 func Example() {
 	// Create the configuration
-	config := hazelcast.NewConfig()
-	config.ClusterConfig.Name = "my-cluster"
-	if err := config.ClusterConfig.SetAddress("192.168.1.42:5000", "192.168.1.42:5001"); err != nil {
-		log.Fatal(err)
-	}
+	config := hazelcast.Config{}
+	config.Cluster.Name = "my-cluster"
+	config.Cluster.Network.SetAddresses("192.168.1.42:5000", "192.168.1.42:5001")
 	// Start the client with the configuration provider.
 	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {

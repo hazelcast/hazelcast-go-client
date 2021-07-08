@@ -109,6 +109,7 @@ type proxy struct {
 	removeFromCacheFn    func() bool
 	serviceName          string
 	name                 string
+	smart                bool
 }
 
 func newProxy(
@@ -142,6 +143,7 @@ func newProxy(
 		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
 		refIDGen:             refIDGen,
+		smart:                !bundle.Config.Cluster.Unisocket,
 	}
 	if err := p.create(ctx); err != nil {
 		return nil, err
