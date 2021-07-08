@@ -58,5 +58,11 @@ func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
 	       return false;
 	   }
 	*/
-	return !(errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrTargetDisconnected))
+	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrTargetDisconnected) {
+		return false
+	}
+	if errors.Is(err, hzerrors.ErrHazelcastInstanceNotActive) {
+		return true
+	}
+	return false
 }
