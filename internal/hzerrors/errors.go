@@ -116,7 +116,7 @@ func NewIllegalArgumentError(msg string, err error) *ClientError {
 }
 
 func NewSerializationError(msg string, err error) *ClientError {
-	return NewClientError(msg, err, hzerrors.ErrSerialization)
+	return NewClientError(msg, err, hzerrors.ErrHazelcastSerialization)
 }
 
 func NewIOError(msg string, err error) *ClientError {
@@ -132,5 +132,5 @@ func NewTargetDisconnectedError(msg string, err error) *ClientError {
 }
 
 func NewInstanceNotActiveError(msg string) *ClientError {
-	return NewClientError(msg, nil, hzerrors.ErrInstanceNotActive)
+	return NewClientError(msg, nil, hzerrors.ErrHazelcastInstanceNotActive)
 }

@@ -154,7 +154,7 @@ func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) 
 			target = pn.clusterService.RandomDataMemberExcluding(excluded)
 		}
 		if target == nil {
-			return nil, nil, ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMemberInCluster)
+			return nil, nil, ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
 		}
 		pn.target = target
 	}

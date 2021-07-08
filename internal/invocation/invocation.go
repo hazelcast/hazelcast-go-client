@@ -152,7 +152,7 @@ func (i *Impl) CanRetry(err error) bool {
 		}
 	*/
 
-	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrInstanceNotActive) {
+	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrHazelcastInstanceNotActive) {
 		return true
 	}
 	if errors.Is(err, hzerrors.ErrTargetDisconnected) {

@@ -108,7 +108,7 @@ func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = service.ToObject(data)
-	if !errors.Is(err, hzerrors.ErrSerialization) {
+	if !errors.Is(err, hzerrors.ErrHazelcastSerialization) {
 		t.Fatalf("should fail as HazelcastSerializationError")
 	}
 }
