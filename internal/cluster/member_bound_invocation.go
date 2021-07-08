@@ -21,7 +21,6 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -43,14 +42,5 @@ func (i *MemberBoundInvocation) CanRetry(err error) bool {
 	if errors.As(err, &nonRetryableError) {
 		return false
 	}
-	if errors.Is(err, hzerrors.ErrTargetNotMember) {
-		return false
-	}
-	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrHazelcastInstanceNotActive) {
-		return true
-	}
-	if errors.Is(err, hzerrors.ErrTargetDisconnected) {
-		return i.Request().Retryable || i.Impl.RedoOperation
-	}
-	return false
+	return i.MaybeCanRetry(err)
 }

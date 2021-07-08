@@ -139,3 +139,16 @@ func NewTargetDisconnectedError(msg string, err error) *ClientError {
 func NewInstanceNotActiveError(msg string) *ClientError {
 	return NewClientError(msg, nil, hzerrors.ErrHazelcastInstanceNotActive)
 }
+
+func IsRetryable(err error) bool {
+	// check whether the error is retryable
+	if _, ok := err.(*hzerrors.RetryableError); ok {
+		return true
+	}
+	if c, ok := err.(*ClientError); ok {
+		if c.IsRetryable() {
+			return true
+		}
+	}
+	return false
+}

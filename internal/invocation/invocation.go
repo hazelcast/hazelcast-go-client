@@ -149,13 +149,8 @@ func (i *Impl) MaybeCanRetry(err error) bool {
 		return true
 	}
 	// check whether the error is retryable
-	if _, ok := err.(*hzerrors.RetryableError); ok {
+	if ihzerrors.IsRetryable(err) {
 		return true
-	}
-	if c, ok := err.(*ihzerrors.ClientError); ok {
-		if c.IsRetryable() {
-			return true
-		}
 	}
 	if errors.Is(err, hzerrors.ErrTargetDisconnected) {
 		return i.Request().Retryable || i.RedoOperation
