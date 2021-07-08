@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 // SSLConfig is SSL configuration for client.
@@ -64,12 +64,11 @@ func (c *SSLConfig) SetCAPath(path string) error {
 	// XXX: what happens if the path is loaded multiple times?
 	// load CA cert
 	if caCert, err := ioutil.ReadFile(path); err != nil {
-		return fmt.Errorf("reading CA certificate: %w", err)
+		return ihzerrors.NewIOError("reading CA certificate: %w", err)
 	} else {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-			return hzerrors.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
-				"the format is pem", nil)
+			return ihzerrors.NewIOError("error while loading the CA file, make sure the path exits and the format is pem", nil)
 		} else {
 			c.tlsConfig.RootCAs = caCertPool
 		}

@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -520,7 +520,7 @@ func EncodeListMultiFrameForString(message *proto.ClientMessage, values []string
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []hzerrors.StackTraceElement) {
+func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []ihzerrors.StackTraceElement) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeStackTraceElement(message, values[i])
@@ -586,8 +586,8 @@ func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator
 	return result
 }
 
-func DecodeListMultiFrameForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []hzerrors.StackTraceElement {
-	result := make([]hzerrors.StackTraceElement, 0)
+func DecodeListMultiFrameForStackTraceElement(frameIterator *proto.ForwardFrameIterator) []ihzerrors.StackTraceElement {
+	var result []ihzerrors.StackTraceElement
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeStackTraceElement(frameIterator))
@@ -717,7 +717,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 	return string(frameIterator.Next().Content)
 }
 
-func DecodeError(msg *proto.ClientMessage) *hzerrors.ServerError {
+func DecodeError(msg *proto.ClientMessage) *ihzerrors.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
 	errorHolders := []proto.ErrorHolder{}
@@ -728,8 +728,7 @@ func DecodeError(msg *proto.ClientMessage) *hzerrors.ServerError {
 		return nil
 	}
 	holder := errorHolders[0]
-	err := hzerrors.NewServerErrorImpl(holder.ErrorCode(), holder.ClassName(), holder.Message(), holder.StackTraceElements(), 0, "")
-	return &err
+	return ihzerrors.NewServerError(holder.ErrorCode, holder.ClassName, holder.Message, holder.StackTraceElements)
 }
 
 func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {

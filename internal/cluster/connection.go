@@ -30,6 +30,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -167,7 +168,7 @@ func (c *Connection) socketWriteLoop() {
 			if err != nil {
 				c.logger.Errorf("write error: %w", err)
 				request = request.Copy()
-				request.Err = hzerrors.NewHazelcastIOError("writing message", err)
+				request.Err = ihzerrors.NewIOError("writing message", err)
 				c.responseCh <- request
 				c.close(err)
 			} else {
@@ -215,7 +216,10 @@ func (c *Connection) socketReadLoop() {
 					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 				})
 				if clientMessage.Type() == messageTypeException {
-					clientMessage.Err = hzerrors.NewHazelcastError(codec.DecodeError(clientMessage))
+					if err := codec.DecodeError(clientMessage); err != nil {
+						clientMessage.Err = wrapError(err)
+					}
+
 				}
 				c.responseCh <- clientMessage
 				clientMessageReader.ResetMessage()
@@ -283,4 +287,215 @@ func positiveDurationOrMax(duration time.Duration) time.Duration {
 		return duration
 	}
 	return time.Duration(math.MaxInt64)
+}
+
+func wrapError(err *ihzerrors.ServerError) error {
+	targetErr := convertErrorCodeToError(errorCode(err.ErrorCode))
+	return ihzerrors.NewClientError(err.String(), err, targetErr)
+}
+
+func convertErrorCodeToError(code errorCode) error {
+	switch code {
+	case errorCodeUndefined:
+		return hzerrors.ErrUndefined
+	case errorCodeArrayIndexOutOfBounds:
+		return hzerrors.ErrArrayIndexOutOfBounds
+	case errorCodeArrayStore:
+		return hzerrors.ErrArrayStore
+	case errorCodeAuthentication:
+		return hzerrors.ErrAuthentication
+	case errorCodeCache:
+		return hzerrors.ErrCache
+	case errorCodeCacheLoader:
+		return hzerrors.ErrCacheLoader
+	case errorCodeCacheNotExists:
+		return hzerrors.ErrCacheNotExists
+	case errorCodeCacheWriter:
+		return hzerrors.ErrCacheWriter
+	case errorCodeCallerNotMember:
+		return hzerrors.ErrCallerNotMember
+	case errorCodeCancellation:
+		return hzerrors.ErrCancellation
+	case errorCodeClassCast:
+		return hzerrors.ErrClassCast
+	case errorCodeClassNotFound:
+		return hzerrors.ErrClassNotFound
+	case errorCodeConcurrentModification:
+		return hzerrors.ErrConcurrentModification
+	case errorCodeConfigMismatch:
+		return hzerrors.ErrConfigMismatch
+	case errorCodeDistributedObjectDestroyed:
+		return hzerrors.ErrDistributedObjectDestroyed
+	case errorCodeEOF:
+		return hzerrors.ErrEOF
+	case errorCodeEntryProcessor:
+		return hzerrors.ErrEntryProcessor
+	case errorCodeExecution:
+		return hzerrors.ErrExecution
+	case errorCodeHazelcast:
+		return hzerrors.ErrHazelcast
+	case errorCodeHazelcastInstanceNotActive:
+		return hzerrors.ErrHazelcastInstanceNotActive
+	case errorCodeHazelcastOverLoad:
+		return hzerrors.ErrHazelcastOverLoad
+	case errorCodeHazelcastSerialization:
+		return hzerrors.ErrHazelcastSerialization
+	case errorCodeIO:
+		return hzerrors.ErrIO
+	case errorCodeIllegalArgument:
+		return hzerrors.ErrIllegalArgument
+	case errorCodeIllegalAccessException:
+		return hzerrors.ErrIllegalAccessException
+	case errorCodeIllegalAccess:
+		return hzerrors.ErrIllegalAccess
+	case errorCodeIllegalMonitorState:
+		return hzerrors.ErrIllegalMonitorState
+	case errorCodeIllegalState:
+		return hzerrors.ErrIllegalState
+	case errorCodeIllegalThreadState:
+		return hzerrors.ErrIllegalThreadState
+	case errorCodeIndexOutOfBounds:
+		return hzerrors.ErrIndexOutOfBounds
+	case errorCodeInterrupted:
+		return hzerrors.ErrInterrupted
+	case errorCodeInvalidAddress:
+		return hzerrors.ErrInvalidAddress
+	case errorCodeInvalidConfiguration:
+		return hzerrors.ErrInvalidConfiguration
+	case errorCodeMemberLeft:
+		return hzerrors.ErrMemberLeft
+	case errorCodeNegativeArraySize:
+		return hzerrors.ErrNegativeArraySize
+	case errorCodeNoSuchElement:
+		return hzerrors.ErrNoSuchElement
+	case errorCodeNotSerializable:
+		return hzerrors.ErrNotSerializable
+	case errorCodeNilPointer:
+		return hzerrors.ErrNilPointer
+	case errorCodeOperationTimeout:
+		return hzerrors.ErrOperationTimeout
+	case errorCodePartitionMigrating:
+		return hzerrors.ErrPartitionMigrating
+	case errorCodeQuery:
+		return hzerrors.ErrQuery
+	case errorCodeQueryResultSizeExceeded:
+		return hzerrors.ErrQueryResultSizeExceeded
+	case errorCodeSplitBrainProtection:
+		return hzerrors.ErrSplitBrainProtection
+	case errorCodeReachedMaxSize:
+		return hzerrors.ErrReachedMaxSize
+	case errorCodeRejectedExecution:
+		return hzerrors.ErrRejectedExecution
+	case errorCodeResponseAlreadySent:
+		return hzerrors.ErrResponseAlreadySent
+	case errorCodeRetryableHazelcast:
+		return hzerrors.ErrRetryableHazelcast
+	case errorCodeRetryableIO:
+		return hzerrors.ErrRetryableIO
+	case errorCodeRuntime:
+		return hzerrors.ErrRuntime
+	case errorCodeSecurity:
+		return hzerrors.ErrSecurity
+	case errorCodeSocket:
+		return hzerrors.ErrSocket
+	case errorCodeStaleSequence:
+		return hzerrors.ErrStaleSequence
+	case errorCodeTargetDisconnected:
+		return hzerrors.ErrTargetDisconnected
+	case errorCodeTargetNotMember:
+		return hzerrors.ErrTargetNotMember
+	case errorCodeTimeout:
+		return hzerrors.ErrTimeout
+	case errorCodeTopicOverload:
+		return hzerrors.ErrTopicOverload
+	case errorCodeTransaction:
+		return hzerrors.ErrTransaction
+	case errorCodeTransactionNotActive:
+		return hzerrors.ErrTransactionNotActive
+	case errorCodeTransactionTimedOut:
+		return hzerrors.ErrTransactionTimedOut
+	case errorCodeURISyntax:
+		return hzerrors.ErrURISyntax
+	case errorCodeUTFDataFormat:
+		return hzerrors.ErrUTFDataFormat
+	case errorCodeUnsupportedOperation:
+		return hzerrors.ErrUnsupportedOperation
+	case errorCodeWrongTarget:
+		return hzerrors.ErrWrongTarget
+	case errorCodeXA:
+		return hzerrors.ErrXA
+	case errorCodeAccessControl:
+		return hzerrors.ErrAccessControl
+	case errorCodeLogin:
+		return hzerrors.ErrLogin
+	case errorCodeUnsupportedCallback:
+		return hzerrors.ErrUnsupportedCallback
+	case errorCodeNoDataMember:
+		return hzerrors.ErrNoDataMember
+	case errorCodeReplicatedMapCantBeCreated:
+		return hzerrors.ErrReplicatedMapCantBeCreated
+	case errorCodeMaxMessageSizeExceeded:
+		return hzerrors.ErrMaxMessageSizeExceeded
+	case errorCodeWANReplicationQueueFull:
+		return hzerrors.ErrWANReplicationQueueFull
+	case errorCodeAssertionError:
+		return hzerrors.ErrAssertion
+	case errorCodeOutOfMemoryError:
+		return hzerrors.ErrOutOfMemory
+	case errorCodeStackOverflowError:
+		return hzerrors.ErrStackOverflow
+	case errorCodeNativeOutOfMemoryError:
+		return hzerrors.ErrNativeOutOfMemory
+	case errorCodeServiceNotFound:
+		return hzerrors.ErrServiceNotFound
+	case errorCodeStaleTaskID:
+		return hzerrors.ErrStaleTaskID
+	case errorCodeDuplicateTask:
+		return hzerrors.ErrDuplicateTask
+	case errorCodeStaleTask:
+		return hzerrors.ErrStaleTask
+	case errorCodeLocalMemberReset:
+		return hzerrors.ErrLocalMemberReset
+	case errorCodeIndeterminateOperationState:
+		return hzerrors.ErrIndeterminateOperationState
+	case errorCodeFlakeIDNodeIDOutOfRangeException:
+		return hzerrors.ErrFlakeIDNodeIDOutOfRangeException
+	case errorCodeTargetNotReplicaException:
+		return hzerrors.ErrTargetNotReplicaException
+	case errorCodeMutationDisallowedException:
+		return hzerrors.ErrMutationDisallowedException
+	case errorCodeConsistencyLostException:
+		return hzerrors.ErrConsistencyLostException
+	case errorCodeSessionExpiredException:
+		return hzerrors.ErrSessionExpiredException
+	case errorCodeWaitKeyCancelledException:
+		return hzerrors.ErrWaitKeyCancelledException
+	case errorCodeLockAcquireLimitReachedException:
+		return hzerrors.ErrLockAcquireLimitReachedException
+	case errorCodeLockOwnershipLostException:
+		return hzerrors.ErrLockOwnershipLostException
+	case errorCodeCPGroupDestroyedException:
+		return hzerrors.ErrCPGroupDestroyedException
+	case errorCodeCannotReplicateException:
+		return hzerrors.ErrCannotReplicateException
+	case errorCodeLeaderDemotedException:
+		return hzerrors.ErrLeaderDemotedException
+	case errorCodeStaleAppendRequestException:
+		return hzerrors.ErrStaleAppendRequestException
+	case errorCodeNotLeaderException:
+		return hzerrors.ErrNotLeaderException
+	case errorCodeVersionMismatchException:
+		return hzerrors.ErrVersionMismatchException
+	case errorCodeNoSuchMethod:
+		return hzerrors.ErrNoSuchMethod
+	case errorCodeNoSuchMethodException:
+		return hzerrors.ErrNoSuchMethodException
+	case errorCodeNoSuchField:
+		return hzerrors.ErrNoSuchField
+	case errorCodeNoSuchFieldException:
+		return hzerrors.ErrNoSuchFieldException
+	case errorCodeNoClassDefFound:
+		return hzerrors.ErrNoClassDefFound
+	}
+	return nil
 }

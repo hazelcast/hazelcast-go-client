@@ -18,14 +18,13 @@ package hazelcast
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -1050,13 +1049,13 @@ func validateAndNormalizeIndexConfig(ic *types.IndexConfig) error {
 	}
 	attrs := attrSet.Attrs()
 	if len(attrs) == 0 {
-		return &hzerrors.IndexValidationError{Err: errors.New("index must have at least one attribute")}
+		return ihzerrors.NewIllegalArgumentError("index must have at least one attribute", nil)
 	}
 	if len(attrs) > maxIndexAttributes {
-		return &hzerrors.IndexValidationError{Err: fmt.Errorf("index cannot have more than %d attributes", maxIndexAttributes)}
+		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("index cannot have more than %d attributes", maxIndexAttributes), nil)
 	}
 	if ic.Type == types.IndexTypeBitmap && len(attrs) > 1 {
-		return &hzerrors.IndexValidationError{Err: errors.New("composite bitmap indexes are not supported")}
+		return ihzerrors.NewIllegalArgumentError("composite bitmap indexes are not supported", nil)
 	}
 	ic.Attributes = attrs
 	return nil
@@ -1072,19 +1071,19 @@ func newAttributeSet() attributeSet {
 
 func (as attributeSet) Add(attr string) error {
 	if attr == "" {
-		return &hzerrors.IndexValidationError{Err: errors.New("attribute name cannot be not empty")}
+		return ihzerrors.NewIllegalArgumentError("attribute name cannot be not empty", nil)
 	}
 	if strings.HasSuffix(attr, ".") {
-		return &hzerrors.IndexValidationError{Err: fmt.Errorf("attribute name cannot end with dot: %s", attr)}
+		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("attribute name cannot end with dot: %s", attr), nil)
 	}
 	if strings.HasPrefix(attr, "this.") {
 		attr = strings.Replace(attr, "this.", "", 1)
 		if attr == "" {
-			return &hzerrors.IndexValidationError{Err: errors.New("attribute name cannot be 'this.'")}
+			return ihzerrors.NewIllegalArgumentError("attribute name cannot be 'this.'", nil)
 		}
 	}
 	if _, ok := as.attrs[attr]; ok {
-		return &hzerrors.IndexValidationError{Err: fmt.Errorf("duplicate attribute name not allowed: %s", attr)}
+		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("duplicate attribute name not allowed: %s", attr), nil)
 	}
 	as.attrs[attr] = struct{}{}
 	return nil

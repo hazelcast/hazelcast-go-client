@@ -14,12 +14,27 @@
  * limitations under the License.
  */
 
-package cluster
+package hzerrors_test
 
-import "errors"
+import (
+	"errors"
+	"os"
+	"testing"
 
-var ErrConfigInvalidClusterName = errors.New("invalid cluster name")
-var ErrConfigInvalidConnectionTimeout = errors.New("invalid connection timeout")
-var ErrConfigInvalidHeartbeatInterval = errors.New("invalid heartbeat interval")
-var ErrConfigInvalidHeartbeatTimeout = errors.New("invalid heartbeat timeout")
-var ErrConfigInvalidInvocationTimeout = errors.New("invalid invocation timeout")
+	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+)
+
+func TestClientError_Is(t *testing.T) {
+	err := ihzerrors.NewIOError("some io error", &os.PathError{
+		Op:   "Open",
+		Path: "/foo/bar",
+		Err:  os.ErrNotExist,
+	})
+	assert.True(t, errors.Is(err, hzerrors.ErrIO))
+	assert.Equal(t, "some io error: Open /foo/bar: file does not exist", err.Error())
+	var pathErr *os.PathError
+	assert.True(t, errors.As(err, &pathErr))
+}

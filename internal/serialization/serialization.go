@@ -17,13 +17,12 @@
 package serialization
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -100,7 +99,7 @@ func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 	if serializer == nil {
 		serializer, ok = s.registry[typeID]
 		if !ok {
-			return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
+			return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 		}
 	}
 	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, !s.SerializationConfig.LittleEndian)
@@ -223,7 +222,7 @@ func (s *Service) registerCustomSerializers(customSerializers map[reflect.Type]p
 
 func (s *Service) registerSerializer(serializer pubserialization.Serializer) error {
 	if s.registry[serializer.ID()] != nil {
-		return hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)
+		return ihzerrors.NewSerializationError("this serializer is already in the registry", nil)
 	}
 	s.registry[serializer.ID()] = serializer
 	return nil
@@ -271,7 +270,7 @@ func (s *Service) registerIdentifiedFactories() error {
 	for _, f := range s.SerializationConfig.IdentifiedDataSerializableFactories() {
 		fid := f.FactoryID()
 		if _, ok := fs[fid]; ok {
-			return hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)
+			return ihzerrors.NewSerializationError("this serializer is already in the registry", nil)
 		}
 		fs[fid] = f
 	}
@@ -341,7 +340,7 @@ func makeError(rec interface{}) error {
 	case error:
 		return v
 	case string:
-		return errors.New(v)
+		return ihzerrors.NewSerializationError(v, nil)
 	default:
 		return fmt.Errorf("%v", rec)
 	}

@@ -64,6 +64,14 @@ func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *prot
 	return inv
 }
 
+func (f *ConnectionInvocationFactory) NewMemberBoundInvocation(message *proto.ClientMessage, member *pubcluster.MemberInfo) *MemberBoundInvocation {
+	message = message.Copy()
+	message.SetCorrelationID(f.makeCorrelationID())
+	deadline := time.Now().Add(f.invocationTimeout)
+	inv := NewMemberBoundInvocation(message, member, deadline, f.redoOperation)
+	return inv
+}
+
 func (f *ConnectionInvocationFactory) makeCorrelationID() int64 {
 	return atomic.AddInt64(&f.nextCorrelationID, 1)
 }

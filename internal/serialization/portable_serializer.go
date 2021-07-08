@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -35,7 +35,7 @@ func NewPortableSerializer(service *Service, factories []serialization.PortableF
 	for _, f := range factories {
 		fid := f.FactoryID()
 		if _, ok := pf[fid]; ok {
-			return nil, hzerrors.NewHazelcastSerializationError("this serializer is already in the registry", nil)
+			return nil, ihzerrors.NewSerializationError("this serializer is already in the registry", nil)
 		}
 		pf[fid] = f
 	}
@@ -86,13 +86,13 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 func (ps *PortableSerializer) createNewPortableInstance(factoryID int32, classID int32) (serialization.Portable, error) {
 	factory := ps.factories[factoryID]
 	if factory == nil {
-		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
+		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
 			factoryID), nil)
 	}
 
 	portable := factory.Create(classID)
 	if portable == nil {
-		return nil, hzerrors.NewHazelcastSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",
+		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",
 			reflect.TypeOf(factory), classID, factoryID), nil)
 	}
 	return portable, nil

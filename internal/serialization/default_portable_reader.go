@@ -19,7 +19,7 @@ package serialization
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -94,10 +94,10 @@ func TypeByID(fieldType serialization.FieldDefinitionType) string {
 func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType serialization.FieldDefinitionType) int32 {
 	field, ok := pr.classDefinition.Fields[fieldName]
 	if !ok {
-		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
 	if field.Type != fieldType {
-		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("not a %s field: %s", TypeByID(fieldType), fieldName), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("not a %s field: %s", TypeByID(fieldType), fieldName), nil))
 	}
 	pos := pr.input.(*ObjectDataInput).ReadInt32AtPosition(pr.offset + field.Index*Int32SizeInBytes)
 	length := pr.input.(*ObjectDataInput).ReadInt16AtPosition(pos)
