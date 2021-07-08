@@ -20,6 +20,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -40,6 +42,9 @@ func NewMemberBoundInvocation(msg *proto.ClientMessage, member *pubcluster.Membe
 func (i *MemberBoundInvocation) CanRetry(err error) bool {
 	var nonRetryableError *cb.NonRetryableError
 	if errors.As(err, &nonRetryableError) {
+		return false
+	}
+	if errors.Is(err, hzerrors.ErrTargetNotMember) {
 		return false
 	}
 	return i.MaybeCanRetry(err)
