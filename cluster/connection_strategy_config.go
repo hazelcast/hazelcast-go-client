@@ -25,10 +25,40 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+type ReconnectMode int
+
+func (rm *ReconnectMode) UnmarshalText(b []byte) error {
+	text := string(b)
+	switch text {
+	case "on":
+		*rm = ReconnectModeOn
+	case "off":
+		*rm = ReconnectModeOff
+	default:
+		return fmt.Errorf("invalid reconnect mode %s: %w", text, hzerrors.ErrIllegalState)
+	}
+	return nil
+}
+
+func (rm ReconnectMode) MarshalText() ([]byte, error) {
+	switch rm {
+	case ReconnectModeOn:
+		return []byte("on"), nil
+	case ReconnectModeOff:
+		return []byte("off"), nil
+	}
+	return nil, hzerrors.ErrIllegalState
+}
+
+const (
+	ReconnectModeOn ReconnectMode = iota
+	ReconnectModeOff
+)
+
 type ConnectionStrategyConfig struct {
-	Retry            ConnectionRetryConfig
-	Timeout          types.Duration `json:",omitempty"`
-	DisableReconnect bool           `json:",omitempty"`
+	Retry         ConnectionRetryConfig
+	Timeout       types.Duration `json:",omitempty"`
+	ReconnectMode ReconnectMode  `json:",omitempty"`
 }
 
 func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {

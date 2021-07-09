@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -65,6 +66,9 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 		"InvocationTimeout": "25s",
 		"Network": {
 			"ConnectionTimeout": "20s"
+		},
+		"ConnectionStrategy": {
+			"ReconnectMode": "off"
 		}
 	},
 	"Logger": {
@@ -88,6 +92,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	assert.Equal(t, types.Duration(10*time.Second), config.Cluster.HeartbeatInterval)
 	assert.Equal(t, types.Duration(15*time.Second), config.Cluster.HeartbeatTimeout)
 	assert.Equal(t, types.Duration(25*time.Second), config.Cluster.InvocationTimeout)
+	assert.Equal(t, cluster.ReconnectModeOff, config.Cluster.ConnectionStrategy.ReconnectMode)
 	assert.Equal(t, true, config.Stats.Enabled)
 	assert.Equal(t, types.Duration(2*time.Minute), config.Stats.Period)
 }
@@ -126,7 +131,7 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, false, c.Cluster.Cloud.Enabled)
 	assert.Equal(t, "", c.Cluster.Cloud.Token)
 
-	assert.Equal(t, false, c.Cluster.ConnectionStrategy.DisableReconnect)
+	assert.Equal(t, cluster.ReconnectModeOn, c.Cluster.ConnectionStrategy.ReconnectMode)
 	assert.Equal(t, types.Duration(9223372036854775807), c.Cluster.ConnectionStrategy.Timeout)
 	cr := &c.Cluster.ConnectionStrategy.Retry
 	assert.Equal(t, types.Duration(1*time.Second), cr.InitialBackoff)

@@ -305,3 +305,19 @@ func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 	t.Logf("events : %v", events)
 	assert.Equal(t, target, events)
 }
+
+func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
+	config := cls.DefaultConfig()
+	config.Cluster.ConnectionStrategy.ReconnectMode = cluster.ReconnectModeOff
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(2 * time.Second)
+	cls.Shutdown()
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, false, c.Running())
+}

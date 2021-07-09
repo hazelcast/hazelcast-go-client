@@ -483,6 +483,11 @@ func (c *Client) clusterDisconnected(e event.Event) {
 		return
 	}
 	ctx := context.Background()
+	if c.clusterConfig.ConnectionStrategy.ReconnectMode == cluster.ReconnectModeOff {
+		c.logger.Debug(func() string { return "reconnect mode is off, shutting down" })
+		c.Shutdown(ctx)
+		return
+	}
 	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
 	// try to reboot cluster connection
 	c.connectionManager.Stop()
