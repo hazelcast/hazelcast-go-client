@@ -122,17 +122,10 @@ func (l *List) AddAllAt(ctx context.Context, index int, elements ...interface{})
 
 // AddListener adds an item listener for this list.
 // The listener will be invoked whenever an item is added to or removed from this list.
+// Received events include the updated item if includeValue is true.
 // Returns subscription ID of the listener.
-func (l *List) AddListener(ctx context.Context, handler ListItemNotifiedHandler) (types.UUID, error) {
-	return l.addListener(ctx, false, handler)
-}
-
-// AddListenerIncludeValue adds an item listener for this list.
-// The listener will be invoked whenever an item is added to or removed from this list.
-// Received events include the updated item.
-// Returns subscription ID of the listener.
-func (l *List) AddListenerIncludeValue(ctx context.Context, handler ListItemNotifiedHandler) (types.UUID, error) {
-	return l.addListener(ctx, true, handler)
+func (l *List) AddListener(ctx context.Context, includeValue bool, handler ListItemNotifiedHandler) (types.UUID, error) {
+	return l.addListener(ctx, includeValue, handler)
 }
 
 // Clear removes all elements from the list.

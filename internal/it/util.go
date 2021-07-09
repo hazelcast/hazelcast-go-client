@@ -47,6 +47,7 @@ const (
 	EnvMemberCount        = "MEMBER_COUNT"
 	EnvEnableLeakCheck    = "ENABLE_LEAKCHECK"
 	EnvEnableSSL          = "ENABLE_SSL"
+	EnvHzVersion          = "HZ_VERSION"
 )
 
 const DefaultPort = 7701
@@ -82,9 +83,10 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 		}
 		config.Logger.Level = logLevel
 		config.Cluster.Unisocket = !smart
-		client := MustClient(hz.StartNewClientWithConfig(config))
+		ctx := context.Background()
+		client := MustClient(hz.StartNewClientWithConfig(ctx, config))
 		defer func() {
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
@@ -208,7 +210,15 @@ func SSLEnabled() bool {
 	return os.Getenv(EnvEnableSSL) == "1"
 }
 
-func defaultMemberCount() int {
+func HzVersion() string {
+	version := os.Getenv(EnvHzVersion)
+	if version == "" {
+		version = "4.2"
+	}
+	return version
+}
+
+func MemberCount() int {
 	if memberCountStr := os.Getenv(EnvMemberCount); memberCountStr != "" {
 		if memberCount, err := strconv.Atoi(memberCountStr); err != nil {
 			panic(err)
@@ -219,8 +229,12 @@ func defaultMemberCount() int {
 	return 1
 }
 
-func createRemoteController() *RemoteControllerClient {
-	transport := MustValue(thrift.NewTSocketConf("localhost:9701", nil)).(*thrift.TSocket)
+func CreateDefaultRemoteController() *RemoteControllerClient {
+	return CreateRemoteController("localhost:9701")
+}
+
+func CreateRemoteController(addr string) *RemoteControllerClient {
+	transport := MustValue(thrift.NewTSocketConf(addr, nil)).(*thrift.TSocket)
 	bufferedTransport := thrift.NewTBufferedTransport(transport, 4096)
 	protocol := thrift.NewTBinaryProtocolConf(bufferedTransport, nil)
 	client := thrift.NewTStandardClient(protocol, protocol)
@@ -233,7 +247,7 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
-		rc = createRemoteController()
+		rc = CreateDefaultRemoteController()
 		if ping, err := rc.Ping(context.Background()); err != nil {
 			panic(err)
 		} else if !ping {
@@ -241,9 +255,9 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 		}
 		if launchDefaultCluster {
 			if SSLEnabled() {
-				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort))
+				defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
 			} else {
-				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlConfig(DefaultClusterName, DefaultPort))
+				defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
 			}
 		}
 	}
@@ -251,44 +265,50 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 }
 
 type TestCluster struct {
-	rc          *RemoteControllerClient
-	clusterID   string
-	memberUUIDs []string
+	RC          *RemoteControllerClient
+	ClusterID   string
+	MemberUUIDs []string
+	Port        int
 }
 
 func StartNewCluster(memberCount int) *TestCluster {
-	ensureRemoteController(false)
-	config := xmlConfig(DefaultClusterName, DefaultPort)
-	if SSLEnabled() {
-		config = xmlSSLConfig(DefaultClusterName, DefaultPort)
-	}
-	return startNewCluster(rc, memberCount, config)
+	return StartNewClusterWithOptions(DefaultClusterName, DefaultPort, memberCount)
 }
 
-func startNewCluster(rc *RemoteControllerClient, memberCount int, config string) *TestCluster {
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.2", config)).(*Cluster)
+func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
+	ensureRemoteController(false)
+	config := xmlConfig(clusterName, port)
+	if SSLEnabled() {
+		config = xmlSSLConfig(clusterName, port)
+	}
+	return startNewCluster(rc, memberCount, config, port)
+}
+
+func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
+	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
 		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
-		rc:          rc,
-		clusterID:   cluster.ID,
-		memberUUIDs: memberUUIDs,
+		RC:          rc,
+		ClusterID:   cluster.ID,
+		MemberUUIDs: memberUUIDs,
+		Port:        port,
 	}
 }
 
 func (c TestCluster) Shutdown() {
-	for _, memberUUID := range c.memberUUIDs {
-		c.rc.ShutdownMember(context.Background(), c.clusterID, memberUUID)
+	for _, memberUUID := range c.MemberUUIDs {
+		c.RC.ShutdownMember(context.Background(), c.ClusterID, memberUUID)
 	}
 }
 
 func (c TestCluster) DefaultConfig() hz.Config {
-	config := hz.NewConfig()
-	config.Cluster.Name = c.clusterID
-	config.Cluster.Network.SetAddresses("localhost:7701")
+	config := hz.Config{}
+	config.Cluster.Name = c.ClusterID
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", c.Port))
 	if SSLEnabled() {
 		config.Cluster.Network.SSL.Enabled = true
 		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
@@ -354,7 +374,7 @@ func getLoggerLevel() logger.Level {
 
 func getDefaultClient(config *hz.Config) *hz.Client {
 	config.Logger.Level = getLoggerLevel()
-	client, err := hz.StartNewClientWithConfig(*config)
+	client, err := hz.StartNewClientWithConfig(context.Background(), *config)
 	if err != nil {
 		panic(err)
 	}

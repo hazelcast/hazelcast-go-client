@@ -50,10 +50,11 @@ func PNCounterTesterWithConfigAndName(t *testing.T, makeName func() string, conf
 		config.Cluster.Unisocket = !smart
 		client, pn = GetClientPNCounterWithConfig(makeName(), &config)
 		defer func() {
-			if err := pn.Destroy(context.Background()); err != nil {
+			ctx := context.Background()
+			if err := pn.Destroy(ctx); err != nil {
 				t.Logf("test warning, could not destroy pn conter: %s", err.Error())
 			}
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()

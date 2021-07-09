@@ -132,7 +132,7 @@ func loadConfig(path string, cfg *hazelcast.Config) error {
 	return nil
 }
 
-func createClient(configPath string) *hazelcast.Client {
+func createClient(ctx context.Context, configPath string) *hazelcast.Client {
 	config := hazelcast.NewConfig()
 	if configPath != "" {
 		log.Println("Configuration Path : ", configPath)
@@ -141,7 +141,7 @@ func createClient(configPath string) *hazelcast.Client {
 		}
 	}
 	config.Serialization.SetIdentifiedDataSerializableFactories(&Factory{})
-	client, err := hazelcast.StartNewClientWithConfig(config)
+	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -186,9 +186,9 @@ func main() {
 	}
 	log.Println("Duration           : ", dur)
 	log.Println("Goroutine Count    : ", goroutineCount)
-	client := createClient(*configPath)
 	ctx, cancel := context.WithTimeout(context.Background(), dur)
 	defer cancel()
+	client := createClient(ctx, *configPath)
 	testMap, err := client.GetMap(ctx, "-test-map")
 	if err != nil {
 		log.Fatal(err)
@@ -220,7 +220,7 @@ func main() {
 	}
 	displayStats(sts)
 	time.Sleep(10 * time.Second)
-	client.Shutdown()
+	client.Shutdown(ctx)
 	log.Println(strings.Repeat("*", 40))
 	resultText := "SUCCESS"
 	if remainingGoroutines > 0 {

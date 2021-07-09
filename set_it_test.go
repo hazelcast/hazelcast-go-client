@@ -59,7 +59,7 @@ func TestSet_AddListener(t *testing.T) {
 	it.SetTester(t, func(t *testing.T, s *hazelcast.Set) {
 		const targetCallCount = int32(10)
 		callCount := int32(0)
-		subscriptionID, err := s.AddListener(context.Background(), func(event *hazelcast.SetItemNotified) {
+		subscriptionID, err := s.AddItemListener(context.Background(), false, func(event *hazelcast.SetItemNotified) {
 			atomic.AddInt32(&callCount, 1)
 		})
 		if err != nil {
@@ -84,11 +84,11 @@ func TestSet_AddListener(t *testing.T) {
 	})
 }
 
-func TestSet_AddListenerIncludeValue(t *testing.T) {
+func TestSet_AddListener_IncludeValue(t *testing.T) {
 	it.SetTester(t, func(t *testing.T, s *hazelcast.Set) {
 		const targetCallCount = int32(0)
 		callCount := int32(0)
-		subscriptionID, err := s.AddListenerIncludeValue(context.Background(), func(event *hazelcast.SetItemNotified) {
+		subscriptionID, err := s.AddItemListener(context.Background(), true, func(event *hazelcast.SetItemNotified) {
 			fmt.Println("value:", event.Value)
 			atomic.AddInt32(&callCount, 1)
 		})

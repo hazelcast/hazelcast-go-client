@@ -52,18 +52,18 @@ const (
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
-func StartNewClient() (*Client, error) {
-	return StartNewClientWithConfig(NewConfig())
+func StartNewClient(ctx context.Context) (*Client, error) {
+	return StartNewClientWithConfig(ctx, NewConfig())
 }
 
 // StartNewClientWithConfig creates and starts a new client with the given configuration.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
-func StartNewClientWithConfig(config Config) (*Client, error) {
+func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, error) {
 	if client, err := newClient(config); err != nil {
 		return nil, err
-	} else if err = client.start(context.TODO()); err != nil {
+	} else if err = client.start(ctx); err != nil {
 		return nil, err
 	} else {
 		return client, nil
@@ -209,9 +209,7 @@ func (c *Client) start(ctx context.Context) error {
 	}
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
-	c.clusterService.Start()
 	if err := c.connectionManager.Start(ctx, false); err != nil {
-		c.clusterService.Stop()
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
 		return err
@@ -226,13 +224,14 @@ func (c *Client) start(ctx context.Context) error {
 }
 
 // Shutdown disconnects the client from the cluster.
-func (c *Client) Shutdown() error {
+func (c *Client) Shutdown(ctx context.Context) error {
+	// Note that passed context is not used at the moment.
+	// In the future, we may need to block during shutdown, which would require a context.
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
 		return nil
 	}
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
-	c.clusterService.Stop()
 	c.connectionManager.Stop()
 	if c.statsService != nil {
 		c.statsService.Stop()
@@ -382,10 +381,10 @@ func (c *Client) subscribeUserEvents() {
 		c.userEventDispatcher.Publish(event)
 	})
 	c.eventDispatcher.SubscribeSync(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientConnected))
+		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateConnected))
 	})
 	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientDisconnected))
+		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateDisconnected))
 	})
 	c.eventDispatcher.SubscribeSync(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
@@ -483,16 +482,19 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.clusterConfig.Network.ConnectionTimeout))
-	defer cancel()
+	ctx := context.Background()
+	if c.clusterConfig.ConnectionStrategy.ReconnectMode == cluster.ReconnectModeOff {
+		c.logger.Debug(func() string { return "reconnect mode is off, shutting down" })
+		c.Shutdown(ctx)
+		return
+	}
 	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
 	// try to reboot cluster connection
 	c.connectionManager.Stop()
-	c.clusterService.Stop()
-	c.clusterService.Start()
+	c.clusterService.Reset()
 	if err := c.connectionManager.Start(ctx, true); err != nil {
 		c.logger.Errorf("cannot reboot cluster, shutting down: %w", err)
-		c.Shutdown()
+		c.Shutdown(ctx)
 	}
 }
 

@@ -39,11 +39,11 @@ func createDestroyMap(ctx context.Context, client *hazelcast.Client, name string
 }
 
 func main() {
-	client, err := hazelcast.StartNewClient()
+	ctx := context.Background()
+	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx := context.Background()
 	log.Println("Adding the event listener.")
 	subID, err := client.AddDistributedObjectListener(ctx, func(e hazelcast.DistributedObjectNotified) {
 		log.Println(e.EventType, e.ServiceName, e.ObjectName)

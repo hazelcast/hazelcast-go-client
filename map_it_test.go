@@ -187,6 +187,19 @@ func TestMap_Set(t *testing.T) {
 	})
 }
 
+func TestMap_SetWithTTL(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		targetValue := "value"
+		if err := m.SetWithTTL(ctx, "key", targetValue, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
+		time.Sleep(2 * time.Second)
+		assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
+	})
+}
+
 func TestMap_Delete(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
@@ -493,7 +506,7 @@ func TestMap_AddIndexWithConfig(t *testing.T) {
 			Attributes:         []string{"A"},
 			BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
 		}
-		if err := m.AddIndexWithConfig(context.Background(), indexConfig); err != nil {
+		if err := m.AddIndex(context.Background(), indexConfig); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -507,7 +520,7 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 			Attributes:         []string{"A", "B"},
 			BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
 		}
-		if err := m.AddIndexWithConfig(context.Background(), indexConfig); err == nil {
+		if err := m.AddIndex(context.Background(), indexConfig); err == nil {
 			t.Fatalf("should have failed")
 		} else if !errors.Is(err, hzerrors.ErrIllegalArgument) {
 			t.Fatalf("should have returned an illegal argument error")
@@ -526,14 +539,6 @@ func TestMap_Flush(t *testing.T) {
 
 // TODO: Test Map AddInterceptor
 // TODO: Test Map ExecuteOnEntries
-// TODO: Test Map LockWithLease
-// TODO: Test Map SetTTL
-// TODO: Test Map SetWithTTL
-// TODO: Test Map SetWithTTLAndMaxIdle
-// TODO: Test Map TryLock
-// TODO: Test Map TryLockWithLease
-// TODO: Test Map TryLockWithTimeout
-// TODO: Test Map TryLockWithLeaseTimeout
 // TODO: Test Map TryPut
 // TODO: Test Map TryPutWithTimeout
 // TODO: Test Map TryRemove
@@ -583,7 +588,7 @@ func TestMap_LoadAllReplacing(t *testing.T) {
 	})
 }
 
-func TestContextMap_Lock(t *testing.T) {
+func TestMap_Lock(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, cm *hz.Map) {
 		const goroutineCount = 100
 		const key = "counter"
@@ -620,7 +625,7 @@ func TestContextMap_Lock(t *testing.T) {
 	})
 }
 
-func TestContextMap_ForceUnlock(t *testing.T) {
+func TestMap_ForceUnlock(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, cm *hz.Map) {
 		lockCtx := cm.NewLockContext(context.Background())
 		if err := cm.Lock(lockCtx, "k1"); err != nil {
@@ -751,7 +756,9 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 		const totalCallCount = int32(100)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.AddInt32(&callCount, 1)
+			if event.EventType == hz.EntryAdded {
+				atomic.AddInt32(&callCount, 1)
+			}
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
 			IncludeValue: true,
@@ -918,6 +925,135 @@ func TestMap_AggregateWithPredicate(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(1), result)
+	})
+}
+
+func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		targetValue := "value"
+		if err := m.SetWithTTLAndMaxIdle(ctx, "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
+		time.Sleep(4 * time.Second)
+		assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
+	})
+}
+
+func TestMap_TryLock(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		const key = "foo"
+		go func() {
+			ctx := m.NewLockContext(context.Background())
+			it.Must(m.Lock(ctx, key))
+			wg.Done()
+		}()
+		wg.Wait()
+		mainCtx := m.NewLockContext(context.Background())
+		b, err := m.TryLock(mainCtx, key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, b)
+	})
+}
+
+// TODO: Test Map TryLockWithLeaseAndTimeout
+
+func TestMap_LockWithLease(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		const key = "foo"
+		go func() {
+			ctx := m.NewLockContext(context.Background())
+			it.Must(m.LockWithLease(ctx, key, 100*time.Millisecond))
+			wg.Done()
+		}()
+		wg.Wait()
+		mainCtx := m.NewLockContext(context.Background())
+		err := m.Lock(mainCtx, key)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestMap_TryLockWithLease(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		const key = "foo"
+		go func() {
+			ctx := m.NewLockContext(context.Background())
+			if b := it.MustValue(m.TryLockWithLease(ctx, key, 100*time.Millisecond)); b != true {
+				panic("unexpected value")
+			}
+			wg.Done()
+		}()
+		wg.Wait()
+		mainCtx := m.NewLockContext(context.Background())
+		err := m.Lock(mainCtx, key)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestMap_TryLockWithTimeout(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		const key = "foo"
+		go func() {
+			ctx := m.NewLockContext(context.Background())
+			it.Must(m.Lock(ctx, key))
+			wg.Done()
+		}()
+		wg.Wait()
+		mainCtx := m.NewLockContext(context.Background())
+		b, err := m.TryLockWithTimeout(mainCtx, key, 100*time.Millisecond)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, b)
+	})
+}
+
+func TestMap_TryLockWithLeaseAndTimeout(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		wg := &sync.WaitGroup{}
+		wg.Add(1)
+		const key = "foo"
+		go func() {
+			ctx := m.NewLockContext(context.Background())
+			it.Must(m.Lock(ctx, key))
+			wg.Done()
+		}()
+		wg.Wait()
+		mainCtx := m.NewLockContext(context.Background())
+		b, err := m.TryLockWithLeaseAndTimeout(mainCtx, key, 100*time.Millisecond, 200*time.Millisecond)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, b)
+	})
+}
+
+func TestMap_SetTTL(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		targetValue := "value"
+		it.Must(m.Set(ctx, "key", targetValue))
+		if err := m.SetTTL(ctx, "key", 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
+		time.Sleep(2 * time.Second)
+		assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
 	})
 }
 

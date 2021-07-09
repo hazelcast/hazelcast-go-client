@@ -47,6 +47,13 @@ Here are all configuration items with their default values:
 	cc.Cloud.Enabled = false
 	cc.Cloud.Token = ""
 
+	cc.ConnectionStrategy.ReconnectMode = cluster.ReconnectModeOn
+	cc.ConnectionStrategy.Timeout = types.Duration(1<<63 - 1)
+	cc.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1*time.Second)
+	cc.ConnectionStrategy.Retry.MaxBackoff = types.Duration(30*time.Second)
+	cc.ConnectionStrategy.Retry.Multiplier = 1.05
+	cc.ConnectionStrategy.Retry.Jitter = 0.0
+
 	sc := &config.Serialization
 	sc.PortableVersion = 0
 	sc.LittleEndian = false

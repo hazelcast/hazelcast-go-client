@@ -51,10 +51,11 @@ func TopicTesterWithConfigAndName(t *testing.T, makeName func() string, cbCallba
 		config.Cluster.Unisocket = !smart
 		client, tp = getClientTopicWithConfig(makeName(), &config)
 		defer func() {
-			if err := tp.Destroy(context.Background()); err != nil {
+			ctx := context.Background()
+			if err := tp.Destroy(ctx); err != nil {
 				t.Logf("test warning, could not destroy topic: %s", err.Error())
 			}
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("test warning, client not shutdown: %s", err.Error())
 			}
 		}()

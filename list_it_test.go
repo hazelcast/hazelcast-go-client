@@ -34,8 +34,8 @@ func TestList_AddListener(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		const targetCallCount = int32(10)
 		callCount := int32(0)
-		subscriptionID, err := l.AddListener(context.Background(), func(event *hz.ListItemNotified) {
-			if event.EventType == hz.NotifyItemAdded {
+		subscriptionID, err := l.AddListener(context.Background(), false, func(event *hz.ListItemNotified) {
+			if event.EventType == hz.ItemAdded {
 				atomic.AddInt32(&callCount, 1)
 			}
 		})
@@ -62,12 +62,12 @@ func TestList_AddListener(t *testing.T) {
 	})
 }
 
-func TestList_AddListenerIncludeValue(t *testing.T) {
+func TestList_AddListener_IncludeValue(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		const targetCallCount = int32(10)
 		callCount := int32(0)
-		subscriptionID, err := l.AddListenerIncludeValue(context.Background(), func(event *hz.ListItemNotified) {
-			if event.EventType == hz.NotifyItemRemoved {
+		subscriptionID, err := l.AddListener(context.Background(), true, func(event *hz.ListItemNotified) {
+			if event.EventType == hz.ItemRemoved {
 				atomic.AddInt32(&callCount, 1)
 			}
 		})

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -139,19 +140,6 @@ type ConnectionManager struct {
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
 	bundle.Check()
-	// TODO: make circuit breaker configurable
-	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt32),
-		cb.MaxFailureCount(3),
-		cb.RetryPolicy(func(attempt int) time.Duration {
-			if attempt < 10 {
-				return time.Duration((attempt+1)*100) * time.Millisecond
-			}
-			if attempt < 1000 {
-				return time.Duration(attempt*attempt) * time.Millisecond
-			}
-			return 20 * time.Minute
-		}))
 	manager := &ConnectionManager{
 		requestCh:            bundle.RequestCh,
 		responseCh:           bundle.ResponseCh,
@@ -168,7 +156,6 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		connMap:              newConnectionMap(bundle.ClusterConfig.LoadBalancer()),
 		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
-		cb:                   cbr,
 		addrTranslator:       bundle.AddrTranslator,
 	}
 	return manager
@@ -176,6 +163,8 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 
 func (m *ConnectionManager) Start(ctx context.Context, refresh bool) error {
 	m.reset()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.clusterConfig.ConnectionStrategy.Timeout))
+	defer cancel()
 	return m.start(ctx, refresh)
 }
 
@@ -210,12 +199,14 @@ func (m *ConnectionManager) start(ctx context.Context, refresh bool) error {
 }
 
 func (m *ConnectionManager) Stop() {
-	atomic.StoreInt32(&m.state, stopped)
 	m.eventDispatcher.Unsubscribe(EventConnectionClosed, event.MakeSubscriptionID(m.handleConnectionClosed))
 	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
 	m.eventDispatcher.Unsubscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved))
-	m.connMap.CloseAll()
+	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
+		return
+	}
 	close(m.doneCh)
+	m.connMap.CloseAll()
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {
@@ -249,8 +240,14 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 
 func (m *ConnectionManager) reset() {
 	m.doneCh = make(chan struct{}, 1)
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	m.cb = cb.NewCircuitBreaker(
+		cb.MaxRetries(math.MaxInt32),
+		cb.MaxFailureCount(3),
+		cb.RetryPolicy(makeRetryPolicy(r, &m.clusterConfig.ConnectionStrategy.Retry)),
+	)
 	m.startCh = make(chan struct{}, 1)
-	m.connMap = newConnectionMap(m.clusterConfig.LoadBalancer())
+	m.connMap.Reset()
 }
 
 func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
@@ -272,7 +269,7 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 		missingAddrs := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
 		for _, addr := range missingAddrs {
 			if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
-				m.logger.Errorf("connecting addr: %w", err)
+				m.logger.Errorf("connecting address: %w", err)
 			} else {
 				m.logger.Infof("connectionManager member added: %s", addr.String())
 			}
@@ -313,7 +310,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	if respawnConnection {
 		if addr, ok := m.connMap.GetAddrForConnectionID(conn.connectionID); ok {
 			if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
-				m.logger.Errorf("error connecting addr: %w", err)
+				m.logger.Errorf("error connecting address: %w", err)
 				// TODO: add failing addrs to a channel
 			}
 		}
@@ -353,7 +350,9 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context, refresh bool)
 	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		addr, err := m.connectCluster(ctx, refresh)
 		if err != nil {
-			m.logger.Errorf("ConnectionManager: error connecting to cluster, attempt %d: %w", attempt, err)
+			m.logger.Debug(func() string {
+				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt, err.Error())
+			})
 		}
 		return addr, err
 	})
@@ -496,7 +495,12 @@ func (m *ConnectionManager) heartbeat() {
 func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
-	m.requestCh <- inv
+	select {
+	case m.requestCh <- inv:
+	case <-time.After(time.Duration(m.clusterConfig.HeartbeatInterval)):
+		return
+	}
+
 }
 
 func (m *ConnectionManager) logStatus() {
@@ -568,6 +572,13 @@ func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
 		addrToConn: map[pubcluster.Address]*Connection{},
 		connToAddr: map[int64]pubcluster.Address{},
 	}
+}
+
+func (m *connectionMap) Reset() {
+	m.mu.Lock()
+	m.addrToConn = map[pubcluster.Address]*Connection{}
+	m.connToAddr = map[int64]pubcluster.Address{}
+	m.mu.Unlock()
 }
 
 func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {

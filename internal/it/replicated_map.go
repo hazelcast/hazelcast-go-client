@@ -56,10 +56,11 @@ func ReplicatedMapTesterWithConfigAndName(t *testing.T, makeMapName func() strin
 		config.Cluster.Unisocket = !smart
 		client, m = getClientReplicatedMapWithConfig(makeMapName(), &config)
 		defer func() {
-			if err := m.Destroy(context.Background()); err != nil {
+			ctx := context.Background()
+			if err := m.Destroy(ctx); err != nil {
 				t.Logf("test warning, could not destroy replicated map: %s", err.Error())
 			}
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("test warning, client not shutdown: %s", err.Error())
 			}
 		}()

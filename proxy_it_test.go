@@ -48,8 +48,9 @@ func retryResult(t *testing.T, redo bool, target bool) {
 	cluster := it.StartNewCluster(1)
 	config := cluster.DefaultConfig()
 	config.Cluster.RedoOperation = redo
-	client := it.MustClient(hz.StartNewClientWithConfig(config))
-	m := it.MustValue(client.GetMap(context.TODO(), "redo-test")).(*hz.Map)
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	m := it.MustValue(client.GetMap(ctx, "redo-test")).(*hz.Map)
 	// shutdown the cluster and try again
 	cluster.Shutdown()
 	okCh := make(chan bool)

@@ -94,7 +94,7 @@ func TestReplicatedMap_GetEntrySet(t *testing.T) {
 			types.NewEntry("k2", "v2"),
 			types.NewEntry("k3", "v3"),
 		}
-		if err := m.PutAll(context.Background(), target); err != nil {
+		if err := m.PutAll(context.Background(), target...); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Second)
@@ -128,6 +128,7 @@ func TestReplicatedMap_GetValues(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.MustValue(m.Put(context.Background(), "k2", "v2"))
 		it.MustValue(m.Put(context.Background(), "k3", "v3"))
+		time.Sleep(1 * time.Second)
 		it.AssertEquals(t, "v1", it.MustValue(m.Get(context.Background(), "k1")))
 		it.AssertEquals(t, "v2", it.MustValue(m.Get(context.Background(), "k2")))
 		it.AssertEquals(t, "v3", it.MustValue(m.Get(context.Background(), "k3")))

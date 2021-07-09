@@ -47,9 +47,9 @@ func TestClientLifecycleEvents(t *testing.T) {
 				t.Logf("Received shutting down state")
 			case hz.LifecycleStateShutDown:
 				t.Logf("Received shut down state")
-			case hz.LifecycleStateClientConnected:
+			case hz.LifecycleStateConnected:
 				t.Logf("Received client connected state")
-			case hz.LifecycleStateClientDisconnected:
+			case hz.LifecycleStateDisconnected:
 				t.Logf("Received client disconnected state")
 			default:
 				t.Log("Received unknown state:", event.State)
@@ -64,13 +64,13 @@ func TestClientLifecycleEvents(t *testing.T) {
 			receivedStatesMu.Unlock()
 		}()
 		time.Sleep(1 * time.Millisecond)
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Millisecond)
 		targetStates := []hz.LifecycleState{
 			hz.LifecycleStateStarting,
-			hz.LifecycleStateClientConnected,
+			hz.LifecycleStateConnected,
 			hz.LifecycleStateStarted,
 			hz.LifecycleStateShuttingDown,
 			hz.LifecycleStateShutDown,
@@ -86,7 +86,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 func TestClientRunning(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		assert.True(t, client.Running())
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		assert.False(t, client.Running())
@@ -129,10 +129,10 @@ func TestClientHeartbeat(t *testing.T) {
 
 func TestClient_Shutdown(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatalf("shutting down second time should not return an error")
 		}
 	})
@@ -146,7 +146,7 @@ func TestClientShutdownRace(t *testing.T) {
 		for i := 0; i < goroutineCount; i++ {
 			go func() {
 				defer wg.Done()
-				client.Shutdown()
+				client.Shutdown(context.Background())
 			}()
 		}
 		wg.Wait()
@@ -212,4 +212,112 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		}
 		mu.Unlock()
 	})
+}
+
+func TestClusterReconnection_ShutdownCluster(t *testing.T) {
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
+	mu := &sync.Mutex{}
+	events := []hz.LifecycleState{}
+	config := cls.DefaultConfig()
+	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+		mu.Lock()
+		events = append(events, event.State)
+		mu.Unlock()
+	})
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Second)
+	cls.Shutdown()
+	time.Sleep(5 * time.Second)
+	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
+	time.Sleep(5 * time.Second)
+	cls.Shutdown()
+	c.Shutdown(ctx)
+	mu.Lock()
+	defer mu.Unlock()
+	target := []hz.LifecycleState{
+		hz.LifecycleStateStarting,
+		hz.LifecycleStateConnected,
+		hz.LifecycleStateStarted,
+		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateConnected,
+		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateShuttingDown,
+		hz.LifecycleStateShutDown,
+	}
+	t.Logf("target : %v", target)
+	t.Logf("events : %v", events)
+	assert.Equal(t, target, events)
+}
+
+func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	mu := &sync.Mutex{}
+	var events []hz.LifecycleState
+	config := cls.DefaultConfig()
+	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+		mu.Lock()
+		events = append(events, event.State)
+		mu.Unlock()
+	})
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Second)
+
+	// start shutting down members one by one
+	for _, uuid := range cls.MemberUUIDs {
+		time.Sleep(1 * time.Second)
+		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
+	}
+	time.Sleep(1 * time.Second)
+	cls.Shutdown()
+	time.Sleep(1 * time.Second)
+
+	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	time.Sleep(5 * time.Second)
+	// start shutting down members one by one
+	for _, uuid := range cls.MemberUUIDs {
+		time.Sleep(1 * time.Second)
+		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
+	}
+	time.Sleep(1 * time.Second)
+	c.Shutdown(ctx)
+
+	mu.Lock()
+	defer mu.Unlock()
+	target := []hz.LifecycleState{
+		hz.LifecycleStateStarting,
+		hz.LifecycleStateConnected,
+		hz.LifecycleStateStarted,
+		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateConnected,
+		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateShuttingDown,
+		hz.LifecycleStateShutDown,
+	}
+	t.Logf("target : %v", target)
+	t.Logf("events : %v", events)
+	assert.Equal(t, target, events)
+}
+
+func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
+	config := cls.DefaultConfig()
+	config.Cluster.ConnectionStrategy.ReconnectMode = cluster.ReconnectModeOff
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(2 * time.Second)
+	cls.Shutdown()
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, false, c.Running())
 }

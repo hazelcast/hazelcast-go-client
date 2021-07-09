@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -52,8 +53,8 @@ func (c *NetworkConfig) Validate() error {
 			}
 		}
 	}
-	if c.ConnectionTimeout <= 0 {
-		c.ConnectionTimeout = types.Duration(5 * time.Second)
+	if err := validate.NonNegativeDuration(&c.ConnectionTimeout, 5*time.Second, "invalid connection timeout"); err != nil {
+		return err
 	}
 	return nil
 }

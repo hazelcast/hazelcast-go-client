@@ -52,10 +52,11 @@ func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configC
 		config.Cluster.Unisocket = !smart
 		client, q = getClientQueueWithConfig(queueName(), &config)
 		defer func() {
-			if err := q.Destroy(context.Background()); err != nil {
+			ctx := context.Background()
+			if err := q.Destroy(ctx); err != nil {
 				t.Logf("test warning, could not destroy queue: %s", err.Error())
 			}
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("test warning, client not shutdown: %s", err.Error())
 			}
 		}()

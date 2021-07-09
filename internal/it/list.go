@@ -52,10 +52,11 @@ func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallbac
 		config.Cluster.Unisocket = !smart
 		client, l = getClientListWithConfig(listName(), &config)
 		defer func() {
-			if err := l.Destroy(context.Background()); err != nil {
+			ctx := context.Background()
+			if err := l.Destroy(ctx); err != nil {
 				t.Logf("test warning, could not destroy list: %s", err.Error())
 			}
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("test warning, client not shutdown: %s", err.Error())
 			}
 		}()

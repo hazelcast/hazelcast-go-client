@@ -32,7 +32,7 @@ func TestTopic_Publish(t *testing.T) {
 	it.TopicTester(t, func(t *testing.T, tp *hz.Topic) {
 		handlerValue := atomic.Value{}
 		handlerValue.Store("base-value")
-		subscriptionID, err := tp.AddListener(context.Background(), func(event *hz.MessagePublished) {
+		subscriptionID, err := tp.AddMessageListener(context.Background(), func(event *hz.MessagePublished) {
 			handlerValue.Store("value1")
 		})
 		if err != nil {
@@ -57,7 +57,7 @@ func TestTopic_Publish(t *testing.T) {
 func TestTopic_PublishAll(t *testing.T) {
 	it.TopicTester(t, func(t *testing.T, tp *hz.Topic) {
 		handlerValue := int32(0)
-		subscriptionID, err := tp.AddListener(context.Background(), func(event *hz.MessagePublished) {
+		subscriptionID, err := tp.AddMessageListener(context.Background(), func(event *hz.MessagePublished) {
 			atomic.AddInt32(&handlerValue, 1)
 		})
 		if err != nil {

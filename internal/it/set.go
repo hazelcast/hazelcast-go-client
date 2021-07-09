@@ -56,10 +56,11 @@ func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCall
 		config.Cluster.Unisocket = !smart
 		client, s = GetClientSetWithConfig(makeName(), &config)
 		defer func() {
-			if err := s.Destroy(context.Background()); err != nil {
+			ctx := context.Background()
+			if err := s.Destroy(ctx); err != nil {
 				t.Logf("test warning, could not destroy set: %s", err.Error())
 			}
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()

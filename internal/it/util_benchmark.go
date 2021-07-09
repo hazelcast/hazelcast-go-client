@@ -85,8 +85,9 @@ func MapBenchmarkerWithConfigAndName(b *testing.B, makeMapName func() string, cb
 	runner := func(b *testing.B, smart bool) {
 		client, m = getMap(makeMapName(), cbCallback, smart)
 		defer func() {
-			m.EvictAll(context.Background())
-			if err := client.Shutdown(); err != nil {
+			ctx := context.Background()
+			m.EvictAll(ctx)
+			if err := client.Shutdown(ctx); err != nil {
 				b.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
@@ -101,8 +102,9 @@ func MapBenchmarkerWithConfigAndName(b *testing.B, makeMapName func() string, cb
 		for i := 0; i < warmups; i++ {
 			f(b, m)
 		}
-		m.EvictAll(context.Background())
-		client.Shutdown()
+		ctx := context.Background()
+		m.EvictAll(ctx)
+		client.Shutdown(ctx)
 	}
 	if SmartEnabled() {
 		b.Run("Smart Client", func(b *testing.B) {
