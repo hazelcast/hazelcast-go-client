@@ -157,9 +157,6 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
 		addrTranslator:       bundle.AddrTranslator,
-		// creating a buffered channel with size 10 in order to not having to close it.
-		// need to adjust it for the number of goroutines.
-		doneCh: make(chan struct{}, 10),
 	}
 	return manager
 }
@@ -208,7 +205,7 @@ func (m *ConnectionManager) Stop() {
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
 		return
 	}
-	m.doneCh <- struct{}{}
+	close(m.doneCh)
 	m.connMap.CloseAll()
 }
 
@@ -242,6 +239,7 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 }
 
 func (m *ConnectionManager) reset() {
+	m.doneCh = make(chan struct{}, 1)
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	m.cb = cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
@@ -497,7 +495,12 @@ func (m *ConnectionManager) heartbeat() {
 func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
-	m.requestCh <- inv
+	select {
+	case m.requestCh <- inv:
+	case <-time.After(time.Duration(m.clusterConfig.HeartbeatInterval)):
+		return
+	}
+
 }
 
 func (m *ConnectionManager) logStatus() {
