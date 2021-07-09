@@ -26,12 +26,16 @@ import (
 )
 
 func makeRetryPolicy(r *rand.Rand, config *cluster.ConnectionRetryConfig) cb.RetryPolicyFunc {
-	backoff := int64(minDuration(config.MaxBackoff, config.InitialBackoff))
+	backoff := minDuration(config.MaxBackoff, config.InitialBackoff)
 	jitter := config.Jitter
 	multiplier := config.Multiplier
+	maxBackOff := config.MaxBackoff
 	return func(attempt int) time.Duration {
 		d1 := float64(backoff) + float64(backoff)*jitter*(2.0*r.Float64()-1.0)
-		backoff = int64(float64(backoff) * multiplier)
+		backoff = types.Duration(float64(backoff) * multiplier)
+		if backoff > maxBackOff {
+			backoff = maxBackOff
+		}
 		return time.Duration(d1)
 	}
 }

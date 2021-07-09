@@ -19,10 +19,12 @@ package cluster
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestMakeRetryPolicy(t *testing.T) {
@@ -35,6 +37,21 @@ func TestMakeRetryPolicy(t *testing.T) {
 		ts = append(ts, f(i).Milliseconds())
 	}
 	target := []int64{1000, 1050, 1102, 1157, 1215, 1276, 1340, 1407, 1477, 1551}
+	assert.Equal(t, target, ts)
+}
+
+func TestMakeRetryPolicy_WithMaxBackoff(t *testing.T) {
+	config := &cluster.ConnectionRetryConfig{
+		MaxBackoff: types.Duration(1100 * time.Millisecond),
+	}
+	config.Validate()
+	r := rand.New(rand.NewSource(1))
+	f := makeRetryPolicy(r, config)
+	var ts []int64
+	for i := 0; i < 10; i++ {
+		ts = append(ts, f(i).Milliseconds())
+	}
+	target := []int64{1000, 1050, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100}
 	assert.Equal(t, target, ts)
 }
 
