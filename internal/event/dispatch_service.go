@@ -19,6 +19,8 @@ package event
 import (
 	"fmt"
 	"sync/atomic"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 const DefaultSubscriptionID = -1
@@ -51,22 +53,24 @@ type controlMessage struct {
 }
 
 type DispatchService struct {
-	subscriptions     map[string]map[int64]Handler
+	logger            logger.Logger
 	syncSubscriptions map[string]map[int64]Handler
 	eventCh           chan Event
 	controlCh         chan controlMessage
 	doneCh            chan struct{}
+	subscriptions     map[string]map[int64]Handler
 	state             int32
 }
 
-func NewDispatchService() *DispatchService {
+func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
 		subscriptions:     map[string]map[int64]Handler{},
 		syncSubscriptions: map[string]map[int64]Handler{},
-		eventCh:           make(chan Event, 1),
-		controlCh:         make(chan controlMessage, 1),
+		eventCh:           make(chan Event, 1024),
+		controlCh:         make(chan controlMessage, 1024),
 		doneCh:            make(chan struct{}),
 		state:             created,
+		logger:            logger,
 	}
 	startCh := make(chan struct{})
 	go service.start(startCh)
@@ -93,6 +97,9 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 	if subscriptionID == DefaultSubscriptionID {
 		subscriptionID = MakeSubscriptionID(handler)
 	}
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.Subscribe: %s, %d, %v", eventName, subscriptionID, handler)
+	})
 	s.controlCh <- controlMessage{
 		controlType:    subscribe,
 		eventName:      eventName,
@@ -112,6 +119,9 @@ func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, 
 	if subscriptionID == DefaultSubscriptionID {
 		subscriptionID = MakeSubscriptionID(handler)
 	}
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.SubscribeSync: %s, %d, %v", eventName, subscriptionID, handler)
+	})
 	s.controlCh <- controlMessage{
 		controlType:    subscribeSync,
 		eventName:      eventName,
@@ -125,6 +135,9 @@ func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
 	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.Unsubscribe: %s, %d", eventName, subscriptionID)
+	})
 	s.controlCh <- controlMessage{
 		// TODO: rename controlType
 		controlType:    unsubscribe,
@@ -138,6 +151,9 @@ func (s *DispatchService) Publish(event Event) {
 	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
+	})
 	s.eventCh <- event
 }
 
@@ -165,6 +181,9 @@ func (s *DispatchService) start(startCh chan<- struct{}) {
 }
 
 func (s *DispatchService) dispatch(event Event) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.dispatch: %s", event.EventName())
+	})
 	// first dispatch sync handlers
 	if handlers, ok := s.syncSubscriptions[event.EventName()]; ok {
 		for _, handler := range handlers {
@@ -180,6 +199,9 @@ func (s *DispatchService) dispatch(event Event) {
 }
 
 func (s *DispatchService) subscribe(eventName string, subscriptionID int64, handler Handler) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.subscribe: %s, %d", eventName, subscriptionID)
+	})
 	subscriptionHandlers, ok := s.subscriptions[eventName]
 	if !ok {
 		subscriptionHandlers = map[int64]Handler{}
@@ -189,6 +211,9 @@ func (s *DispatchService) subscribe(eventName string, subscriptionID int64, hand
 }
 
 func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, handler Handler) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.subscribeSync: %s, %d", eventName, subscriptionID)
+	})
 	subscriptionHandlers, ok := s.syncSubscriptions[eventName]
 	if !ok {
 		subscriptionHandlers = map[int64]Handler{}
@@ -197,19 +222,22 @@ func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, 
 	subscriptionHandlers[subscriptionID] = handler
 }
 
-func (s *DispatchService) unsubscribe(eventName string, unsubscribeSubscriptionID int64) {
+func (s *DispatchService) unsubscribe(eventName string, subscriptionID int64) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("event.DispatchService.unsubscribe: %s, %d", eventName, subscriptionID)
+	})
 	if handlers, ok := s.syncSubscriptions[eventName]; ok {
-		for subscriptionID := range handlers {
-			if subscriptionID == unsubscribeSubscriptionID {
-				delete(handlers, subscriptionID)
+		for sid := range handlers {
+			if sid == subscriptionID {
+				delete(handlers, sid)
 				return
 			}
 		}
 	}
 	if handlers, ok := s.subscriptions[eventName]; ok {
-		for subscriptionID := range handlers {
-			if subscriptionID == unsubscribeSubscriptionID {
-				delete(handlers, subscriptionID)
+		for sid := range handlers {
+			if sid == subscriptionID {
+				delete(handlers, sid)
 				break
 			}
 		}

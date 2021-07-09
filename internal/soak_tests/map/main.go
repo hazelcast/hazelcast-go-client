@@ -113,7 +113,7 @@ func displayStats(sts []*Stats) {
 		}
 	}
 	if len(hanged) == 0 {
-		log.Println("All goroutines worked without hanging")
+		log.Println("All goroutines worked without blocking")
 	} else {
 		log.Printf("%d goroutines hanged with ids: %v", len(hanged), hanged)
 	}
@@ -222,7 +222,11 @@ func main() {
 	time.Sleep(10 * time.Second)
 	client.Shutdown()
 	log.Println(strings.Repeat("*", 40))
-	log.Println("Soak test finished with SUCCESS.")
+	resultText := "SUCCESS"
+	if remainingGoroutines > 0 {
+		resultText = "FAILURE"
+	}
+	log.Printf("Soak test finished with %s.\n", resultText)
 	log.Printf("Remaining goroutine count: %d", remainingGoroutines)
 	log.Println(strings.Repeat("-", 40))
 }

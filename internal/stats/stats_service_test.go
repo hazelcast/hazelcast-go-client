@@ -31,9 +31,9 @@ import (
 )
 
 func TestNewService(t *testing.T) {
-	ed := event.NewDispatchService()
-	requestCh := make(chan invocation.Invocation, 1)
 	lg := logger.New()
+	ed := event.NewDispatchService(lg)
+	requestCh := make(chan invocation.Invocation, 1)
 	config := hazelcast.NewConfig()
 	invFac := cluster.NewConnectionInvocationFactory(&config.Cluster)
 	srv := stats.NewService(requestCh, invFac, ed, lg, 100*time.Millisecond, "hz1")

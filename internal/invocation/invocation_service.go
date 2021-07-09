@@ -24,12 +24,13 @@ import (
 )
 
 type Handler interface {
-	Invoke(invocation Invocation) error
+	Invoke(invocation Invocation) (groupID int64, err error)
 }
 
 type Service struct {
-	requestCh  <-chan Invocation
-	responseCh <-chan *proto.ClientMessage
+	requestCh       <-chan Invocation
+	urgentRequestCh <-chan Invocation
+	responseCh      <-chan *proto.ClientMessage
 	// removeCh carries correlationIDs to be removed
 	removeCh    <-chan int64
 	doneCh      chan struct{}
@@ -40,18 +41,20 @@ type Service struct {
 
 func NewService(
 	requestCh <-chan Invocation,
+	urgentRequestCh <-chan Invocation,
 	responseCh <-chan *proto.ClientMessage,
 	removeCh <-chan int64,
 	handler Handler,
 	logger ilogger.Logger) *Service {
 	service := &Service{
-		requestCh:   requestCh,
-		responseCh:  responseCh,
-		removeCh:    removeCh,
-		doneCh:      make(chan struct{}),
-		invocations: map[int64]Invocation{},
-		handler:     handler,
-		logger:      logger,
+		requestCh:       requestCh,
+		urgentRequestCh: urgentRequestCh,
+		responseCh:      responseCh,
+		removeCh:        removeCh,
+		doneCh:          make(chan struct{}),
+		invocations:     map[int64]Invocation{},
+		handler:         handler,
+		logger:          logger,
 	}
 	go service.processIncoming()
 	return service
@@ -71,6 +74,8 @@ loop:
 		select {
 		case inv := <-s.requestCh:
 			s.sendInvocation(inv)
+		case inv := <-s.urgentRequestCh:
+			s.sendInvocation(inv)
 		case msg := <-s.responseCh:
 			s.handleClientMessage(msg)
 		case id := <-s.removeCh:
@@ -87,9 +92,13 @@ loop:
 }
 
 func (s *Service) sendInvocation(invocation Invocation) {
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("invocation.Service.sendInvocation correlationID: %d", invocation.Request().CorrelationID())
+	})
 	s.registerInvocation(invocation)
-	if err := s.handler.Invoke(invocation); err != nil {
-		s.handleError(invocation.Request().CorrelationID(), err)
+	corrID := invocation.Request().CorrelationID()
+	if _, err := s.handler.Invoke(invocation); err != nil {
+		s.handleError(corrID, err)
 	}
 }
 
