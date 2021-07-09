@@ -64,7 +64,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 			receivedStatesMu.Unlock()
 		}()
 		time.Sleep(1 * time.Millisecond)
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		time.Sleep(1 * time.Millisecond)
@@ -86,7 +86,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 func TestClientRunning(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		assert.True(t, client.Running())
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
 		assert.False(t, client.Running())
@@ -129,10 +129,10 @@ func TestClientHeartbeat(t *testing.T) {
 
 func TestClient_Shutdown(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
-		if err := client.Shutdown(); err != nil {
+		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatalf("shutting down second time should not return an error")
 		}
 	})
@@ -146,7 +146,7 @@ func TestClientShutdownRace(t *testing.T) {
 		for i := 0; i < goroutineCount; i++ {
 			go func() {
 				defer wg.Done()
-				client.Shutdown()
+				client.Shutdown(context.Background())
 			}()
 		}
 		wg.Wait()

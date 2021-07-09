@@ -52,18 +52,18 @@ const (
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
-func StartNewClient() (*Client, error) {
-	return StartNewClientWithConfig(NewConfig())
+func StartNewClient(ctx context.Context) (*Client, error) {
+	return StartNewClientWithConfig(ctx, NewConfig())
 }
 
 // StartNewClientWithConfig creates and starts a new client with the given configuration.
 // Hazelcast client enables you to do all Hazelcast operations without
 // being a member of the cluster. It connects to one or more of the
 // cluster members and delegates all cluster wide operations to them.
-func StartNewClientWithConfig(config Config) (*Client, error) {
+func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, error) {
 	if client, err := newClient(config); err != nil {
 		return nil, err
-	} else if err = client.start(context.TODO()); err != nil {
+	} else if err = client.start(ctx); err != nil {
 		return nil, err
 	} else {
 		return client, nil
@@ -226,7 +226,9 @@ func (c *Client) start(ctx context.Context) error {
 }
 
 // Shutdown disconnects the client from the cluster.
-func (c *Client) Shutdown() error {
+func (c *Client) Shutdown(ctx context.Context) error {
+	// Note that passed context is not used at the moment.
+	// In the future, we may need to block during shutdown, which would require a context.
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
 		return nil
 	}
@@ -491,7 +493,7 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	c.clusterService.Start()
 	if err := c.connectionManager.Start(ctx, true); err != nil {
 		c.logger.Errorf("cannot reboot cluster, shutting down: %w", err)
-		c.Shutdown()
+		c.Shutdown(ctx)
 	}
 }
 

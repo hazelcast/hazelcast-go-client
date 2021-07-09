@@ -82,9 +82,10 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 		}
 		config.Logger.Level = logLevel
 		config.Cluster.Unisocket = !smart
-		client := MustClient(hz.StartNewClientWithConfig(config))
+		ctx := context.Background()
+		client := MustClient(hz.StartNewClientWithConfig(ctx, config))
 		defer func() {
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
@@ -354,7 +355,7 @@ func getLoggerLevel() logger.Level {
 
 func getDefaultClient(config *hz.Config) *hz.Client {
 	config.Logger.Level = getLoggerLevel()
-	client, err := hz.StartNewClientWithConfig(*config)
+	client, err := hz.StartNewClientWithConfig(context.Background(), *config)
 	if err != nil {
 		panic(err)
 	}

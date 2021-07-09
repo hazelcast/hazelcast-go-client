@@ -37,14 +37,14 @@ func makeKeyValue(i int) (key string, value string) {
 	return
 }
 
-func getClient() *hazelcast.Client {
+func getClient(ctx context.Context) *hazelcast.Client {
 	config := hazelcast.NewConfig()
 	config.Logger.Level = loggingLevel
 	config.Cluster.Name = clusterName
 	cc := &config.Cluster.Cloud
 	cc.Enabled = true
 	cc.Token = token
-	client, err := hazelcast.StartNewClientWithConfig(config)
+	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,8 +52,8 @@ func getClient() *hazelcast.Client {
 }
 
 func main() {
-	ctx := context.Background()
-	client := getClient()
+	ctx := context.TODO()
+	client := getClient(ctx)
 	m, err := client.GetMap(ctx, "sample-map")
 	if err != nil {
 		log.Fatal(err)
@@ -78,7 +78,7 @@ func main() {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	if err = client.Shutdown(); err != nil {
+	if err = client.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
 }

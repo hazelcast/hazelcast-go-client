@@ -105,36 +105,37 @@ func main() {
 	config.Serialization.SetClassDefinitions(classDefinition)
 
 	// start the client with the given configuration
-	client, err := hazelcast.StartNewClientWithConfig(config)
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// retrieve a map
-	m, err := client.GetMap(context.Background(), "example")
+	m, err := client.GetMap(ctx, "example")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// set / get portable serialized value
 	employee := &EmployeePortable{Name: "Jane Doe", Age: 30}
-	if err := m.Set(context.Background(), "employee", employee); err != nil {
+	if err := m.Set(ctx, "employee", employee); err != nil {
 		log.Fatal(err)
 	}
-	if v, err := m.Get(context.Background(), "employee"); err != nil {
+	if v, err := m.Get(ctx, "employee"); err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println(v)
 	}
 	// set / get portable serialized nullable value
 	baseObj := &BaseObject{Employee: employee}
-	if err := m.Set(context.Background(), "base-obj", baseObj); err != nil {
+	if err := m.Set(ctx, "base-obj", baseObj); err != nil {
 		log.Fatal(err)
 	}
-	if v, err := m.Get(context.Background(), "base-obj"); err != nil {
+	if v, err := m.Get(ctx, "base-obj"); err != nil {
 		log.Fatal(err)
 	} else {
 		fmt.Println(v)
 	}
 	// stop the client
 	time.Sleep(1 * time.Second)
-	client.Shutdown()
+	client.Shutdown(ctx)
 }

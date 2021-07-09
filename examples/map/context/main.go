@@ -64,17 +64,18 @@ func fetchAndSave(ctx context.Context, m *hazelcast.Map, url string) error {
 
 func main() {
 	// create and start the Hazelcast client
-	client, err := hazelcast.StartNewClient()
+	ctx := context.Background()
+	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	m, err := client.GetMap(context.Background(), "foo")
+	m, err := client.GetMap(ctx, "foo")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// create the context
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// scrape some JSON documents
@@ -90,5 +91,5 @@ func main() {
 	}
 
 	// shutdown the client to release resources
-	client.Shutdown()
+	client.Shutdown(ctx)
 }

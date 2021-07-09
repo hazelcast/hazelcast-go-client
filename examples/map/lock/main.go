@@ -65,14 +65,15 @@ func main() {
 	const key = "counter"
 
 	// Start the client with defaults
-	client, err := hazelcast.StartNewClient()
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Get a random map.
 	rand.Seed(time.Now().Unix())
 	mapName := fmt.Sprintf("sample-%d", rand.Int())
-	myMap, err := client.GetMap(context.Background(), mapName)
+	myMap, err := client.GetMap(ctx, mapName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,5 +92,5 @@ func main() {
 	} else {
 		fmt.Println("lastValue", lastValue)
 	}
-	client.Shutdown()
+	client.Shutdown(ctx)
 }

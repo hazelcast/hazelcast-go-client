@@ -1,5 +1,3 @@
-// +build noos
-
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
@@ -34,31 +32,32 @@ func Example() {
 	config.Cluster.Name = "my-cluster"
 	config.Cluster.Network.SetAddresses("192.168.1.42:5000", "192.168.1.42:5001")
 	// Start the client with the configuration provider.
-	client, err := hazelcast.StartNewClientWithConfig(config)
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Retrieve a map.
-	peopleMap, err := client.GetMap(context.TODO(), "people")
+	peopleMap, err := client.GetMap(ctx, "people")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Call map functions.
-	err = peopleMap.Set(context.TODO(), "jane", "doe")
+	err = peopleMap.Set(ctx, "jane", "doe")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Stop the client once you are done with it.
-	client.Shutdown()
+	client.Shutdown(ctx)
 }
 
 func ExampleSet() {
 	// Create the Hazelcast client.
-	client, err := hazelcast.StartNewClient()
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx := context.Background()
 	// Retrieve the set named my-set
 	set, err := client.GetSet(ctx, "my-set")
 	if err != nil {
@@ -80,11 +79,11 @@ func ExampleSet() {
 
 func ExamplePNCounter() {
 	// Create the Hazelcast client.
-	client, err := hazelcast.StartNewClient()
+	ctx := context.Background()
+	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx := context.Background()
 	// Retrieve the PN counter named my-pn
 	pn, err := client.GetPNCounter(ctx, "my-pn")
 	if err != nil {
@@ -106,11 +105,11 @@ func ExamplePNCounter() {
 
 func ExampleMap_Aggregate() {
 	// Create the Hazelcast client.
-	client, err := hazelcast.StartNewClient()
+	ctx := context.Background()
+	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx := context.Background()
 	myMap, err := client.GetMap(ctx, "my-map")
 	if err != nil {
 		log.Fatal(err)

@@ -55,10 +55,11 @@ func MapTesterWithConfigAndName(t *testing.T, makeMapName func() string, configC
 		config.Cluster.Unisocket = !smart
 		client, m = GetClientMapWithConfig(makeMapName(), &config)
 		defer func() {
-			if err := m.Destroy(context.Background()); err != nil {
+			ctx := context.Background()
+			if err := m.Destroy(ctx); err != nil {
 				t.Logf("test warning, could not destroy map: %s", err.Error())
 			}
-			if err := client.Shutdown(); err != nil {
+			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
