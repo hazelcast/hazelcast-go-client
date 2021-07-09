@@ -19,8 +19,11 @@ package validationutil
 import (
 	"fmt"
 	"math"
+	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func ValidateAsNonNegativeInt32(n int) (int32, error) {
@@ -31,4 +34,14 @@ func ValidateAsNonNegativeInt32(n int) (int32, error) {
 		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("signed 32-bit integer number expected: %d", n), nil)
 	}
 	return int32(n), nil
+}
+
+func NonNegativeDuration(v *types.Duration, d time.Duration, msg string) error {
+	if *v < 0 {
+		return fmt.Errorf("%s: %w", msg, hzerrors.ErrIllegalArgument)
+	}
+	if *v == 0 {
+		*v = types.Duration(d)
+	}
+	return nil
 }

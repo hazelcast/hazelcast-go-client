@@ -17,8 +17,11 @@
 package cluster
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -33,9 +36,8 @@ func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {
 }
 
 func (c *ConnectionStrategyConfig) Validate() error {
-	if c.Timeout <= 0 {
-		// maximum duration
-		c.Timeout = types.Duration(1<<63 - 1)
+	if err := validate.NonNegativeDuration(&c.Timeout, 1<<63-1, "invalid timeout"); err != nil {
+		return err
 	}
 	return c.Retry.Validate()
 }
@@ -52,14 +54,17 @@ func (c ConnectionRetryConfig) Clone() ConnectionRetryConfig {
 }
 
 func (c *ConnectionRetryConfig) Validate() error {
-	if c.InitialBackoff <= 0 {
-		c.InitialBackoff = types.Duration(1 * time.Second)
+	if err := validate.NonNegativeDuration(&c.InitialBackoff, 1*time.Second, "invalid initial backoff"); err != nil {
+		return err
 	}
-	if c.MaxBackoff <= 0 {
-		c.MaxBackoff = types.Duration(30 * time.Second)
+	if err := validate.NonNegativeDuration(&c.MaxBackoff, 30*time.Second, "invalid max backoff"); err != nil {
+		return err
 	}
-	if c.Multiplier <= 0 {
+	if c.Multiplier == 0 {
 		c.Multiplier = 1.05
+	}
+	if c.Multiplier < 1.0 {
+		return fmt.Errorf("invalid multiplier: %w", hzerrors.ErrIllegalArgument)
 	}
 	return nil
 }

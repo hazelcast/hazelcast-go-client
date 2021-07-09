@@ -381,10 +381,10 @@ func (c *Client) subscribeUserEvents() {
 		c.userEventDispatcher.Publish(event)
 	})
 	c.eventDispatcher.SubscribeSync(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientConnected))
+		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateConnected))
 	})
 	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateClientDisconnected))
+		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateDisconnected))
 	})
 	c.eventDispatcher.SubscribeSync(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)

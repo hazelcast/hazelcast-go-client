@@ -108,9 +108,9 @@ func (s LifecycleState) String() string {
 		return "shutting down"
 	case LifecycleStateShutDown:
 		return "shutdown"
-	case LifecycleStateClientConnected:
+	case LifecycleStateConnected:
 		return "client connected"
-	case LifecycleStateClientDisconnected:
+	case LifecycleStateDisconnected:
 		return "client disconnected"
 	default:
 		return "UNKNOWN"
@@ -126,10 +126,10 @@ const (
 	LifecycleStateShuttingDown
 	// LifecycleStateShutDown signals that the client shut down.
 	LifecycleStateShutDown
-	// LifecycleStateClientConnected signals that the client connected to the cluster.
-	LifecycleStateClientConnected
-	// LifecycleStateClientDisconnected signals that the client disconnected from the cluster.
-	LifecycleStateClientDisconnected
+	// LifecycleStateConnected signals that the client connected to the cluster.
+	LifecycleStateConnected
+	// LifecycleStateDisconnected signals that the client disconnected from the cluster.
+	LifecycleStateDisconnected
 )
 
 type LifecycleStateChangeHandler func(event LifecycleStateChanged)

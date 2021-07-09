@@ -47,9 +47,9 @@ func TestClientLifecycleEvents(t *testing.T) {
 				t.Logf("Received shutting down state")
 			case hz.LifecycleStateShutDown:
 				t.Logf("Received shut down state")
-			case hz.LifecycleStateClientConnected:
+			case hz.LifecycleStateConnected:
 				t.Logf("Received client connected state")
-			case hz.LifecycleStateClientDisconnected:
+			case hz.LifecycleStateDisconnected:
 				t.Logf("Received client disconnected state")
 			default:
 				t.Log("Received unknown state:", event.State)
@@ -70,7 +70,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 		time.Sleep(1 * time.Millisecond)
 		targetStates := []hz.LifecycleState{
 			hz.LifecycleStateStarting,
-			hz.LifecycleStateClientConnected,
+			hz.LifecycleStateConnected,
 			hz.LifecycleStateStarted,
 			hz.LifecycleStateShuttingDown,
 			hz.LifecycleStateShutDown,
@@ -240,11 +240,11 @@ func TestClusterReconnection(t *testing.T) {
 	defer mu.Unlock()
 	target := []hz.LifecycleState{
 		hz.LifecycleStateStarting,
-		hz.LifecycleStateClientConnected,
+		hz.LifecycleStateConnected,
 		hz.LifecycleStateStarted,
-		hz.LifecycleStateClientDisconnected,
-		hz.LifecycleStateClientConnected,
-		hz.LifecycleStateClientDisconnected,
+		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateConnected,
+		hz.LifecycleStateDisconnected,
 		hz.LifecycleStateShuttingDown,
 		hz.LifecycleStateShutDown,
 	}
@@ -293,11 +293,11 @@ func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 	defer mu.Unlock()
 	target := []hz.LifecycleState{
 		hz.LifecycleStateStarting,
-		hz.LifecycleStateClientConnected,
+		hz.LifecycleStateConnected,
 		hz.LifecycleStateStarted,
-		hz.LifecycleStateClientDisconnected,
-		hz.LifecycleStateClientConnected,
-		hz.LifecycleStateClientDisconnected,
+		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateConnected,
+		hz.LifecycleStateDisconnected,
 		hz.LifecycleStateShuttingDown,
 		hz.LifecycleStateShutDown,
 	}

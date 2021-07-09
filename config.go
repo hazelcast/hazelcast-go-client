@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -129,8 +130,8 @@ func (c StatsConfig) clone() StatsConfig {
 }
 
 func (c *StatsConfig) Validate() error {
-	if c.Period <= 0 {
-		c.Period = types.Duration(5 * time.Second)
+	if err := validate.NonNegativeDuration(&c.Period, 5*time.Second, "invalid period"); err != nil {
+		return err
 	}
 	return nil
 }

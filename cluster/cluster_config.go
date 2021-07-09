@@ -19,6 +19,7 @@ package cluster
 import (
 	"time"
 
+	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -60,14 +61,14 @@ func (c *Config) Validate() error {
 	if c.Name == "" {
 		c.Name = defaultName
 	}
-	if c.HeartbeatInterval <= 0 {
-		c.HeartbeatInterval = types.Duration(5 * time.Second)
+	if err := validate.NonNegativeDuration(&c.HeartbeatInterval, 5*time.Second, "invalid heartbeat interval"); err != nil {
+		return err
 	}
-	if c.HeartbeatTimeout <= 0 {
-		c.HeartbeatTimeout = types.Duration(60 * time.Second)
+	if err := validate.NonNegativeDuration(&c.HeartbeatTimeout, 60*time.Second, "invalid heartbeat timeout"); err != nil {
+		return err
 	}
-	if c.InvocationTimeout <= 0 {
-		c.InvocationTimeout = types.Duration(120 * time.Second)
+	if err := validate.NonNegativeDuration(&c.InvocationTimeout, 120*time.Second, "invalid heartbeat timeout"); err != nil {
+		return err
 	}
 	if c.loadBalancer == nil {
 		c.loadBalancer = NewRoundRobinLoadBalancer()

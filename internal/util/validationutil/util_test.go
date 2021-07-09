@@ -17,10 +17,15 @@
 package validationutil
 
 import (
+	"errors"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestValidateAsNonNegativeInt32(t *testing.T) {
@@ -58,4 +63,16 @@ func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
 			assert.Contains(t, err.Error(), tc.msg)
 		})
 	}
+}
+
+func TestNonNegativeDuration(t *testing.T) {
+	v := types.Duration(-1)
+	if err := NonNegativeDuration(&v, 5*time.Second, "invalid"); !errors.Is(err, hzerrors.ErrIllegalArgument) {
+		t.Fatalf("unexpected error")
+	}
+	v = types.Duration(0)
+	if err := NonNegativeDuration(&v, 5*time.Second, "invalid"); err != nil {
+		t.Fatalf("unexpected error")
+	}
+	assert.Equal(t, types.Duration(5*time.Second), v)
 }
