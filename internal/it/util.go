@@ -47,6 +47,7 @@ const (
 	EnvMemberCount        = "MEMBER_COUNT"
 	EnvEnableLeakCheck    = "ENABLE_LEAKCHECK"
 	EnvEnableSSL          = "ENABLE_SSL"
+	EnvHzVersion          = "HZ_VERSION"
 )
 
 const DefaultPort = 7701
@@ -209,6 +210,14 @@ func SSLEnabled() bool {
 	return os.Getenv(EnvEnableSSL) == "1"
 }
 
+func HzVersion() string {
+	version := os.Getenv(EnvHzVersion)
+	if version == "" {
+		version = "4.2"
+	}
+	return version
+}
+
 func defaultMemberCount() int {
 	if memberCountStr := os.Getenv(EnvMemberCount); memberCountStr != "" {
 		if memberCount, err := strconv.Atoi(memberCountStr); err != nil {
@@ -220,8 +229,12 @@ func defaultMemberCount() int {
 	return 1
 }
 
-func createRemoteController() *RemoteControllerClient {
-	transport := MustValue(thrift.NewTSocketConf("localhost:9701", nil)).(*thrift.TSocket)
+func CreateDefaultRemoteController() *RemoteControllerClient {
+	return CreateRemoteController("localhost:9701")
+}
+
+func CreateRemoteController(addr string) *RemoteControllerClient {
+	transport := MustValue(thrift.NewTSocketConf(addr, nil)).(*thrift.TSocket)
 	bufferedTransport := thrift.NewTBufferedTransport(transport, 4096)
 	protocol := thrift.NewTBinaryProtocolConf(bufferedTransport, nil)
 	client := thrift.NewTStandardClient(protocol, protocol)
@@ -234,7 +247,7 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
-		rc = createRemoteController()
+		rc = CreateDefaultRemoteController()
 		if ping, err := rc.Ping(context.Background()); err != nil {
 			panic(err)
 		} else if !ping {
@@ -267,7 +280,7 @@ func StartNewCluster(memberCount int) *TestCluster {
 }
 
 func startNewCluster(rc *RemoteControllerClient, memberCount int, config string) *TestCluster {
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), "4.2", config)).(*Cluster)
+	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
 		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)

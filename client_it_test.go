@@ -213,3 +213,41 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		mu.Unlock()
 	})
 }
+
+func TestClusterReconnection(t *testing.T) {
+	ctx := context.Background()
+	cls := it.StartNewCluster(1)
+	mu := &sync.Mutex{}
+	events := []hz.LifecycleState{}
+	config := cls.DefaultConfig()
+	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+		mu.Lock()
+		events = append(events, event.State)
+		mu.Unlock()
+	})
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Second)
+	cls.Shutdown()
+	time.Sleep(5 * time.Second)
+	cls = it.StartNewCluster(1)
+	time.Sleep(5 * time.Second)
+	cls.Shutdown()
+	c.Shutdown(ctx)
+	mu.Lock()
+	defer mu.Unlock()
+	target := []hz.LifecycleState{
+		hz.LifecycleStateStarting,
+		hz.LifecycleStateClientConnected,
+		hz.LifecycleStateStarted,
+		hz.LifecycleStateClientDisconnected,
+		hz.LifecycleStateClientConnected,
+		hz.LifecycleStateClientDisconnected,
+		hz.LifecycleStateShuttingDown,
+		hz.LifecycleStateShutDown,
+	}
+	assert.Equal(t, target, events)
+
+}

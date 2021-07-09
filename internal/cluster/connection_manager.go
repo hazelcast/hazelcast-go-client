@@ -349,7 +349,9 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context, refresh bool)
 	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		addr, err := m.connectCluster(ctx, refresh)
 		if err != nil {
-			m.logger.Errorf("ConnectionManager: error connecting to cluster, attempt %d: %w", attempt, err)
+			m.logger.Debug(func() string {
+				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt, err.Error())
+			})
 		}
 		return addr, err
 	})
