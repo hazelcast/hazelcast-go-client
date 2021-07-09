@@ -50,9 +50,7 @@ const (
 
 const (
 	created int32 = iota
-	starting
 	ready
-	stopping
 	stopped
 )
 
