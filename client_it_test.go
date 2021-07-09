@@ -25,8 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
-
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -223,7 +221,6 @@ func TestClusterReconnection(t *testing.T) {
 	mu := &sync.Mutex{}
 	events := []hz.LifecycleState{}
 	config := cls.DefaultConfig()
-	config.Logger.Level = logger.TraceLevel
 	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 		mu.Lock()
 		events = append(events, event.State)
