@@ -767,13 +767,13 @@ func (m *Map) TryLockWithTimeout(ctx context.Context, key interface{}, timeout t
 	return m.tryLock(ctx, key, 0, timeout.Milliseconds())
 }
 
-// TryLockWithLeaseTimeout tries to acquire the lock for the specified key.
+// TryLockWithLeaseAndTimeout tries to acquire the lock for the specified key.
 // The current thread becomes disabled for thread scheduling purposes and lies
 // dormant until one of the followings happens:
 // - The lock is acquired by the current thread, or
 // - The specified waiting time elapses.
 // Lock will be released after lease time passes.
-func (m *Map) TryLockWithLeaseTimeout(ctx context.Context, key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
+func (m *Map) TryLockWithLeaseAndTimeout(ctx context.Context, key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
 	return m.tryLock(ctx, key, lease.Milliseconds(), timeout.Milliseconds())
 }
 

@@ -533,7 +533,7 @@ func TestMap_Flush(t *testing.T) {
 // TODO: Test Map TryLock
 // TODO: Test Map TryLockWithLease
 // TODO: Test Map TryLockWithTimeout
-// TODO: Test Map TryLockWithLeaseTimeout
+// TODO: Test Map TryLockWithLeaseAndTimeout
 // TODO: Test Map TryPut
 // TODO: Test Map TryPutWithTimeout
 // TODO: Test Map TryRemove
