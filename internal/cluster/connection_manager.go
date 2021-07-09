@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -141,19 +142,12 @@ type ConnectionManager struct {
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
 	bundle.Check()
-	// TODO: make circuit breaker configurable
+	r := rand.New(rand.NewSource(time.Now().Unix()))
 	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(3),
-		cb.RetryPolicy(func(attempt int) time.Duration {
-			if attempt < 10 {
-				return time.Duration((attempt+1)*100) * time.Millisecond
-			}
-			if attempt < 1000 {
-				return time.Duration(attempt*attempt) * time.Millisecond
-			}
-			return 20 * time.Minute
-		}))
+		cb.RetryPolicy(makeRetryPolicy(r, &bundle.ClusterConfig.ConnectionStrategy.Retry)),
+	)
 	lb := bundle.ClusterConfig.LoadBalancer()
 	if lb == nil {
 		lb = pubcluster.NewRoundRobinLoadBalancer()

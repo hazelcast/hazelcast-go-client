@@ -30,11 +30,11 @@ type Config struct {
 	Name               string `json:",omitempty"`
 	Cloud              CloudConfig
 	Network            NetworkConfig
+	ConnectionStrategy ConnectionStrategyConfig
 	InvocationTimeout  types.Duration `json:",omitempty"`
 	HeartbeatInterval  types.Duration `json:",omitempty"`
 	HeartbeatTimeout   types.Duration `json:",omitempty"`
 	Discovery          DiscoveryConfig
-	ConnectionStrategy ConnectionStrategyConfig
 	RedoOperation      bool `json:",omitempty"`
 	Unisocket          bool `json:",omitempty"`
 }
