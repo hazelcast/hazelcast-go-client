@@ -52,8 +52,8 @@ func newTopic(p *proxy) (*Topic, error) {
 	}
 }
 
-// AddListener adds a subscriber to this topic.
-func (t *Topic) AddListener(ctx context.Context, handler TopicMessageHandler) (types.UUID, error) {
+// AddMessageListener adds a subscriber to this topic.
+func (t *Topic) AddMessageListener(ctx context.Context, handler TopicMessageHandler) (types.UUID, error) {
 	return t.addListener(ctx, handler)
 }
 

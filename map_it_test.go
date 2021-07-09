@@ -493,7 +493,7 @@ func TestMap_AddIndexWithConfig(t *testing.T) {
 			Attributes:         []string{"A"},
 			BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
 		}
-		if err := m.AddIndexWithConfig(context.Background(), indexConfig); err != nil {
+		if err := m.AddIndex(context.Background(), indexConfig); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -507,7 +507,7 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 			Attributes:         []string{"A", "B"},
 			BitmapIndexOptions: types.BitmapIndexOptions{UniqueKey: "B", UniqueKeyTransformation: types.UniqueKeyTransformationLong},
 		}
-		if err := m.AddIndexWithConfig(context.Background(), indexConfig); err == nil {
+		if err := m.AddIndex(context.Background(), indexConfig); err == nil {
 			t.Fatalf("should have failed")
 		} else if !errors.Is(err, hzerrors.ErrIllegalArgument) {
 			t.Fatalf("should have returned an illegal argument error")
@@ -751,7 +751,9 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 		const totalCallCount = int32(100)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.AddInt32(&callCount, 1)
+			if event.EventType == hz.EntryAdded {
+				atomic.AddInt32(&callCount, 1)
+			}
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
 			IncludeValue: true,

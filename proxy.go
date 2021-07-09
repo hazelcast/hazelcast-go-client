@@ -397,7 +397,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 			return
 		}
 		member := p.clusterService.GetMemberByUUID(binUUID)
-		handler(newEntryNotifiedEvent(p.name, *member, key, value, oldValue, mergingValue, int(affectedEntries)))
+		handler(newEntryNotifiedEvent(p.name, *member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
 	}
 }
 

@@ -64,8 +64,8 @@ func (m *Map) AddEntryListener(ctx context.Context, config MapEntryListenerConfi
 	return m.addEntryListener(ctx, config.flags, config.IncludeValue, config.Key, config.Predicate, handler)
 }
 
-// AddIndexWithConfig adds an index to this map for the specified entries so that queries can run faster.
-func (m *Map) AddIndexWithConfig(ctx context.Context, indexConfig types.IndexConfig) error {
+// AddIndex adds an index to this map for the specified entries so that queries can run faster.
+func (m *Map) AddIndex(ctx context.Context, indexConfig types.IndexConfig) error {
 	return m.addIndex(ctx, indexConfig)
 }
 
@@ -1105,43 +1105,43 @@ type MapEntryListenerConfig struct {
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryAdded(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryAdded, enable)
+	flagsSetOrClear(&c.flags, int32(EntryAdded), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryRemoved(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryRemoved, enable)
+	flagsSetOrClear(&c.flags, int32(EntryRemoved), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryUpdated(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryUpdated, enable)
+	flagsSetOrClear(&c.flags, int32(EntryUpdated), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryEvicted(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryEvicted, enable)
+	flagsSetOrClear(&c.flags, int32(EntryEvicted), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryExpired(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryExpired, enable)
+	flagsSetOrClear(&c.flags, int32(EntryExpired), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryAllEvicted(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryAllEvicted, enable)
+	flagsSetOrClear(&c.flags, int32(EntryAllEvicted), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryAllCleared(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryAllCleared, enable)
+	flagsSetOrClear(&c.flags, int32(EntryAllCleared), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryMerged(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryMerged, enable)
+	flagsSetOrClear(&c.flags, int32(EntryMerged), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryInvalidated, enable)
+	flagsSetOrClear(&c.flags, int32(EntryInvalidated), enable)
 }
 
 func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
-	flagsSetOrClear(&c.flags, NotifyEntryLoaded, enable)
+	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
 }
 
 func flagsSetOrClear(flags *int32, flag int32, enable bool) {

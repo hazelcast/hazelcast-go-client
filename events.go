@@ -22,27 +22,29 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
+type EntryEventType int32
+
 const (
-	// NotifyEntryAdded is dispatched if an entry is added.
-	NotifyEntryAdded = int32(1 << 0)
-	// NotifyEntryRemoved is dispatched if an entry is removed.
-	NotifyEntryRemoved = int32(1 << 1)
-	// NotifyEntryUpdated is dispatched if an entry is updated.
-	NotifyEntryUpdated = int32(1 << 2)
-	// NotifyEntryEvicted is dispatched if an entry is evicted.
-	NotifyEntryEvicted = int32(1 << 3)
-	// NotifyEntryExpired is dispatched if an entry is expired.
-	NotifyEntryExpired = int32(1 << 4)
-	// NotifyEntryAllEvicted is dispatched if all entries are evicted.
-	NotifyEntryAllEvicted = int32(1 << 5)
-	// NotifyEntryAllCleared is dispatched if all entries are cleared.
-	NotifyEntryAllCleared = int32(1 << 6)
-	// NotifyEntryMerged is dispatched if an entry is merged after a network partition.
-	NotifyEntryMerged = int32(1 << 7)
-	// NotifyEntryInvalidated is dispatched if an entry is invalidated.
-	NotifyEntryInvalidated = int32(1 << 8)
-	// NotifyEntryLoaded is dispatched if an entry is loaded.
-	NotifyEntryLoaded = int32(1 << 9)
+	// EntryAdded is dispatched if an entry is added.
+	EntryAdded EntryEventType = 1 << 0
+	// EntryRemoved is dispatched if an entry is removed.
+	EntryRemoved EntryEventType = 1 << 1
+	// EntryUpdated is dispatched if an entry is updated.
+	EntryUpdated EntryEventType = 1 << 2
+	// EntryEvicted is dispatched if an entry is evicted.
+	EntryEvicted EntryEventType = 1 << 3
+	// EntryExpired is dispatched if an entry is expired.
+	EntryExpired EntryEventType = 1 << 4
+	// EntryAllEvicted is dispatched if all entries are evicted.
+	EntryAllEvicted EntryEventType = 1 << 5
+	// EntryAllCleared is dispatched if all entries are cleared.
+	EntryAllCleared EntryEventType = 1 << 6
+	// EntryMerged is dispatched if an entry is merged after a network partition.
+	EntryMerged EntryEventType = 1 << 7
+	// EntryInvalidated is dispatched if an entry is invalidated.
+	EntryInvalidated EntryEventType = 1 << 8
+	// EntryLoaded is dispatched if an entry is loaded.
+	EntryLoaded EntryEventType = 1 << 9
 )
 
 type EntryNotifiedHandler func(event *EntryNotified)
@@ -65,7 +67,7 @@ type EntryNotified struct {
 	MapName                 string
 	Member                  cluster.MemberInfo
 	NumberOfAffectedEntries int
-	EventType               int32
+	EventType               EntryEventType
 }
 
 func (e *EntryNotified) EventName() string {
@@ -80,6 +82,7 @@ func newEntryNotifiedEvent(
 	oldValue interface{},
 	mergingValue interface{},
 	numberOfAffectedEntries int,
+	eventType EntryEventType,
 ) *EntryNotified {
 	return &EntryNotified{
 		MapName:                 mapName,
@@ -89,6 +92,7 @@ func newEntryNotifiedEvent(
 		OldValue:                oldValue,
 		MergingValue:            mergingValue,
 		NumberOfAffectedEntries: numberOfAffectedEntries,
+		EventType:               eventType,
 	}
 }
 
@@ -166,10 +170,10 @@ func newMessagePublished(name string, value interface{}, publishTime time.Time, 
 type ItemEventType int32
 
 const (
-	// NotifyItemAdded stands for item added event.
-	NotifyItemAdded ItemEventType = 1
-	// NotifyItemRemoved stands for item removed event.
-	NotifyItemRemoved ItemEventType = 2
+	// ItemAdded stands for item added event.
+	ItemAdded ItemEventType = 1
+	// ItemRemoved stands for item removed event.
+	ItemRemoved ItemEventType = 2
 )
 
 type QueueItemNotifiedHandler func(event *QueueItemNotified)

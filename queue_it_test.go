@@ -65,7 +65,7 @@ func TestQueue_AddListener(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
 		const targetCallCount = int32(10)
 		callCount := int32(0)
-		subscriptionID, err := q.AddListener(context.Background(), func(event *hz.QueueItemNotified) {
+		subscriptionID, err := q.AddItemListener(context.Background(), false, func(event *hz.QueueItemNotified) {
 			atomic.AddInt32(&callCount, 1)
 		})
 		if err != nil {
@@ -90,11 +90,11 @@ func TestQueue_AddListener(t *testing.T) {
 	})
 }
 
-func TestQueue_AddListenerIncludeValue(t *testing.T) {
+func TestQueue_AddListener_IncludeValue(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
 		const targetCallCount = int32(0)
 		callCount := int32(0)
-		subscriptionID, err := q.AddListenerIncludeValue(context.Background(), func(event *hz.QueueItemNotified) {
+		subscriptionID, err := q.AddItemListener(context.Background(), true, func(event *hz.QueueItemNotified) {
 			fmt.Println("value:", event.Value)
 			atomic.AddInt32(&callCount, 1)
 		})

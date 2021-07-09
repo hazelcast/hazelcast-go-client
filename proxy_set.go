@@ -76,17 +76,11 @@ func (s *Set) AddAll(ctx context.Context, values ...interface{}) (bool, error) {
 	}
 }
 
-// AddListener adds an item listener for this set.
+// AddItemListener adds an item listener for this set.
 // Listener will be notified for all set add/remove events.
-func (s *Set) AddListener(ctx context.Context, handler SetItemNotifiedHandler) (types.UUID, error) {
-	return s.addListener(ctx, false, handler)
-}
-
-// AddListenerIncludeValue adds an item listener for this set.
-// Listener will be notified for all set add/remove events.
-// Received events include the updated item.
-func (s *Set) AddListenerIncludeValue(ctx context.Context, handler SetItemNotifiedHandler) (types.UUID, error) {
-	return s.addListener(ctx, true, handler)
+// Received events include the updated item if includeValue is true.
+func (s *Set) AddItemListener(ctx context.Context, includeValue bool, handler SetItemNotifiedHandler) (types.UUID, error) {
+	return s.addListener(ctx, includeValue, handler)
 }
 
 // Clear clears this set.
