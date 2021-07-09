@@ -214,7 +214,7 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 	})
 }
 
-func TestClusterReconnection(t *testing.T) {
+func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	ctx := context.Background()
 	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
 	mu := &sync.Mutex{}
@@ -307,7 +307,7 @@ func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 }
 
 func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
 	config := cls.DefaultConfig()
