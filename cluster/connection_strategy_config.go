@@ -24,7 +24,8 @@ import (
 
 type ConnectionStrategyConfig struct {
 	Retry            ConnectionRetryConfig
-	DisableReconnect bool `json:",omitempty"`
+	Timeout          types.Duration `json:",omitempty"`
+	DisableReconnect bool           `json:",omitempty"`
 }
 
 func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {
@@ -32,6 +33,10 @@ func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {
 }
 
 func (c *ConnectionStrategyConfig) Validate() error {
+	if c.Timeout <= 0 {
+		// maximum duration
+		c.Timeout = types.Duration(1<<63 - 1)
+	}
 	return c.Retry.Validate()
 }
 
@@ -39,7 +44,6 @@ type ConnectionRetryConfig struct {
 	InitialBackoff types.Duration `json:",omitempty"`
 	MaxBackoff     types.Duration `json:",omitempty"`
 	Multiplier     float64        `json:",omitempty"`
-	ConnectTimeout types.Duration `json:",omitempty"`
 	Jitter         float64        `json:",omitempty"`
 }
 
@@ -56,10 +60,6 @@ func (c *ConnectionRetryConfig) Validate() error {
 	}
 	if c.Multiplier <= 0 {
 		c.Multiplier = 1.05
-	}
-	if c.ConnectTimeout <= 0 {
-		// maximum duration
-		c.ConnectTimeout = types.Duration(1<<63 - 1)
 	}
 	return nil
 }

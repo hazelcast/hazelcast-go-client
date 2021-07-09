@@ -48,7 +48,7 @@ Here are all configuration items with their default values:
 	cc.Cloud.Token = ""
 
 	cc.ConnectionStrategy.DisableReconnect = false
-	cc.ConnectionStrategy.Retry.ConnectTimeout = types.Duration(1<<63 - 1)
+	cc.ConnectionStrategy.Timeout = types.Duration(1<<63 - 1)
 	cc.ConnectionStrategy.Retry.InitialBackoff = types.Duration(1*time.Second)
 	cc.ConnectionStrategy.Retry.MaxBackoff = types.Duration(30*time.Second)
 	cc.ConnectionStrategy.Retry.Multiplier = 1.05

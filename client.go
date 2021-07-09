@@ -483,8 +483,7 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.clusterConfig.Network.ConnectionTimeout))
-	defer cancel()
+	ctx := context.Background()
 	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
 	// try to reboot cluster connection
 	c.connectionManager.Stop()

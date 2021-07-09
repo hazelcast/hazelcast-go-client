@@ -127,8 +127,8 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, "", c.Cluster.Cloud.Token)
 
 	assert.Equal(t, false, c.Cluster.ConnectionStrategy.DisableReconnect)
+	assert.Equal(t, types.Duration(9223372036854775807), c.Cluster.ConnectionStrategy.Timeout)
 	cr := &c.Cluster.ConnectionStrategy.Retry
-	assert.Equal(t, types.Duration(9223372036854775807), cr.ConnectTimeout)
 	assert.Equal(t, types.Duration(1*time.Second), cr.InitialBackoff)
 	assert.Equal(t, types.Duration(30*time.Second), cr.MaxBackoff)
 	assert.Equal(t, 1.05, cr.Multiplier)

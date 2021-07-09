@@ -172,6 +172,8 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 
 func (m *ConnectionManager) Start(ctx context.Context, refresh bool) error {
 	m.reset()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.clusterConfig.ConnectionStrategy.Timeout))
+	defer cancel()
 	return m.start(ctx, refresh)
 }
 
