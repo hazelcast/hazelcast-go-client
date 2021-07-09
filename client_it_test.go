@@ -18,7 +18,6 @@ package hazelcast_test
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -249,8 +248,8 @@ func TestClusterReconnection(t *testing.T) {
 		hz.LifecycleStateShuttingDown,
 		hz.LifecycleStateShutDown,
 	}
-	fmt.Println("target :", target)
-	fmt.Println("events :", events)
+	t.Logf("target : %v", target)
+	t.Logf("events : %v", events)
 	assert.Equal(t, target, events)
 }
 
@@ -302,7 +301,7 @@ func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 		hz.LifecycleStateShuttingDown,
 		hz.LifecycleStateShutDown,
 	}
-	fmt.Println("target :", target)
-	fmt.Println("events :", events)
+	t.Logf("target : %v", target)
+	t.Logf("events : %v", events)
 	assert.Equal(t, target, events)
 }
