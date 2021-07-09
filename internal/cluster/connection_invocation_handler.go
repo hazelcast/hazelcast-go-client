@@ -23,8 +23,8 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
@@ -75,7 +75,7 @@ func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBu
 		clusterService:    bundle.ClusterService,
 		logger:            bundle.Logger,
 		cb:                cbr,
-		smart:             bundle.Config.SmartRouting,
+		smart:             !bundle.Config.Unisocket,
 	}
 }
 
@@ -121,9 +121,8 @@ func (h *ConnectionInvocationHandler) invokeNonSmart(inv invocation.Invocation) 
 }
 
 func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation, conn *Connection) (int64, error) {
-	sent := conn.send(inv)
-	if !sent {
-		return 0, hzerrors.NewHazelcastIOError("packet not sent", nil)
+	if sent := conn.send(inv); !sent {
+		return 0, ihzerrors.NewIOError("packet not sent", nil)
 	}
 	return conn.connectionID, nil
 }
@@ -148,7 +147,7 @@ func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, a
 func (h *ConnectionInvocationHandler) sendToRandomAddress(inv invocation.Invocation) (int64, error) {
 	if conn := h.connectionManager.RandomConnection(); conn == nil {
 		// TODO: use correct error type
-		return 0, hzerrors.NewHazelcastIOError("no connection found", nil)
+		return 0, ihzerrors.NewIOError("no connection found", nil)
 	} else {
 		return h.sendToConnection(inv, conn)
 	}

@@ -52,10 +52,10 @@ download () {
   if [ -f "$jar_path" ]; then
       log_info "$jar_path already exists, skipping download."
   else
-      log_info "Downloading: $jar_path ($artifact)"
+      log_info "Downloading: $jar_path ($artifact) from: $repo"
       mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Ddest="$jar_path"
       if [ $? -ne 0 ]; then
-          log_fatal "Failed downloading $jar_path ($artifact) from $repo"
+          log_fatal "Failed downloading $jar_path ($artifact) from: $repo"
       fi
   fi
 }
@@ -100,7 +100,7 @@ startRC () {
     log_fatal "PID file $PID_FILE exists. Is there an another instance of Hazelcast Remote Controller running?"
   fi
 
-  if [ "${HZ_VERSION}" = "*-SNAPSHOT" ]
+  if [[ "${HZ_VERSION}" == *-SNAPSHOT ]]
   then
     repo=${SNAPSHOT_REPO}
     enterprise_repo=${ENTERPRISE_SNAPSHOT_REPO}

@@ -24,15 +24,15 @@ import (
 	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func Example() {
 	// Create the configuration
-	config := hazelcast.NewConfig()
-	config.ClusterConfig.Name = "my-cluster"
-	if err := config.ClusterConfig.SetAddress("192.168.1.42:5000", "192.168.1.42:5001"); err != nil {
-		log.Fatal(err)
-	}
+	config := hazelcast.Config{}
+	config.Cluster.Name = "my-cluster"
+	config.Cluster.Network.SetAddresses("192.168.1.42:5000", "192.168.1.42:5001")
 	// Start the client with the configuration provider.
 	client, err := hazelcast.StartNewClientWithConfig(config)
 	if err != nil {
@@ -102,4 +102,29 @@ func ExamplePNCounter() {
 	}
 	fmt.Println(value)
 	// Output: 42
+}
+
+func ExampleMap_Aggregate() {
+	// Create the Hazelcast client.
+	client, err := hazelcast.StartNewClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx := context.Background()
+	myMap, err := client.GetMap(ctx, "my-map")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = myMap.Set(ctx, "k1", serialization.JSON(`{"A": "foo", "B": 10}`)); err != nil {
+		log.Fatal(err)
+	}
+	if err = myMap.Set(ctx, "k2", serialization.JSON(`{"A": "bar", "B": 30}`)); err != nil {
+		log.Fatal(err)
+	}
+	result, err := myMap.Aggregate(ctx, aggregate.LongSum("B"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result)
+	// Output: 40
 }

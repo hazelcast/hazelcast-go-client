@@ -21,18 +21,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestImpl_CanRetry(t *testing.T) {
 	msg := proto.NewClientMessage(proto.NewFrame(make([]byte, 64)))
 	inv := invocation.NewImpl(msg, 0, "", time.Now().Add(10*time.Second), false)
 	err := errors.New("foo")
-	targetDisconnectedErr := hzerrors.NewHazelcastTargetDisconnectedError("foo", nil)
+	targetDisconnectedErr := ihzerrors.NewTargetDisconnectedError("foo", nil)
 	noRetries := []error{err, cb.WrapNonRetryableError(err), targetDisconnectedErr}
 	for _, e := range noRetries {
 		if !assert.False(t, inv.CanRetry(e)) {
@@ -43,9 +45,22 @@ func TestImpl_CanRetry(t *testing.T) {
 	if !assert.True(t, inv.CanRetry(targetDisconnectedErr)) {
 		t.FailNow()
 	}
-	ioErr := hzerrors.NewHazelcastIOError("foo", nil)
-	instNotActiveErr := hzerrors.NewHazelcastInstanceNotActiveError("foo", nil)
-	yesRetries := []error{ioErr, instNotActiveErr}
+	ioErr := ihzerrors.NewIOError("foo", nil)
+	instNotActiveErr := ihzerrors.NewInstanceNotActiveError("foo")
+	callerNotMemberErr := ihzerrors.NewClientError("err", nil, hzerrors.ErrCallerNotMember)
+	yesRetries := []error{ioErr, instNotActiveErr, callerNotMemberErr}
+	yesRetries = append(yesRetries,
+		hzerrors.ErrCallerNotMember,
+		hzerrors.ErrHazelcastInstanceNotActive,
+		hzerrors.ErrMemberLeft,
+		hzerrors.ErrPartitionMigrating,
+		hzerrors.ErrRetryableHazelcast,
+		hzerrors.ErrRetryableIO,
+		hzerrors.ErrTargetNotMember,
+		hzerrors.ErrWrongTarget,
+		hzerrors.ErrTargetNotReplicaException,
+		hzerrors.ErrCannotReplicateException,
+	)
 	for _, e := range yesRetries {
 		if !assert.True(t, inv.CanRetry(e)) {
 			t.FailNow()

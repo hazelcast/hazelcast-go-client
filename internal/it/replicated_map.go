@@ -53,7 +53,7 @@ func ReplicatedMapTesterWithConfigAndName(t *testing.T, makeMapName func() strin
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
-		config.ClusterConfig.SmartRouting = smart
+		config.Cluster.Unisocket = !smart
 		client, m = getClientReplicatedMapWithConfig(makeMapName(), &config)
 		defer func() {
 			if err := m.Destroy(context.Background()); err != nil {

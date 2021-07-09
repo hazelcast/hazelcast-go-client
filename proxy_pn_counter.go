@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -94,7 +95,7 @@ func (pn *PNCounter) DecrementAndGet(ctx context.Context) (int64, error) {
 
 // Get returns the current value of the counter.
 func (pn *PNCounter) Get(ctx context.Context) (int64, error) {
-	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID, clocks []proto.Pair) *proto.ClientMessage {
+	resp, err := pn.invokeOnMember(ctx, func(uuid types.UUID, clocks []proto.Pair) *proto.ClientMessage {
 		return codec.EncodePNCounterGetRequest(pn.name, clocks, uuid)
 	})
 	if err != nil {
@@ -153,7 +154,7 @@ func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) 
 			target = pn.clusterService.RandomDataMemberExcluding(excluded)
 		}
 		if target == nil {
-			return nil, nil, hzerrors.NewHazelcastNoDataMemberInClusterError("no data members in cluster", nil)
+			return nil, nil, ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
 		}
 		pn.target = target
 	}
@@ -172,7 +173,7 @@ func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
 }
 
 func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool) (int64, error) {
-	resp, err := pn.invokeOnTarget(ctx, func(uuid types.UUID, clocks []proto.Pair) *proto.ClientMessage {
+	resp, err := pn.invokeOnMember(ctx, func(uuid types.UUID, clocks []proto.Pair) *proto.ClientMessage {
 		return codec.EncodePNCounterAddRequest(pn.name, delta, getBeforeUpdate, clocks, uuid)
 	})
 	if err != nil {
@@ -183,7 +184,7 @@ func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool)
 	return value, nil
 }
 
-func (pn *PNCounter) invokeOnTarget(ctx context.Context, makeReq func(target types.UUID, clocks []proto.Pair) *proto.ClientMessage) (*proto.ClientMessage, error) {
+func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target types.UUID, clocks []proto.Pair) *proto.ClientMessage) (*proto.ClientMessage, error) {
 	// in the best case scenario, no members will be excluded, so excluded set is nil
 	var excluded map[cluster.Address]struct{}
 	var lastAddr cluster.Address
@@ -203,7 +204,7 @@ func (pn *PNCounter) invokeOnTarget(ctx context.Context, makeReq func(target typ
 			return nil, cb.WrapNonRetryableError(err)
 		}
 		request = makeReq(mem.UUID, clocks)
-		inv := pn.invocationFactory.NewInvocationOnTarget(request, mem.Address)
+		inv := pn.invocationFactory.NewMemberBoundInvocation(request, mem)
 		if err := pn.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}

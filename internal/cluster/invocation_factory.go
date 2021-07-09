@@ -33,7 +33,7 @@ type ConnectionInvocationFactory struct {
 
 func NewConnectionInvocationFactory(config *pubcluster.Config) *ConnectionInvocationFactory {
 	return &ConnectionInvocationFactory{
-		invocationTimeout: config.InvocationTimeout,
+		invocationTimeout: time.Duration(config.InvocationTimeout),
 		redoOperation:     config.RedoOperation,
 	}
 }
@@ -61,6 +61,14 @@ func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *prot
 	message.SetCorrelationID(f.makeCorrelationID())
 	inv := newConnectionBoundInvocation(message, -1, "", conn, time.Now().Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
+	return inv
+}
+
+func (f *ConnectionInvocationFactory) NewMemberBoundInvocation(message *proto.ClientMessage, member *pubcluster.MemberInfo) *MemberBoundInvocation {
+	message = message.Copy()
+	message.SetCorrelationID(f.makeCorrelationID())
+	deadline := time.Now().Add(f.invocationTimeout)
+	inv := NewMemberBoundInvocation(message, member, deadline, f.redoOperation)
 	return inv
 }
 

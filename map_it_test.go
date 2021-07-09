@@ -30,6 +30,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -310,6 +312,7 @@ func TestMap_GetKeySet(t *testing.T) {
 		}
 	})
 }
+
 func TestMap_GetKeySetWithPredicate(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetKeySet := []interface{}{serialization.JSON(`{"a": 15}`)}
@@ -398,7 +401,7 @@ func TestMap_GetEntrySet(t *testing.T) {
 
 func TestMap_GetEntrySetWithPredicateUsingPortable(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		okValue := "foo-Ğİ"
@@ -506,11 +509,8 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 		}
 		if err := m.AddIndexWithConfig(context.Background(), indexConfig); err == nil {
 			t.Fatalf("should have failed")
-		} else {
-			vErr := &hz.IndexValidationError{}
-			if !errors.As(err, &vErr) {
-				t.Fatalf("should have returned an index validation error")
-			}
+		} else if !errors.Is(err, hzerrors.ErrIllegalArgument) {
+			t.Fatalf("should have returned an illegal argument error")
 		}
 	})
 }
@@ -674,7 +674,7 @@ func TestMap_IsEmptySize(t *testing.T) {
 
 func TestMap_RemoveAll(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		entries := []types.Entry{
@@ -809,7 +809,7 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 
 func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		const totalCallCount = int32(100)
@@ -839,7 +839,7 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 
 func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
-		config.SerializationConfig.AddPortableFactory(it.SamplePortableFactory{})
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
@@ -870,6 +870,54 @@ func TestMap_Destroy(t *testing.T) {
 		if err := m.Destroy(context.Background()); err != nil {
 			t.Fatal(err)
 		}
+	})
+}
+
+func TestMap_Aggregate(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
+		it.MustValue(m.Put(ctx, "k3", &it.SamplePortable{A: "zoo", B: 30}))
+		result, err := m.Aggregate(ctx, aggregate.Count("B"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(3), result)
+	})
+}
+
+func TestMap_Aggregate_2(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", serialization.JSON(`{"A": "foo", "B": 10}`)))
+		it.MustValue(m.Put(ctx, "k2", serialization.JSON(`{"A": "bar", "B": 30}`)))
+		it.MustValue(m.Put(ctx, "k3", serialization.JSON(`{"A": "zoo", "B": 30}`)))
+		result, err := m.Aggregate(ctx, aggregate.Count("B"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(3), result)
+	})
+}
+
+func TestMap_AggregateWithPredicate(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
+		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "zoo", B: 30}))
+		result, err := m.AggregateWithPredicate(ctx, aggregate.Count("B"), predicate.Equal("A", "foo"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, int64(1), result)
 	})
 }
 

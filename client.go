@@ -18,13 +18,13 @@ package hazelcast
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -46,12 +46,6 @@ const (
 	ready
 	stopping
 	stopped
-)
-
-var (
-	ErrClientCannotStart = errors.New("client cannot start")
-	ErrClientNotActive   = errors.New("client not active")
-	ErrContextIsNil      = errors.New("context is nil")
 )
 
 // StartNewClient creates and starts a new client.
@@ -111,25 +105,25 @@ func newClient(config Config) (*Client, error) {
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
 	}
-	logLevel, err := ilogger.GetLogLevel(config.LoggerConfig.Level)
+	logLevel, err := ilogger.GetLogLevel(config.Logger.Level)
 	if err != nil {
 		return nil, err
 	}
 	clientLogger := ilogger.NewWithLevel(logLevel)
 	// TODO: Move addrProviderTranslator to createComponents
 	// Not doing that right now, because of the event dispatchers.
-	addrProvider, addrTranslator, err := addrProviderTranslator(context.Background(), &config.ClusterConfig, clientLogger)
+	addrProvider, addrTranslator, err := addrProviderTranslator(context.Background(), &config.Cluster, clientLogger)
 	if err != nil {
 		return nil, err
 	}
-	serializationService, err := serialization.NewService(&config.SerializationConfig)
+	serializationService, err := serialization.NewService(&config.Serialization)
 	if err != nil {
 		return nil, err
 	}
 	clientLogger.Trace(func() string { return fmt.Sprintf("creating new client: %s", name) })
 	c := &Client{
 		name:                    name,
-		clusterConfig:           &config.ClusterConfig,
+		clusterConfig:           &config.Cluster,
 		serializationService:    serializationService,
 		eventDispatcher:         event.NewDispatchService(clientLogger),
 		userEventDispatcher:     event.NewDispatchService(clientLogger),
@@ -156,7 +150,7 @@ func (c *Client) Name() string {
 // GetList returns a list instance.
 func (c *Client) GetList(ctx context.Context, name string) (*List, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getList(ctx, name)
 }
@@ -164,14 +158,14 @@ func (c *Client) GetList(ctx context.Context, name string) (*List, error) {
 // GetMap returns a distributed map instance.
 func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getMap(ctx, name)
 }
 
 func (c *Client) GetReplicatedMap(ctx context.Context, name string) (*ReplicatedMap, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getReplicatedMap(ctx, name)
 }
@@ -179,7 +173,7 @@ func (c *Client) GetReplicatedMap(ctx context.Context, name string) (*Replicated
 // GetQueue returns a queue instance.
 func (c *Client) GetQueue(ctx context.Context, name string) (*Queue, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getQueue(ctx, name)
 }
@@ -187,7 +181,7 @@ func (c *Client) GetQueue(ctx context.Context, name string) (*Queue, error) {
 // GetTopic returns a topic instance.
 func (c *Client) GetTopic(ctx context.Context, name string) (*Topic, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getTopic(ctx, name)
 }
@@ -195,7 +189,7 @@ func (c *Client) GetTopic(ctx context.Context, name string) (*Topic, error) {
 // GetSet returns a set instance.
 func (c *Client) GetSet(ctx context.Context, name string) (*Set, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getSet(ctx, name)
 }
@@ -203,7 +197,7 @@ func (c *Client) GetSet(ctx context.Context, name string) (*Set, error) {
 // GetPNCounter returns a PNCounter instance.
 func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, error) {
 	if atomic.LoadInt32(&c.state) != ready {
-		return nil, ErrClientNotActive
+		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getPNCounter(ctx, name)
 }
@@ -211,7 +205,7 @@ func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, err
 // Start connects the client to the cluster.
 func (c *Client) start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
-		return ErrClientCannotStart
+		return nil
 	}
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
@@ -234,7 +228,7 @@ func (c *Client) start(ctx context.Context) error {
 // Shutdown disconnects the client from the cluster.
 func (c *Client) Shutdown() error {
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
-		return ErrClientNotActive
+		return nil
 	}
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
@@ -263,7 +257,7 @@ func (c *Client) Running() bool {
 // The handler must not block.
 func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return types.UUID{}, ErrClientNotActive
+		return types.UUID{}, hzerrors.ErrClientNotActive
 	}
 	uuid := types.NewUUID()
 	subscriptionID := c.refIDGen.NextID()
@@ -277,7 +271,7 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (type
 // RemoveLifecycleListener removes the lifecycle state change handler with the given subscription ID
 func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return ErrClientNotActive
+		return hzerrors.ErrClientNotActive
 	}
 	c.lifecyleListenerMapMu.Lock()
 	if intID, ok := c.lifecyleListenerMap[subscriptionID]; ok {
@@ -293,7 +287,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 // Use the returned subscription ID to remove the listener.
 func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return types.UUID{}, ErrClientNotActive
+		return types.UUID{}, hzerrors.ErrClientNotActive
 	}
 	uuid := types.NewUUID()
 	subscriptionID := c.refIDGen.NextID()
@@ -307,7 +301,7 @@ func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHand
 // RemoveMembershipListener removes the member state change handler with the given subscription ID.
 func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return ErrClientNotActive
+		return hzerrors.ErrClientNotActive
 	}
 	c.membershipListenerMapMu.Lock()
 	if intID, ok := c.membershipListenerMap[subscriptionID]; ok {
@@ -321,14 +315,14 @@ func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 
 func (c *Client) AddDistributedObjectListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return types.UUID{}, ErrClientNotActive
+		return types.UUID{}, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.addDistributedObjectEventListener(ctx, handler)
 }
 
 func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
-		return ErrClientNotActive
+		return hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
 }
@@ -402,8 +396,8 @@ func (c *Client) subscribeUserEvents() {
 }
 
 func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCredentials {
-	securityConfig := config.ClusterConfig.SecurityConfig
-	return security.NewUsernamePasswordCredentials(securityConfig.Username, securityConfig.Password)
+	securityConfig := config.Cluster.Security
+	return security.NewUsernamePasswordCredentials(securityConfig.Credentials.Username, securityConfig.Credentials.Password)
 }
 
 func (c *Client) createComponents(config *Config, addrProvider icluster.AddressProvider, addrTranslator icluster.AddressTranslator) {
@@ -416,7 +410,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		EventDispatcher: c.eventDispatcher,
 		Logger:          c.logger,
 	})
-	invocationFactory := icluster.NewConnectionInvocationFactory(&config.ClusterConfig)
+	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
 	clusterService := icluster.NewService(icluster.CreationBundle{
 		AddrProvider:      addrProvider,
 		RequestCh:         urgentRequestCh,
@@ -424,7 +418,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		EventDispatcher:   c.eventDispatcher,
 		PartitionService:  partitionService,
 		Logger:            c.logger,
-		Config:            &config.ClusterConfig,
+		Config:            &config.Cluster,
 		AddressTranslator: addrTranslator,
 	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
@@ -436,7 +430,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		SerializationService: c.serializationService,
 		EventDispatcher:      c.eventDispatcher,
 		InvocationFactory:    invocationFactory,
-		ClusterConfig:        &config.ClusterConfig,
+		ClusterConfig:        &config.Cluster,
 		Credentials:          credentials,
 		ClientName:           c.name,
 		AddrTranslator:       addrTranslator,
@@ -446,7 +440,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
 		Logger:            c.logger,
-		Config:            &config.ClusterConfig,
+		Config:            &config.Cluster,
 	})
 	invocationService := invocation.NewService(requestCh, urgentRequestCh, responseCh, removeCh, invocationHandler, c.logger)
 	listenerBinder := icluster.NewConnectionListenerBinder(
@@ -456,7 +450,7 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		removeCh,
 		c.eventDispatcher,
 		c.logger,
-		config.ClusterConfig.SmartRouting)
+		!config.Cluster.Unisocket)
 	proxyManagerServiceBundle := creationBundle{
 		RequestCh:            requestCh,
 		RemoveCh:             removeCh,
@@ -468,13 +462,13 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		ListenerBinder:       listenerBinder,
 		Logger:               c.logger,
 	}
-	if config.StatsConfig.Enabled {
+	if config.Stats.Enabled {
 		c.statsService = stats.NewService(
 			requestCh,
 			invocationFactory,
 			c.eventDispatcher,
 			c.logger,
-			config.StatsConfig.Period,
+			time.Duration(config.Stats.Period),
 			c.name)
 	}
 	c.connectionManager = connectionManager
@@ -489,7 +483,7 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), c.clusterConfig.ConnectionTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.clusterConfig.Network.ConnectionTimeout))
 	defer cancel()
 	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
 	// try to reboot cluster connection
@@ -503,8 +497,8 @@ func (c *Client) clusterDisconnected(e event.Event) {
 }
 
 func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
-	if config.HazelcastCloudConfig.Enabled {
-		dc := cloud.NewDiscoveryClient(&config.HazelcastCloudConfig, logger)
+	if config.Cloud.Enabled {
+		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		nodes, err := dc.DiscoverNodes(ctx)
 		if err != nil {
 			return nil, nil, err
@@ -515,8 +509,8 @@ func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger 
 		}
 		return pr, cloud.NewAddressTranslator(dc, nodes), nil
 	}
-	pr := icluster.NewDefaultAddressProvider(config)
-	if config.DiscoveryConfig.UsePublicIP {
+	pr := icluster.NewDefaultAddressProvider(&config.Network)
+	if config.Discovery.UsePublicIP {
 		return pr, icluster.NewDefaultPublicAddressTranslator(), nil
 	}
 	return pr, icluster.NewDefaultAddressTranslator(), nil

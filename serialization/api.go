@@ -158,7 +158,7 @@ type DataOutput interface {
 	WriteStringArray(v []string)
 
 	// WriteBytes writes a string's characters.
-	WriteBytes(bytes string)
+	WriteStringBytes(bytes string)
 
 	// WriteZeroBytes writes zero bytes as given length.
 	WriteZeroBytes(count int)

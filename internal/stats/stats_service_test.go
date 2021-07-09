@@ -35,7 +35,7 @@ func TestNewService(t *testing.T) {
 	ed := event.NewDispatchService(lg)
 	requestCh := make(chan invocation.Invocation, 1)
 	config := hazelcast.NewConfig()
-	invFac := cluster.NewConnectionInvocationFactory(&config.ClusterConfig)
+	invFac := cluster.NewConnectionInvocationFactory(&config.Cluster)
 	srv := stats.NewService(requestCh, invFac, ed, lg, 100*time.Millisecond, "hz1")
 	srv.Start()
 	ed.Publish(cluster.NewConnected(pubcluster.NewAddress("100.200.300.400", 12345)))

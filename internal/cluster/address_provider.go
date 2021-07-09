@@ -38,10 +38,10 @@ func ParseAddress(addr string) (pubcluster.Address, error) {
 	return pubcluster.Address(addr), nil
 }
 
-func NewDefaultAddressProvider(networkConfig *pubcluster.Config) *DefaultAddressProvider {
+func NewDefaultAddressProvider(networkConfig *pubcluster.NetworkConfig) *DefaultAddressProvider {
 	var err error
-	addresses := make([]pubcluster.Address, len(networkConfig.Addrs))
-	for i, addr := range networkConfig.Addrs {
+	addresses := make([]pubcluster.Address, len(networkConfig.Addresses))
+	for i, addr := range networkConfig.Addresses {
 		addresses[i] = pubcluster.Address(addr)
 		if addresses[i], err = ParseAddress(addr); err != nil {
 			panic(err)

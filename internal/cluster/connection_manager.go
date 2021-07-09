@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -41,9 +42,10 @@ import (
 )
 
 const (
-	authenticated = iota
-	credentialsFailed
-	serializationVersionMismatch
+	authenticated                = 0
+	credentialsFailed            = 1
+	serializationVersionMismatch = 2
+	notAllowedInCluster          = 3
 )
 
 const (
@@ -165,7 +167,8 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		clientName:           bundle.ClientName,
 		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
-		smartRouting:         bundle.ClusterConfig.SmartRouting,
+		connMap:              newConnectionMap(bundle.ClusterConfig.LoadBalancer()),
+		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
 		cb:                   cbr,
 		addrTranslator:       bundle.AddrTranslator,
@@ -249,7 +252,7 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 func (m *ConnectionManager) reset() {
 	m.doneCh = make(chan struct{}, 1)
 	m.startCh = make(chan struct{}, 1)
-	m.connMap = newConnectionMap()
+	m.connMap = newConnectionMap(m.clusterConfig.LoadBalancer())
 }
 
 func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
@@ -331,23 +334,19 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 		return "", errors.New("no seed addresses")
 	}
 	var initialAddr pubcluster.Address
-	var initialErr error
+	var conn *Connection
+	var err error
 	for _, addr := range seedAddrs {
-		if conn, err := m.ensureConnection(ctx, addr); err != nil {
+		if conn, err = m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-		} else if err := m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+		} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
 			m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
-			initialErr = err
-			continue
 		} else if initialAddr == "" {
 			initialAddr = addr
 		}
 	}
 	if initialAddr == "" {
-		if initialErr != nil {
-			return "", fmt.Errorf("cannot connect to any address in the cluster: %w", initialErr)
-		}
-		return "", errors.New("cannot connect to any address in the cluster")
+		return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
 	}
 	return initialAddr, nil
 }
@@ -381,7 +380,7 @@ func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubc
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection(addr)
 	if err := conn.start(m.clusterConfig, addr); err != nil {
-		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
+		return nil, ihzerrors.NewTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(ctx, conn); err != nil {
 		conn.close(nil)
 		return nil, err
@@ -448,12 +447,15 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 			return fmt.Sprintf("opened connection to: %s", connAddr)
 		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
+		return nil
 	case credentialsFailed:
-		return hzerrors.NewHazelcastAuthenticationError("invalid credentials", nil)
+		return fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication)
 	case serializationVersionMismatch:
-		return hzerrors.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
+		return fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication)
+	case notAllowedInCluster:
+		return cb.WrapNonRetryableError(hzerrors.ErrClientNotAllowedInCluster)
 	}
-	return nil
+	return hzerrors.ErrAuthentication
 }
 
 func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {
@@ -479,7 +481,7 @@ func (m *ConnectionManager) createAuthenticationRequest(creds *security.Username
 }
 
 func (m *ConnectionManager) heartbeat() {
-	ticker := time.NewTicker(m.clusterConfig.HeartbeatInterval)
+	ticker := time.NewTicker(time.Duration(m.clusterConfig.HeartbeatInterval))
 	for {
 		select {
 		case <-m.doneCh:
@@ -552,89 +554,111 @@ func (m *ConnectionManager) checkFixConnection(addr pubcluster.Address) {
 }
 
 type connectionMap struct {
-	connectionsMu *sync.RWMutex
+	lb pubcluster.LoadBalancer
+	mu *sync.RWMutex
 	// addrToConn maps connection address to connection
 	addrToConn map[pubcluster.Address]*Connection
 	// connToAddr maps connection ID to address
 	connToAddr map[int64]pubcluster.Address
+	addrs      []pubcluster.Address
 }
 
-func newConnectionMap() *connectionMap {
+func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
 	return &connectionMap{
-		connectionsMu: &sync.RWMutex{},
-		addrToConn:    map[pubcluster.Address]*Connection{},
-		connToAddr:    map[int64]pubcluster.Address{},
+		lb:         lb,
+		mu:         &sync.RWMutex{},
+		addrToConn: map[pubcluster.Address]*Connection{},
+		connToAddr: map[int64]pubcluster.Address{},
 	}
 }
 
 func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {
-	m.connectionsMu.Lock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	// if the connection was already added, skip it
+	if _, ok := m.connToAddr[conn.connectionID]; ok {
+		return
+	}
 	m.addrToConn[addr] = conn
 	m.connToAddr[conn.connectionID] = addr
-	m.connectionsMu.Unlock()
+	m.addrs = append(m.addrs, addr)
 }
 
-// RemoveConnection removes a connection and returns true if there are no more addrToConn left.
+// RemoveConnection removes a connection and returns the number of remaining connections.
 func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
-	m.connectionsMu.Lock()
+	m.mu.Lock()
 	var remaining int
 	for addr, conn := range m.addrToConn {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.addrToConn, addr)
 			delete(m.connToAddr, conn.connectionID)
+			m.removeAddr(addr)
 			break
 		}
 	}
 	remaining = len(m.addrToConn)
-	m.connectionsMu.Unlock()
+	m.mu.Unlock()
 	return remaining
 }
 
 func (m *connectionMap) CloseAll() {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	for _, conn := range m.addrToConn {
 		conn.close(nil)
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 }
 
 func (m *connectionMap) GetConnectionForAddr(addr pubcluster.Address) *Connection {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	conn := m.addrToConn[addr]
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return conn
 }
 
 func (m *connectionMap) GetAddrForConnectionID(connID int64) (pubcluster.Address, bool) {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	addr, ok := m.connToAddr[connID]
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return addr, ok
 }
 
 func (m *connectionMap) RandomConn() *Connection {
-	m.connectionsMu.RLock()
-	var conn *Connection
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if len(m.addrs) == 0 {
+		return nil
+	}
+	var addr pubcluster.Address
+	if len(m.addrs) == 1 {
+		addr = m.addrs[0]
+	} else {
+		addr = m.lb.OneOf(m.addrs)
+	}
+	conn := m.addrToConn[addr]
+	if conn != nil {
+		return conn
+	}
+	// if the connection was not found by using the load balancer, select a random one.
 	for _, conn = range m.addrToConn {
 		// Go randomizes maps, this is random enough for now.
-		break
+		return conn
 	}
-	m.connectionsMu.RUnlock()
-	return conn
+	return nil
 }
 
 func (m *connectionMap) Connections() []*Connection {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	conns := make([]*Connection, 0, len(m.addrToConn))
 	for _, conn := range m.addrToConn {
 		conns = append(conns, conn)
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return conns
 }
 
 func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Service) []pubcluster.Address {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	addedAddrs := make([]pubcluster.Address, 0, len(members))
 	for _, member := range members {
 		addr, err := cs.MemberAddr(&member)
@@ -645,12 +669,12 @@ func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Serv
 			addedAddrs = append(addedAddrs, addr)
 		}
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return addedAddrs
 }
 
 func (m *connectionMap) FindRemovedConns(members []pubcluster.MemberInfo) []*Connection {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	removedConns := []*Connection{}
 	for _, member := range members {
 		addr := member.Address
@@ -658,19 +682,30 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.MemberInfo) []*Con
 			removedConns = append(removedConns, conn)
 		}
 	}
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return removedConns
 }
 
 func (m *connectionMap) Info(infoFun func(connections map[pubcluster.Address]*Connection, connToAddr map[int64]pubcluster.Address)) {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	infoFun(m.addrToConn, m.connToAddr)
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 }
 
 func (m *connectionMap) Len() int {
-	m.connectionsMu.RLock()
+	m.mu.RLock()
 	l := len(m.connToAddr)
-	m.connectionsMu.RUnlock()
+	m.mu.RUnlock()
 	return l
+}
+
+func (m *connectionMap) removeAddr(addr pubcluster.Address) {
+	for i, a := range m.addrs {
+		if a.Equal(addr) {
+			// note that this changes the order of addresses
+			m.addrs[i] = m.addrs[len(m.addrs)-1]
+			m.addrs = m.addrs[:len(m.addrs)-1]
+			break
+		}
+	}
 }

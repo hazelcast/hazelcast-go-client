@@ -17,8 +17,11 @@
 package serialization
 
 import (
+	"log"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -183,15 +186,18 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 		age:  22,
 		name: "Furkan Şenharputlu",
 	}
-	config := &serialization.Config{
-		PortableFactories: []serialization.PortableFactory{&portableFactory1{}}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID, classDef.ClassID, 0))
 
 	o := NewPositionalObjectDataOutput(0, service, false)
-	serializer, _ := service.FindSerializerFor(expectedRet)
+	serializer, err := service.FindSerializerFor(expectedRet)
+	if err != nil {
+		t.Fatal(err)
+	}
 	pw := NewDefaultPortableWriter(serializer.(*PortableSerializer), o, classDef)
 	pw.WritePortable("engineer", expectedRet)
 	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
@@ -206,9 +212,8 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 
 func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 	var expectedRet serialization.Portable
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
@@ -394,15 +399,14 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{id: 11, age: 20, name: "Jack Purcell"},
 	}
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer, err := NewPortableSerializer(service, config.PortableFactories, 0)
+	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,9 +424,8 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 
 func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	var expectedRet serialization.Portable
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
 	service, _ := NewService(config)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
@@ -482,4 +485,23 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 		ret6 != nil || ret7 != nil || ret8 != nil || ret9 != nil || ret10 != nil {
 		t.Errorf("ReadPortable() returns %v expected %v", ret, expectedRet)
 	}
+}
+
+func TestDefaultPortableReader_ReadString_NonASCIIFieldName(t *testing.T) {
+	// See: https://github.com/hazelcast/hazelcast/issues/17955#issuecomment-778152424
+	service, err := NewService(&serialization.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	o := NewPositionalObjectDataOutput(0, service, false)
+	cd := serialization.NewClassDefinition(2, 1, 3)
+	if err = cd.AddStringField("şerıalızatıon"); err != nil {
+		t.Fatal(err)
+	}
+	pw := NewDefaultPortableWriter(nil, o, cd)
+	pw.WriteString("şerıalızatıon", "foo")
+	i := NewObjectDataInput(o.ToBuffer(), 0, service, false)
+	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
+	ret := pr.ReadString("şerıalızatıon")
+	assert.Equal(t, "foo", ret)
 }

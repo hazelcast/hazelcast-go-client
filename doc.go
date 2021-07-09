@@ -17,6 +17,63 @@
 /*
 Package hazelcast provides the Hazelcast Go client.
 
+Full Configuration
+
+Here are all configuration items with their default values:
+
+	config := hazelcast.Config{}
+	config.ClientName = ""
+	config.SetLabels()
+
+	cc := &config.Cluster
+	cc.Name = "dev"
+	cc.HeartbeatTimeout = types.Duration(5 * time.Second)
+	cc.HeartbeatInterval = types.Duration(60 * time.Second)
+	cc.InvocationTimeout = types.Duration(120 * time.Second)
+	cc.RedoOperation = false
+	cc.Unisocket = false
+	cc.SetLoadBalancer(cluster.NewRoundRobinLoadBalancer())
+
+	cc.Network.SetAddresses("127.0.0.1:5701")
+	cc.Network.SSL.Enabled = true
+	cc.Network.SSL.SetTLSConfig(&tls.Config{})
+	cc.Network.ConnectionTimeout = types.Duration(5 * time.Second)
+
+	cc.Security.Credentials.Username = ""
+	cc.Security.Credentials.Password = ""
+
+	cc.Discovery.UsePublicIP = false
+
+	cc.Cloud.Enabled = false
+	cc.Cloud.Token = ""
+
+	sc := &config.Serialization
+	sc.PortableVersion = 0
+	sc.LittleEndian = false
+
+	stc := &config.Stats
+	stc.Enabled = false
+	stc.Period = types.Duration(5 * time.Second)
+
+	config.Logger.Level = logger.InfoLevel
+
+
+Configuring Load Balancer
+
+Load balancer configuration allows you to specify which cluster address to send next operation.
+
+If smart client mode is used, only the operations that are not key-based are routed to the member that is returned by the load balancer.
+Load balancer is ignored for unisocket mode.
+
+The default load balancer is the RoundRobinLoadBalancer, which picks the next address in order among the provided addresses.
+The other built-in load balancer is RandomLoadBalancer.
+You can also write a custom load balancer by implementing LoadBalancer.
+
+Use config.ClusterConfig.SetLoadBalancer to set the load balancer:
+
+	config := NewConfig()
+	config.Cluster.SetLoadBalancer(cluster.NewRandomLoadBalancer())
+
 Hazelcast Cloud Discovery
 
 Hazelcast Go client can discover and connect to Hazelcast clusters running on Hazelcast Cloud https://cloud.hazelcast.com.
@@ -24,8 +81,8 @@ In order to activate it, set the cluster name, enable Hazelcast Cloud discovery 
 Here is an example:
 
 	config := hazelcast.NewConfig()
-	config.ClusterConfig.Name = "MY-CLUSTER-NAME"
-	cc := &config.ClusterConfig.HazelcastCloudConfig
+	config.Cluster.Name = "MY-CLUSTER-NAME"
+	cc := &config.Cluster.Cloud
 	cc.Enabled = true
 	cc.Token = "MY-CLUSTER-TOKEN"
 	client, err := hazelcast.StartNewClientWithConfig(config)
@@ -45,12 +102,12 @@ Whenever Hazelcast cluster members are able to resolve their own public external
 As a result, the client can use public addresses for communication, if it cannot access members via private IPs.
 
 Hazelcast Go client has a built-in mechanism to use public IP addresses instead of private ones.
-You can enable this feature by setting config.DiscoveryConfig.UsePublicIP to true and specifying the adddress of at least one member:
+You can enable this feature by setting config.Discovery.UsePublicIP to true and specifying the adddress of at least one member:
 
 	config := hazelcast.NewConfig()
-	cc := &config.ClusterConfig
-	cc.SetAddress("30.40.50.60:5701")
-	cc.DiscoveryConfig.UsePublicIP = true
+	cc := &config.Cluster
+	cc.SetAddresses("30.40.50.60:5701")
+	cc.Discovery.UsePublicIP = true
 
 For more details on member-side configuration, refer to the Discovery SPI section in the Hazelcast IMDG Reference Manual.
 
@@ -80,12 +137,12 @@ Collecting Statistics
 
 Hazelcast Management Center can monitor your clients if client-side statistics are enabled.
 
-You can enable statistics by setting config.StatsConfig.Enabled to true.
-Optionally, the period of statistics collection can be set using config.StatsConfig.Period setting.
+You can enable statistics by setting config.Stats.Enabled to true.
+Optionally, the period of statistics collection can be set using config.Stats.Period setting.
 
 	config := hazelcast.NewConfig()
-	config.StatsConfig.Enabled = true
-	config.StatsConfig.Period = 1 * time.Second
+	config.Stats.Enabled = true
+	config.Stats.Period = 1 * time.Second
 	client, err := hazelcast.StartNewClientWithConfig(config)
 */
 package hazelcast

@@ -19,7 +19,7 @@ package serialization
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -90,7 +90,7 @@ func (pw *DefaultPortableWriter) WriteString(fieldName string, value string) {
 func (pw *DefaultPortableWriter) WritePortable(fieldName string, portable serialization.Portable) {
 	fieldDefinition, ok := pw.classDefinition.Fields[fieldName]
 	if !ok {
-		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
 	pw.setPosition(fieldName, int32(serialization.TypePortable))
 	isNullPortable := portable == nil
@@ -157,7 +157,7 @@ func (pw *DefaultPortableWriter) WriteStringArray(fieldName string, array []stri
 func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableArray []serialization.Portable) {
 	fieldDefinition, ok := pw.classDefinition.Fields[fieldName]
 	if !ok {
-		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
 	pw.setPosition(fieldName, int32(serialization.TypePortableArray))
 	length := len(portableArray)
@@ -184,12 +184,13 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) {
 	field, ok := pw.classDefinition.Fields[fieldName]
 	if !ok {
-		panic(hzerrors.NewHazelcastSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
 	}
 	pos := pw.output.Position()
 	pw.output.PWriteInt32(pw.offset+field.Index*Int32SizeInBytes, pos)
-	pw.output.WriteInt16(int16(len(fieldName)))
-	pw.output.WriteBytes(fieldName)
+	runes := []rune(fieldName)
+	pw.output.WriteInt16(int16(len(runes)))
+	pw.output.writeStringBytes(runes)
 	pw.output.WriteByte(byte(fieldType))
 }
 

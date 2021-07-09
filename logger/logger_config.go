@@ -16,7 +16,9 @@
 
 package logger
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Level string
 
@@ -37,21 +39,22 @@ const (
 	TraceLevel Level = "trace"
 )
 
-type Config struct {
-	Level Level
+func (l Level) String() string {
+	return string(l)
 }
 
-func NewConfig() Config {
-	return Config{
-		Level: InfoLevel,
-	}
+type Config struct {
+	Level Level `json:",omitempty"`
 }
 
 func (c Config) Clone() Config {
 	return Config{Level: c.Level}
 }
 
-func (c Config) Validate() error {
+func (c *Config) Validate() error {
+	if c.Level == "" {
+		c.Level = InfoLevel
+	}
 	switch string(c.Level) {
 	case "off":
 		fallthrough

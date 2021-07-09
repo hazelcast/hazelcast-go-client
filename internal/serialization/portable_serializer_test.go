@@ -17,6 +17,7 @@
 package serialization
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -28,7 +29,7 @@ import (
 type portableFactory1 struct {
 }
 
-func (*portableFactory1) Create(classID int32) serialization.Portable {
+func (portableFactory1) Create(classID int32) serialization.Portable {
 	if classID == 1 {
 		return &student{}
 	} else if classID == 2 {
@@ -37,7 +38,21 @@ func (*portableFactory1) Create(classID int32) serialization.Portable {
 	return nil
 }
 
-func (*portableFactory1) FactoryID() int32 {
+func (portableFactory1) FactoryID() int32 {
+	return 2
+}
+
+type portableFactory2 struct {
+}
+
+func (portableFactory2) Create(classID int32) serialization.Portable {
+	if classID == 1 {
+		return &student2{}
+	}
+	return nil
+}
+
+func (portableFactory2) FactoryID() int32 {
 	return 2
 }
 
@@ -112,18 +127,15 @@ func (*student3) Version() int32 {
 	return 1
 }
 
-func (s *student3) WritePortable(writer serialization.PortableWriter) error {
-	return nil
+func (s *student3) WritePortable(writer serialization.PortableWriter) {
 }
 
-func (s *student3) ReadPortable(reader serialization.PortableReader) error {
-	return nil
+func (s *student3) ReadPortable(reader serialization.PortableReader) {
 }
 
 func TestPortableSerializer(t *testing.T) {
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	service, err := NewService(config)
 	if err != nil {
@@ -143,27 +155,28 @@ func TestPortableSerializer_NoFactory(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectedRet := &student3{}
-	data, _ := service.ToData(expectedRet)
+	data, err := service.ToData(expectedRet)
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, err = service.ToObject(data)
-	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
+	if !errors.Is(err, hzerrors.ErrHazelcastSerialization) {
 		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
 	}
 }
 
 func TestPortableSerializerDuplicateFactory(t *testing.T) {
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
+	config.SetPortableFactories(&portableFactory1{})
 	if _, err := NewService(config); err == nil {
 		t.Fatalf("should have failed")
 	}
 }
 
 func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	service, err := NewService(config)
 	if err != nil {
 		t.Fatal(err)
@@ -171,8 +184,7 @@ func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
 	expectedRet := &student3{}
 	data, _ := service.ToData(expectedRet)
 	_, err = service.ToObject(data)
-	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
-		fmt.Println(err)
+	if !errors.Is(err, hzerrors.ErrHazelcastSerialization) {
 		t.Errorf("err should be 'factory is not able to create an instance for id: 3 on factory id: 2'")
 	}
 }
@@ -184,7 +196,7 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
 
-	if _, ok := err.(*hzerrors.HazelcastSerializationError); !ok {
+	if !errors.Is(err, hzerrors.ErrHazelcastSerialization) {
 		t.Errorf("PortableSerializer Read() should return '%v'", fmt.Sprintf("there is no suitable portable factory for %v", 1))
 	}
 }
@@ -271,9 +283,8 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) {
 }
 
 func TestPortableSerializer2(t *testing.T) {
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	service, err := NewService(config)
 	if err != nil {
 		t.Fatal(err)
@@ -318,9 +329,8 @@ func TestPortableSerializer2(t *testing.T) {
 }
 
 func TestPortableSerializer3(t *testing.T) {
-	config := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config := &serialization.Config{}
+	config.SetPortableFactories(&portableFactory1{})
 	service, _ := NewService(config)
 	service2, _ := NewService(config)
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
@@ -333,14 +343,13 @@ func TestPortableSerializer3(t *testing.T) {
 }
 
 func TestPortableSerializer4(t *testing.T) {
-	config1 := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory1{},
-	}}
+	config1 := &serialization.Config{}
+	config1.SetPortableFactories(&portableFactory1{})
 	def := serialization.NewClassDefinition(2, 1, 0)
 	def.AddInt16Field("id")
 	def.AddInt32Field("age")
 	def.AddStringField("name")
-	config1.ClassDefinitions = append(config1.ClassDefinitions, def)
+	config1.SetClassDefinitions(def)
 	service, err := NewService(config1)
 	if err != nil {
 		t.Fatal(err)
@@ -440,9 +449,8 @@ func (p *parent) ReadPortable(reader serialization.PortableReader) {
 }
 
 func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
-	sc := &serialization.Config{PortableFactories: []serialization.PortableFactory{
-		&portableFactory{},
-	}}
+	sc := &serialization.Config{}
+	sc.SetPortableFactories(&portableFactory{})
 	sc.PortableVersion = 6
 	ss1, _ := NewService(sc)
 	ss2, _ := NewService(sc)

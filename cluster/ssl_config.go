@@ -24,53 +24,53 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 // SSLConfig is SSL configuration for client.
-// SSLConfig has tls.Config embedded in it so that users can set any field
-// of tls config as they wish. SSL config also has some helpers such as SetCaPath, AddClientCertAndKeyPath to
-// make configuration easier for users.
+// SSLConfig has tls.Config embedded in it so that users can set any field of tls config as they wish.
 type SSLConfig struct {
-	TLSConfig *tls.Config `json:"-"`
-	Enabled   bool
-}
-
-func NewSSLConfig() SSLConfig {
-	return SSLConfig{TLSConfig: &tls.Config{}}
+	tlsConfig *tls.Config
+	Enabled   bool `json:",omitempty"`
 }
 
 func (c *SSLConfig) Clone() SSLConfig {
+	c.ensureTLSConfig()
 	return SSLConfig{
 		Enabled:   c.Enabled,
-		TLSConfig: c.TLSConfig.Clone(),
+		tlsConfig: c.tlsConfig.Clone(),
 	}
 }
 
 func (c *SSLConfig) Validate() error {
-	if c.Enabled && c.TLSConfig == nil {
-		return fmt.Errorf("TLS configuration cannot be nil")
-	}
+	c.ensureTLSConfig()
 	return nil
 }
 
-func (c *SSLConfig) ResetTLSConfig(tlsConfig *tls.Config) {
-	c.TLSConfig = tlsConfig.Clone()
+// SetTLSConfig resets the internal TLS configuration.
+func (c *SSLConfig) SetTLSConfig(tlsConfig *tls.Config) {
+	c.tlsConfig = tlsConfig.Clone()
+}
+
+// TLSConfig returns the clone of internal TLS configuration.
+func (c *SSLConfig) TLSConfig() *tls.Config {
+	c.ensureTLSConfig()
+	return c.tlsConfig.Clone()
 }
 
 // SetCAPath sets CA file path.
 func (c *SSLConfig) SetCAPath(path string) error {
+	c.ensureTLSConfig()
 	// XXX: what happens if the path is loaded multiple times?
 	// load CA cert
 	if caCert, err := ioutil.ReadFile(path); err != nil {
-		return fmt.Errorf("reading CA certificate: %w", err)
+		return ihzerrors.NewIOError("reading CA certificate: %w", err)
 	} else {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-			return hzerrors.NewHazelcastIOError("error while loading the CA file, make sure the path exits and "+
-				"the format is pem", nil)
+			return ihzerrors.NewIOError("error while loading the CA file, make sure the path exits and the format is pem", nil)
 		} else {
-			c.TLSConfig.RootCAs = caCertPool
+			c.tlsConfig.RootCAs = caCertPool
 		}
 	}
 	return nil
@@ -84,10 +84,11 @@ func (c *SSLConfig) SetCAPath(path string) error {
 // For mutual authentication at least one client certificate should be added.
 // It returns an error if any of files cannot be loaded.
 func (c *SSLConfig) AddClientCertAndKeyPath(clientCertPath string, clientPrivateKeyPath string) error {
+	c.ensureTLSConfig()
 	if cert, err := tls.LoadX509KeyPair(clientCertPath, clientPrivateKeyPath); err != nil {
 		return fmt.Errorf("loading key pair: %w", err)
 	} else {
-		c.TLSConfig.Certificates = append(c.TLSConfig.Certificates, cert)
+		c.tlsConfig.Certificates = append(c.tlsConfig.Certificates, cert)
 	}
 	return nil
 }
@@ -102,6 +103,7 @@ func (c *SSLConfig) AddClientCertAndKeyPath(clientCertPath string, clientPrivate
 // For mutual authentication at least one client certificate should be added.
 // It returns an error if any of files cannot be loaded.
 func (c *SSLConfig) AddClientCertAndEncryptedKeyPath(certPath string, privateKeyPath string, password string) error {
+	c.ensureTLSConfig()
 	var certPEMBlock, privatePEM, der []byte
 	var privKey *rsa.PrivateKey
 	var cert tls.Certificate
@@ -123,6 +125,12 @@ func (c *SSLConfig) AddClientCertAndEncryptedKeyPath(certPath string, privateKey
 	if cert, err = tls.X509KeyPair(certPEMBlock, keyPEM); err != nil {
 		return fmt.Errorf("creating certificate from key pair: %w", err)
 	}
-	c.TLSConfig.Certificates = append(c.TLSConfig.Certificates, cert)
+	c.tlsConfig.Certificates = append(c.tlsConfig.Certificates, cert)
 	return nil
+}
+
+func (c *SSLConfig) ensureTLSConfig() {
+	if c.tlsConfig == nil {
+		c.tlsConfig = &tls.Config{}
+	}
 }

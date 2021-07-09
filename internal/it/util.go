@@ -80,8 +80,8 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 		if TraceLoggingEnabled() {
 			logLevel = logger.TraceLevel
 		}
-		config.LoggerConfig.Level = logLevel
-		config.ClusterConfig.SmartRouting = smart
+		config.Logger.Level = logLevel
+		config.Cluster.Unisocket = !smart
 		client := MustClient(hz.StartNewClientWithConfig(config))
 		defer func() {
 			if err := client.Shutdown(); err != nil {
@@ -287,13 +287,11 @@ func (c TestCluster) Shutdown() {
 
 func (c TestCluster) DefaultConfig() hz.Config {
 	config := hz.NewConfig()
-	config.ClusterConfig.Name = c.clusterID
-	if err := config.ClusterConfig.SetAddress("localhost:7701"); err != nil {
-		panic(err)
-	}
+	config.Cluster.Name = c.clusterID
+	config.Cluster.Network.SetAddresses("localhost:7701")
 	if SSLEnabled() {
-		config.ClusterConfig.SSLConfig.Enabled = true
-		config.ClusterConfig.SSLConfig.ResetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+		config.Cluster.Network.SSL.Enabled = true
+		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 	return config
 }
@@ -355,7 +353,7 @@ func getLoggerLevel() logger.Level {
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {
-	config.LoggerConfig.Level = getLoggerLevel()
+	config.Logger.Level = getLoggerLevel()
 	client, err := hz.StartNewClientWithConfig(*config)
 	if err != nil {
 		panic(err)

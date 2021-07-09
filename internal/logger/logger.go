@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	publogger "github.com/hazelcast/hazelcast-go-client/logger"
 )
 
@@ -72,7 +72,7 @@ func isValidLogLevel(logLevel publogger.Level) bool {
 // GetLogLevel returns the corresponding log level with the given string if it exists, otherwise returns an error.
 func GetLogLevel(logLevel publogger.Level) (int, error) {
 	if !isValidLogLevel(logLevel) {
-		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf("no log level found for %s", logLevel), nil)
+		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no log level found for %s", logLevel), nil)
 	}
 	return nameToLevel[logLevel], nil
 }

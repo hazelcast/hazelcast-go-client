@@ -23,9 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -33,6 +34,7 @@ import (
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -50,8 +52,6 @@ const (
 	ttlUnset     = -1
 	ttlUnlimited = 0
 )
-
-var errNilArg = hzerrors.NewHazelcastNilPointerError("nil arg is not allowed", nil)
 
 type creationBundle struct {
 	RequestCh            chan<- invocation.Invocation
@@ -110,6 +110,7 @@ type proxy struct {
 	removeFromCacheFn    func() bool
 	serviceName          string
 	name                 string
+	smart                bool
 }
 
 func newProxy(
@@ -143,6 +144,7 @@ func newProxy(
 		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
 		refIDGen:             refIDGen,
+		smart:                !bundle.Config.Cluster.Unisocket,
 	}
 	if err := p.create(ctx); err != nil {
 		return nil, err
@@ -176,7 +178,7 @@ func (p *proxy) Destroy(ctx context.Context) error {
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
 	if nilutil.IsNil(arg1) {
-		return nil, errNilArg
+		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	return p.serializationService.ToData(arg1)
 }
@@ -184,7 +186,7 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, er
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
-		return nil, nil, errNilArg
+		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
 	if err != nil {
@@ -197,7 +199,7 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, arg3Data *iserialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
-		return nil, nil, nil, errNilArg
+		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
 	if err != nil {
@@ -211,11 +213,19 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 	return
 }
 
-func (p *proxy) validateAndSerializePredicate(arg1 interface{}) (arg1Data *iserialization.Data, err error) {
-	if nilutil.IsNil(arg1) {
-		return nil, hzerrors.NewHazelcastSerializationError("predicate should not be nil", nil)
+func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data *iserialization.Data, err error) {
+	if nilutil.IsNil(agg) {
+		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil", nil)
 	}
-	arg1Data, err = p.serializationService.ToData(arg1)
+	arg1Data, err = p.serializationService.ToData(agg)
+	return
+}
+
+func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data *iserialization.Data, err error) {
+	if nilutil.IsNil(pred) {
+		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil", nil)
+	}
+	arg1Data, err = p.serializationService.ToData(pred)
 	return
 }
 
