@@ -20,20 +20,15 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
-)
-
-const (
-	nonNegativeValueExpected = "non-negative integer number expected: %d"
-	int32ValueExpected       = "signed 32-bit integer number expected: %d"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 func ValidateAsNonNegativeInt32(n int) (int32, error) {
 	if n < 0 {
-		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(nonNegativeValueExpected, n), nil)
+		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("non-negative integer number expected: %d", n), nil)
 	}
 	if n > math.MaxInt32 {
-		return 0, hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf(int32ValueExpected, n), nil)
+		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("signed 32-bit integer number expected: %d", n), nil)
 	}
 	return int32(n), nil
 }

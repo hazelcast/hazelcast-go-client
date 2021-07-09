@@ -509,11 +509,8 @@ func TestMap_AddIndexValidationError(t *testing.T) {
 		}
 		if err := m.AddIndexWithConfig(context.Background(), indexConfig); err == nil {
 			t.Fatalf("should have failed")
-		} else {
-			vErr := &hzerrors.IndexValidationError{}
-			if !errors.As(err, &vErr) {
-				t.Fatalf("should have returned an index validation error")
-			}
+		} else if !errors.Is(err, hzerrors.ErrIllegalArgument) {
+			t.Fatalf("should have returned an illegal argument error")
 		}
 	})
 }

@@ -19,7 +19,7 @@ package serialization
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -301,7 +301,7 @@ func (mpr *MorphingPortableReader) ReadPortableArray(fieldName string) []seriali
 
 func (mpr *MorphingPortableReader) createIncompatibleClassChangeError(fd *serialization.FieldDefinition,
 	expectedType serialization.FieldDefinitionType) error {
-	return hzerrors.NewHazelcastSerializationError(fmt.Sprintf("incompatible to read %v from %v while reading field : %v",
+	return ihzerrors.NewSerializationError(fmt.Sprintf("incompatible to read %v from %v while reading field : %v",
 		TypeByID(expectedType), TypeByID(fd.Type), fd.Name), nil)
 }
 

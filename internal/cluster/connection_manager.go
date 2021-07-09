@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -41,9 +42,10 @@ import (
 )
 
 const (
-	authenticated = iota
-	credentialsFailed
-	serializationVersionMismatch
+	authenticated                = 0
+	credentialsFailed            = 1
+	serializationVersionMismatch = 2
+	notAllowedInCluster          = 3
 )
 
 const (
@@ -329,16 +331,18 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 	if len(seedAddrs) == 0 {
 		return "", cb.WrapNonRetryableError(errors.New("no seed addresses"))
 	}
+	var conn *Connection
+	var err error
 	for _, addr := range seedAddrs {
-		if conn, err := m.ensureConnection(ctx, addr); err != nil {
+		if conn, err = m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-		} else if err := m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+		} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
 			return "", err
 		} else {
 			return addr, nil
 		}
 	}
-	return "", errors.New("cannot connect to any address in the cluster")
+	return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
 }
 
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
@@ -356,7 +360,7 @@ func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubc
 	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection(addr)
 	if err := conn.start(m.clusterConfig, addr); err != nil {
-		return nil, hzerrors.NewHazelcastTargetDisconnectedError(err.Error(), err)
+		return nil, ihzerrors.NewTargetDisconnectedError(err.Error(), err)
 	} else if err = m.authenticate(conn); err != nil {
 		conn.close(nil)
 		return nil, err
@@ -418,12 +422,15 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 			return fmt.Sprintf("opened connection to: %s", connAddr)
 		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
+		return nil
 	case credentialsFailed:
-		return hzerrors.NewHazelcastAuthenticationError("invalid credentials", nil)
+		return fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication)
 	case serializationVersionMismatch:
-		return hzerrors.NewHazelcastAuthenticationError("serialization version mismatches with the server", nil)
+		return fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication)
+	case notAllowedInCluster:
+		return cb.WrapNonRetryableError(hzerrors.ErrClientNotAllowedInCluster)
 	}
-	return nil
+	return hzerrors.ErrAuthentication
 }
 
 func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {

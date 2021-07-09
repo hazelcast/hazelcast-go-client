@@ -16,29 +16,13 @@
 
 package proto
 
-type StackTraceElement struct {
-	className  string
-	methodName string
-	fileName   string
-	lineNumber int32
-}
+import "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 
-func NewStackTraceElement(className, methodName, fileName string, lineNumber int32) StackTraceElement {
-	return StackTraceElement{className, methodName, fileName, lineNumber}
-}
-
-func (s StackTraceElement) ClassName() string {
-	return s.className
-}
-
-func (s StackTraceElement) MethodName() string {
-	return s.methodName
-}
-
-func (s StackTraceElement) FileName() string {
-	return s.fileName
-}
-
-func (s StackTraceElement) LineNumber() int32 {
-	return s.lineNumber
+func NewStackTraceElement(className, methodName, fileName string, lineNumber int32) hzerrors.StackTraceElement {
+	return hzerrors.StackTraceElement{
+		ClassName:  className,
+		MethodName: methodName,
+		FileName:   fileName,
+		LineNumber: lineNumber,
+	}
 }

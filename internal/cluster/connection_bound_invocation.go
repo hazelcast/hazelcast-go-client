@@ -23,6 +23,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
@@ -50,10 +51,23 @@ func (i *ConnectionBoundInvocation) SetEventHandler(handler proto.ClientMessageH
 
 func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
 	var nonRetryableError *cb.NonRetryableError
-	if errors.Is(err, nonRetryableError) {
+	if errors.As(err, &nonRetryableError) {
 		return false
 	}
-	var ioError *hzerrors.HazelcastIOError
-	var targetDisconnectedError *hzerrors.HazelcastTargetDisconnectedError
-	return errors.As(err, &ioError) || errors.As(err, &targetDisconnectedError)
+	/* corresponds to Java client's
+	   if (isBindToSingleConnection() && (t instanceof IOException || t instanceof TargetDisconnectedException)) {
+	       return false;
+	   }
+	*/
+	if errors.Is(err, hzerrors.ErrIO) || errors.Is(err, hzerrors.ErrTargetDisconnected) {
+		return false
+	}
+	// check whether the error is retryable
+	if ihzerrors.IsRetryable(err) {
+		return true
+	}
+	if errors.Is(err, hzerrors.ErrHazelcastInstanceNotActive) {
+		return true
+	}
+	return false
 }

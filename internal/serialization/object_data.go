@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 const (
@@ -317,10 +317,10 @@ func (i *ObjectDataInput) Available() int32 {
 
 func (i *ObjectDataInput) AssertAvailable(k int) {
 	if i.position < 0 {
-		panic(hzerrors.NewHazelcastIllegalArgumentError(fmt.Sprintf("negative pos: %v", i.position), nil))
+		panic(ihzerrors.NewIllegalArgumentError(fmt.Sprintf("negative pos: %v", i.position), nil))
 	}
 	if len(i.buffer) < int(i.position)+k {
-		panic(hzerrors.NewHazelcastEOFError(fmt.Sprintf("cannot read %v bytes", k), nil))
+		panic(ihzerrors.NewEOFError(fmt.Sprintf("cannot read %v bytes", k)))
 	}
 }
 

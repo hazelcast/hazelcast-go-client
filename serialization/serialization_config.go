@@ -17,8 +17,9 @@
 package serialization
 
 import (
-	"errors"
 	"reflect"
+
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 // Config contains the serialization configuration of a Hazelcast instance.
@@ -95,7 +96,7 @@ func (b *Config) PortableFactories() []PortableFactory {
 func (b *Config) SetCustomSerializer(t reflect.Type, serializer Serializer) error {
 	b.ensureCustomSerializers()
 	if serializer.ID() <= 0 {
-		return errors.New("serializerID must be positive")
+		return ihzerrors.NewIllegalArgumentError("serializerID must be positive", nil)
 	}
 	b.customSerializers[t] = serializer
 	return nil
