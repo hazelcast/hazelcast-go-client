@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 type sampleEvent struct {
@@ -41,7 +42,8 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 		wg.Done()
 	}
-	service := event.NewDispatchService()
+	lg := logger.New()
+	service := event.NewDispatchService(lg)
 	service.Subscribe("sample.event", 100, handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
@@ -54,7 +56,8 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 }
 
 func TestDispatchServiceUnsubscribe(t *testing.T) {
-	service := event.NewDispatchService()
+	lg := logger.New()
+	service := event.NewDispatchService(lg)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	dispatchCount := int32(0)

@@ -113,7 +113,7 @@ func (l *DefaultLogger) Error(err error) {
 
 func (l *DefaultLogger) Errorf(format string, values ...interface{}) {
 	if l.canLogError() {
-		s := fmt.Sprintf("ERROR : %s", fmt.Errorf(format, values...).Error())
+		s := fmt.Sprintf("ERROR: %s", fmt.Errorf(format, values...).Error())
 		l.Output(logCallDepth, s)
 	}
 }

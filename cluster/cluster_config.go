@@ -69,6 +69,9 @@ func (c *Config) Validate() error {
 	if c.InvocationTimeout <= 0 {
 		c.InvocationTimeout = types.Duration(120 * time.Second)
 	}
+	if c.loadBalancer == nil {
+		c.loadBalancer = NewRoundRobinLoadBalancer()
+	}
 	if err := c.Security.Validate(); err != nil {
 		return err
 	}

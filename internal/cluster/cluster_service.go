@@ -87,12 +87,10 @@ func NewService(bundle CreationBundle) *Service {
 	return &Service{
 		addrProvider:      bundle.AddrProvider,
 		requestCh:         bundle.RequestCh,
-		doneCh:            make(chan struct{}),
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		partitionService:  bundle.PartitionService,
 		logger:            bundle.Logger,
-		membersMap:        newMembersMap(bundle.AddressTranslator),
 		config:            bundle.Config,
 		addrTranslator:    bundle.AddressTranslator,
 	}
@@ -103,6 +101,7 @@ func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 }
 
 func (s *Service) Start() {
+	s.reset()
 	if s.logger.CanLogDebug() {
 		go s.logStatus()
 	}
@@ -125,6 +124,7 @@ func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]stru
 }
 
 func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
+	s.membersMap.reset()
 	addrSet := NewAddrSet()
 	addrSet.AddAddrs(s.addrProvider.Addresses(refresh))
 	return addrSet.Addrs()
@@ -132,6 +132,11 @@ func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
 
 func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, error) {
 	return s.addrTranslator.TranslateMember(context.TODO(), m)
+}
+
+func (s *Service) reset() {
+	s.doneCh = make(chan struct{}, 1)
+	s.membersMap = newMembersMap(s.addrTranslator, s.logger)
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
@@ -146,6 +151,7 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 }
 
 func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
+	s.logger.Trace(func() string { return "cluster.Service.sendMemberListViewRequest" })
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
@@ -208,20 +214,21 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 
 type membersMap struct {
 	addrTranslator   AddressTranslator
+	logger           ilogger.Logger
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
 	membersMu        *sync.RWMutex
 	version          int32
 }
 
-func newMembersMap(translator AddressTranslator) membersMap {
-	return membersMap{
-		members:          map[types.UUID]*pubcluster.MemberInfo{},
-		addrToMemberUUID: map[pubcluster.Address]types.UUID{},
-		membersMu:        &sync.RWMutex{},
-		version:          -1,
-		addrTranslator:   translator,
+func newMembersMap(translator AddressTranslator, lg ilogger.Logger) membersMap {
+	mm := membersMap{
+		membersMu:      &sync.RWMutex{},
+		addrTranslator: translator,
+		logger:         lg,
 	}
+	mm.reset()
+	return mm
 }
 
 func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (added []pubcluster.MemberInfo, removed []pubcluster.MemberInfo) {
@@ -309,11 +316,11 @@ func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]s
 
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.
 // If memberinfo already exists returns false.
-func (m *membersMap) addMember(memberInfo *pubcluster.MemberInfo) bool {
-	uuid := memberInfo.UUID
-	addr, err := m.addrTranslator.TranslateMember(context.TODO(), memberInfo)
+func (m *membersMap) addMember(member *pubcluster.MemberInfo) bool {
+	uuid := member.UUID
+	addr, err := m.addrTranslator.TranslateMember(context.TODO(), member)
 	if err != nil {
-		addr = memberInfo.Address
+		addr = member.Address
 	}
 	if _, uuidFound := m.members[uuid]; uuidFound {
 		return false
@@ -321,12 +328,24 @@ func (m *membersMap) addMember(memberInfo *pubcluster.MemberInfo) bool {
 	if existingUUID, addrFound := m.addrToMemberUUID[addr]; addrFound {
 		delete(m.members, existingUUID)
 	}
-	m.members[uuid] = memberInfo
+	m.logger.Trace(func() string {
+		return fmt.Sprintf("membersMap.addMember: %s, %s", member.UUID.String(), addr)
+	})
+	m.members[uuid] = member
 	m.addrToMemberUUID[addr] = uuid
 	return true
 }
 
 func (m *membersMap) removeMember(member *pubcluster.MemberInfo) {
+	m.logger.Trace(func() string {
+		return fmt.Sprintf("membersMap.removeMember: %s, %s", member.UUID.String(), member.Address.String())
+	})
 	delete(m.members, member.UUID)
 	delete(m.addrToMemberUUID, member.Address)
+}
+
+func (m *membersMap) reset() {
+	m.members = map[types.UUID]*pubcluster.MemberInfo{}
+	m.addrToMemberUUID = map[pubcluster.Address]types.UUID{}
+	m.version = -1
 }
