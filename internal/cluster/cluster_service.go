@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -40,7 +39,6 @@ type Service struct {
 	partitionService  *PartitionService
 	requestCh         chan<- invocation.Invocation
 	invocationFactory *ConnectionInvocationFactory
-	doneCh            chan struct{}
 	membersMap        membersMap
 }
 
@@ -93,22 +91,12 @@ func NewService(bundle CreationBundle) *Service {
 		logger:            bundle.Logger,
 		config:            bundle.Config,
 		addrTranslator:    bundle.AddressTranslator,
+		membersMap:        newMembersMap(bundle.AddressTranslator, bundle.Logger),
 	}
 }
 
 func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 	return s.membersMap.Find(uuid)
-}
-
-func (s *Service) Start() {
-	s.reset()
-	if s.logger.CanLogDebug() {
-		go s.logStatus()
-	}
-}
-
-func (s *Service) Stop() {
-	close(s.doneCh)
 }
 
 func (s *Service) MemberAddrs() []pubcluster.Address {
@@ -134,9 +122,8 @@ func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, erro
 	return s.addrTranslator.TranslateMember(context.TODO(), m)
 }
 
-func (s *Service) reset() {
-	s.doneCh = make(chan struct{}, 1)
-	s.membersMap = newMembersMap(s.addrTranslator, s.logger)
+func (s *Service) Reset() {
+	s.membersMap.reset()
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
@@ -163,27 +150,6 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 	s.requestCh <- inv
 	_, err := inv.GetWithContext(ctx)
 	return err
-}
-
-func (s *Service) logStatus() {
-	ticker := time.NewTicker(10 * time.Second)
-	for {
-		select {
-		case <-s.doneCh:
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			s.membersMap.Info(func(members map[types.UUID]*pubcluster.MemberInfo) {
-				s.logger.Trace(func() string {
-					mems := map[types.UUID]pubcluster.Address{}
-					for uuid, member := range members {
-						mems[uuid] = member.Address
-					}
-					return fmt.Sprintf("members: %+v", mems)
-				})
-			})
-		}
-	}
 }
 
 type AddrSet struct {
@@ -317,6 +283,7 @@ func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]s
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.
 // If memberinfo already exists returns false.
 func (m *membersMap) addMember(member *pubcluster.MemberInfo) bool {
+	// synchronized in Update
 	uuid := member.UUID
 	addr, err := m.addrTranslator.TranslateMember(context.TODO(), member)
 	if err != nil {
@@ -337,6 +304,7 @@ func (m *membersMap) addMember(member *pubcluster.MemberInfo) bool {
 }
 
 func (m *membersMap) removeMember(member *pubcluster.MemberInfo) {
+	// synchronized in Update
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("membersMap.removeMember: %s, %s", member.UUID.String(), member.Address.String())
 	})
@@ -345,7 +313,9 @@ func (m *membersMap) removeMember(member *pubcluster.MemberInfo) {
 }
 
 func (m *membersMap) reset() {
+	m.membersMu.Lock()
 	m.members = map[types.UUID]*pubcluster.MemberInfo{}
 	m.addrToMemberUUID = map[pubcluster.Address]types.UUID{}
 	m.version = -1
+	m.membersMu.Unlock()
 }

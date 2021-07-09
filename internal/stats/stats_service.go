@@ -98,7 +98,7 @@ func (s *Service) Start() {
 	go s.loop()
 }
 
-func (s Service) Stop() {
+func (s *Service) Stop() {
 	close(s.doneCh)
 	subID := event.MakeSubscriptionID(s.handleClusterConnected)
 	s.ed.Unsubscribe(cluster.EventConnected, subID)
@@ -128,11 +128,13 @@ func (s *Service) handleClusterConnected(event event.Event) {
 }
 
 func (s *Service) sendStats(ctx context.Context) {
+	s.mu.Lock()
 	now := time.Now()
 	s.addBasicStats(now)
 	blob := s.makeStats()
 	statsStr := makeStatString(s.btStats.stats)
 	s.resetStats()
+	s.mu.Unlock()
 	s.logger.Debug(func() string {
 		return fmt.Sprintf("sending stats: %s", statsStr)
 	})

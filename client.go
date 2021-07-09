@@ -209,9 +209,7 @@ func (c *Client) start(ctx context.Context) error {
 	}
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
-	c.clusterService.Start()
 	if err := c.connectionManager.Start(ctx, false); err != nil {
-		c.clusterService.Stop()
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
 		return err
@@ -234,7 +232,6 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	}
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
-	c.clusterService.Stop()
 	c.connectionManager.Stop()
 	if c.statsService != nil {
 		c.statsService.Stop()
@@ -489,8 +486,7 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
 	// try to reboot cluster connection
 	c.connectionManager.Stop()
-	c.clusterService.Stop()
-	c.clusterService.Start()
+	c.clusterService.Reset()
 	if err := c.connectionManager.Start(ctx, true); err != nil {
 		c.logger.Errorf("cannot reboot cluster, shutting down: %w", err)
 		c.Shutdown(ctx)

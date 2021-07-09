@@ -157,6 +157,9 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
 		addrTranslator:       bundle.AddrTranslator,
+		// creating a buffered channel with size 10 in order to not having to close it.
+		// need to adjust it for the number of goroutines.
+		doneCh: make(chan struct{}, 10),
 	}
 	return manager
 }
@@ -199,12 +202,14 @@ func (m *ConnectionManager) start(ctx context.Context, refresh bool) error {
 }
 
 func (m *ConnectionManager) Stop() {
-	atomic.StoreInt32(&m.state, stopped)
 	m.eventDispatcher.Unsubscribe(EventConnectionClosed, event.MakeSubscriptionID(m.handleConnectionClosed))
 	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
 	m.eventDispatcher.Unsubscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved))
+	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
+		return
+	}
+	m.doneCh <- struct{}{}
 	m.connMap.CloseAll()
-	close(m.doneCh)
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {
@@ -243,9 +248,8 @@ func (m *ConnectionManager) reset() {
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(makeRetryPolicy(r, &m.clusterConfig.ConnectionStrategy.Retry)),
 	)
-	m.doneCh = make(chan struct{}, 1)
 	m.startCh = make(chan struct{}, 1)
-	m.connMap = newConnectionMap(m.clusterConfig.LoadBalancer())
+	m.connMap.Reset()
 }
 
 func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
@@ -565,6 +569,13 @@ func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
 		addrToConn: map[pubcluster.Address]*Connection{},
 		connToAddr: map[int64]pubcluster.Address{},
 	}
+}
+
+func (m *connectionMap) Reset() {
+	m.mu.Lock()
+	m.addrToConn = map[pubcluster.Address]*Connection{}
+	m.connToAddr = map[int64]pubcluster.Address{}
+	m.mu.Unlock()
 }
 
 func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {

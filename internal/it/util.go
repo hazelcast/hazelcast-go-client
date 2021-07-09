@@ -218,7 +218,7 @@ func HzVersion() string {
 	return version
 }
 
-func defaultMemberCount() int {
+func MemberCount() int {
 	if memberCountStr := os.Getenv(EnvMemberCount); memberCountStr != "" {
 		if memberCount, err := strconv.Atoi(memberCountStr); err != nil {
 			panic(err)
@@ -255,9 +255,9 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 		}
 		if launchDefaultCluster {
 			if SSLEnabled() {
-				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
+				defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
 			} else {
-				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
+				defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
 			}
 		}
 	}
