@@ -18,11 +18,14 @@ package hazelcast_test
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/logger"
 
 	"github.com/stretchr/testify/assert"
 
@@ -216,10 +219,11 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 
 func TestClusterReconnection(t *testing.T) {
 	ctx := context.Background()
-	cls := it.StartNewCluster(1)
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
 	mu := &sync.Mutex{}
 	events := []hz.LifecycleState{}
 	config := cls.DefaultConfig()
+	config.Logger.Level = logger.TraceLevel
 	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 		mu.Lock()
 		events = append(events, event.State)
@@ -232,7 +236,7 @@ func TestClusterReconnection(t *testing.T) {
 	time.Sleep(5 * time.Second)
 	cls.Shutdown()
 	time.Sleep(5 * time.Second)
-	cls = it.StartNewCluster(1)
+	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
 	time.Sleep(5 * time.Second)
 	cls.Shutdown()
 	c.Shutdown(ctx)
@@ -248,6 +252,60 @@ func TestClusterReconnection(t *testing.T) {
 		hz.LifecycleStateShuttingDown,
 		hz.LifecycleStateShutDown,
 	}
+	fmt.Println("target :", target)
+	fmt.Println("events :", events)
 	assert.Equal(t, target, events)
+}
 
+func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	mu := &sync.Mutex{}
+	var events []hz.LifecycleState
+	config := cls.DefaultConfig()
+	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+		mu.Lock()
+		events = append(events, event.State)
+		mu.Unlock()
+	})
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Second)
+
+	// start shutting down members one by one
+	for _, uuid := range cls.MemberUUIDs {
+		time.Sleep(1 * time.Second)
+		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
+	}
+	time.Sleep(1 * time.Second)
+	cls.Shutdown()
+	time.Sleep(1 * time.Second)
+
+	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	time.Sleep(5 * time.Second)
+	// start shutting down members one by one
+	for _, uuid := range cls.MemberUUIDs {
+		time.Sleep(1 * time.Second)
+		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
+	}
+	time.Sleep(1 * time.Second)
+	c.Shutdown(ctx)
+
+	mu.Lock()
+	defer mu.Unlock()
+	target := []hz.LifecycleState{
+		hz.LifecycleStateStarting,
+		hz.LifecycleStateClientConnected,
+		hz.LifecycleStateStarted,
+		hz.LifecycleStateClientDisconnected,
+		hz.LifecycleStateClientConnected,
+		hz.LifecycleStateClientDisconnected,
+		hz.LifecycleStateShuttingDown,
+		hz.LifecycleStateShutDown,
+	}
+	fmt.Println("target :", target)
+	fmt.Println("events :", events)
+	assert.Equal(t, target, events)
 }

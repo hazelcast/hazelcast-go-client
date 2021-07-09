@@ -255,9 +255,9 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 		}
 		if launchDefaultCluster {
 			if SSLEnabled() {
-				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort))
+				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
 			} else {
-				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlConfig(DefaultClusterName, DefaultPort))
+				defaultTestCluster = startNewCluster(rc, defaultMemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
 			}
 		}
 	}
@@ -265,21 +265,26 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 }
 
 type TestCluster struct {
-	rc          *RemoteControllerClient
-	clusterID   string
-	memberUUIDs []string
+	RC          *RemoteControllerClient
+	ClusterID   string
+	MemberUUIDs []string
+	Port        int
 }
 
 func StartNewCluster(memberCount int) *TestCluster {
-	ensureRemoteController(false)
-	config := xmlConfig(DefaultClusterName, DefaultPort)
-	if SSLEnabled() {
-		config = xmlSSLConfig(DefaultClusterName, DefaultPort)
-	}
-	return startNewCluster(rc, memberCount, config)
+	return StartNewClusterWithOptions(DefaultClusterName, DefaultPort, memberCount)
 }
 
-func startNewCluster(rc *RemoteControllerClient, memberCount int, config string) *TestCluster {
+func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
+	ensureRemoteController(false)
+	config := xmlConfig(clusterName, port)
+	if SSLEnabled() {
+		config = xmlSSLConfig(clusterName, port)
+	}
+	return startNewCluster(rc, memberCount, config, port)
+}
+
+func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
 	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
@@ -287,22 +292,23 @@ func startNewCluster(rc *RemoteControllerClient, memberCount int, config string)
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
-		rc:          rc,
-		clusterID:   cluster.ID,
-		memberUUIDs: memberUUIDs,
+		RC:          rc,
+		ClusterID:   cluster.ID,
+		MemberUUIDs: memberUUIDs,
+		Port:        port,
 	}
 }
 
 func (c TestCluster) Shutdown() {
-	for _, memberUUID := range c.memberUUIDs {
-		c.rc.ShutdownMember(context.Background(), c.clusterID, memberUUID)
+	for _, memberUUID := range c.MemberUUIDs {
+		c.RC.ShutdownMember(context.Background(), c.ClusterID, memberUUID)
 	}
 }
 
 func (c TestCluster) DefaultConfig() hz.Config {
-	config := hz.NewConfig()
-	config.Cluster.Name = c.clusterID
-	config.Cluster.Network.SetAddresses("localhost:7701")
+	config := hz.Config{}
+	config.Cluster.Name = c.ClusterID
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", c.Port))
 	if SSLEnabled() {
 		config.Cluster.Network.SSL.Enabled = true
 		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})

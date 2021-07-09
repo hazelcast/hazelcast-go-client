@@ -140,12 +140,6 @@ type ConnectionManager struct {
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
 	bundle.Check()
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt32),
-		cb.MaxFailureCount(3),
-		cb.RetryPolicy(makeRetryPolicy(r, &bundle.ClusterConfig.ConnectionStrategy.Retry)),
-	)
 	manager := &ConnectionManager{
 		requestCh:            bundle.RequestCh,
 		responseCh:           bundle.ResponseCh,
@@ -162,7 +156,6 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		connMap:              newConnectionMap(bundle.ClusterConfig.LoadBalancer()),
 		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
-		cb:                   cbr,
 		addrTranslator:       bundle.AddrTranslator,
 	}
 	return manager
@@ -244,6 +237,12 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 }
 
 func (m *ConnectionManager) reset() {
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	m.cb = cb.NewCircuitBreaker(
+		cb.MaxRetries(math.MaxInt32),
+		cb.MaxFailureCount(3),
+		cb.RetryPolicy(makeRetryPolicy(r, &m.clusterConfig.ConnectionStrategy.Retry)),
+	)
 	m.doneCh = make(chan struct{}, 1)
 	m.startCh = make(chan struct{}, 1)
 	m.connMap = newConnectionMap(m.clusterConfig.LoadBalancer())
@@ -268,7 +267,7 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 		missingAddrs := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
 		for _, addr := range missingAddrs {
 			if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
-				m.logger.Errorf("connecting addr: %w", err)
+				m.logger.Errorf("connecting address: %w", err)
 			} else {
 				m.logger.Infof("connectionManager member added: %s", addr.String())
 			}
@@ -309,7 +308,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	if respawnConnection {
 		if addr, ok := m.connMap.GetAddrForConnectionID(conn.connectionID); ok {
 			if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
-				m.logger.Errorf("error connecting addr: %w", err)
+				m.logger.Errorf("error connecting address: %w", err)
 				// TODO: add failing addrs to a channel
 			}
 		}

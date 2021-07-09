@@ -187,6 +187,19 @@ func TestMap_Set(t *testing.T) {
 	})
 }
 
+func TestMap_SetWithTTL(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		targetValue := "value"
+		if err := m.SetWithTTL(ctx, "key", targetValue, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
+		time.Sleep(2 * time.Second)
+		assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
+	})
+}
+
 func TestMap_Delete(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
@@ -528,8 +541,6 @@ func TestMap_Flush(t *testing.T) {
 // TODO: Test Map ExecuteOnEntries
 // TODO: Test Map LockWithLease
 // TODO: Test Map SetTTL
-// TODO: Test Map SetWithTTL
-// TODO: Test Map SetWithTTLAndMaxIdle
 // TODO: Test Map TryLock
 // TODO: Test Map TryLockWithLease
 // TODO: Test Map TryLockWithTimeout
@@ -583,7 +594,7 @@ func TestMap_LoadAllReplacing(t *testing.T) {
 	})
 }
 
-func TestContextMap_Lock(t *testing.T) {
+func TestMap_Lock(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, cm *hz.Map) {
 		const goroutineCount = 100
 		const key = "counter"
@@ -620,7 +631,7 @@ func TestContextMap_Lock(t *testing.T) {
 	})
 }
 
-func TestContextMap_ForceUnlock(t *testing.T) {
+func TestMap_ForceUnlock(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, cm *hz.Map) {
 		lockCtx := cm.NewLockContext(context.Background())
 		if err := cm.Lock(lockCtx, "k1"); err != nil {
@@ -955,6 +966,19 @@ func TestMapSetGetLargePayload(t *testing.T) {
 		if !assert.Equal(t, payload, v) {
 			t.FailNow()
 		}
+	})
+}
+
+func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		targetValue := "value"
+		if err := m.SetWithTTLAndMaxIdle(ctx, "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
+		time.Sleep(4 * time.Second)
+		assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
 	})
 }
 
