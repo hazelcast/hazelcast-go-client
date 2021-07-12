@@ -32,8 +32,8 @@ var defaultAddress = fmt.Sprintf("127.0.0.1:%d", defaultPort)
 type NetworkConfig struct {
 	SSL               SSLConfig      `json:",omitempty"`
 	Addresses         []string       `json:",omitempty"`
-	PortRange         *PortRange     `json:",omitempty"`
 	ConnectionTimeout types.Duration `json:",omitempty"`
+	PortRange         *PortRange     `json:",omitempty"`
 }
 
 type PortRange struct {
