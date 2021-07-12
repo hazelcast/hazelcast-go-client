@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// Package serialization serializes user objects to Data and back to Object.
-// Data is the internal representation of binary data in Hazelcast.
 package serialization
 
 // IdentifiedDataSerializableFactory is used to create IdentifiedDataSerializable instances during deserialization.

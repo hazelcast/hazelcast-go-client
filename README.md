@@ -42,12 +42,12 @@ import (
 )
 
 func main() {
+	ctx := context.TODO()
 	// create the client and connect to the cluster
-	client, err := hazelcast.StartNewClient() 
+	client, err := hazelcast.StartNewClient(ctx) 
     if err != nil {
     	log.Fatal(err)
     }
-    ctx := context.TODO()
     // get a map
     people, err := client.GetMap(ctx, "people")
     if err != nil {
@@ -64,6 +64,8 @@ func main() {
         log.Fatal(err)
     }
     fmt.Printf("%s is %d years old.\n", personName, age)
+    // stop the client to release resources
+    client.Shutdown(ctx)
 }
 ```
 
@@ -88,7 +90,7 @@ Requirements:
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
 # Depend on a specific release
-$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.4
+$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0
 ```
 
 ## Quick Start
@@ -117,7 +119,8 @@ After the download, you can start the Hazelcast member using the bin/start.sh sc
 Start the client with the default Hazelcast IMDG host and port using `hazelcast.StartNewClient`: 
 
 ```go
-client, err := hazelcast.StartNewClient()
+ctx := context.TODO()
+client, err := hazelcast.StartNewClient(ctx)
 // handle client start error
 ```
 
@@ -127,13 +130,13 @@ Note that `Config` structs are not thread-safe. Complete creation of the configu
 
 ```go
 // create the default configuration
-config := hazelcast.NewConfig()
+config := hazelcast.Config{}
 
 // optionally set member addresses manually
-config.ClusterConfig.SetAddress("member1.example.com", "member2.example.com")
+config.Cluster.Network.SetAddresses("member1.example.com", "member2.example.com")
 
 // create and start the client with the configuration provider
-client, err := hazelcast.StartNewClientWithConfig(config)
+client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 // handle client start error
 ```
 

@@ -17,7 +17,92 @@
 /*
 Package hazelcast provides the Hazelcast Go client.
 
-Full Configuration
+Hazelcast is an open-source distributed in-memory data store and computation platform. It provides a wide variety of distributed data structures and concurrency primitives.
+
+Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and access the cluster data.
+
+Configuration
+
+If you are using Hazelcast and Go Client on the same computer, generally the default configuration should be fine.
+This is great for trying out the client.
+However, if you run the client on a different computer than any of the cluster members, you may need to do some simple configurations such as specifying the member addresses.
+
+The Hazelcast IMDG members and clients have their own configuration options.
+You may need to reflect some of the member side configurations on the client side to properly connect to the cluster.
+
+In order to configure the client, you only need to create a new `hazelcast.Config{}`, which you can pass to `hazelcast.StartNewClientWithConnfig` function:
+
+	config := hazelcast.Config{}
+	client, err := hazelcast.StartNewClientWithConfig(context.TODO(), config)
+
+Calling hazelcast.StartNewClientWithConfig with the default configuration is equivalent to hazelcast.StartNewClient.
+The default configuration assumes Hazelcast is running at localhost:5701 with the cluster name set to dev.
+If you run Hazelcast members in a different server than the client, you need to make certain changes to client settings.
+
+Assuming Hazelcast members are running at hz1.server.com:5701, hz2.server.com:5701 and hz3.server.com:5701 with cluster name production, you would use the configuration below.
+Note that addresses must include port numbers:
+
+	config := hazelcast.Config{}
+	config.Cluster.Name = "production"
+	config.Cluster.Network.SetAddresses("hz1.server.com:5701", "hz2.server.com:5701", "hz3.server.com:5701")
+
+You can also load configuration from JSON:
+
+	text := `
+		{
+			"Cluster": {
+				"Name": "production",
+				"Network": {
+					"Addresses": [
+						"hz1.server.com:5701",
+						"hz2.server.com:5701",
+						"hz3.server.com:5701"
+					]
+				}
+			}
+		}`
+	var config hazelcast.Config
+	if err := json.Unmarshal([]byte(text), &config); err != nil {
+		panic(err)
+	}
+
+If you are changing several options in a configuration section, you may have to repeatedly specify the configuration section:
+
+	config := hazelcast.Config{}
+	config.Cluster.Name = "dev"
+	config.Cluster.HeartbeatInterval = types.Duration(60 * time.Second)
+	config.Cluster.Unisocket = true
+	config.Cluster.SetLoadBalancer(cluster.NewRandomLoadBalancer())
+
+You can simplify the code above by getting a reference to config.Cluster and update it:
+
+	config := hazelcast.Config{}
+	cc := &config.Cluster  // Note that we are getting a reference to config.Cluster!
+	cc.Name = "dev"
+	cc.HeartbeatInterval = types.Duration(60 * time.Second)
+	cc.Unisocket = true
+	cc.SetLoadBalancer(cluster.NewRandomLoadBalancer())
+
+Note that you should get a reference to the configuration section you are updating, otherwise you would update a copy of it, which doesn't modify the configuration.
+
+There are a few options that require a duration, such as config.Cluster.HeartbeatInterval, config.Cluster.Network.ConnectionTimeout and others.
+You must use types.Duration instead of time.Duration with those options, since types.Duration values support human readable durations when deserialized from text:
+
+	import "github.com/hazelcast/hazelcast-go-client/types"
+	// ...
+	config := hazelcast.Config{}
+	config.Cluster.InvocationTimeout = types.Duration(3 * time.Minute)
+	config.Cluster.Network.ConnectionTimeout = types.Duration(10 * time.Second)
+
+That corresponds to the following JSON configuration. Refer to https://golang.org/pkg/time/#ParseDuration for the available duration strings:
+
+	{
+		"Cluster": {
+			"InvocationTimeout": "3m",
+			"Network": {
+				"ConnectionTimeout": "10s"
+			}
+	}
 
 Here are all configuration items with their default values:
 
@@ -54,69 +139,18 @@ Here are all configuration items with their default values:
 	cc.ConnectionStrategy.Retry.Multiplier = 1.05
 	cc.ConnectionStrategy.Retry.Jitter = 0.0
 
-	sc := &config.Serialization
-	sc.PortableVersion = 0
-	sc.LittleEndian = false
+	config.Serialization.PortableVersion = 0
+	config.Serialization.LittleEndian = false
+	config.Serialization.SetPortableFactories()
+	config.Serialization.SetIdentifiedDataSerializableFactories()
+	config.Serialization.SetCustomSerializer()
+	config.Serialization.SetClassDefinitions()
+	config.Serialization.SetGlobalSerializer() // Gob serializer
 
-	stc := &config.Stats
-	stc.Enabled = false
-	stc.Period = types.Duration(5 * time.Second)
+	config.Stats.Enabled = false
+	config.Stats.Period = types.Duration(5 * time.Second)
 
 	config.Logger.Level = logger.InfoLevel
-
-
-Configuring Load Balancer
-
-Load balancer configuration allows you to specify which cluster address to send next operation.
-
-If smart client mode is used, only the operations that are not key-based are routed to the member that is returned by the load balancer.
-Load balancer is ignored for unisocket mode.
-
-The default load balancer is the RoundRobinLoadBalancer, which picks the next address in order among the provided addresses.
-The other built-in load balancer is RandomLoadBalancer.
-You can also write a custom load balancer by implementing LoadBalancer.
-
-Use config.ClusterConfig.SetLoadBalancer to set the load balancer:
-
-	config := NewConfig()
-	config.Cluster.SetLoadBalancer(cluster.NewRandomLoadBalancer())
-
-Hazelcast Cloud Discovery
-
-Hazelcast Go client can discover and connect to Hazelcast clusters running on Hazelcast Cloud https://cloud.hazelcast.com.
-In order to activate it, set the cluster name, enable Hazelcast Cloud discovery and add Hazelcast Cloud Token to the configuration.
-Here is an example:
-
-	config := hazelcast.NewConfig()
-	config.Cluster.Name = "MY-CLUSTER-NAME"
-	cc := &config.Cluster.Cloud
-	cc.Enabled = true
-	cc.Token = "MY-CLUSTER-TOKEN"
-	client, err := hazelcast.StartNewClientWithConfig(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-Also check the code sample in https://github.com/hazelcast/hazelcast-go-client/tree/master/examples/discovery/cloud.
-
-If you have enabled encryption for your cluster, you should also enable TLS/SSL configuration for the client.
-
-External Client Public Address Discovery
-
-When you set up a Hazelcast cluster in the Cloud (AWS, Azure, GCP, Kubernetes) and would like to use it from outside the Cloud network,
-the client needs to communicate with all cluster members via their public IP addresses.
-Whenever Hazelcast cluster members are able to resolve their own public external IP addresses, they pass this information to the client.
-As a result, the client can use public addresses for communication, if it cannot access members via private IPs.
-
-Hazelcast Go client has a built-in mechanism to use public IP addresses instead of private ones.
-You can enable this feature by setting config.Discovery.UsePublicIP to true and specifying the adddress of at least one member:
-
-	config := hazelcast.NewConfig()
-	cc := &config.Cluster
-	cc.SetAddresses("30.40.50.60:5701")
-	cc.Discovery.UsePublicIP = true
-
-For more details on member-side configuration, refer to the Discovery SPI section in the Hazelcast IMDG Reference Manual.
 
 Listening for Distributed Object Events
 
@@ -140,14 +174,16 @@ If you don't want to receive any distributed object events, use client.RemoveDis
 
 	client.RemoveDistributedObjectListener(subscriptionID)
 
-Collecting Statistics
+Management Center Integration
 
 Hazelcast Management Center can monitor your clients if client-side statistics are enabled.
 
 You can enable statistics by setting config.Stats.Enabled to true.
 Optionally, the period of statistics collection can be set using config.Stats.Period setting.
+The labels set in configuration appear in the Management Center console:
 
-	config := hazelcast.NewConfig()
+	config := hazelcast.Config{}
+	config.SetLabels("fast-cache", "staging")
 	config.Stats.Enabled = true
 	config.Stats.Period = 1 * time.Second
 	client, err := hazelcast.StartNewClientWithConfig(config)
