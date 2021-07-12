@@ -333,9 +333,9 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 	portRange := m.clusterConfig.Network.PortRange
 	for _, addr := range seedAddrs {
 		if portRange != nil { // we have port range defined
-			host, port, err := internal.ParseAddr(addr.String())
-			if err != nil {
-				return "", err
+			host, port, parseErr := internal.ParseAddr(addr.String())
+			if parseErr != nil {
+				return "", parseErr
 			}
 			if port == pubcluster.ApplyDefaultsPort { // we need to try all addresses in port range
 				for i := portRange.Min; i <= portRange.Max; i++ {
