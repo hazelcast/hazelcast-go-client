@@ -113,7 +113,7 @@ func TestNewConfig_Validate_InvalidPortRangeNegativeNumber(t *testing.T) {
 	config.Cluster.Network.SetPortRange(-1, 5705)
 	err := config.Cluster.Network.Validate()
 	assert.NotNil(t, err)
-	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 }
 
 func TestNewConfig_Validate_InvalidPortRange(t *testing.T) {
@@ -123,7 +123,7 @@ func TestNewConfig_Validate_InvalidPortRange(t *testing.T) {
 	config.Cluster.Network.SetPortRange(5701, 5700)
 	err := config.Cluster.Network.Validate()
 	assert.NotNil(t, err)
-	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 }
 
 func TestUnMarshalDefaultJSONConfig(t *testing.T) {
