@@ -18,6 +18,8 @@ package hazelcast_test
 
 import (
 	"context"
+	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -91,6 +93,82 @@ func TestClientRunning(t *testing.T) {
 		}
 		assert.False(t, client.Running())
 	})
+}
+
+func TestClientPortRangeAllAddresses(t *testing.T) {
+	it.TesterWithConfigBuilder(t, func(config *hz.Config) {
+		clusterAddress := config.Cluster.Network.Addresses[0]
+		_, port, err := internal.ParseAddr(clusterAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+		config.Cluster.Network.SetAddresses("127.0.0.1", "localhost", "0.0.0.0")
+		config.Cluster.Network.SetPortRange(port-4, port)
+	},
+		func(t *testing.T, client *hz.Client) {
+			assert.True(t, client.Running())
+			if err := client.Shutdown(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			assert.False(t, client.Running())
+		})
+}
+
+func TestClientPortRangeMultipleAddresses(t *testing.T) {
+	it.TesterWithConfigBuilder(t, func(config *hz.Config) {
+		clusterAddress := config.Cluster.Network.Addresses[0]
+		_, port, err := internal.ParseAddr(clusterAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+		config.Cluster.Network.SetAddresses("127.0.0.1", "localhost", fmt.Sprintf("0.0.0.0:%d", port))
+		config.Cluster.Network.SetPortRange(port-4, port)
+	},
+		func(t *testing.T, client *hz.Client) {
+			assert.True(t, client.Running())
+			if err := client.Shutdown(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			assert.False(t, client.Running())
+		})
+}
+
+func TestClientPortRangeSingleAddress(t *testing.T) {
+	it.TesterWithConfigBuilder(t, func(config *hz.Config) {
+		clusterAddress := config.Cluster.Network.Addresses[0]
+		_, port, err := internal.ParseAddr(clusterAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+		config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port), "127.0.0.1", fmt.Sprintf("0.0.0.0:%d", port))
+		config.Cluster.Network.SetPortRange(port-4, port)
+	},
+		func(t *testing.T, client *hz.Client) {
+			assert.True(t, client.Running())
+			if err := client.Shutdown(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			assert.False(t, client.Running())
+		})
+}
+
+func TestClientPortRangeSingleAddressNoDefaultAddr(t *testing.T) {
+	it.TesterWithConfigBuilder(t, func(config *hz.Config) {
+		clusterAddress := config.Cluster.Network.Addresses[0]
+		_, port, err := internal.ParseAddr(clusterAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+		config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port))
+		config.Cluster.Network.SetPortRange(port-4, port)
+	},
+		func(t *testing.T, client *hz.Client) {
+			assert.True(t, client.Running())
+			if err := client.Shutdown(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			assert.False(t, client.Running())
+		})
 }
 
 func TestClientMemberEvents(t *testing.T) {

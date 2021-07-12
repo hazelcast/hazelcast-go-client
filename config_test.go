@@ -44,6 +44,88 @@ func TestNewConfig_SetAddress(t *testing.T) {
 	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 }
 
+func TestNewConfig_Validate_AddressWithoutPort(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2")
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
+	err := config.Cluster.Network.Validate()
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:5701"}, config.Cluster.Network.Addresses)
+}
+
+func TestNewConfig_Validate_InvalidAddress(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2:")
+	assert.Equal(t, []string{"192.168.1.2:"}, config.Cluster.Network.Addresses)
+	err := config.Cluster.Network.Validate()
+	assert.NotNil(t, err)
+}
+
+func TestNewConfig_Validate_AddressWithDefaultPort(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2:0")
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+	err := config.Cluster.Network.Validate()
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:5701"}, config.Cluster.Network.Addresses)
+}
+
+func TestNewConfig_Validate_AddressWithPort(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2:1234")
+	assert.Equal(t, []string{"192.168.1.2:1234"}, config.Cluster.Network.Addresses)
+	err := config.Cluster.Network.Validate()
+	assert.Nil(t, err)
+}
+
+func TestNewConfig_Validate_InvalidPort(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2:-1")
+	assert.Equal(t, []string{"192.168.1.2:-1"}, config.Cluster.Network.Addresses)
+	err := config.Cluster.Network.Validate()
+	assert.NotNil(t, err)
+}
+
+func TestNewConfig_Validate_ValidPortRange(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2")
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
+	config.Cluster.Network.SetPortRange(5701, 5705)
+	err := config.Cluster.Network.Validate()
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+}
+
+func TestNewConfig_Validate_ValidPortRange_PortZero(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2:0")
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+	config.Cluster.Network.SetPortRange(5701, 5705)
+	err := config.Cluster.Network.Validate()
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+}
+
+func TestNewConfig_Validate_InvalidPortRangeNegativeNumber(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2")
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
+	config.Cluster.Network.SetPortRange(-1, 5705)
+	err := config.Cluster.Network.Validate()
+	assert.NotNil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+}
+
+func TestNewConfig_Validate_InvalidPortRange(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2")
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
+	config.Cluster.Network.SetPortRange(5701, 5700)
+	err := config.Cluster.Network.Validate()
+	assert.NotNil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+}
+
 func TestUnMarshalDefaultJSONConfig(t *testing.T) {
 	var config hazelcast.Config
 	if err := json.Unmarshal([]byte("{}"), &config); err != nil {

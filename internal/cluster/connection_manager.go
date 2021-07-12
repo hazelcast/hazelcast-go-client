@@ -329,21 +329,51 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 		return "", errors.New("no seed addresses")
 	}
 	var initialAddr pubcluster.Address
+	var err error
+	portRange := m.clusterConfig.Network.PortRange
+	for _, addr := range seedAddrs {
+		if portRange != nil { // we have port range defined
+			host, port, err := internal.ParseAddr(addr.String())
+			if err != nil {
+				return "", err
+			}
+			if port == pubcluster.ApplyDefaultsPort { // we need to try all addresses in port range
+				for i := portRange.Min; i <= portRange.Max; i++ {
+					currAddr := pubcluster.NewAddress(host, int32(i))
+					currentAddrRet, connErr := m.checkConnectionToAddress(ctx, currAddr)
+					if connErr == nil {
+						initialAddr = currentAddrRet
+						break
+					}
+				}
+				if initialAddr == "" {
+					return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
+				}
+			} else {
+				initialAddr, err = m.checkConnectionToAddress(ctx, addr)
+			}
+		} else { // do not have any port range defined
+			initialAddr, err = m.checkConnectionToAddress(ctx, addr)
+		}
+	}
+	return initialAddr, err
+}
+
+func (m *ConnectionManager) checkConnectionToAddress(ctx context.Context, addr pubcluster.Address) (pubcluster.Address, error) {
+	var initialAddr pubcluster.Address
 	var conn *Connection
 	var err error
-	for _, addr := range seedAddrs {
-		if conn, err = m.ensureConnection(ctx, addr); err != nil {
-			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-		} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
-			m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
-		} else if initialAddr == "" {
-			initialAddr = addr
-		}
+	if conn, err = m.ensureConnection(ctx, addr); err != nil {
+		m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
+	} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+		m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
+	} else if initialAddr == "" {
+		initialAddr = addr
 	}
 	if initialAddr == "" {
 		return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
 	}
-	return initialAddr, nil
+	return initialAddr, err
 }
 
 func (m *ConnectionManager) tryConnectCluster(ctx context.Context, refresh bool) (pubcluster.Address, error) {
