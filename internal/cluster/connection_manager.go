@@ -339,7 +339,7 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 			}
 			if port == pubcluster.ApplyDefaultsPort { // we need to try all addresses in port range
 				for i := portRange.Min; i <= portRange.Max; i++ {
-					currAddr := pubcluster.NewAddress(host, i)
+					currAddr := pubcluster.NewAddress(host, int32(i))
 					currentAddrRet, connErr := m.checkConnectionToAddress(ctx, currAddr)
 					if connErr == nil {
 						initialAddr = currentAddrRet

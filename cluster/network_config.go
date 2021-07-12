@@ -37,8 +37,8 @@ type NetworkConfig struct {
 }
 
 type PortRange struct {
-	Min int32 `json:",omitempty"`
-	Max int32 `json:",omitempty"`
+	Min int `json:",omitempty"`
+	Max int `json:",omitempty"`
 }
 
 func (pr *PortRange) Clone() *PortRange {
@@ -65,8 +65,8 @@ func (c *NetworkConfig) Clone() NetworkConfig {
 
 func (c *NetworkConfig) SetPortRange(min int, max int) {
 	c.PortRange = &PortRange{
-		Min: int32(min),
-		Max: int32(max),
+		Min: min,
+		Max: max,
 	}
 }
 
