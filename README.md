@@ -9,19 +9,6 @@ You can still use Go client for Hazelcast 3 by migrating your project to use Go 
 require github.com/hazelcast/hazelcast-go-client v0.6.0
 ```
 
----
-
-## Note
-
-The master branch is the development branch for the upcoming version 1 of the client. Version 1 is currently in alpha stage:
-
-* CODE IN THIS BRANCH IS IN NO WAY SUPPORTED FOR ANY PRODUCTION USE. 
-* API IN THIS BRANCH CAN CHANGE IN BREAKING WAYS AT ANY TIME.
-
-Your feedback and contribution are appreciated! Join us at [Hazelcast Community Slack](https://hazelcastcommunity.slack.com/channels/go-client)
-
----
-
 # Hazelcast Go Client
 
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
@@ -142,7 +129,7 @@ client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 
 ## Documentation
 
-Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.0.0-preview.4).
+Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client).
 
 You can view the documentation locally by using godoc:
 ```  
