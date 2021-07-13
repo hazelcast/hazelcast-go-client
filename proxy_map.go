@@ -1185,7 +1185,7 @@ func (c *MapEntryListenerConfig) NotifyEntryExpired(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryExpired), enable)
 }
 
-// NotifyEntryAllEvicted enables receiving an entry event when an entry is evicted.
+// NotifyEntryAllEvicted enables receiving an entry event when all entries are evicted.
 func (c *MapEntryListenerConfig) NotifyEntryAllEvicted(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAllEvicted), enable)
 }
