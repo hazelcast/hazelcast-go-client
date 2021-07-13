@@ -17,6 +17,7 @@
 package internal
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -25,7 +26,7 @@ import (
 const defaultHost = "127.0.0.1"
 
 func ParseAddr(addr string) (string, int, error) {
-	if addr == "" {
+	if addr == "" || strings.TrimSpace(addr) == "" {
 		return defaultHost, 0, nil
 	}
 	if !strings.Contains(addr, ":") {
@@ -36,8 +37,11 @@ func ParseAddr(addr string) (string, int, error) {
 	} else if portInt, err := strconv.Atoi(port); err != nil {
 		return "", 0, err
 	} else {
-		if host == "" {
+		if host == "" || strings.TrimSpace(host) == "" {
 			host = defaultHost
+		}
+		if portInt < 0 { // port number should be more than 0
+			return "", 0, fmt.Errorf("invalid port number: '%d'", portInt)
 		}
 		return host, portInt, nil
 	}
