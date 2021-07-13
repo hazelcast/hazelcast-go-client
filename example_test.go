@@ -131,21 +131,31 @@ func ExampleMap_AddEntryListener() {
 		IncludeValue: true,
 	}
 	m, _ := client.GetMap(ctx, "somemap")
+	// enable receiving entry added events
 	entryListenerConfig.NotifyEntryAdded(true)
+	// enable receiving entry removed events
 	entryListenerConfig.NotifyEntryRemoved(true)
+	// enable receiving entry updated events
 	entryListenerConfig.NotifyEntryUpdated(true)
+	// enable receiving entry evicted events
 	entryListenerConfig.NotifyEntryEvicted(true)
+	// enable receiving entry loaded events
 	entryListenerConfig.NotifyEntryLoaded(true)
 	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
 		switch event.EventType {
+		// this is an entry added event
 		case hazelcast.EntryAdded:
 			fmt.Println("Entry Added:", event.Value)
+		// this is an entry removed event
 		case hazelcast.EntryRemoved:
 			fmt.Println("Entry Removed:", event.Value)
+		// this is an entry updated event
 		case hazelcast.EntryUpdated:
 			fmt.Println("Entry Updated:", event.Value)
+		// this is an entry evicted event
 		case hazelcast.EntryEvicted:
 			fmt.Println("Entry Remove:", event.Value)
+		// this is an entry loaded event
 		case hazelcast.EntryLoaded:
 			fmt.Println("Entry Loaded:", event.Value)
 		}
