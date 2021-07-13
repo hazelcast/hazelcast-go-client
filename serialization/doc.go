@@ -205,6 +205,32 @@ Hazelcast lets you plug a custom serializer to be used for serialization of valu
 See https://docs.hazelcast.com/imdg/latest/serialization/custom-serialization.html for details.
 
 In order to use a custom serializer for a type, the type should implement serialization.Serializer interface.
+Here is an example:
+
+	type EmployeeCustomSerializer struct{}
+
+	func (e EmployeeCustomSerializer) ID() (id int32) {
+		return 45392
+	}
+
+	func (e EmployeeCustomSerializer) Read(input serialization.DataInput) interface{} {
+		surname := input.ReadString()
+		return &Employee{Surname: surname}
+	}
+
+	func (e EmployeeCustomSerializer) Write(output serialization.DataOutput, object interface{}) {
+		employee, ok := object.(*Employee)
+		if !ok {
+			panic("can serialize only Employee")
+		}
+		output.WriteString(employee.Surname)
+	}
+
+You should register the serializer in the configuration with the corresponding type:
+
+	config := hazelcast.Config{}
+	config.Serialization.SetCustomSerializer(reflect.TypeOf(&Employee{}), &EmployeeCustomSerializer{})
+
 
 Global Serializer
 

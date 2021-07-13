@@ -27,7 +27,7 @@ import (
 )
 
 // Config contains configuration for a client.
-// Prefer to create the configuration using the NewConfig function.
+// Zero value of Config is the default configuration.
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
@@ -39,6 +39,7 @@ type Config struct {
 	Stats               StatsConfig          `json:",omitempty"`
 }
 
+// NewConfig creates the default configuration.
 func NewConfig() Config {
 	return Config{}
 }
@@ -54,7 +55,7 @@ func (c *Config) AddLifecycleListener(handler LifecycleStateChangeHandler) types
 	return id
 }
 
-// AddMembershipListener adds a membership listeener.
+// AddMembershipListener adds a membership listener.
 // The listener is attached to the client before the client starts, so all membership events can be received.
 // Use the returned subscription ID to remove the listener.
 func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHandler) types.UUID {
@@ -70,6 +71,7 @@ func (c *Config) SetLabels(labels ...string) {
 	c.Labels = labels
 }
 
+// Clone returns a copy of the configuration.
 func (c *Config) Clone() Config {
 	c.ensureLifecycleListeners()
 	c.ensureMembershipListeners()
@@ -89,6 +91,7 @@ func (c *Config) Clone() Config {
 	}
 }
 
+// Validate validates the configuration and replaces missing configuration with defaults.
 func (c *Config) Validate() error {
 	if err := c.Cluster.Validate(); err != nil {
 		return err
@@ -129,6 +132,7 @@ func (c StatsConfig) clone() StatsConfig {
 	return c
 }
 
+// Validate validates the stats configuration and replaces missing configuration with defaults.
 func (c *StatsConfig) Validate() error {
 	if err := validate.NonNegativeDuration(&c.Period, 5*time.Second, "invalid period"); err != nil {
 		return err

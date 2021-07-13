@@ -22,17 +22,24 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
+	"strconv"
+	"sync"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
+
+var client = getClient()
 
 func Example() {
 	// Create the configuration
 	config := hazelcast.Config{}
-	config.Cluster.Name = "my-cluster"
-	config.Cluster.Network.SetAddresses("192.168.1.42:5000", "192.168.1.42:5001")
+	config.Cluster.Name = "dev"
+	config.Cluster.Network.SetAddresses("localhost:5701")
 	// Start the client with the configuration provider.
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
@@ -54,12 +61,7 @@ func Example() {
 }
 
 func ExampleSet() {
-	// Create the Hazelcast client.
 	ctx := context.TODO()
-	client, err := hazelcast.StartNewClient(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
 	// Retrieve the set named my-set
 	set, err := client.GetSet(ctx, "my-set")
 	if err != nil {
@@ -81,11 +83,7 @@ func ExampleSet() {
 
 func ExamplePNCounter() {
 	// Create the Hazelcast client.
-	ctx := context.Background()
-	client, err := hazelcast.StartNewClient(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	ctx := context.TODO()
 	// Retrieve the PN counter named my-pn
 	pn, err := client.GetPNCounter(ctx, "my-pn")
 	if err != nil {
@@ -108,10 +106,6 @@ func ExamplePNCounter() {
 func ExampleMap_Aggregate() {
 	// Create the Hazelcast client.
 	ctx := context.Background()
-	client, err := hazelcast.StartNewClient(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
 	myMap, err := client.GetMap(ctx, "my-map")
 	if err != nil {
 		log.Fatal(err)
@@ -128,4 +122,122 @@ func ExampleMap_Aggregate() {
 	}
 	fmt.Println(result)
 	// Output: 40
+}
+
+func ExampleMap_AddEntryListener() {
+	// error handling was omitted for brevity
+	ctx := context.TODO()
+	entryListenerConfig := hazelcast.MapEntryListenerConfig{
+		IncludeValue: true,
+	}
+	m, _ := client.GetMap(ctx, "somemap")
+	entryListenerConfig.NotifyEntryAdded(true)
+	entryListenerConfig.NotifyEntryRemoved(true)
+	entryListenerConfig.NotifyEntryUpdated(true)
+	entryListenerConfig.NotifyEntryEvicted(true)
+	entryListenerConfig.NotifyEntryLoaded(true)
+	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
+		switch event.EventType {
+		case hazelcast.EntryAdded:
+			fmt.Println("Entry Added:", event.Value)
+		case hazelcast.EntryRemoved:
+			fmt.Println("Entry Removed:", event.Value)
+		case hazelcast.EntryUpdated:
+			fmt.Println("Entry Updated:", event.Value)
+		case hazelcast.EntryEvicted:
+			fmt.Println("Entry Remove:", event.Value)
+		case hazelcast.EntryLoaded:
+			fmt.Println("Entry Loaded:", event.Value)
+		}
+	})
+	if err != nil {
+		panic(err)
+	}
+	// performing modifications on the map entries
+	key := strconv.Itoa(int(time.Now().Unix()))
+	if err := m.Set(ctx, key, "1"); err != nil {
+		panic(err)
+	}
+	if err := m.Set(ctx, key, "2"); err != nil {
+		panic(err)
+	}
+	if err := m.Delete(ctx, key); err != nil {
+		panic(err)
+	}
+	// you can use the subscriptionID later to remove the event listener.
+	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
+		panic(err)
+	}
+}
+
+func ExampleMap_NewLockContext() {
+	// lockAndIncrement locks the given key, reads the value from it and sets back the incremented value.
+	lockAndIncrement := func(myMap *hazelcast.Map, key string, wg *sync.WaitGroup) {
+		// Signal completion before this goroutine exits.
+		defer wg.Done()
+		intValue := int64(0)
+		// Create a new unique lock context.
+		lockCtx := myMap.NewLockContext(context.Background())
+		// Lock the key.
+		// The key cannot be unlocked without the same lock context.
+		if err := myMap.Lock(lockCtx, key); err != nil {
+			panic(err)
+		}
+		// Remember to unlock the key, otherwise it won't be accessible elsewhere.
+		defer myMap.Unlock(lockCtx, key)
+		// The same lock context, or a derived one from that lock context must be used,
+		// otherwise the Get operation below will block.
+		v, err := myMap.Get(lockCtx, key)
+		if err != nil {
+			panic(err)
+		}
+		// If v is not nil, then there's already a value for the key.
+		if v != nil {
+			intValue = v.(int64)
+		}
+		// Increment and set the value back.
+		intValue++
+		// The same lock context, or a derived one from that lock context must be used,
+		// otherwise the Set operation below will block.
+		if err = myMap.Set(lockCtx, key, intValue); err != nil {
+			panic(err)
+		}
+	}
+
+	const goroutineCount = 100
+	const key = "counter"
+
+	ctx := context.TODO()
+	// Get a random map.
+	rand.Seed(time.Now().Unix())
+	mapName := fmt.Sprintf("sample-%d", rand.Int())
+	myMap, err := client.GetMap(ctx, mapName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Lock and increment the value stored in key for goroutineCount times.
+	wg := &sync.WaitGroup{}
+	wg.Add(goroutineCount)
+	for i := 0; i < goroutineCount; i++ {
+		go lockAndIncrement(myMap, key, wg)
+	}
+	// Wait for all goroutines to complete.
+	wg.Wait()
+	// Retrieve the final value.
+	// A lock context is not needed, since the key is unlocked.
+	if lastValue, err := myMap.Get(context.Background(), key); err != nil {
+		panic(err)
+	} else {
+		fmt.Println("lastValue", lastValue)
+	}
+	client.Shutdown(ctx)
+}
+
+func getClient() *hazelcast.Client {
+	var tc = it.StartNewCluster(1)
+	client, err := hazelcast.StartNewClientWithConfig(context.Background(), tc.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	return client
 }

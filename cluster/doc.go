@@ -96,7 +96,5 @@ You can configure the frequency of the reconnection attempts using config.Cluste
 	r.Jitter = 0.0
 	r.Multiplier = 1.05
 
-
-
 */
 package cluster

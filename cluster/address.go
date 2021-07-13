@@ -20,6 +20,7 @@ import (
 	"fmt"
 )
 
+// Address is the address of a Hazelcast member
 type Address string
 
 func NewAddress(host string, port int32) Address {

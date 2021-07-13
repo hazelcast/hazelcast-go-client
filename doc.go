@@ -164,10 +164,10 @@ Here is an example:
 		isCreationEvent := e.EventType == hazelcast.DistributedObjectCreated
 		log.Println(e.EventType, e.ServiceName, e.ObjectName, "creation?", isCreationEvent, "isMap?", isMapEvent)
 	}
-	subscriptionID, _ := client.AddDistributedObjectListener(handler)
-	myMap, _ := client.GetMap("my-map")
+	subscriptionID, _ := client.AddDistributedObjectListener(ctx, handler)
+	myMap, _ := client.GetMap(ctx, "my-map")
 	// handler is called with: ServiceName=ServiceNameMap; ObjectName="my-map"; EventType=DistributedObjectCreated
-	myMap.Destroy()
+	myMap.Destroy(ctx)
 	// handler is called with: ServiceName=ServiceNameMap; ObjectName="my-map"; EventType=DistributedObjectDestroyed
 
 If you don't want to receive any distributed object events, use client.RemoveDistributedObjectListener:

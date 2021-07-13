@@ -27,13 +27,15 @@ import (
 )
 
 /*
-List is a concurrent, distributed, ordered collection. The user of this
-data structure has precise control over where in the list each element is
-inserted. The user can access elements by their integer index (position in the list),
-and search for elements in the list.
+List is a concurrent, distributed, ordered collection.
+The user of this data structure has precise control over where in the list each element is inserted.
+The user can access elements by their integer index (position in the list), and search for elements in the list.
 
-List is not a partitioned Hazelcast data structure. So all the contents of the List are stored in a single
-machine (and in the backup). So, a single List will not scale by adding more members in the cluster.
+List is not a partitioned Hazelcast data structure.
+So all the contents of the List are stored in a single machine (and in the backup).
+So, a single List will not scale by adding more members in the cluster.
+
+For details, see https://docs.hazelcast.com/imdg/latest/data-structures/map.html
 */
 type List struct {
 	*proxy
