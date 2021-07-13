@@ -25,10 +25,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-/* Set is a concurrent, distributed set implementation.
+/*
+Set is a concurrent, distributed set implementation.
 
 Hazelcast Set is a distributed set which does not allow duplicate elements.
-For details, see the Set section in the Hazelcast Reference Manual: https://docs.hazelcast.org/docs/latest/manual/html-single/index.html#set
+For details, see: https://docs.hazelcast.com/imdg/latest/data-structures/set.html
 */
 type Set struct {
 	*proxy

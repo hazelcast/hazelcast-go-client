@@ -42,6 +42,77 @@ const (
 type lockID int64
 type lockIDKeyType string
 
+/*
+Map is a distributed map.
+Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast Map with methods like Get and Put.
+For details, see https://docs.hazelcast.com/imdg/latest/data-structures/map.html
+
+Listening for Map Entry Events
+
+The first step of listening to entry-based events is  creating an instance of MapEntryListenerConfig.
+MapEntryListenerConfig contains options to filter the events by key and/or predicate and has an option to include the value of the entry, not just the key.
+You should also choose which type of events you want to receive.
+In the example below, a listener configuration for added and updated entries is created.
+Entries only with key "somekey" and matching to predicate year > 2000 are considered:
+
+	entryListenerConfig := hazelcast.MapEntryListenerConfig{
+		Key: "somekey",
+		Predicate: predicate.Greater("year", 2000),
+		IncludeValue: true,
+	}
+	m, err := client.GetMap(ctx, "somemap")
+	entryListenerConfig.NotifyEntryAdded(true)
+	entryListenerConfig.NotifyEntryUpdated(true)
+
+After creating the configuration, the second step is adding an event listener and a handler o act on received events:
+
+	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
+		switch event.EventType {
+		case hazelcast.EntryAdded:
+			fmt.Println("Entry Added:", event.Value)
+		case hazelcast.EntryRemoved:
+			fmt.Println("Entry Removed:", event.Value)
+		case hazelcast.EntryUpdated:
+			fmt.Println("Entry Updated:", event.Value)
+		case hazelcast.EntryEvicted:
+			fmt.Println("Entry Remove:", event.Value)
+		case hazelcast.EntryLoaded:
+			fmt.Println("Entry Loaded:", event.Value)
+		}
+	})
+
+Adding an event listener returns a subscription ID, which you can later use to remove the listener:
+
+	err = m.RemoveEntryListener(ctx, subscriptionID)
+
+Using Locks
+
+You can lock entries in a Map.
+When an entry is locked, only the owner of that lock can access that entry in the cluster until it is unlocked by the owner of force unlocked.
+See https://docs.hazelcast.com/imdg/latest/data-structures/map.html#locking-maps for details.
+
+Locks are reentrant.
+The owner of a lock can acquire the lock again without waiting for the lock to be unlocked.
+If the key is locked N times, it should be unlocked N times before another goroutine can acquire it.
+
+Lock ownership in Hazelcast Go Client is explicit.
+The first step to own a lock is creating a lock context, which is similar to a key.
+The lock context is a regular context.Context which carry a special value that uniquely identifies the lock context in the cluster.
+Once the lock context is created, it can be used to lock/unlock entries and used with any function that is lock aware, such as Put.
+
+	m, err := client.GetMap(ctx, "my-map")
+	lockCtx := m.NewLockContext(ctx)
+	// block acquiring the lock
+	err = m.Lock(lockCtx, "some-key")
+	// pass lock context to use the locked entry
+	err = m.Set(lockCtx, "some-key", "some-value")
+	// release the lock once done with it
+	err = m.Unlock(lockCtx, "some-key")
+
+As mentioned before, lock context is a regular context.Context which carry a special lock ID.
+You can pass any context.Context to any Map function, but in that case lock ownership between operations using the same hazelcast.Client instance is not possible.
+
+*/
 type Map struct {
 	*proxy
 }
@@ -460,37 +531,27 @@ func (m *Map) LoadAllReplacing(ctx context.Context, keys ...interface{}) error {
 	return m.loadAll(ctx, true, keys...)
 }
 
-// Lock acquires the lock for the specified key infinitely or for the specified lease time if provided.
-// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
-// dormant until the lock has been acquired.
-//
-// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
-// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
-// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
-// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
-//
-// Scope of the lock is this map only. Acquired lock is only for the key in this map.
-//
-// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
-// acquire it.
+/*
+Lock acquires the lock for the specified key infinitely.
+If the lock is not available, the current goroutine is blocked until the lock is acquired using the same lock context.
+
+You get a lock whether the value is present in the map or not.
+Other goroutines or threads on other systems would block on their invoke of Lock until the non-existent key is unlocked.
+If the lock holder introduces the key to the map, the Put operation is not blocked.
+If a goroutine not holding a lock on the non-existent key tries to introduce the key while a lock exists on the non-existent key, the Put operation blocks until it is unlocked.
+
+Scope of the lock is this Map only.
+Acquired lock is only for the key in this map.
+
+Locks are re-entrant.
+If the key is locked N times, it should be unlocked N times before another goroutine can acquire it.
+*/
 func (m *Map) Lock(ctx context.Context, key interface{}) error {
 	return m.lock(ctx, key, ttlUnset)
 }
 
-// LockWithLease acquires the lock for the specified key infinitely or for the specified lease time if provided.
-// If the lock is not available, the current thread becomes disabled for thread scheduling purposes and lies
-// dormant until the lock has been acquired.
-//
-// You get a lock whether the value is present in the map or not. Other threads (possibly on other systems) would
-// block on their invoke of lock() until the non-existent key is unlocked. If the lock holder introduces the key to
-// the map, the put() operation is not blocked. If a thread not holding a lock on the non-existent key tries to
-// introduce the key while a lock exists on the non-existent key, the put() operation blocks until it is unlocked.
-//
-// Scope of the lock is this map only. Acquired lock is only for the key in this map.
-//
-// Locks are re-entrant; so, if the key is locked N times, it should be unlocked N times before another thread can
-// acquire it.
-// Lease time is the the time to wait before releasing the lock.
+// LockWithLease acquires the lock for the specified lease time.
+// Otherwise it behaves the same as Lock function.
 func (m *Map) LockWithLease(ctx context.Context, key interface{}, leaseTime time.Duration) error {
 	return m.lock(ctx, key, leaseTime.Milliseconds())
 }
@@ -747,7 +808,7 @@ func (m *Map) Size(ctx context.Context) (int, error) {
 }
 
 // TryLock tries to acquire the lock for the specified key.
-// When the lock is not available, the current thread doesn't wait and returns false immediately.
+// When the lock is not available, the current goroutine doesn't wait and returns false immediately.
 func (m *Map) TryLock(ctx context.Context, key interface{}) (bool, error) {
 	return m.tryLock(ctx, key, 0, 0)
 }
@@ -759,19 +820,13 @@ func (m *Map) TryLockWithLease(ctx context.Context, key interface{}, lease time.
 }
 
 // TryLockWithTimeout tries to acquire the lock for the specified key.
-// The current thread becomes disabled for thread scheduling purposes and lies
-// dormant until one of the followings happens:
-// - The lock is acquired by the current thread, or
-// - The specified waiting time elapses.
+// The current goroutine is blocked until the lock is acquired using the same lock context, or he specified waiting time elapses.
 func (m *Map) TryLockWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (bool, error) {
 	return m.tryLock(ctx, key, 0, timeout.Milliseconds())
 }
 
 // TryLockWithLeaseAndTimeout tries to acquire the lock for the specified key.
-// The current thread becomes disabled for thread scheduling purposes and lies
-// dormant until one of the followings happens:
-// - The lock is acquired by the current thread, or
-// - The specified waiting time elapses.
+// The current goroutine is blocked until the lock is acquired using the same lock context, or he specified waiting time elapses.
 // Lock will be released after lease time passes.
 func (m *Map) TryLockWithLeaseAndTimeout(ctx context.Context, key interface{}, lease time.Duration, timeout time.Duration) (bool, error) {
 	return m.tryLock(ctx, key, lease.Milliseconds(), timeout.Milliseconds())
@@ -782,7 +837,7 @@ func (m *Map) TryPut(ctx context.Context, key interface{}, value interface{}) (b
 	return m.tryPut(ctx, key, value, 0)
 }
 
-// TryPutWithTimeout tries to put the given key and value into this map and waits until operation is completed or timeout is reached.
+// TryPutWithTimeout tries to put the given key and value into this map and waits until operation is completed or the given timeout is reached.
 func (m *Map) TryPutWithTimeout(ctx context.Context, key interface{}, value interface{}, timeout time.Duration) (bool, error) {
 	return m.tryPut(ctx, key, value, timeout.Milliseconds())
 }
@@ -1097,6 +1152,7 @@ func (as attributeSet) Attrs() []string {
 	return attrs
 }
 
+// MapEntryListenerConfig contains configuration for a map entry listener.
 type MapEntryListenerConfig struct {
 	Predicate    predicate.Predicate
 	Key          interface{}
@@ -1104,42 +1160,52 @@ type MapEntryListenerConfig struct {
 	IncludeValue bool
 }
 
+// NotifyEntryAdded enables receiving an entry event when an entry is added.
 func (c *MapEntryListenerConfig) NotifyEntryAdded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAdded), enable)
 }
 
+// NotifyEntryRemoved enables receiving an entry event when an entry is removed.
 func (c *MapEntryListenerConfig) NotifyEntryRemoved(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryRemoved), enable)
 }
 
+// NotifyEntryUpdated enables receiving an entry event when an entry is updated.
 func (c *MapEntryListenerConfig) NotifyEntryUpdated(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryUpdated), enable)
 }
 
+// NotifyEntryEvicted enables receiving an entry event when an entry is evicted.
 func (c *MapEntryListenerConfig) NotifyEntryEvicted(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryEvicted), enable)
 }
 
+// NotifyEntryExpired enables receiving an entry event when an entry is expired.
 func (c *MapEntryListenerConfig) NotifyEntryExpired(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryExpired), enable)
 }
 
+// NotifyEntryAllEvicted enables receiving an entry event when all entries are evicted.
 func (c *MapEntryListenerConfig) NotifyEntryAllEvicted(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAllEvicted), enable)
 }
 
+// NotifyEntryAllCleared enables receiving an entry event when all entries are cleared.
 func (c *MapEntryListenerConfig) NotifyEntryAllCleared(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAllCleared), enable)
 }
 
+// NotifyEntryMerged enables receiving an entry event when an entry is merged.
 func (c *MapEntryListenerConfig) NotifyEntryMerged(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryMerged), enable)
 }
 
+// NotifyEntryInvalidated enables receiving an entry event when an entry is invalidated.
 func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryInvalidated), enable)
 }
 
+// NotifyEntryLoaded enables receiving an entry event when an entry is loaded.
 func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
 }
