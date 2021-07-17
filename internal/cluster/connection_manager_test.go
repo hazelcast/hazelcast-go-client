@@ -18,8 +18,8 @@ import (
 )
 
 type CheckedAddressHelper struct {
-	address pubcluster.Address
 	error   error
+	address pubcluster.Address
 }
 
 type MockMemberConnectivityChecker struct {

@@ -157,11 +157,11 @@ type ConnectionManager struct {
 	addrTranslator            AddressTranslator
 	clientName                string
 	labels                    []string
+	memberConnectivityChecker ConnectivityChecker
 	clientUUID                types.UUID
 	nextConnID                int64
 	state                     int32
 	smartRouting              bool
-	memberConnectivityChecker ConnectivityChecker
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
