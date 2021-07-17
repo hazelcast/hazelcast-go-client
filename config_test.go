@@ -50,7 +50,7 @@ func TestNewConfig_Validate_AddressWithoutPort(t *testing.T) {
 	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 	err := config.Cluster.Network.Validate()
 	assert.Nil(t, err)
-	assert.Equal(t, []string{"192.168.1.2:5701"}, config.Cluster.Network.Addresses)
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
 }
 
 func TestNewConfig_Validate_InvalidAddress(t *testing.T) {
@@ -67,7 +67,7 @@ func TestNewConfig_Validate_AddressWithDefaultPort(t *testing.T) {
 	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
 	err := config.Cluster.Network.Validate()
 	assert.Nil(t, err)
-	assert.Equal(t, []string{"192.168.1.2:5701"}, config.Cluster.Network.Addresses)
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
 }
 
 func TestNewConfig_Validate_AddressWithPort(t *testing.T) {
@@ -76,6 +76,7 @@ func TestNewConfig_Validate_AddressWithPort(t *testing.T) {
 	assert.Equal(t, []string{"192.168.1.2:1234"}, config.Cluster.Network.Addresses)
 	err := config.Cluster.Network.Validate()
 	assert.Nil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:1234"}, config.Cluster.Network.Addresses)
 }
 
 func TestNewConfig_Validate_InvalidPort(t *testing.T) {
@@ -86,6 +87,19 @@ func TestNewConfig_Validate_InvalidPort(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestNewConfig_Validate_DefaultPortRange(t *testing.T) {
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SetAddresses("192.168.1.2")
+	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
+	err := config.Cluster.Network.Validate()
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+	assert.Equal(t, cluster.PortRange{
+		Min: 5701,
+		Max: 5703,
+	}, config.Cluster.Network.PortRange)
+}
+
 func TestNewConfig_Validate_ValidPortRange(t *testing.T) {
 	config := hazelcast.NewConfig()
 	config.Cluster.Network.SetAddresses("192.168.1.2")
@@ -94,6 +108,10 @@ func TestNewConfig_Validate_ValidPortRange(t *testing.T) {
 	err := config.Cluster.Network.Validate()
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+	assert.Equal(t, cluster.PortRange{
+		Min: 5701,
+		Max: 5705,
+	}, config.Cluster.Network.PortRange)
 }
 
 func TestNewConfig_Validate_ValidPortRange_PortZero(t *testing.T) {
@@ -104,6 +122,10 @@ func TestNewConfig_Validate_ValidPortRange_PortZero(t *testing.T) {
 	err := config.Cluster.Network.Validate()
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"192.168.1.2:0"}, config.Cluster.Network.Addresses)
+	assert.Equal(t, cluster.PortRange{
+		Min: 5701,
+		Max: 5705,
+	}, config.Cluster.Network.PortRange)
 }
 
 func TestNewConfig_Validate_InvalidPortRangeNegativeNumber(t *testing.T) {
@@ -185,7 +207,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"SSL":{}},"ConnectionStrategy":{"Retry":{}}},"Stats":{}}`
+	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"PortRange":{},"SSL":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 

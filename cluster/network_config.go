@@ -25,14 +25,17 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-var ApplyDefaultsPort = 0
-var defaultPort = 5701
-var defaultAddress = fmt.Sprintf("127.0.0.1:%d", defaultPort)
+const (
+	CheckPortRangePort  = 0
+	defaultAddress      = "127.0.0.1:5701"
+	defaultPortRangeMin = 5701
+	defaultPortRangeMax = 5703
+)
 
 type NetworkConfig struct {
-	PortRange         *PortRange     `json:",omitempty"`
 	SSL               SSLConfig      `json:",omitempty"`
 	Addresses         []string       `json:",omitempty"`
+	PortRange         PortRange      `json:",omitempty"`
 	ConnectionTimeout types.Duration `json:",omitempty"`
 }
 
@@ -41,8 +44,8 @@ type PortRange struct {
 	Max int `json:",omitempty"`
 }
 
-func (pr *PortRange) Clone() *PortRange {
-	return &PortRange{
+func (pr *PortRange) Clone() PortRange {
+	return PortRange{
 		Min: pr.Min,
 		Max: pr.Max,
 	}
@@ -51,26 +54,30 @@ func (pr *PortRange) Clone() *PortRange {
 func (c *NetworkConfig) Clone() NetworkConfig {
 	addrs := make([]string, len(c.Addresses))
 	copy(addrs, c.Addresses)
-	var portRange *PortRange = nil
-	if c.PortRange != nil {
-		portRange = c.PortRange.Clone()
-	}
 	return NetworkConfig{
 		Addresses:         addrs,
 		ConnectionTimeout: c.ConnectionTimeout,
 		SSL:               c.SSL.Clone(),
-		PortRange:         portRange,
+		PortRange:         c.PortRange.Clone(),
 	}
 }
 
 func (c *NetworkConfig) SetPortRange(min int, max int) {
-	c.PortRange = &PortRange{
+	c.PortRange = PortRange{
 		Min: min,
 		Max: max,
 	}
 }
 
 func (c *NetworkConfig) Validate() error {
+	// set port range defaults if needed
+	if c.PortRange.Min == 0 && c.PortRange.Max == 0 {
+		c.PortRange = PortRange{
+			Min: defaultPortRangeMin,
+			Max: defaultPortRangeMax,
+		}
+	}
+
 	// validate port range
 	if err := c.validatePortRange(); err != nil {
 		return err
@@ -85,10 +92,8 @@ func (c *NetworkConfig) Validate() error {
 			if err != nil {
 				return fmt.Errorf("invalid address '%s': %w", addr, err)
 			}
-			if port == 0 && c.PortRange == nil {
-				c.Addresses[i] = fmt.Sprintf("%s:%d", host, defaultPort)
-			} else if port == 0 && c.PortRange != nil {
-				c.Addresses[i] = fmt.Sprintf("%s:%d", host, ApplyDefaultsPort)
+			if port == 0 { // we do not have any port defined
+				c.Addresses[i] = fmt.Sprintf("%s:%d", host, CheckPortRangePort)
 			}
 		}
 	}
@@ -106,11 +111,8 @@ func (c *NetworkConfig) SetAddresses(addrs ...string) {
 
 // validatePortRange validates whether the port range given is valid or not
 func (c *NetworkConfig) validatePortRange() error {
-	if c.PortRange != nil {
-		if c.PortRange.Min > 0 && c.PortRange.Max > c.PortRange.Min {
-			return nil
-		}
-		return fmt.Errorf("invalid port range: '%d-%d'", c.PortRange.Min, c.PortRange.Max)
+	if c.PortRange.Min > 0 && c.PortRange.Max > c.PortRange.Min {
+		return nil
 	}
-	return nil
+	return fmt.Errorf("invalid port range: '%d-%d'", c.PortRange.Min, c.PortRange.Max)
 }
