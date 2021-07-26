@@ -60,7 +60,7 @@ const (
 	serializationVersion = 1
 )
 
-type ConnectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
+type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
 func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error) {
 	var initialAddr pubcluster.Address
@@ -84,7 +84,7 @@ func tryConnectAddress(
 	m *ConnectionManager,
 	portRange pubcluster.PortRange,
 	addr pubcluster.Address,
-	connMember ConnectMemberFunc,
+	connMember connectMemberFunc,
 ) (pubcluster.Address, error) {
 	host, port, err := internal.ParseAddr(addr.String())
 	if err != nil {
