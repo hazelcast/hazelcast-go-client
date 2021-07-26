@@ -14,7 +14,7 @@ type CheckedAddressHelper struct {
 	address pubcluster.Address
 }
 
-func TestConnectCluster_NoAddressAvailable(t *testing.T) {
+func TestTryConnectAddress_NoAddressAvailable(t *testing.T) {
 	// inputs
 	inputAddress := "127.0.0.1:0"
 	checkedAddresses := []CheckedAddressHelper{
@@ -36,7 +36,7 @@ func TestConnectCluster_NoAddressAvailable(t *testing.T) {
 	assert.Equal(t, connMemberCounter, 3)
 }
 
-func TestConnectCluster_LastAddressAvailable(t *testing.T) {
+func TestTryConnectAddress_LastAddressAvailable(t *testing.T) {
 	// inputs
 	inputAddress := "127.0.0.1:0"
 	checkedAddresses := []CheckedAddressHelper{
@@ -57,7 +57,7 @@ func TestConnectCluster_LastAddressAvailable(t *testing.T) {
 	assert.Equal(t, connMemberCounter, 3)
 }
 
-func TestConnectCluster_SecondAddressAvailable(t *testing.T) {
+func TestTryConnectAddress_SecondAddressAvailable(t *testing.T) {
 	// inputs
 	inputAddress := "127.0.0.1:0"
 	checkedAddresses := []CheckedAddressHelper{
@@ -78,7 +78,7 @@ func TestConnectCluster_SecondAddressAvailable(t *testing.T) {
 	assert.Equal(t, connMemberCounter, 2)
 }
 
-func TestConnectCluster_MultipleAddressesAvailable(t *testing.T) {
+func TestTryConnectAddress_MultipleAddressesAvailable(t *testing.T) {
 	// inputs
 	inputAddresses := []string{"127.0.0.1:0", "192.168.1.2:6000"}
 	checkedAddresses := []CheckedAddressHelper{
