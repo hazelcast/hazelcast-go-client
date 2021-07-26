@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/portrangeutil"
 	"math"
 	"math/rand"
 	"sync"
@@ -59,28 +60,55 @@ const (
 	serializationVersion = 1
 )
 
-type ConnectivityChecker interface {
-	checkConnectivity(ctx context.Context, addr pubcluster.Address) (pubcluster.Address, error)
-}
+type ConnectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
-type MemberConnectivityChecker struct {
-	ConnectionManager *ConnectionManager
-}
-
-func (c MemberConnectivityChecker) checkConnectivity(ctx context.Context, addr pubcluster.Address) (pubcluster.Address, error) {
+func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error) {
 	var initialAddr pubcluster.Address
 	var conn *Connection
 	var err error
-	if conn, err = c.ConnectionManager.ensureConnection(ctx, addr); err != nil {
-		c.ConnectionManager.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-	} else if err = c.ConnectionManager.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
-		c.ConnectionManager.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
+	if conn, err = m.ensureConnection(ctx, addr); err != nil {
+		m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
+	} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+		m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
 	} else if initialAddr == "" {
 		initialAddr = addr
 	}
 	if initialAddr == "" {
 		return "", fmt.Errorf("cannot connect to address in the cluster: %w", err)
 	}
+	return initialAddr, nil
+}
+
+func tryConnectAddress(
+	ctx context.Context,
+	m *ConnectionManager,
+	portRange pubcluster.PortRange,
+	addr pubcluster.Address,
+	connMember ConnectMemberFunc,
+) (pubcluster.Address, error) {
+	host, port, err := internal.ParseAddr(addr.String())
+	if err != nil {
+		return "", err
+	}
+	var initialAddr pubcluster.Address
+	if port == 0 { // we need to try all addresses in port range
+		for _, currAddr := range portrangeutil.GetAddresses(host, portRange) {
+			currentAddrRet, connErr := connMember(ctx, m, currAddr)
+			if connErr == nil {
+				initialAddr = currentAddrRet
+				break
+			} else {
+				err = connErr
+			}
+		}
+	} else {
+		initialAddr, err = connMember(ctx, m, addr)
+	}
+
+	if initialAddr == "" {
+		return initialAddr, fmt.Errorf("cannot connect to any address in the cluster: %w", err)
+	}
+
 	return initialAddr, nil
 }
 
@@ -140,28 +168,27 @@ func (b ConnectionManagerCreationBundle) Check() {
 }
 
 type ConnectionManager struct {
-	logger                    ilogger.Logger
-	credentials               security.Credentials
-	cb                        *cb.CircuitBreaker
-	partitionService          *PartitionService
-	serializationService      *iserialization.Service
-	eventDispatcher           *event.DispatchService
-	invocationFactory         *ConnectionInvocationFactory
-	clusterService            *Service
-	responseCh                chan<- *proto.ClientMessage
-	startCh                   chan struct{}
-	connMap                   *connectionMap
-	doneCh                    chan struct{}
-	clusterConfig             *pubcluster.Config
-	requestCh                 chan<- invocation.Invocation
-	addrTranslator            AddressTranslator
-	clientName                string
-	labels                    []string
-	memberConnectivityChecker ConnectivityChecker
-	clientUUID                types.UUID
-	nextConnID                int64
-	state                     int32
-	smartRouting              bool
+	logger               ilogger.Logger
+	credentials          security.Credentials
+	cb                   *cb.CircuitBreaker
+	partitionService     *PartitionService
+	serializationService *iserialization.Service
+	eventDispatcher      *event.DispatchService
+	invocationFactory    *ConnectionInvocationFactory
+	clusterService       *Service
+	responseCh           chan<- *proto.ClientMessage
+	startCh              chan struct{}
+	connMap              *connectionMap
+	doneCh               chan struct{}
+	clusterConfig        *pubcluster.Config
+	requestCh            chan<- invocation.Invocation
+	addrTranslator       AddressTranslator
+	clientName           string
+	labels               []string
+	clientUUID           types.UUID
+	nextConnID           int64
+	state                int32
+	smartRouting         bool
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
@@ -184,7 +211,6 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		logger:               bundle.Logger,
 		addrTranslator:       bundle.AddrTranslator,
 	}
-	manager.memberConnectivityChecker = &MemberConnectivityChecker{ConnectionManager: manager}
 	return manager
 }
 
@@ -357,29 +383,14 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 	}
 	var initialAddr pubcluster.Address
 	var err error
-	portRange := m.clusterConfig.Network.PortRange
 	for _, addr := range seedAddrs {
-		host, port, parseErr := internal.ParseAddr(addr.String())
-		if parseErr != nil {
-			return "", parseErr
-		}
-		if port == pubcluster.CheckPortRangePort { // we need to try all addresses in port range
-			for i := portRange.Min; i <= portRange.Max; i++ {
-				currAddr := pubcluster.NewAddress(host, int32(i))
-				currentAddrRet, connErr := m.memberConnectivityChecker.checkConnectivity(ctx, currAddr)
-				if connErr == nil {
-					initialAddr = currentAddrRet
-					break
-				} else {
-					err = connErr
-				}
-			}
-		} else {
-			initialAddr, err = m.memberConnectivityChecker.checkConnectivity(ctx, addr)
+		initialAddr, err = tryConnectAddress(ctx, m, m.clusterConfig.Network.PortRange, addr, connectMember)
+		if err != nil {
+			return "", err
 		}
 	}
 	if initialAddr == "" {
-		return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
+		return "", err
 	}
 	return initialAddr, nil
 }

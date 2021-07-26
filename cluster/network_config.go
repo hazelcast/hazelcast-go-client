@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	CheckPortRangePort  = 0
 	defaultAddress      = "127.0.0.1:5701"
 	defaultPortRangeMin = 5701
 	defaultPortRangeMax = 5703
@@ -93,7 +92,7 @@ func (c *NetworkConfig) Validate() error {
 				return fmt.Errorf("invalid address '%s': %w", addr, err)
 			}
 			if port == 0 { // we do not have any port defined
-				c.Addresses[i] = fmt.Sprintf("%s:%d", host, CheckPortRangePort)
+				c.Addresses[i] = fmt.Sprintf("%s:%d", host, port)
 			}
 		}
 	}
