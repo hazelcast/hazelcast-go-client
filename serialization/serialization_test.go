@@ -36,7 +36,6 @@ func TestJSON_String(t *testing.T) {
 
 // Test compatibility with `encoding/json` package
 func TestJSON_Marshal(t *testing.T) {
-
 	j := serialization.JSON(`{"foo":4}`)
 	b, err := json.Marshal(j)
 	assert.NoError(t, err)
