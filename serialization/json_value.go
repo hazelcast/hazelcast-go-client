@@ -24,9 +24,9 @@ func (j JSON) String() string {
 	return string(j)
 }
 
-// MarshalJSON is used by functions in the Go `json` package. This function
-// ensures that a `serialization.JSON` value is correctly serialized by this
-// package. This is mostly applicable when `serialization.JSON` is
+// MarshalJSON is used by functions in the Go `encoding/json` package. This
+// function ensures that a `serialization.JSON` value is correctly serialized
+// by this package. This is mostly applicable when `serialization.JSON` is
 // serialized as a field of a larger struct.
 func (j JSON) MarshalJSON() ([]byte, error) {
 	if j == nil {
@@ -35,9 +35,9 @@ func (j JSON) MarshalJSON() ([]byte, error) {
 	return j, nil
 }
 
-// UnmarshalJSON is used by functions in the Go `json` package. This function
-// ensures that a `serialization.JSON` value is correctly deserialized from
-// JSON objects that should contain a field of this type.
+// UnmarshalJSON is used by functions in the Go `encoding/json` package. This
+// function ensures that a `serialization.JSON` value is correctly deserialized
+// from JSON objects that contain a field of this type.
 func (j *JSON) UnmarshalJSON(data []byte) error {
 	if j == nil {
 		return errors.New("serialization.JSON: UnmarshalJSON on nil pointer")
