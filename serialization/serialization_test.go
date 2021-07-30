@@ -17,6 +17,7 @@
 package serialization_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -31,6 +32,23 @@ func TestJSON_String(t *testing.T) {
 	if !assert.Equal(t, `{"foo": 4}`, j.String()) {
 		t.FailNow()
 	}
+}
+
+// Test compatibility with `encoding/json` package
+func TestJSON_Marshal(t *testing.T) {
+	j := serialization.JSON(`{"foo":4}`)
+	b, err := json.Marshal(j)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte(j), b)
+}
+
+// Test compatibility with `encoding/json` package
+func TestJSON_Unmarshal(t *testing.T) {
+	b := []byte(`{"foo":4}`)
+	var j serialization.JSON
+	err := json.Unmarshal(b, &j)
+	assert.NoError(t, err)
+	assert.Equal(t, serialization.JSON(b), j)
 }
 
 func TestClassDefinitionAddDuplicateField(t *testing.T) {

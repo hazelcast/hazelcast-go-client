@@ -16,8 +16,32 @@
 
 package serialization
 
+import ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+
 type JSON []byte
 
 func (j JSON) String() string {
 	return string(j)
+}
+
+// MarshalJSON is used by functions in the Go `encoding/json` package.
+// This function ensures that a `serialization.JSON` value is correctly
+// serialized by this package. This is mostly applicable when
+// `serialization.JSON` is serialized as a field of a larger struct.
+func (j JSON) MarshalJSON() ([]byte, error) {
+	if j == nil {
+		return []byte("null"), nil
+	}
+	return j, nil
+}
+
+// UnmarshalJSON is used by functions in the Go `encoding/json` package.
+// This function ensures that a `serialization.JSON` value is correctly
+// deserialized from JSON objects that contain a field of this type.
+func (j *JSON) UnmarshalJSON(data []byte) error {
+	if j == nil {
+		return ihzerrors.NewIllegalArgumentError("serialization.JSON: UnmarshalJSON on nil pointer", nil)
+	}
+	*j = append((*j)[0:0], data...)
+	return nil
 }
