@@ -20,6 +20,13 @@ const (
 	enterpriseKey     = "HAZELCAST_ENTERPRISE_KEY"
 )
 
+// SkipIf can be used to skip a test case based on comma-separated conditions.
+// The following conditions may be set:
+// "hz": Hazelcast version
+// "ver": go client version
+// "os": value of runtime.GOOS
+// "enterprise"/"oss": presence of enterprise key environment variable
+// Example: SkipIf(t, "ver > 1.1, hz = 5")
 func SkipIf(t *testing.T, conditionString string) {
 	skip, err := skipIf(conditionString)
 	if err != nil {
