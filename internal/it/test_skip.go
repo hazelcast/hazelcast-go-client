@@ -68,13 +68,13 @@ func checkCondition(condition string) bool {
 		validateLength(parts, 1, condition, "!oss")
 		return enterprise()
 	default:
-		panic(fmt.Errorf("unexpected test skip constant \"%s\" in %s", parts[0], condition))
+		panic(fmt.Errorf(`unexpected test skip constant "%s" in %s`, parts[0], condition))
 	}
 }
 
 func validateLength(parts []string, expected int, condition, example string) {
 	if len(parts) != expected {
-		panic(fmt.Errorf("unexpected format for %s, example of expected condition: \"%s\" ", condition, example))
+		panic(fmt.Errorf(`unexpected format for %s, example of expected condition: "%s"`, condition, example))
 	}
 }
 
@@ -94,7 +94,7 @@ func checkVersion(given, operator, actual string) bool {
 	case "<=":
 		return greater >= 0
 	default:
-		panic(fmt.Errorf("unexpected test skip operator \"%s\" to compare versions", operator))
+		panic(fmt.Errorf(`unexpected test skip operator "%s" to compare versions`, operator))
 	}
 }
 
@@ -136,7 +136,7 @@ func checkOS(operator, value string) bool {
 	case "!=":
 		return runtime.GOOS != value
 	default:
-		panic(fmt.Errorf("unexpected test skip operator \"%s\" in \"%s\" condition", operator, skipOS))
+		panic(fmt.Errorf(`unexpected test skip operator "%s" in "%s" condition`, operator, skipOS))
 	}
 }
 
