@@ -49,7 +49,7 @@ func TestCountAll(t *testing.T) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		it.SkipIf(t, "hz <= 4.0.3")
+		it.SkipIf(t, "hz < 4.1")
 		ctx := context.Background()
 		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
 		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
@@ -86,7 +86,7 @@ func TestDistinctValuesAll(t *testing.T) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
-		it.SkipIf(t, "hz <= 4.0.3")
+		it.SkipIf(t, "hz < 4.1")
 		ctx := context.Background()
 		it.MustValue(m.Put(ctx, "k1", &it.SamplePortable{A: "foo", B: 10}))
 		it.MustValue(m.Put(ctx, "k2", &it.SamplePortable{A: "bar", B: 30}))
