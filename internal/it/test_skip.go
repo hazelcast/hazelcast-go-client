@@ -33,7 +33,7 @@ func SkipIf(t *testing.T, conditionString string) {
 		t.Fatalf(err.Error())
 	}
 	if skip {
-		t.Skip()
+		t.Skip("Skipping test: SkipIf conditions met")
 	}
 }
 
@@ -97,7 +97,7 @@ func skipIf(conditionString string) (bool, error) {
 			}
 			skip := checkEnterprise(true)
 			if skip {
-				return skip, nil
+				return true, nil
 			}
 		case parts[0] == "!"+skipOSS:
 			if err := validateLength(parts, 1, condition, "!oss"); err != nil {
@@ -181,7 +181,7 @@ func compareVersions(given, actual string) (*bool, error) {
 		}
 		actualNumber, err := strconv.Atoi(actualVersions[i])
 		if err != nil {
-			return nil, fmt.Errorf("Could not parse version number (to integer): %d", givenNumber)
+			return nil, fmt.Errorf("Could not parse version number (to integer): %d", actualNumber)
 		}
 
 		if givenNumber > actualNumber {

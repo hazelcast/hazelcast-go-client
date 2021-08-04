@@ -3,6 +3,7 @@ package it_test
 import (
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/stretchr/testify/assert"
 )
@@ -42,9 +43,21 @@ func TestSkipIf(t *testing.T) {
 		{name: "skip version = 100.0.0", conditions: "ver = 100.0.0", expectFatal: false, expectSkip: false},
 		{name: "skip version != 100.0.0", conditions: "ver != 100.0.0", expectFatal: false, expectSkip: true},
 
+		// Check version compared to actual version
+		{name: "skip version >= actual", conditions: "ver >= " + internal.ClientVersion, expectFatal: false, expectSkip: true},
+		{name: "skip version < actual", conditions: "ver > " + internal.ClientVersion, expectFatal: false, expectSkip: false},
+		{name: "skip version <= actual", conditions: "ver <= " + internal.ClientVersion, expectFatal: false, expectSkip: true},
+		{name: "skip version < actual", conditions: "ver > " + internal.ClientVersion, expectFatal: false, expectSkip: false},
+		{name: "skip version = actual", conditions: "ver = " + internal.ClientVersion, expectFatal: false, expectSkip: true},
+		{name: "skip version != actual", conditions: "ver != " + internal.ClientVersion, expectFatal: false, expectSkip: false},
+
 		// Check hz
 		{name: "skip hz != 100.0.0", conditions: "hz != 100.0.0", expectFatal: false, expectSkip: true},
 		{name: "skip hz = 100", conditions: "hz = 100", expectFatal: false, expectSkip: false},
+
+		// Multiple conditions
+		{name: "skip hz = 100 or version = 100", conditions: "hz = 100, ver = 100", expectFatal: false, expectSkip: false},
+		{name: "skip hz = 100 or version < 100", conditions: "hz = 100.0.0, ver < 100", expectFatal: false, expectSkip: true},
 	}
 
 	for _, tc := range testCases {
