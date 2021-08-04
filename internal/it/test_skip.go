@@ -27,143 +27,78 @@ const (
 // "os": value of runtime.GOOS
 // "enterprise"/"oss": presence of enterprise key environment variable
 // Example: SkipIf(t, "ver > 1.1, hz = 5")
-func SkipIf(t *testing.T, conditionString string) {
-	skip, err := skipIf(conditionString)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	if skip {
-		t.Skip("Skipping test: SkipIf conditions met")
+func SkipIf(t *testing.T, conditions string) {
+	if skip := canSkip(conditions); skip {
+		t.Skipf("Skipping test since: %s", conditions)
 	}
 }
 
-func skipIf(conditionString string) (bool, error) {
+func canSkip(conditionString string) bool {
 	conditions := strings.Split(conditionString, ",")
 	for _, condition := range conditions {
 		condition = strings.Trim(condition, " ")
-		switch parts := strings.Split(condition, " "); {
-		case parts[0] == skipHzVersion:
-			if err := validateLength(parts, 3, condition, "hz = 4.0"); err != nil {
-				return true, err
-			}
-			skip, err := checkVersion(parts[2], parts[1], HzVersion())
-			if err != nil {
-				return true, err
-			}
-			if skip {
-				return true, nil
-			}
-		case parts[0] == skipClientVersion:
-			if err := validateLength(parts, 3, condition, "ver = 4.0"); err != nil {
-				return true, err
-			}
-			skip, err := checkVersion(parts[2], parts[1], internal.ClientVersion)
-			if err != nil {
-				return true, err
-			}
-			if skip {
-				return true, nil
-			}
-		case parts[0] == skipOS:
-			if err := validateLength(parts, 3, condition, "os = windows"); err != nil {
-				return true, err
-			}
-			skip, err := checkOS(parts[1], parts[2])
-			if err != nil {
-				return true, err
-			}
-			if skip {
-				return true, nil
-			}
-		case parts[0] == skipEnterprise:
-			if err := validateLength(parts, 1, condition, "enterprise"); err != nil {
-				return true, err
-			}
-			skip := checkEnterprise(false)
-			if skip {
-				return true, nil
-			}
-		case parts[0] == "!"+skipEnterprise:
-			if err := validateLength(parts, 1, condition, "!enterprise"); err != nil {
-				return true, err
-			}
-			skip := checkEnterprise(true)
-			if skip {
-				return true, nil
-			}
-		case parts[0] == skipOSS:
-			if err := validateLength(parts, 1, condition, "oss"); err != nil {
-				return true, err
-			}
-			skip := checkEnterprise(true)
-			if skip {
-				return true, nil
-			}
-		case parts[0] == "!"+skipOSS:
-			if err := validateLength(parts, 1, condition, "!oss"); err != nil {
-				return true, err
-			}
-			skip := checkEnterprise(false)
-			if skip {
-				return true, nil
-			}
-		default:
-			return true, fmt.Errorf("Unexpected test skip constant \"%s\" in %s", parts[0], condition)
+		if checkCondition(condition) {
+			return true
 		}
 	}
-	return false, nil
+	return false
 }
 
-func validateLength(parts []string, expected int, condition, example string) error {
+func checkCondition(condition string) bool {
+	switch parts := strings.Split(condition, " "); parts[0] {
+	case skipHzVersion:
+		validateLength(parts, 3, condition, "hz = 4.0")
+		return checkVersion(parts[2], parts[1], HzVersion())
+	case skipClientVersion:
+		validateLength(parts, 3, condition, "ver = 4.0")
+		return checkVersion(parts[2], parts[1], internal.ClientVersion)
+	case skipOS:
+		validateLength(parts, 3, condition, "os = windows")
+		return checkOS(parts[1], parts[2])
+	case skipEnterprise:
+		validateLength(parts, 1, condition, "enterprise")
+		return enterprise()
+	case "!" + skipEnterprise:
+		validateLength(parts, 1, condition, "!enterprise")
+		return !enterprise()
+	case skipOSS:
+		validateLength(parts, 1, condition, "oss")
+		return !enterprise()
+	case "!" + skipOSS:
+		validateLength(parts, 1, condition, "!oss")
+		return enterprise()
+	default:
+		panic(fmt.Errorf("Unexpected test skip constant \"%s\" in %s", parts[0], condition))
+	}
+}
+
+func validateLength(parts []string, expected int, condition, example string) {
 	if len(parts) != expected {
-		return fmt.Errorf("Unexpected format for %s, example of expected condition: \"%s\" ", condition, example)
+		panic(fmt.Errorf("Unexpected format for %s, example of expected condition: \"%s\" ", condition, example))
 	}
-	return nil
 }
 
-func checkVersion(given, operator, actual string) (bool, error) {
-	isGivenGreater, err := compareVersions(given, actual)
-	if err != nil {
-		return true, err
-	}
-
+func checkVersion(given, operator, actual string) bool {
+	greater := compareVersions(given, actual)
 	switch operator {
 	case "=":
-		if isGivenGreater == nil {
-			return true, nil
-		}
-		return false, nil
+		return greater == 0
 	case "!=":
-		if isGivenGreater != nil {
-			return true, nil
-		}
-		return false, nil
+		return greater != 0
 	case ">":
-		if isGivenGreater != nil && !*isGivenGreater {
-			return true, nil
-		}
-		return false, nil
+		return greater < 0
 	case ">=":
-		if isGivenGreater != nil && *isGivenGreater {
-			return false, nil
-		}
-		return true, nil
+		return greater <= 0
 	case "<":
-		if isGivenGreater != nil && *isGivenGreater {
-			return true, nil
-		}
-		return false, nil
+		return greater > 0
 	case "<=":
-		if isGivenGreater != nil && !*isGivenGreater {
-			return false, nil
-		}
-		return true, nil
+		return greater >= 0
 	default:
-		return true, fmt.Errorf("Unexpected test skip operator \"%s\" to compare versions", operator)
+		panic(fmt.Errorf("Unexpected test skip operator \"%s\" to compare versions", operator))
 	}
 }
 
-func compareVersions(given, actual string) (*bool, error) {
+func compareVersions(given, actual string) int {
 	// versionNumbers describe the numbers of the present version
 	actualVersions := strings.Split(actual, ".")
 	// checkNumbers describe the numbers received to test for
@@ -177,45 +112,35 @@ func compareVersions(given, actual string) (*bool, error) {
 	for i := 0; i < min; i++ {
 		givenNumber, err := strconv.Atoi(givenVersions[i])
 		if err != nil {
-			return nil, fmt.Errorf("Could not parse version number (to integer): %d", givenNumber)
+			panic(fmt.Errorf("Could not parse version number (to integer): %d", givenNumber))
 		}
 		actualNumber, err := strconv.Atoi(actualVersions[i])
 		if err != nil {
-			return nil, fmt.Errorf("Could not parse version number (to integer): %d", actualNumber)
+			panic(fmt.Errorf("Could not parse version number (to integer): %d", actualNumber))
 		}
 
 		if givenNumber > actualNumber {
-			res := true
-			return &res, nil
+			return 1
 		}
 		if actualNumber > givenNumber {
-			res := false
-			return &res, nil
+			return -1
 		}
 	}
-	return nil, nil
+	return 0
 }
 
-func checkOS(operator, value string) (bool, error) {
+func checkOS(operator, value string) bool {
 	switch operator {
 	case "=":
-		if runtime.GOOS == value {
-			return true, nil
-		}
+		return runtime.GOOS == value
 	case "!=":
-		if runtime.GOOS != value {
-			return true, nil
-		}
+		return runtime.GOOS != value
 	default:
-		return true, fmt.Errorf("Unexpected test skip operator \"%s\" in \"%s\" condition", operator, skipOS)
+		panic(fmt.Errorf("Unexpected test skip operator \"%s\" in \"%s\" condition", operator, skipOS))
 	}
-	return false, nil
 }
 
-func checkEnterprise(expected bool) bool {
-	_, actual := os.LookupEnv(enterpriseKey)
-	if actual == expected {
-		return true
-	}
-	return false
+func enterprise() bool {
+	_, enterprise := os.LookupEnv(enterpriseKey)
+	return enterprise
 }
