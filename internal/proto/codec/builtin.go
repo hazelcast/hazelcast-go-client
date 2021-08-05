@@ -620,6 +620,27 @@ func DecodeListMultiFrameForDataContainsNullable(frameIterator *proto.ForwardFra
 	return result
 }
 
+func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []DistributedObjectInfo {
+	result := make([]DistributedObjectInfo, 0)
+	frameIterator.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
+		result = append(result, DecodeDistributedObjectInfo(frameIterator))
+	}
+	frameIterator.Next()
+	return result
+}
+
+func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) DistributedObjectInfo {
+	frameIterator.Next()
+	serviceName := DecodeString(frameIterator)
+	name := DecodeString(frameIterator)
+	CodecUtil.FastForwardToEndFrame(frameIterator)
+	return DistributedObjectInfo{
+		name:        name,
+		serviceName: serviceName,
+	}
+}
+
 func EncodeListData(message *proto.ClientMessage, entries []*iserialization.Data) {
 	EncodeListMultiFrameForData(message, entries)
 }

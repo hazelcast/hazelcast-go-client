@@ -31,6 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -198,6 +199,44 @@ func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, err
 		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getPNCounter(ctx, name)
+}
+
+func (c *Client) GetDistributedObjects(ctx context.Context) (map[string]interface{}, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, hzerrors.ErrClientNotActive
+	}
+
+	request := codec.EncodeClientGetDistributedObjectsRequest()
+	resp, err := c.proxyManager.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	cachedObjects := make(map[codec.DistributedObjectInfo]struct{})
+	for _, o := range c.proxyManager.getCachedObjectsInfo() {
+		cachedObjects[o] = struct{}{}
+	}
+
+	for _, o := range codec.DecodeClientGetDistributedObjectsResponse(resp) {
+		if !isServiceSupported(o.ServiceName()) {
+			continue
+		}
+		delete(cachedObjects, o)
+		// Ensure the remote proxy resides in the manager's cache. This should
+		// not create a remote proxy as it might be destroyed cluster-wide after
+		// member's response.
+		_, err = c.proxyManager.proxyFor(ctx, o.ServiceName(), o.Name(), false)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for o := range cachedObjects {
+		// Purge the stale object from the manager's cache.
+		c.proxyManager.remove(o.ServiceName(), o.Name())
+	}
+
+	return c.proxyManager.getCachedObjects()
 }
 
 func (c *Client) start(ctx context.Context) error {

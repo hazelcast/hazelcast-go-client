@@ -321,3 +321,112 @@ func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, false, c.Running())
 }
+
+func TestClient_GetDistributedObjects(t *testing.T) {
+	const (
+		testMapName = "get-distributed-objects-map"
+		testSetName = "get-distributed-objects-set"
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	defer cancel()
+
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 1)
+	time.Sleep(2 * time.Second)
+	defer cls.Shutdown()
+	config := cls.DefaultConfig()
+
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = c.GetMap(ctx, testMapName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = c.GetSet(ctx, testSetName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Shutdown(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	c, err = hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	objects, err := c.GetDistributedObjects(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, 2, len(objects))
+	hzMap := objects[testMapName]
+	hzSet := objects[testSetName]
+	assert.NotNil(t, hzMap)
+	assert.NotNil(t, hzSet)
+	assert.IsType(t, new(hz.Map), hzMap)
+	assert.IsType(t, new(hz.Set), hzSet)
+
+	if err = c.Shutdown(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClient_PurgeDestroyedDistributedObjects(t *testing.T) {
+	const (
+		testMapName = "get-distributed-objects-map"
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+	defer cancel()
+
+	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 1)
+	time.Sleep(2 * time.Second)
+	defer cls.Shutdown()
+	config := cls.DefaultConfig()
+
+	// create map from client1
+	client1, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client1.GetMap(ctx, testMapName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	objects, err := client1.GetDistributedObjects(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 1, len(objects))
+	assert.NotNil(t, objects[testMapName])
+
+	// destroy map from client2
+	client2, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := client2.GetMap(ctx, testMapName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = m.Destroy(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// check objects from client1
+	objects, err = client1.GetDistributedObjects(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 0, len(objects))
+
+	if err = client1.Shutdown(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = client2.Shutdown(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
