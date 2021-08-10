@@ -190,6 +190,10 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 	return client
 }
 
+func NewUniqueServiceName(service string) string {
+	return fmt.Sprintf("test-%s-%d-%d", service, idGen.NextID(), rand.Int())
+}
+
 func TraceLoggingEnabled() bool {
 	return os.Getenv(EnvEnableTraceLogging) == "1"
 }

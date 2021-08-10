@@ -18,8 +18,6 @@ package it
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	"go.uber.org/goleak"
@@ -29,7 +27,7 @@ import (
 
 func ListTester(t *testing.T, f func(t *testing.T, l *hz.List)) {
 	makeListName := func() string {
-		return fmt.Sprintf("test-list-%d-%d", idGen.NextID(), rand.Int())
+		return NewUniqueServiceName("list")
 	}
 	ListTesterWithConfigAndName(t, makeListName, nil, f)
 }

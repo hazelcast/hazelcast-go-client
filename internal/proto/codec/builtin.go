@@ -620,6 +620,24 @@ func DecodeListMultiFrameForDataContainsNullable(frameIterator *proto.ForwardFra
 	return result
 }
 
+func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []types.DistributedObjectInfo {
+	result := make([]types.DistributedObjectInfo, 0)
+	frameIterator.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
+		result = append(result, DecodeDistributedObjectInfo(frameIterator))
+	}
+	frameIterator.Next()
+	return result
+}
+
+func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) types.DistributedObjectInfo {
+	frameIterator.Next()
+	serviceName := DecodeString(frameIterator)
+	name := DecodeString(frameIterator)
+	CodecUtil.FastForwardToEndFrame(frameIterator)
+	return types.NewDistributedObjectInfo(name, serviceName)
+}
+
 func EncodeListData(message *proto.ClientMessage, entries []*iserialization.Data) {
 	EncodeListMultiFrameForData(message, entries)
 }
@@ -754,31 +772,6 @@ type DistributedObject interface {
 
 	// ServiceName returns the service name for this object.
 	ServiceName() string
-}
-
-type DistributedObjectInfo struct {
-	name        string
-	serviceName string
-}
-
-func (i *DistributedObjectInfo) Name() string {
-	return i.name
-}
-
-func (i *DistributedObjectInfo) ServiceName() string {
-	return i.serviceName
-}
-
-func (i *DistributedObjectInfo) GetName() string {
-	return i.name
-}
-
-func (i *DistributedObjectInfo) GetServiceName() string {
-	return i.serviceName
-}
-
-func NewDistributedObjectInfo(name string, serviceName string) DistributedObjectInfo {
-	return DistributedObjectInfo{name: name, serviceName: serviceName}
 }
 
 func NewMemberVersion(major, minor, patch byte) pubcluster.MemberVersion {

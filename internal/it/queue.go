@@ -18,8 +18,6 @@ package it
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	"go.uber.org/goleak"
@@ -29,7 +27,7 @@ import (
 
 func QueueTester(t *testing.T, f func(t *testing.T, q *hz.Queue)) {
 	makeQueueName := func() string {
-		return fmt.Sprintf("test-queue-%d-%d", idGen.NextID(), rand.Int())
+		return NewUniqueServiceName("queue")
 	}
 	QueueTesterWithConfigAndName(t, makeQueueName, nil, f)
 }

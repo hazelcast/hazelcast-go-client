@@ -28,20 +28,28 @@ import (
 )
 
 type proxyManager struct {
-	mu             *sync.RWMutex
-	proxies        map[string]*proxy
-	serviceBundle  creationBundle
-	refIDGenerator *iproxy.ReferenceIDGenerator
+	mu              *sync.RWMutex
+	proxies         map[string]*proxy
+	invocationProxy *proxy
+	serviceBundle   creationBundle
+	refIDGenerator  *iproxy.ReferenceIDGenerator
 }
 
 func newProxyManager(bundle creationBundle) *proxyManager {
 	bundle.Check()
-	return &proxyManager{
+	pm := &proxyManager{
 		mu:             &sync.RWMutex{},
 		proxies:        map[string]*proxy{},
 		serviceBundle:  bundle,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
 	}
+	p, err := newProxy(context.Background(), pm.serviceBundle, "", "", pm.refIDGenerator, func() bool { return false }, false)
+	if err != nil {
+		// It actually never panics since the proxy is local.
+		panic(err)
+	}
+	pm.invocationProxy = p
+	return pm
 }
 
 func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
@@ -100,6 +108,20 @@ func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounte
 	}
 }
 
+func (m *proxyManager) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	return m.invocationProxy.invokeOnRandomTarget(ctx, request, handler)
+}
+
+func (m *proxyManager) getCachedObjectsInfo() []types.DistributedObjectInfo {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	objects := make([]types.DistributedObjectInfo, 0, len(m.proxies))
+	for _, p := range m.proxies {
+		objects = append(objects, types.NewDistributedObjectInfo(p.name, p.serviceName))
+	}
+	return objects
+}
+
 func (m *proxyManager) addDistributedObjectEventListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
 	request := codec.EncodeClientAddDistributedObjectListenerRequest(!m.serviceBundle.Config.Cluster.Unisocket)
 	subscriptionID := types.NewUUID()
@@ -138,20 +160,16 @@ func (m *proxyManager) proxyFor(ctx context.Context, serviceName string, objectN
 	if ok {
 		return obj, nil
 	}
-	if p, err := m.createProxy(ctx, serviceName, objectName); err != nil {
-		return nil, err
-	} else {
-		m.mu.Lock()
-		m.proxies[name] = p
-		m.mu.Unlock()
-		return p, nil
-	}
-}
-
-func (m *proxyManager) createProxy(ctx context.Context, serviceName string, objectName string) (*proxy, error) {
-	return newProxy(ctx, m.serviceBundle, serviceName, objectName, m.refIDGenerator, func() bool {
+	p, err := newProxy(ctx, m.serviceBundle, serviceName, objectName, m.refIDGenerator, func() bool {
 		return m.remove(serviceName, objectName)
-	})
+	}, true)
+	if err != nil {
+		return nil, err
+	}
+	m.mu.Lock()
+	m.proxies[name] = p
+	m.mu.Unlock()
+	return p, nil
 }
 
 func makeProxyName(serviceName string, objectName string) string {

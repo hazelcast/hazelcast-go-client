@@ -29,6 +29,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestClientLifecycleEvents(t *testing.T) {
@@ -320,4 +321,48 @@ func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
 	cls.Shutdown()
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, false, c.Running())
+}
+
+func TestClient_GetDistributedObjects(t *testing.T) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var (
+			testMapName = it.NewUniqueServiceName("map")
+			testSetName = it.NewUniqueServiceName("set")
+			mapInfo     = types.NewDistributedObjectInfo(testMapName, hz.ServiceNameMap)
+			setInfo     = types.NewDistributedObjectInfo(testSetName, hz.ServiceNameSet)
+		)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+		defer cancel()
+
+		testMap, err := client.GetMap(ctx, testMapName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testSet, err := client.GetSet(ctx, testSetName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		objects, err := client.GetDistributedObjectsInfo(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Contains(t, objects, mapInfo)
+		assert.Contains(t, objects, setInfo)
+
+		if err = testMap.Destroy(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if err = testSet.Destroy(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		objects, err = client.GetDistributedObjectsInfo(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.NotContains(t, objects, mapInfo)
+		assert.NotContains(t, objects, setInfo)
+	})
 }

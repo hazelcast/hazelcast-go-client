@@ -18,8 +18,6 @@ package it
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	"go.uber.org/goleak"
@@ -33,7 +31,7 @@ func SetTester(t *testing.T, f func(t *testing.T, s *hz.Set)) {
 
 func SetTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, s *hz.Set)) {
 	makeName := func() string {
-		return fmt.Sprintf("test-set-%d-%d", idGen.NextID(), rand.Int())
+		return NewUniqueServiceName("set")
 	}
 	SetTesterWithConfigAndName(t, makeName, configCallback, f)
 }
