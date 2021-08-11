@@ -30,13 +30,12 @@ type AddressTranslator struct {
 	mu         *sync.RWMutex
 }
 
-func NewAddressTranslator(dc *DiscoveryClient, addrs []Address) *AddressTranslator {
+func NewAddressTranslator(dc *DiscoveryClient) *AddressTranslator {
 	t := &AddressTranslator{
 		dc:         dc,
 		translator: map[string]pubcluster.Address{},
 		mu:         &sync.RWMutex{},
 	}
-	t.updateTranslator(addrs)
 	return t
 }
 

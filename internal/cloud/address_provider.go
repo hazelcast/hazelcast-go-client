@@ -24,42 +24,25 @@ import (
 )
 
 type AddressProvider struct {
-	dc    *DiscoveryClient
-	addrs []pubcluster.Address
+	dc *DiscoveryClient
 }
 
-func NewAddressProvider(dc *DiscoveryClient, addrs []Address) (*AddressProvider, error) {
-	if pubAddrs, err := translateAddrs(addrs); err != nil {
-		return nil, err
-	} else {
-		return &AddressProvider{
-			addrs: pubAddrs,
-			dc:    dc,
-		}, nil
-	}
+func NewAddressProvider(dc *DiscoveryClient) *AddressProvider {
+	return &AddressProvider{dc: dc}
 }
 
-func (a *AddressProvider) Addresses(refresh bool) []pubcluster.Address {
-	if refresh {
-		if err := a.refresh(); err != nil {
-			// TODO: log the error
-			return nil
-		}
-	}
-	return a.addrs
-}
-
-func (a *AddressProvider) refresh() error {
+func (a *AddressProvider) Addresses() []pubcluster.Address {
 	addrs, err := a.dc.DiscoverNodes(context.Background())
 	if err != nil {
-		return err
+		// TODO: log the error
+		return nil
 	}
 	pubAddrs, err := translateAddrs(addrs)
 	if err != nil {
-		return err
+		// TODO: log the error
+		return nil
 	}
-	a.addrs = pubAddrs
-	return nil
+	return pubAddrs
 }
 
 func translateAddrs(addrs []Address) ([]pubcluster.Address, error) {

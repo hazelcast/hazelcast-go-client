@@ -103,7 +103,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"SSL":{}},"ConnectionStrategy":{"Retry":{}}},"Stats":{}}`
+	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"SSL":{}},"ConnectionStrategy":{"Retry":{}}},"Failover":{},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 

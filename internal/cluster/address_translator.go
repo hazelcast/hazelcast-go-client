@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )

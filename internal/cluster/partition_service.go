@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -86,12 +87,17 @@ func (s *PartitionService) Update(connID int64, partitions []proto.Pair, version
 	}
 }
 
+func (s *PartitionService) Reset() {
+	s.partitionTable.Reset()
+}
+
 func (s *PartitionService) checkAndSetPartitionCount(newPartitionCount int32) error {
 	if atomic.CompareAndSwapInt32(&s.partitionCount, 0, newPartitionCount) {
 		return nil
 	}
 	if atomic.LoadInt32(&s.partitionCount) != newPartitionCount {
-		return hzerrors.ErrClientNotAllowedInCluster
+		return fmt.Errorf("client cannot work with this cluster because it has different partition count, expected %d, got %d: %w",
+			atomic.LoadInt32(&s.partitionCount), newPartitionCount, hzerrors.ErrClientNotAllowedInCluster)
 	}
 	return nil
 }
@@ -136,6 +142,14 @@ func (p *partitionTable) GetOwnerUUID(partitionID int32) (types.UUID, bool) {
 		return uuid, true
 	}
 	return types.UUID{}, false
+}
+
+func (p *partitionTable) Reset() {
+	p.mu.Lock()
+	p.partitionStateVersion = -1
+	p.partitions = map[int32]types.UUID{}
+	p.connectionID = 0
+	p.mu.Unlock()
 }
 
 func defaultPartitionTable() partitionTable {

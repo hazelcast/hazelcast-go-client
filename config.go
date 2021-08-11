@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/failover"
 	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -31,9 +32,10 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	Labels              []string             `json:",omitempty"`
 	ClientName          string               `json:",omitempty"`
 	Logger              logger.Config        `json:",omitempty"`
+	Failover            failover.Config      `json:",omitempty"`
+	Labels              []string             `json:",omitempty"`
 	Serialization       serialization.Config `json:",omitempty"`
 	Cluster             cluster.Config       `json:",omitempty"`
 	Stats               StatsConfig          `json:",omitempty"`
@@ -81,6 +83,7 @@ func (c *Config) Clone() Config {
 		ClientName:    c.ClientName,
 		Labels:        newLabels,
 		Cluster:       c.Cluster.Clone(),
+		Failover:      c.Failover.Clone(),
 		Serialization: c.Serialization.Clone(),
 		Logger:        c.Logger.Clone(),
 		Stats:         c.Stats.clone(),
@@ -94,6 +97,9 @@ func (c *Config) Clone() Config {
 // Validate validates the configuration and replaces missing configuration with defaults.
 func (c *Config) Validate() error {
 	if err := c.Cluster.Validate(); err != nil {
+		return err
+	}
+	if err := c.Failover.Validate(c.Cluster); err != nil {
 		return err
 	}
 	if err := c.Serialization.Validate(); err != nil {
