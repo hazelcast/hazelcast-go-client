@@ -36,6 +36,9 @@ const (
 
 	// EventDisconnected is dispatched when all connections to the cluster are closed.
 	EventDisconnected = "internal.cluster.disconnected"
+
+	// EventChangedCluster is dispatched when a cluster ID change is detected during reconnection.
+	EventChangedCluster = "internal.cluster.changed"
 )
 
 type ConnectionOpenedHandler func(event *ConnectionOpened)
@@ -116,4 +119,15 @@ func NewDisconnected() *Disconnected {
 
 func (c *Disconnected) EventName() string {
 	return EventDisconnected
+}
+
+type ChangedCluster struct {
+}
+
+func NewChangedCluster() *ChangedCluster {
+	return &ChangedCluster{}
+}
+
+func (c *ChangedCluster) EventName() string {
+	return EventChangedCluster
 }

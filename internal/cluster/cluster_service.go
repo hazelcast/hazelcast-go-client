@@ -32,11 +32,10 @@ import (
 
 type Service struct {
 	logger            ilogger.Logger
-	addrTranslator    AddressTranslator
-	addrProvider      AddressProvider
 	config            *pubcluster.Config
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
+	failoverService   *FailoverService
 	requestCh         chan<- invocation.Invocation
 	invocationFactory *ConnectionInvocationFactory
 	membersMap        membersMap
@@ -44,19 +43,15 @@ type Service struct {
 
 type CreationBundle struct {
 	Logger            ilogger.Logger
-	AddressTranslator AddressTranslator
 	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
+	FailoverService   *FailoverService
 	Config            *pubcluster.Config
-	AddrProvider      AddressProvider
 }
 
 func (b CreationBundle) Check() {
-	if b.AddrProvider == nil {
-		panic("AddrProvider is nil")
-	}
 	if b.RequestCh == nil {
 		panic("RequestCh is nil")
 	}
@@ -75,23 +70,19 @@ func (b CreationBundle) Check() {
 	if b.Config == nil {
 		panic("Config is nil")
 	}
-	if b.AddressTranslator == nil {
-		panic("AddressTranslator is nil")
-	}
 }
 
 func NewService(bundle CreationBundle) *Service {
 	bundle.Check()
 	return &Service{
-		addrProvider:      bundle.AddrProvider,
 		requestCh:         bundle.RequestCh,
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		partitionService:  bundle.PartitionService,
+		failoverService:   bundle.FailoverService,
 		logger:            bundle.Logger,
 		config:            bundle.Config,
-		addrTranslator:    bundle.AddressTranslator,
-		membersMap:        newMembersMap(bundle.AddressTranslator, bundle.Logger),
+		membersMap:        newMembersMap(bundle.FailoverService, bundle.Logger),
 	}
 }
 
@@ -111,15 +102,15 @@ func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]stru
 	return s.membersMap.RandomDataMemberExcluding(excluded)
 }
 
-func (s *Service) RefreshedSeedAddrs(refresh bool) []pubcluster.Address {
+func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateClusterCtx) []pubcluster.Address {
 	s.membersMap.reset()
 	addrSet := NewAddrSet()
-	addrSet.AddAddrs(s.addrProvider.Addresses(refresh))
+	addrSet.AddAddrs(clusterCtx.AddressProvider.Addresses())
 	return addrSet.Addrs()
 }
 
 func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, error) {
-	return s.addrTranslator.TranslateMember(context.TODO(), m)
+	return s.failoverService.Current().AddressTranslator.TranslateMember(context.TODO(), m)
 }
 
 func (s *Service) Reset() {
@@ -179,7 +170,7 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
-	addrTranslator   AddressTranslator
+	failoverService  *FailoverService
 	logger           ilogger.Logger
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
@@ -187,11 +178,11 @@ type membersMap struct {
 	version          int32
 }
 
-func newMembersMap(translator AddressTranslator, lg ilogger.Logger) membersMap {
+func newMembersMap(failoverService *FailoverService, lg ilogger.Logger) membersMap {
 	mm := membersMap{
-		membersMu:      &sync.RWMutex{},
-		addrTranslator: translator,
-		logger:         lg,
+		membersMu:       &sync.RWMutex{},
+		failoverService: failoverService,
+		logger:          lg,
 	}
 	mm.reset()
 	return mm
@@ -285,7 +276,7 @@ func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]s
 func (m *membersMap) addMember(member *pubcluster.MemberInfo) bool {
 	// synchronized in Update
 	uuid := member.UUID
-	addr, err := m.addrTranslator.TranslateMember(context.TODO(), member)
+	addr, err := m.failoverService.Current().AddressTranslator.TranslateMember(context.TODO(), member)
 	if err != nil {
 		addr = member.Address
 	}
