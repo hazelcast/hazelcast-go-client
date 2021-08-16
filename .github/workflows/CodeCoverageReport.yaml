@@ -3,12 +3,9 @@ on:
     push:
       branches: 
         - master
-        - 4.*.x
-        - CoverageUpload
     pull_request:
       branches: 
         - master
-        - 4.*.x
 jobs:
   test_client:
     name: Test Go client against enterprise ${{ matrix.version }} server on ubuntu-latest
