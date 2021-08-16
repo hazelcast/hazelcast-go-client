@@ -328,8 +328,8 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 		var (
 			testMapName = it.NewUniqueObjectName("map")
 			testSetName = it.NewUniqueObjectName("set")
-			mapInfo     = types.NewDistributedObjectInfo(testMapName, hz.ServiceNameMap)
-			setInfo     = types.NewDistributedObjectInfo(testSetName, hz.ServiceNameSet)
+			mapInfo     = types.DistributedObjectInfo{Name: testMapName, ServiceName: hz.ServiceNameMap}
+			setInfo     = types.DistributedObjectInfo{Name: testSetName, ServiceName: hz.ServiceNameSet}
 		)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
