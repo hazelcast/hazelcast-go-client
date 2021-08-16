@@ -29,7 +29,6 @@ jobs:
         run: |
           ./rc.sh start
           sudo bash ./coverage.sh
-        working-directory: client
         
       - name: Publish to Codecov
         uses: codecov/codecov-action@v2
