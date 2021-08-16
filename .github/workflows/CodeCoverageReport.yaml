@@ -3,12 +3,13 @@ on:
     push:
       branches: 
         - master
+        - CoverageUpload
     pull_request:
       branches: 
         - master
 jobs:
   test_client:
-    name: Test Go client against enterprise ${{ matrix.version }} server on ubuntu-latest
+    name: Run code coverage and upload to Codecov
     runs-on: ubuntu-latest
     steps:
         
@@ -20,13 +21,9 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '1.15'
-            
-      - name: Checkout the ${{ github.event.inputs.branch_name }}     
+          
+      - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          repository: hazelcast/hazelcast-go-client
-          path: client
-          ref: ${{ github.event.inputs.branch_name }}
           
       - name: Test
         run: |
