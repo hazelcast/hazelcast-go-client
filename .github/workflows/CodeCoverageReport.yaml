@@ -27,7 +27,7 @@ jobs:
       - name: Test
         run: |
           ./rc.sh start
-          sudo bash ./coverage.sh
+          bash ./coverage.sh
         
       - name: Publish to Codecov
         uses: codecov/codecov-action@v2
