@@ -206,34 +206,25 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, hzerrors.ErrClientNotActive
 	}
-
 	request := codec.EncodeClientGetDistributedObjectsRequest()
 	resp, err := c.proxyManager.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return nil, err
 	}
-
 	objects := codec.DecodeClientGetDistributedObjectsResponse(resp)
 	result := make([]types.DistributedObjectInfo, 0, len(objects))
-
 	cached := make(map[types.DistributedObjectInfo]struct{})
 	for _, o := range c.proxyManager.getCachedObjectsInfo() {
 		cached[o] = struct{}{}
 	}
-
 	for _, o := range objects {
-		if !serviceSupported(o.ServiceName()) {
-			continue
-		}
 		result = append(result, o)
 		delete(cached, o)
 	}
-
 	for o := range cached {
 		// Purge the stale object from the manager's cache.
-		c.proxyManager.remove(o.ServiceName(), o.Name())
+		c.proxyManager.remove(o.ServiceName, o.Name)
 	}
-
 	return result, nil
 }
 

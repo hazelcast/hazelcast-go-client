@@ -27,7 +27,7 @@ import (
 
 func ListTester(t *testing.T, f func(t *testing.T, l *hz.List)) {
 	makeListName := func() string {
-		return NewUniqueServiceName("list")
+		return NewUniqueObjectName("list")
 	}
 	ListTesterWithConfigAndName(t, makeListName, nil, f)
 }

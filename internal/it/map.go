@@ -30,7 +30,7 @@ func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 
 func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
 	makeMapName := func() string {
-		return NewUniqueServiceName("map")
+		return NewUniqueObjectName("map")
 	}
 	MapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }

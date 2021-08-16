@@ -117,7 +117,7 @@ func (m *proxyManager) getCachedObjectsInfo() []types.DistributedObjectInfo {
 	defer m.mu.RUnlock()
 	objects := make([]types.DistributedObjectInfo, 0, len(m.proxies))
 	for _, p := range m.proxies {
-		objects = append(objects, types.NewDistributedObjectInfo(p.name, p.serviceName))
+		objects = append(objects, types.DistributedObjectInfo{Name: p.name, ServiceName: p.serviceName})
 	}
 	return objects
 }

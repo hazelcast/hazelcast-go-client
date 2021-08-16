@@ -31,7 +31,7 @@ func ReplicatedMapTester(t *testing.T, f func(t *testing.T, m *hz.ReplicatedMap)
 
 func ReplicatedMapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.ReplicatedMap)) {
 	makeMapName := func() string {
-		return NewUniqueServiceName("replicated-map")
+		return NewUniqueObjectName("replicated-map")
 	}
 	ReplicatedMapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }

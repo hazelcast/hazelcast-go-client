@@ -53,21 +53,6 @@ const (
 	ttlUnlimited = 0
 )
 
-func serviceSupported(serviceName string) bool {
-	switch serviceName {
-	case ServiceNameMap,
-		ServiceNameReplicatedMap,
-		ServiceNameQueue,
-		ServiceNameTopic,
-		ServiceNameList,
-		ServiceNameSet,
-		ServiceNamePNCounter:
-		return true
-	default:
-		return false
-	}
-}
-
 type creationBundle struct {
 	RequestCh            chan<- invocation.Invocation
 	RemoveCh             chan<- int64

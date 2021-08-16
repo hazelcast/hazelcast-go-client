@@ -326,8 +326,8 @@ func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
 func TestClient_GetDistributedObjects(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		var (
-			testMapName = it.NewUniqueServiceName("map")
-			testSetName = it.NewUniqueServiceName("set")
+			testMapName = it.NewUniqueObjectName("map")
+			testSetName = it.NewUniqueObjectName("set")
 			mapInfo     = types.NewDistributedObjectInfo(testMapName, hz.ServiceNameMap)
 			setInfo     = types.NewDistributedObjectInfo(testSetName, hz.ServiceNameSet)
 		)

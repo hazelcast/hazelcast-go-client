@@ -27,7 +27,7 @@ import (
 
 func QueueTester(t *testing.T, f func(t *testing.T, q *hz.Queue)) {
 	makeQueueName := func() string {
-		return NewUniqueServiceName("queue")
+		return NewUniqueObjectName("queue")
 	}
 	QueueTesterWithConfigAndName(t, makeQueueName, nil, f)
 }

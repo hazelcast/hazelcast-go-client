@@ -31,7 +31,7 @@ func SetTester(t *testing.T, f func(t *testing.T, s *hz.Set)) {
 
 func SetTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, s *hz.Set)) {
 	makeName := func() string {
-		return NewUniqueServiceName("set")
+		return NewUniqueObjectName("set")
 	}
 	SetTesterWithConfigAndName(t, makeName, configCallback, f)
 }

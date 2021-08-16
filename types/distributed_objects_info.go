@@ -17,18 +17,6 @@
 package types
 
 type DistributedObjectInfo struct {
-	name        string
-	serviceName string
-}
-
-func (i *DistributedObjectInfo) Name() string {
-	return i.name
-}
-
-func (i *DistributedObjectInfo) ServiceName() string {
-	return i.serviceName
-}
-
-func NewDistributedObjectInfo(name string, serviceName string) DistributedObjectInfo {
-	return DistributedObjectInfo{name: name, serviceName: serviceName}
+	Name        string
+	ServiceName string
 }

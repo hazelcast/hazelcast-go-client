@@ -29,7 +29,7 @@ func PNCounterTester(t *testing.T, f func(t *testing.T, pn *hz.PNCounter)) {
 
 func PNCounterTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, pn *hz.PNCounter)) {
 	makeName := func() string {
-		return NewUniqueServiceName("pn-counter")
+		return NewUniqueObjectName("pn-counter")
 	}
 	PNCounterTesterWithConfigAndName(t, makeName, configCallback, f)
 }

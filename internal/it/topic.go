@@ -26,7 +26,7 @@ import (
 
 func TopicTester(t *testing.T, f func(t *testing.T, tp *hz.Topic)) {
 	makeName := func() string {
-		return NewUniqueServiceName("topic")
+		return NewUniqueObjectName("topic")
 	}
 	TopicTesterWithConfigAndName(t, makeName, nil, f)
 }

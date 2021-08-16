@@ -190,7 +190,7 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 	return client
 }
 
-func NewUniqueServiceName(service string) string {
+func NewUniqueObjectName(service string) string {
 	return fmt.Sprintf("test-%s-%d-%d", service, idGen.NextID(), rand.Int())
 }
 
