@@ -3,7 +3,6 @@ on:
     push:
       branches: 
         - master
-        - CoverageUpload
     pull_request:
       branches: 
         - master
@@ -11,8 +10,8 @@ jobs:
   test_client:
     name: Run code coverage and upload to Codecov
     runs-on: ubuntu-latest
-    steps:
-        
+    steps:     
+    
       - name: Setup Java
         uses: actions/setup-java@v1
         with:
