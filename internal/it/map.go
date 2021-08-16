@@ -18,8 +18,6 @@ package it
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -32,7 +30,7 @@ func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 
 func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
 	makeMapName := func() string {
-		return fmt.Sprintf("test-map-%d-%d", idGen.NextID(), rand.Int())
+		return NewUniqueObjectName("map")
 	}
 	MapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }

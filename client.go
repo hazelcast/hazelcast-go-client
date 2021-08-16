@@ -31,6 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -198,6 +199,19 @@ func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, err
 		return nil, hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.getPNCounter(ctx, name)
+}
+
+// GetDistributedObjectsInfo returns the information of all objects created cluster-wide.
+func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.DistributedObjectInfo, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, hzerrors.ErrClientNotActive
+	}
+	request := codec.EncodeClientGetDistributedObjectsRequest()
+	resp, err := c.proxyManager.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeClientGetDistributedObjectsResponse(resp), nil
 }
 
 func (c *Client) start(ctx context.Context) error {

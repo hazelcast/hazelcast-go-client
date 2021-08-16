@@ -18,8 +18,6 @@ package it
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	"go.uber.org/goleak"
@@ -33,7 +31,7 @@ func ReplicatedMapTester(t *testing.T, f func(t *testing.T, m *hz.ReplicatedMap)
 
 func ReplicatedMapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.ReplicatedMap)) {
 	makeMapName := func() string {
-		return fmt.Sprintf("test-replicated-map-%d-%d", idGen.NextID(), rand.Int())
+		return NewUniqueObjectName("replicated-map")
 	}
 	ReplicatedMapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }
