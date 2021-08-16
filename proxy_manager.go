@@ -112,16 +112,6 @@ func (m *proxyManager) invokeOnRandomTarget(ctx context.Context, request *proto.
 	return m.invocationProxy.invokeOnRandomTarget(ctx, request, handler)
 }
 
-func (m *proxyManager) getCachedObjectsInfo() []types.DistributedObjectInfo {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	objects := make([]types.DistributedObjectInfo, 0, len(m.proxies))
-	for _, p := range m.proxies {
-		objects = append(objects, types.DistributedObjectInfo{Name: p.name, ServiceName: p.serviceName})
-	}
-	return objects
-}
-
 func (m *proxyManager) addDistributedObjectEventListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
 	request := codec.EncodeClientAddDistributedObjectListenerRequest(!m.serviceBundle.Config.Cluster.Unisocket)
 	subscriptionID := types.NewUUID()

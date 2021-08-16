@@ -211,21 +211,7 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 	if err != nil {
 		return nil, err
 	}
-	objects := codec.DecodeClientGetDistributedObjectsResponse(resp)
-	result := make([]types.DistributedObjectInfo, 0, len(objects))
-	cached := make(map[types.DistributedObjectInfo]struct{})
-	for _, o := range c.proxyManager.getCachedObjectsInfo() {
-		cached[o] = struct{}{}
-	}
-	for _, o := range objects {
-		result = append(result, o)
-		delete(cached, o)
-	}
-	for o := range cached {
-		// Purge the stale object from the manager's cache.
-		c.proxyManager.remove(o.ServiceName, o.Name)
-	}
-	return result, nil
+	return codec.DecodeClientGetDistributedObjectsResponse(resp), nil
 }
 
 func (c *Client) start(ctx context.Context) error {
