@@ -34,7 +34,7 @@ jobs:
       - name: Test
         run: |
           ./rc.sh start
-          ./coverage.sh
+          sudo bash ./coverage.sh
         working-directory: client
         
       - name: Publish to Codecov
