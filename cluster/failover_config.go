@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package failover
+package cluster
 
 import (
 	"fmt"
 	"math"
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
-// Config to configure multiple client configs to be used by single client
-// instance. The client will try to connect them in given order. When the
-// connected cluster fails or the client blacklisted from the cluster via
-// the Management Center, the client will search for alternative clusters
-// with given configs.
-type Config struct {
+// FailoverConfig allows configuring multiple client configs to be used
+// by a single client instance. The client will try to connect them in
+// the given order. When the connected cluster fails or the client
+// gets blacklisted from the cluster via the Management Center, the client
+// will search for alternative clusters with given configs.
+type FailoverConfig struct {
 	// Configs is the configured list of failover cluster configurations.
 	// Together with the main configuration (Cluster option), they form
 	// the list of alternative cluster configs.
@@ -42,7 +41,7 @@ type Config struct {
 	// * Network.SSL
 	// * Network.Addresses
 	// * Cloud
-	Configs []cluster.Config `json:",omitempty"`
+	Configs []Config `json:",omitempty"`
 	// TryCount is the count of attempts to connect to a cluster.
 	//
 	// For each alternative cluster, the client will try to connect to the
@@ -61,30 +60,33 @@ type Config struct {
 	// the TryCount is set as 4, the maximum number of subsequent connection
 	// attempts done by the client is 4 x 2 = 8.
 	//
-	// When a zero or a negative value is provided, math.MaxInt32 is used
-	// instead as the value for this option.
+	// When a zero value is provided, math.MaxInt32 is used instead as the
+	// value for this option.
 	TryCount int `json:",omitempty"`
 	// Enabled is the enable failover behavior of the client.
 	Enabled bool `json:",omitempty"`
 }
 
-func (c *Config) Clone() Config {
-	newConfigs := make([]cluster.Config, len(c.Configs))
+func (c *FailoverConfig) Clone() FailoverConfig {
+	newConfigs := make([]Config, len(c.Configs))
 	for i, cc := range c.Configs {
 		newConfigs[i] = cc.Clone()
 	}
-	return Config{
+	return FailoverConfig{
 		Enabled:  c.Enabled,
 		TryCount: c.TryCount,
 		Configs:  newConfigs,
 	}
 }
 
-func (c *Config) Validate(rootConfig cluster.Config) error {
+func (c *FailoverConfig) Validate(rootConfig Config) error {
 	if !c.Enabled {
 		return nil
 	}
-	if c.TryCount < 1 {
+	if c.TryCount < 0 {
+		return fmt.Errorf("non-negative TryCount number expected: %w", hzerrors.ErrIllegalArgument)
+	}
+	if c.TryCount == 0 {
 		c.TryCount = math.MaxInt32
 	}
 	if len(c.Configs) == 0 {
@@ -104,7 +106,7 @@ func (c *Config) Validate(rootConfig cluster.Config) error {
 }
 
 // Checks for cluster config equality.
-func equalConfigs(c1, c2 cluster.Config) bool {
+func equalConfigs(c1, c2 Config) bool {
 	c1 = sanitizedConfig(c1)
 	c2 = sanitizedConfig(c2)
 	return reflect.DeepEqual(c1, c2)
@@ -116,16 +118,16 @@ func equalConfigs(c1, c2 cluster.Config) bool {
 // * Network.SSL
 // * Network.Addresses
 // * Cloud
-func sanitizedConfig(c cluster.Config) cluster.Config {
+func sanitizedConfig(c Config) Config {
 	c.Name = ""
-	c.Security = cluster.SecurityConfig{}
-	c.Network.SSL = cluster.SSLConfig{}
+	c.Security = SecurityConfig{}
+	c.Network.SSL = SSLConfig{}
 	c.Network.Addresses = nil
-	c.Cloud = cluster.CloudConfig{}
+	c.Cloud = CloudConfig{}
 	return c
 }
 
 // SetConfigs sets the cluster configuration list.
-func (c *Config) SetConfigs(configs ...cluster.Config) {
+func (c *FailoverConfig) SetConfigs(configs ...Config) {
 	c.Configs = configs
 }

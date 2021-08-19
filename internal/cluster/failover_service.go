@@ -27,12 +27,12 @@ import (
 // Responsible for cluster failover state and attempts management.
 type FailoverService struct {
 	isClientRunningFn func() bool
-	candidateClusters []CandidateClusterCtx
+	candidateClusters []CandidateCluster
 	maxTryCount       int
 	index             uint64
 }
 
-type CandidateClusterCtx struct {
+type CandidateCluster struct {
 	AddressProvider   AddressProvider
 	AddressTranslator AddressTranslator
 	Credentials       security.Credentials
@@ -47,11 +47,11 @@ func NewFailoverService(
 	addrProviderTranslatorFn func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator),
 	isClientRunningFn func() bool) *FailoverService {
 
-	candidateClusters := []CandidateClusterCtx{}
+	candidateClusters := []CandidateCluster{}
 	configs := []pubcluster.Config{rootConfig}
 	configs = append(configs, failoverConfigs...)
 	for _, c := range configs {
-		ctx := CandidateClusterCtx{
+		ctx := CandidateCluster{
 			ClusterName: c.Name,
 			Credentials: makeCredentials(&c.Security),
 		}
@@ -70,7 +70,7 @@ func makeCredentials(config *pubcluster.SecurityConfig) *security.UsernamePasswo
 	return security.NewUsernamePasswordCredentials(config.Credentials.Username, config.Credentials.Password)
 }
 
-func (s *FailoverService) TryNextCluster(fn func(next *CandidateClusterCtx) (pubcluster.Address, bool)) (pubcluster.Address, bool) {
+func (s *FailoverService) TryNextCluster(fn func(next *CandidateCluster) (pubcluster.Address, bool)) (pubcluster.Address, bool) {
 	tryCount := 0
 	for s.isClientRunningFn() && tryCount < s.maxTryCount {
 		for i := 0; i < len(s.candidateClusters); i++ {
@@ -83,12 +83,12 @@ func (s *FailoverService) TryNextCluster(fn func(next *CandidateClusterCtx) (pub
 	return "", false
 }
 
-func (s *FailoverService) Current() *CandidateClusterCtx {
+func (s *FailoverService) Current() *CandidateCluster {
 	idx := atomic.LoadUint64(&s.index)
 	return &s.candidateClusters[idx%uint64(len(s.candidateClusters))]
 }
 
-func (s *FailoverService) Next() *CandidateClusterCtx {
+func (s *FailoverService) Next() *CandidateCluster {
 	idx := atomic.AddUint64(&s.index, 1)
 	return &s.candidateClusters[idx%uint64(len(s.candidateClusters))]
 }

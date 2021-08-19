@@ -339,9 +339,9 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.Address, error) {
-	currentCtx := m.failoverService.Current()
+	current := m.failoverService.Current()
 	m.logger.Trace(func() string {
-		return fmt.Sprintf("ConnectionManager: trying to connect to cluster: %s", currentCtx.ClusterName)
+		return fmt.Sprintf("ConnectionManager: trying to connect to cluster: %s", current.ClusterName)
 	})
 	maxAttempts := math.MaxInt32
 	if m.failoverEnabled {
@@ -349,12 +349,12 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 		maxAttempts = 1
 	}
 	// try the current cluster
-	addr, err := m.tryConnectCandidateCluster(ctx, currentCtx, maxAttempts)
+	addr, err := m.tryConnectCandidateCluster(ctx, current, maxAttempts)
 	if err == nil {
 		return addr, nil
 	}
 	// try all of the next alternative clusters
-	addr, ok := m.failoverService.TryNextCluster(func(next *CandidateClusterCtx) (pubcluster.Address, bool) {
+	addr, ok := m.failoverService.TryNextCluster(func(next *CandidateCluster) (pubcluster.Address, bool) {
 		m.logger.Infof("trying to connect to next cluster: %s", next.ClusterName)
 		if addr, err := m.tryConnectCandidateCluster(ctx, next, maxAttempts); err == nil {
 			m.logger.Infof("successfully connected to cluster: %s", next.ClusterName)
@@ -369,15 +369,15 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	return "", fmt.Errorf("cannot connect to any cluster: %w", hzerrors.ErrIllegalState)
 }
 
-func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, candidateCtx *CandidateClusterCtx, maxAttempts int) (pubcluster.Address, error) {
+func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, maxAttempts int) (pubcluster.Address, error) {
 	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt == maxAttempts {
 			m.logger.Debug(func() string {
-				return fmt.Sprintf("ConnectionManager: giving up connection attempts to cluster: %s", candidateCtx.ClusterName)
+				return fmt.Sprintf("ConnectionManager: giving up connection attempts to cluster: %s", cluster.ClusterName)
 			})
 			return "", cb.WrapNonRetryableError(fmt.Errorf("giving up connection attempts to cluster: %w", hzerrors.ErrIllegalState))
 		}
-		addr, err := m.connectCluster(ctx, candidateCtx)
+		addr, err := m.connectCluster(ctx, cluster)
 		if err != nil {
 			m.logger.Debug(func() string {
 				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt, err.Error())
@@ -391,14 +391,16 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cand
 	return addr.(pubcluster.Address), nil
 }
 
-func (m *ConnectionManager) connectCluster(ctx context.Context, clusterCtx *CandidateClusterCtx) (pubcluster.Address, error) {
-	seedAddrs := m.clusterService.RefreshedSeedAddrs(clusterCtx)
+func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *CandidateCluster) (pubcluster.Address, error) {
+	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(cluster)
+	if err != nil {
+		return "", fmt.Errorf("failed to refresh seed addresses: %w", err)
+	}
 	if len(seedAddrs) == 0 {
-		return "", errors.New("no seed addresses")
+		return "", errors.New("could not find any seed addresses")
 	}
 	var initialAddr pubcluster.Address
 	var conn *Connection
-	var err error
 	for _, addr := range seedAddrs {
 		if conn, err = m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)

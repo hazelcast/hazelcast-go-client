@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/failover"
 	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -32,13 +31,13 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	ClientName          string               `json:",omitempty"`
-	Logger              logger.Config        `json:",omitempty"`
-	Failover            failover.Config      `json:",omitempty"`
-	Labels              []string             `json:",omitempty"`
-	Serialization       serialization.Config `json:",omitempty"`
-	Cluster             cluster.Config       `json:",omitempty"`
-	Stats               StatsConfig          `json:",omitempty"`
+	ClientName          string                 `json:",omitempty"`
+	Logger              logger.Config          `json:",omitempty"`
+	Failover            cluster.FailoverConfig `json:",omitempty"`
+	Labels              []string               `json:",omitempty"`
+	Serialization       serialization.Config   `json:",omitempty"`
+	Cluster             cluster.Config         `json:",omitempty"`
+	Stats               StatsConfig            `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.

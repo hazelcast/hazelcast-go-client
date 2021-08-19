@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package failover_test
+package cluster_test
 
 import (
 	"errors"
@@ -22,18 +22,17 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/failover"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFailoverConfigValidate_Empty(t *testing.T) {
-	c := failover.Config{}
+	c := cluster.FailoverConfig{}
 	assert.NoError(t, c.Validate(cluster.Config{}))
 }
 
 func TestFailoverConfigValidate_ZeroTryCount(t *testing.T) {
-	c := failover.Config{
+	c := cluster.FailoverConfig{
 		Enabled: true,
 		Configs: []cluster.Config{emptyClusterConfig(), emptyClusterConfig()},
 	}
@@ -41,8 +40,19 @@ func TestFailoverConfigValidate_ZeroTryCount(t *testing.T) {
 	assert.Equal(t, math.MaxInt32, c.TryCount)
 }
 
+func TestFailoverConfigValidate_NegativeTryCount(t *testing.T) {
+	c := cluster.FailoverConfig{
+		Enabled:  true,
+		TryCount: -42,
+		Configs:  []cluster.Config{emptyClusterConfig(), emptyClusterConfig()},
+	}
+	if !errors.Is(c.Validate(emptyClusterConfig()), hzerrors.ErrIllegalArgument) {
+		t.Fatalf("should fail as ErrIllegalArgument")
+	}
+}
+
 func TestFailoverConfigValidate_NoConfigs(t *testing.T) {
-	c := failover.Config{
+	c := cluster.FailoverConfig{
 		Enabled:  true,
 		TryCount: 1,
 	}
@@ -52,7 +62,7 @@ func TestFailoverConfigValidate_NoConfigs(t *testing.T) {
 }
 
 func TestFailoverConfigValidate_SameConfigs(t *testing.T) {
-	c := failover.Config{
+	c := cluster.FailoverConfig{
 		Enabled:  true,
 		TryCount: 1,
 		Configs:  []cluster.Config{emptyClusterConfig()},
@@ -61,7 +71,7 @@ func TestFailoverConfigValidate_SameConfigs(t *testing.T) {
 }
 
 func TestFailoverConfigValidate_ConfigsWithAllowedDifferences(t *testing.T) {
-	c := failover.Config{
+	c := cluster.FailoverConfig{
 		Enabled:  true,
 		TryCount: 42,
 		Configs:  []cluster.Config{emptyClusterConfig()},
@@ -72,7 +82,7 @@ func TestFailoverConfigValidate_ConfigsWithAllowedDifferences(t *testing.T) {
 func TestFailoverConfigValidate_ConfigsWithUnallowedDifferences(t *testing.T) {
 	rootConfig := allowedClusterConfig()
 	rootConfig.InvocationTimeout = 42
-	c := failover.Config{
+	c := cluster.FailoverConfig{
 		Enabled:  true,
 		TryCount: 42,
 		Configs:  []cluster.Config{emptyClusterConfig()},

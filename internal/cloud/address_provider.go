@@ -31,18 +31,16 @@ func NewAddressProvider(dc *DiscoveryClient) *AddressProvider {
 	return &AddressProvider{dc: dc}
 }
 
-func (a *AddressProvider) Addresses() []pubcluster.Address {
+func (a *AddressProvider) Addresses() ([]pubcluster.Address, error) {
 	addrs, err := a.dc.DiscoverNodes(context.Background())
 	if err != nil {
-		// TODO: log the error
-		return nil
+		return nil, err
 	}
 	pubAddrs, err := translateAddrs(addrs)
 	if err != nil {
-		// TODO: log the error
-		return nil
+		return nil, err
 	}
-	return pubAddrs
+	return pubAddrs, nil
 }
 
 func translateAddrs(addrs []Address) ([]pubcluster.Address, error) {

@@ -102,11 +102,15 @@ func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]stru
 	return s.membersMap.RandomDataMemberExcluding(excluded)
 }
 
-func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateClusterCtx) []pubcluster.Address {
+func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
 	s.membersMap.reset()
 	addrSet := NewAddrSet()
-	addrSet.AddAddrs(clusterCtx.AddressProvider.Addresses())
-	return addrSet.Addrs()
+	addrs, err := clusterCtx.AddressProvider.Addresses()
+	if err != nil {
+		return nil, err
+	}
+	addrSet.AddAddrs(addrs)
+	return addrSet.Addrs(), nil
 }
 
 func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, error) {

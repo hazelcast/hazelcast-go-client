@@ -412,8 +412,8 @@ func (c *Client) createComponents(config *Config) {
 		Logger:          c.logger,
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
-	var maxTryCount = 0
 	var failoverConfigs []cluster.Config
+	maxTryCount := 0
 	if config.Failover.Enabled {
 		maxTryCount = config.Failover.TryCount
 		failoverConfigs = config.Failover.Configs
