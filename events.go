@@ -22,6 +22,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
+// EntryEventType is the type of an entry event.
 type EntryEventType int32
 
 const (
@@ -47,6 +48,7 @@ const (
 	EntryLoaded EntryEventType = 1 << 9
 )
 
+// EntryNotifiedHandler is called when an entry event happens.
 type EntryNotifiedHandler func(event *EntryNotified)
 
 const (
@@ -59,6 +61,7 @@ const (
 	eventDistributedObjectNotified  = "distributedobjectnotified"
 )
 
+// EntryNotified contains information about an entry event.
 type EntryNotified struct {
 	MergingValue            interface{}
 	Key                     interface{}
@@ -96,6 +99,7 @@ func newEntryNotifiedEvent(
 	}
 }
 
+// LifecycleState indicates the state of the lifecycle event.
 type LifecycleState int
 
 func (s LifecycleState) String() string {
@@ -132,8 +136,10 @@ const (
 	LifecycleStateDisconnected
 )
 
+// LifecycleStateChangeHandler is called when a lifecycle event occurs.
 type LifecycleStateChangeHandler func(event LifecycleStateChanged)
 
+// LifecycleStateChanged contains information about a lifecycle event.
 type LifecycleStateChanged struct {
 	State LifecycleState
 }
@@ -146,6 +152,7 @@ func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 	return &LifecycleStateChanged{State: state}
 }
 
+// MessagePublished contains information about a message published event.
 type MessagePublished struct {
 	PublishTime time.Time
 	Value       interface{}
@@ -176,8 +183,10 @@ const (
 	ItemRemoved ItemEventType = 2
 )
 
+// QueueItemNotifiedHandler is called when an item notified event is generated for a Queue.
 type QueueItemNotifiedHandler func(event *QueueItemNotified)
 
+// QueueItemNotified contains information about an item notified event.
 type QueueItemNotified struct {
 	Value     interface{}
 	QueueName string
@@ -223,8 +232,10 @@ func newListItemNotified(name string, value interface{}, member cluster.MemberIn
 	}
 }
 
+// SetItemNotifiedHandler is called when an item notified event is generated for a Set.
 type SetItemNotifiedHandler func(event *SetItemNotified)
 
+// SetItemNotified contains information about an item notified event.
 type SetItemNotified struct {
 	Value     interface{}
 	SetName   string
@@ -245,15 +256,20 @@ func newSetItemNotified(name string, value interface{}, member cluster.MemberInf
 	}
 }
 
+// DistributedObjectEventType describes event type of a distributed object.
 type DistributedObjectEventType string
 
 const (
-	DistributedObjectCreated   DistributedObjectEventType = "CREATED"
+	// DistributedObjectCreated is the event type when a distributed object is created.
+	DistributedObjectCreated DistributedObjectEventType = "CREATED"
+	// DistributedObjectDestroyed is the event type when a distributed object is destroyed.
 	DistributedObjectDestroyed DistributedObjectEventType = "DESTROYED"
 )
 
+// DistributedObjectNotifiedHandler is called when a distribute object event occurs.
 type DistributedObjectNotifiedHandler func(event DistributedObjectNotified)
 
+// DistributedObjectNotified contains informatino about the distributed object event.
 type DistributedObjectNotified struct {
 	ServiceName string
 	ObjectName  string

@@ -29,6 +29,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+/*
+ReplicatedMap is a distributed key-value data structure where the data is replicated to all members in the cluster.
+It provides full replication of entries to all members for high speed access.
+
+See https://docs.hazelcast.com/imdg/latest/data-structures/replicated-map.html for details.
+*/
 type ReplicatedMap struct {
 	*proxy
 	refIDGenerator *iproxy.ReferenceIDGenerator
@@ -108,9 +114,8 @@ func (m *ReplicatedMap) ContainsValue(ctx context.Context, value interface{}) (b
 }
 
 // Get returns the value for the specified key, or nil if this map does not contain this key.
-// Warning:
-//   This method returns a clone of original value, modifying the returned value does not change the
-//   actual value in the map. One should put modified value back to make changes visible to all nodes.
+// This function returns a clone of original value, modifying the returned value does not change the  actual value in the map.
+// One should put modified value back to make changes visible to all nodes.
 func (m *ReplicatedMap) Get(ctx context.Context, key interface{}) (interface{}, error) {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err

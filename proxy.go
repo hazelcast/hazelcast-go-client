@@ -119,7 +119,8 @@ func newProxy(
 	serviceName string,
 	objectName string,
 	refIDGen *iproxy.ReferenceIDGenerator,
-	removeFromCacheFn func() bool) (*proxy, error) {
+	removeFromCacheFn func() bool,
+	remote bool) (*proxy, error) {
 
 	bundle.Check()
 	// TODO: make circuit breaker configurable
@@ -145,6 +146,9 @@ func newProxy(
 		removeFromCacheFn:    removeFromCacheFn,
 		refIDGen:             refIDGen,
 		smart:                !bundle.Config.Cluster.Unisocket,
+	}
+	if !remote {
+		return p, nil
 	}
 	if err := p.create(ctx); err != nil {
 		return nil, err

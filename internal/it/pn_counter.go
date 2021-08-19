@@ -18,8 +18,6 @@ package it
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -31,7 +29,7 @@ func PNCounterTester(t *testing.T, f func(t *testing.T, pn *hz.PNCounter)) {
 
 func PNCounterTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, pn *hz.PNCounter)) {
 	makeName := func() string {
-		return fmt.Sprintf("test-pn-counter-%d-%d", idGen.NextID(), rand.Int())
+		return NewUniqueObjectName("pn-counter")
 	}
 	PNCounterTesterWithConfigAndName(t, makeName, configCallback, f)
 }

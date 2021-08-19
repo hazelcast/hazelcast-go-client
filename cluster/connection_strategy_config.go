@@ -25,6 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+// ReconnectMode enables or disables reconnecting to a cluster.
 type ReconnectMode int
 
 func (rm *ReconnectMode) UnmarshalText(b []byte) error {
@@ -51,14 +52,20 @@ func (rm ReconnectMode) MarshalText() ([]byte, error) {
 }
 
 const (
+	// ReconnectModeOn enables reconnecting to a cluster.
 	ReconnectModeOn ReconnectMode = iota
+	// ReconnectModeOff disables reconnecting to a cluster.
 	ReconnectModeOff
 )
 
+// ConnectionStrategyConfig contains configuration for reconnecting to a cluster.
 type ConnectionStrategyConfig struct {
-	Retry         ConnectionRetryConfig
-	Timeout       types.Duration `json:",omitempty"`
-	ReconnectMode ReconnectMode  `json:",omitempty"`
+	// Retry contains the backoff configuration.
+	Retry ConnectionRetryConfig
+	// Timeout is the maximum time before giving up reconnecting to a cluster.
+	Timeout types.Duration `json:",omitempty"`
+	// ReconnectMode enables or disables reconnecting to a cluster.
+	ReconnectMode ReconnectMode `json:",omitempty"`
 }
 
 func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {
@@ -72,11 +79,30 @@ func (c *ConnectionStrategyConfig) Validate() error {
 	return c.Retry.Validate()
 }
 
+/*
+ConnectionRetryConfig contains configuration to computer the waiting the duration between connection attempts.
+
+The waiting duration before the next reconnection attempt is found using the following formula:
+
+	backoff = minimum(MaxBackoff, InitialBackoff)
+	duration = backoff + backoff*Jitter*2.0*(RandomFloat64()-1.0)
+	next(backoff) = minimum(MaxBackoff, backoff*Multiplier)
+
+*/
 type ConnectionRetryConfig struct {
+	// InitialBackoff is the duration to wait for before the first reconnection attempt.
+	// Defaults to 1 second.
 	InitialBackoff types.Duration `json:",omitempty"`
-	MaxBackoff     types.Duration `json:",omitempty"`
-	Multiplier     float64        `json:",omitempty"`
-	Jitter         float64        `json:",omitempty"`
+	// MaxBackoff is the maximum duration to wait for before the next reconnection attempt.
+	// Defaults to 30 seconds.
+	MaxBackoff types.Duration `json:",omitempty"`
+	// Multiplier controls the speed of increasing backoff duration.
+	// Defaults to 1.05.
+	// Should be greater than or equal to 1.
+	Multiplier float64 `json:",omitempty"`
+	// Jitter controls the amount of randomness introduces to reduce contention.
+	// Defaults to 0.
+	Jitter float64 `json:",omitempty"`
 }
 
 func (c ConnectionRetryConfig) Clone() ConnectionRetryConfig {

@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-package cluster
+package types
 
-// CloudConfig contains configuration for Hazelcast Cloud.
-type CloudConfig struct {
-	// Token is the Hazelcast Cloud token.
-	Token string `json:",omitempty"`
-	// Enabled enables Hazelcast Cloud integration.
-	Enabled bool `json:",omitempty"`
-}
-
-func (h CloudConfig) Clone() CloudConfig {
-	return h
-}
-
-func (h CloudConfig) Validate() error {
-	return nil
+type DistributedObjectInfo struct {
+	Name        string
+	ServiceName string
 }

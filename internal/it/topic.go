@@ -18,8 +18,6 @@ package it
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"testing"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
@@ -28,7 +26,7 @@ import (
 
 func TopicTester(t *testing.T, f func(t *testing.T, tp *hz.Topic)) {
 	makeName := func() string {
-		return fmt.Sprintf("test-topic-%d-%d", idGen.NextID(), rand.Int())
+		return NewUniqueObjectName("topic")
 	}
 	TopicTesterWithConfigAndName(t, makeName, nil, f)
 }

@@ -68,7 +68,7 @@ func (t *Topic) Publish(ctx context.Context, message interface{}) error {
 	}
 }
 
-// PublishAll published all given messages to all subscribers of this topic.
+// PublishAll publishes all given messages to all subscribers of this topic.
 func (t *Topic) PublishAll(ctx context.Context, messages ...interface{}) error {
 	if len(messages) == 0 {
 		return nil

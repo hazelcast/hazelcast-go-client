@@ -25,19 +25,31 @@ import (
 
 const defaultName = "dev"
 
+// Config contains cluster and connection configuration.
 type Config struct {
-	loadBalancer       LoadBalancer
-	Security           SecurityConfig
-	Name               string `json:",omitempty"`
-	Cloud              CloudConfig
-	Network            NetworkConfig
+	loadBalancer LoadBalancer
+	// Security contains security related configuration such as credentials.
+	Security SecurityConfig
+	// Name is the cluster name.
+	Name string `json:",omitempty"`
+	// Cloud contains Hazelcast Cloud related configuration.
+	Cloud CloudConfig
+	// Network contains connection configuration.
+	Network NetworkConfig
+	// ConnectionStrategy contains cluster connection strategy configuration.
 	ConnectionStrategy ConnectionStrategyConfig
-	InvocationTimeout  types.Duration `json:",omitempty"`
-	HeartbeatInterval  types.Duration `json:",omitempty"`
-	HeartbeatTimeout   types.Duration `json:",omitempty"`
-	Discovery          DiscoveryConfig
-	RedoOperation      bool `json:",omitempty"`
-	Unisocket          bool `json:",omitempty"`
+	// InvocationTimeout is the maximum time to wait for the response of an invocation.
+	InvocationTimeout types.Duration `json:",omitempty"`
+	// HeartbeatInterval is the frequency of sending pings to the cluster to keep the connection alive.
+	HeartbeatInterval types.Duration `json:",omitempty"`
+	// HeartbeatTimeout is the maximum time to wait for the response of a ping before closing the connection.
+	HeartbeatTimeout types.Duration `json:",omitempty"`
+	// Discovery contains configuration related to discovery of Hazelcast members.
+	Discovery DiscoveryConfig
+	// RedoOperation enables retrying some errors even when they are not retried by default.
+	RedoOperation bool `json:",omitempty"`
+	// Unisocket disables smart routing and enables unisocket mode of operation.
+	Unisocket bool `json:",omitempty"`
 }
 
 func (c *Config) Clone() Config {

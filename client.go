@@ -31,6 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -48,18 +49,13 @@ const (
 	stopped
 )
 
-// StartNewClient creates and starts a new client.
-// Hazelcast client enables you to do all Hazelcast operations without
-// being a member of the cluster. It connects to one or more of the
-// cluster members and delegates all cluster wide operations to them.
+// StartNewClient creates and starts a new client with the default configuration.
+// The default configuration is tuned connect to an Hazelcast cluster running on the same computer with the client.
 func StartNewClient(ctx context.Context) (*Client, error) {
 	return StartNewClientWithConfig(ctx, NewConfig())
 }
 
 // StartNewClientWithConfig creates and starts a new client with the given configuration.
-// Hazelcast client enables you to do all Hazelcast operations without
-// being a member of the cluster. It connects to one or more of the
-// cluster members and delegates all cluster wide operations to them.
 func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, error) {
 	if client, err := newClient(config); err != nil {
 		return nil, err
@@ -70,6 +66,8 @@ func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, erro
 	}
 }
 
+// Client enables you to do all Hazelcast operations without being a member of the cluster.
+// It connects to one or more of the cluster members and delegates all cluster wide operations to them.
 type Client struct {
 	invocationHandler       invocation.Handler
 	logger                  ilogger.Logger
@@ -141,8 +139,8 @@ func newClient(config Config) (*Client, error) {
 }
 
 // Name returns client's name
-// Use ConfigBuilder.SetName to set the client name.
-// If not set manually, an automatic name is used.
+// Use config.Name to set the client name.
+// If not set manually, an automatically generated name is used.
 func (c *Client) Name() string {
 	return c.name
 }
@@ -163,6 +161,7 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	return c.proxyManager.getMap(ctx, name)
 }
 
+// GetReplicatedMap returns a replicated map instance.
 func (c *Client) GetReplicatedMap(ctx context.Context, name string) (*ReplicatedMap, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, hzerrors.ErrClientNotActive
@@ -202,7 +201,19 @@ func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, err
 	return c.proxyManager.getPNCounter(ctx, name)
 }
 
-// Start connects the client to the cluster.
+// GetDistributedObjectsInfo returns the information of all objects created cluster-wide.
+func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.DistributedObjectInfo, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, hzerrors.ErrClientNotActive
+	}
+	request := codec.EncodeClientGetDistributedObjectsRequest()
+	resp, err := c.proxyManager.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeClientGetDistributedObjectsResponse(resp), nil
+}
+
 func (c *Client) start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
 		return nil
@@ -223,7 +234,7 @@ func (c *Client) start(ctx context.Context) error {
 	return nil
 }
 
-// Shutdown disconnects the client from the cluster.
+// Shutdown disconnects the client from the cluster and frees resources allocated by the client.
 func (c *Client) Shutdown(ctx context.Context) error {
 	// Note that passed context is not used at the moment.
 	// In the future, we may need to block during shutdown, which would require a context.
@@ -245,13 +256,12 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// Running checks whether or not the client is running.
+// Running returns true if the client is running.
 func (c *Client) Running() bool {
 	return atomic.LoadInt32(&c.state) == ready
 }
 
 // AddLifecycleListener adds a lifecycle state change handler after the client starts.
-// The listener is attached to the client after the client starts, so lifecyle events after the client start can be received.
 // Use the returned subscription ID to remove the listener.
 // The handler must not block.
 func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (types.UUID, error) {
@@ -281,8 +291,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 	return nil
 }
 
-// AddMembershipListener adds a member state change handler with a unique subscription ID.
-// The listener is attached to the client after the client starts, so membership events after the client start can be received.
+// AddMembershipListener adds a member state change handler and returns a unique subscription ID.
 // Use the returned subscription ID to remove the listener.
 func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
@@ -312,6 +321,8 @@ func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	return nil
 }
 
+// AddDistributedObjectListener adds a distributed object listener and returns a unique subscription ID.
+// Use the returned subscription ID to remove the listener.
 func (c *Client) AddDistributedObjectListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return types.UUID{}, hzerrors.ErrClientNotActive
@@ -319,6 +330,7 @@ func (c *Client) AddDistributedObjectListener(ctx context.Context, handler Distr
 	return c.proxyManager.addDistributedObjectEventListener(ctx, handler)
 }
 
+// RemoveDistributedObjectListener removes the distributed object listener handler with the given subscription ID.
 func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscriptionID types.UUID) error {
 	if atomic.LoadInt32(&c.state) >= stopping {
 		return hzerrors.ErrClientNotActive
