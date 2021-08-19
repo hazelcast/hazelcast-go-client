@@ -201,6 +201,14 @@ func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, err
 	return c.proxyManager.getPNCounter(ctx, name)
 }
 
+// GetPNCounter returns a PNCounter instance.
+func (c *Client) GetFlakeIDGenerator(ctx context.Context, name string) (*FlakeIdGenerator, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, hzerrors.ErrClientNotActive
+	}
+	return c.proxyManager.getFlakeIDGenerator(ctx, name)
+}
+
 // GetDistributedObjectsInfo returns the information of all objects created cluster-wide.
 func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.DistributedObjectInfo, error) {
 	if atomic.LoadInt32(&c.state) != ready {

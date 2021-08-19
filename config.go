@@ -29,14 +29,15 @@ import (
 // Config contains configuration for a client.
 // Zero value of Config is the default configuration.
 type Config struct {
-	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
-	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	Labels              []string             `json:",omitempty"`
-	ClientName          string               `json:",omitempty"`
-	Logger              logger.Config        `json:",omitempty"`
-	Serialization       serialization.Config `json:",omitempty"`
-	Cluster             cluster.Config       `json:",omitempty"`
-	Stats               StatsConfig          `json:",omitempty"`
+	lifecycleListeners      map[types.UUID]LifecycleStateChangeHandler
+	membershipListeners     map[types.UUID]cluster.MembershipStateChangeHandler
+	Labels                  []string                          `json:",omitempty"`
+	ClientName              string                            `json:",omitempty"`
+	Logger                  logger.Config                     `json:",omitempty"`
+	Serialization           serialization.Config              `json:",omitempty"`
+	Cluster                 cluster.Config                    `json:",omitempty"`
+	Stats                   StatsConfig                       `json:",omitempty"`
+	FlakeIDGeneratorConfigs map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.
@@ -77,13 +78,18 @@ func (c *Config) Clone() Config {
 	c.ensureMembershipListeners()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
+	newFlakeIDConfigs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGeneratorConfigs))
+	for k, v := range c.FlakeIDGeneratorConfigs {
+		newFlakeIDConfigs[k] = v
+	}
 	return Config{
-		ClientName:    c.ClientName,
-		Labels:        newLabels,
-		Cluster:       c.Cluster.Clone(),
-		Serialization: c.Serialization.Clone(),
-		Logger:        c.Logger.Clone(),
-		Stats:         c.Stats.clone(),
+		ClientName:              c.ClientName,
+		Labels:                  newLabels,
+		Cluster:                 c.Cluster.Clone(),
+		Serialization:           c.Serialization.Clone(),
+		Logger:                  c.Logger.Clone(),
+		Stats:                   c.Stats.clone(),
+		FlakeIDGeneratorConfigs: newFlakeIDConfigs,
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -104,6 +110,11 @@ func (c *Config) Validate() error {
 	}
 	if err := c.Stats.Validate(); err != nil {
 		return err
+	}
+	for _, v := range c.FlakeIDGeneratorConfigs {
+		if err := v.Validate(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -138,4 +149,41 @@ func (c *StatsConfig) Validate() error {
 		return err
 	}
 	return nil
+}
+
+const (
+	defaultFlakeIDPrefetchCount  = 100
+	maxFlakeIDPrefetchCount      = 100_000
+	defaultFlakeIDPrefetchExpiry = types.Duration(10 * time.Minute)
+)
+
+// FlakeIDGeneratorConfig configures pre-fetching behavior for FlakeIDGenerator.
+type FlakeIDGeneratorConfig struct {
+	// PrefetchCount defines the number of pre-fetched IDs from cluster. Defaults to 100.
+	PrefetchCount int32 `json:",omitempty"`
+	// PrefetchExpiration defines the expiry duration of pre-fetched IDs. Defaults to 10 minutes.
+	PrefetchExpiration types.Duration `json:",omitempty"`
+}
+
+func (f FlakeIDGeneratorConfig) clone() FlakeIDGeneratorConfig {
+	return f
+}
+
+func (f *FlakeIDGeneratorConfig) Validate() error {
+	if f.PrefetchCount == 0 {
+		f.PrefetchCount = defaultFlakeIDPrefetchCount
+	} else if err := validate.ValidateWithinInclusiveRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
+		return err
+	}
+	if err := validate.NonNegativeDuration(&f.PrefetchExpiration, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func newDefaultFlakeIDGeneratorConfig() FlakeIDGeneratorConfig {
+	return FlakeIDGeneratorConfig{
+		PrefetchCount:      defaultFlakeIDPrefetchCount,
+		PrefetchExpiration: defaultFlakeIDPrefetchExpiry,
+	}
 }
