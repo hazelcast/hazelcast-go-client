@@ -53,7 +53,7 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 }
 
 func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
-	p, err := m.proxyWrapperFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
 		return newMap(p), nil
 	})
 	if err != nil {
@@ -63,7 +63,7 @@ func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
 }
 
 func (m *proxyManager) getReplicatedMap(ctx context.Context, name string) (*ReplicatedMap, error) {
-	p, err := m.proxyWrapperFor(ctx, ServiceNameReplicatedMap, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNameReplicatedMap, name, func(p *proxy) (interface{}, error) {
 		return newReplicatedMap(p, m.refIDGenerator)
 	})
 	if err != nil {
@@ -73,7 +73,7 @@ func (m *proxyManager) getReplicatedMap(ctx context.Context, name string) (*Repl
 }
 
 func (m *proxyManager) getQueue(ctx context.Context, name string) (*Queue, error) {
-	p, err := m.proxyWrapperFor(ctx, ServiceNameQueue, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNameQueue, name, func(p *proxy) (interface{}, error) {
 		return newQueue(p)
 	})
 	if err != nil {
@@ -83,7 +83,7 @@ func (m *proxyManager) getQueue(ctx context.Context, name string) (*Queue, error
 }
 
 func (m *proxyManager) getTopic(ctx context.Context, name string) (*Topic, error) {
-	p, err := m.proxyWrapperFor(ctx, ServiceNameTopic, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNameTopic, name, func(p *proxy) (interface{}, error) {
 		return newTopic(p)
 	})
 	if err != nil {
@@ -93,7 +93,7 @@ func (m *proxyManager) getTopic(ctx context.Context, name string) (*Topic, error
 }
 
 func (m *proxyManager) getList(ctx context.Context, name string) (*List, error) {
-	p, err := m.proxyWrapperFor(ctx, ServiceNameList, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNameList, name, func(p *proxy) (interface{}, error) {
 		return newList(p)
 	})
 	if err != nil {
@@ -103,7 +103,7 @@ func (m *proxyManager) getList(ctx context.Context, name string) (*List, error) 
 }
 
 func (m *proxyManager) getSet(ctx context.Context, name string) (*Set, error) {
-	p, err := m.proxyWrapperFor(ctx, ServiceNameSet, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNameSet, name, func(p *proxy) (interface{}, error) {
 		return newSet(p)
 	})
 	if err != nil {
@@ -113,7 +113,7 @@ func (m *proxyManager) getSet(ctx context.Context, name string) (*Set, error) {
 }
 
 func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounter, error) {
-	p, err := m.proxyWrapperFor(ctx, ServiceNamePNCounter, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNamePNCounter, name, func(p *proxy) (interface{}, error) {
 		return newPNCounter(p), nil
 	})
 	if err != nil {
@@ -156,7 +156,7 @@ func (m *proxyManager) remove(serviceName string, objectName string) bool {
 	return true
 }
 
-func (m *proxyManager) proxyWrapperFor(
+func (m *proxyManager) proxyFor(
 	ctx context.Context,
 	serviceName string,
 	objectName string,

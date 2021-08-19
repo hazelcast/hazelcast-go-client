@@ -369,8 +369,8 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 
 func TestClient_GetProxyInstance(t *testing.T) {
 	testCases := []struct {
-		name  string
 		getFn func(ctx context.Context, client *hz.Client, name string) (interface{}, error)
+		name  string
 	}{
 		{
 			name: "map",
