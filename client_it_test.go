@@ -453,9 +453,6 @@ func TestClientFailover_OSSCluster(t *testing.T) {
 	failoverConfig.Name = "backup-failover-test-cluster"
 	config.Failover.SetConfigs(failoverConfig)
 	_, err := hz.StartNewClientWithConfig(ctx, config)
-	if err == nil {
-		t.Fatalf("should have failed")
-	}
 	if !errors.Is(err, hzerrors.ErrIllegalState) {
 		t.Fatalf("should have returned a client illegal state error")
 	}

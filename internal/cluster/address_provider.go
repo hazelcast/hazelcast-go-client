@@ -24,7 +24,7 @@ import (
 )
 
 type AddressProvider interface {
-	Addresses() []pubcluster.Address
+	Addresses() ([]pubcluster.Address, error)
 }
 
 type DefaultAddressProvider struct {
@@ -50,6 +50,6 @@ func NewDefaultAddressProvider(networkConfig *pubcluster.NetworkConfig) *Default
 	return &DefaultAddressProvider{addresses: addresses}
 }
 
-func (p DefaultAddressProvider) Addresses() []pubcluster.Address {
-	return p.addresses
+func (p DefaultAddressProvider) Addresses() ([]pubcluster.Address, error) {
+	return p.addresses, nil
 }
