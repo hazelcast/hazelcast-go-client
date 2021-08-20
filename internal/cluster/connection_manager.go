@@ -61,18 +61,18 @@ const (
 
 type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
-	Credentials          security.Credentials
-	AddrTranslator       AddressTranslator
-	RequestCh            chan<- invocation.Invocation
+	ClusterService       *Service
 	ResponseCh           chan<- *proto.ClientMessage
 	PartitionService     *PartitionService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
-	ClusterService       *Service
+	RequestCh            chan<- invocation.Invocation
 	SerializationService *iserialization.Service
 	EventDispatcher      *event.DispatchService
+	FailoverService      *FailoverService
 	ClientName           string
 	Labels               []string
+	FailoverEnabled      bool
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
@@ -103,21 +103,17 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.ClusterConfig == nil {
 		panic("ClusterConfig is nil")
 	}
-	if b.Credentials == nil {
-		panic("Credentials is nil")
-	}
 	if b.ClientName == "" {
 		panic("ClientName is blank")
 	}
-	if b.AddrTranslator == nil {
-		panic("AddrTranslator is nil")
+	if b.FailoverService == nil {
+		panic("FailoverService is nil")
 	}
 }
 
 type ConnectionManager struct {
 	logger               ilogger.Logger
-	credentials          security.Credentials
-	cb                   *cb.CircuitBreaker
+	clusterIDMu          *sync.Mutex
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
@@ -128,14 +124,18 @@ type ConnectionManager struct {
 	connMap              *connectionMap
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
+	cb                   *cb.CircuitBreaker
+	failoverService      *FailoverService
+	clusterID            *types.UUID // protected by clusterIDMu
 	requestCh            chan<- invocation.Invocation
-	addrTranslator       AddressTranslator
+	prevClusterID        *types.UUID // protected by clusterIDMu
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
 	nextConnID           int64
 	state                int32
 	smartRouting         bool
+	failoverEnabled      bool
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
@@ -149,34 +149,35 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		eventDispatcher:      bundle.EventDispatcher,
 		invocationFactory:    bundle.InvocationFactory,
 		clusterConfig:        bundle.ClusterConfig,
-		credentials:          bundle.Credentials,
 		clientName:           bundle.ClientName,
 		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
 		connMap:              newConnectionMap(bundle.ClusterConfig.LoadBalancer()),
 		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
-		addrTranslator:       bundle.AddrTranslator,
+		failoverService:      bundle.FailoverService,
+		failoverEnabled:      bundle.FailoverEnabled,
+		clusterIDMu:          &sync.Mutex{},
 	}
 	return manager
 }
 
-func (m *ConnectionManager) Start(ctx context.Context, refresh bool) error {
+func (m *ConnectionManager) Start(ctx context.Context) error {
 	m.reset()
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.clusterConfig.ConnectionStrategy.Timeout))
 	defer cancel()
-	return m.start(ctx, refresh)
+	return m.start(ctx)
 }
 
-func (m *ConnectionManager) start(ctx context.Context, refresh bool) error {
+func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
-	addr, err := m.tryConnectCluster(ctx, refresh)
+	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
 		return err
 	}
+	// wait for initial member list
 	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: waiting for the initial member list" })
-	// wait for the initial member list
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -184,6 +185,14 @@ func (m *ConnectionManager) start(ctx context.Context, refresh bool) error {
 		break
 	}
 	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: received the initial member list" })
+	// check if cluster ID has changed after reconnection
+	var clusterIDChanged bool
+	m.clusterIDMu.Lock()
+	clusterIDChanged = m.prevClusterID != nil && m.prevClusterID != m.clusterID
+	m.clusterIDMu.Unlock()
+	if clusterIDChanged {
+		m.eventDispatcher.Publish(NewChangedCluster())
+	}
 	m.eventDispatcher.Publish(NewConnected(addr))
 	go m.heartbeat()
 	if m.smartRouting {
@@ -206,7 +215,7 @@ func (m *ConnectionManager) Stop() {
 		return
 	}
 	close(m.doneCh)
-	m.connMap.CloseAll()
+	m.connMap.CloseAll(nil)
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {
@@ -247,6 +256,12 @@ func (m *ConnectionManager) reset() {
 		cb.RetryPolicy(makeRetryPolicy(r, &m.clusterConfig.ConnectionStrategy.Retry)),
 	)
 	m.startCh = make(chan struct{}, 1)
+	m.clusterIDMu.Lock()
+	if m.clusterID != nil {
+		m.prevClusterID = m.clusterID
+	}
+	m.clusterID = nil
+	m.clusterIDMu.Unlock()
 	m.connMap.Reset()
 }
 
@@ -323,14 +338,69 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 	}
 }
 
-func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (pubcluster.Address, error) {
-	seedAddrs := m.clusterService.RefreshedSeedAddrs(refresh)
+func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.Address, error) {
+	current := m.failoverService.Current()
+	m.logger.Trace(func() string {
+		return fmt.Sprintf("ConnectionManager: trying to connect to cluster: %s", current.ClusterName)
+	})
+	maxAttempts := math.MaxInt32
+	if m.failoverEnabled {
+		// when failover configs are provided, we want to switch between alternative clusters
+		maxAttempts = 1
+	}
+	// try the current cluster
+	addr, err := m.tryConnectCandidateCluster(ctx, current, maxAttempts)
+	if err == nil {
+		return addr, nil
+	}
+	// try all of the next alternative clusters
+	addr, ok := m.failoverService.TryNextCluster(func(next *CandidateCluster) (pubcluster.Address, bool) {
+		m.logger.Infof("trying to connect to next cluster: %s", next.ClusterName)
+		if addr, err := m.tryConnectCandidateCluster(ctx, next, maxAttempts); err == nil {
+			m.logger.Infof("successfully connected to cluster: %s", next.ClusterName)
+			return addr, true
+		}
+		return "", false
+	})
+	if ok {
+		return addr, nil
+	}
+	// notify if no successful cluster connection was established
+	return "", fmt.Errorf("cannot connect to any cluster: %w", hzerrors.ErrIllegalState)
+}
+
+func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, maxAttempts int) (pubcluster.Address, error) {
+	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt == maxAttempts {
+			m.logger.Debug(func() string {
+				return fmt.Sprintf("ConnectionManager: giving up connection attempts to cluster: %s", cluster.ClusterName)
+			})
+			return "", cb.WrapNonRetryableError(fmt.Errorf("giving up connection attempts to cluster: %w", hzerrors.ErrIllegalState))
+		}
+		addr, err := m.connectCluster(ctx, cluster)
+		if err != nil {
+			m.logger.Debug(func() string {
+				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt, err.Error())
+			})
+		}
+		return addr, err
+	})
+	if err != nil {
+		return "", err
+	}
+	return addr.(pubcluster.Address), nil
+}
+
+func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *CandidateCluster) (pubcluster.Address, error) {
+	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(cluster)
+	if err != nil {
+		return "", fmt.Errorf("failed to refresh seed addresses: %w", err)
+	}
 	if len(seedAddrs) == 0 {
-		return "", errors.New("no seed addresses")
+		return "", errors.New("could not find any seed addresses")
 	}
 	var initialAddr pubcluster.Address
 	var conn *Connection
-	var err error
 	for _, addr := range seedAddrs {
 		if conn, err = m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
@@ -344,22 +414,6 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, refresh bool) (p
 		return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
 	}
 	return initialAddr, nil
-}
-
-func (m *ConnectionManager) tryConnectCluster(ctx context.Context, refresh bool) (pubcluster.Address, error) {
-	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		addr, err := m.connectCluster(ctx, refresh)
-		if err != nil {
-			m.logger.Debug(func() string {
-				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt, err.Error())
-			})
-		}
-		return addr, err
-	})
-	if err != nil {
-		return "", err
-	}
-	return addr.(pubcluster.Address), nil
 }
 
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
@@ -405,7 +459,8 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 		return fmt.Sprintf("authenticate: local: %s; remote: %s; addr: %s",
 			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.Endpoint())
 	})
-	m.credentials.SetEndpoint(conn.LocalAddr())
+	credentials := m.failoverService.Current().Credentials
+	credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
 	m.logger.Debug(func() string {
@@ -427,28 +482,58 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 
 func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
 	// TODO: use memberUUID v
-	status, address, _, _, serverHazelcastVersion, partitionCount, _, _ := codec.DecodeClientAuthenticationResponse(result)
+	status, address, _, _, serverHazelcastVersion, partitionCount, newClusterID, failoverSupported := codec.DecodeClientAuthenticationResponse(result)
+	if m.failoverEnabled && !failoverSupported {
+		m.logger.Warnf("cluster does not support failover: this feature is available in Hazelcast Enterprise")
+		status = notAllowedInCluster
+	}
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
-		connAddr, err := m.addrTranslator.Translate(context.TODO(), *address)
+		connAddr, err := m.failoverService.Current().AddressTranslator.Translate(context.TODO(), *address)
 		if err != nil {
 			return err
 		}
-		m.connMap.AddConnection(conn, connAddr)
-		// TODO: detect cluster change
 		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return err
 		}
+
+		m.logger.Trace(func() string {
+			return fmt.Sprintf("ConnectionManager: checking the cluster: %v, current cluster: %v", newClusterID, m.clusterID)
+		})
+		m.clusterIDMu.Lock()
+		// clusterID is nil only at the start of the client,
+		// or at the start of a reconnection attempt.
+		// It is only set in this method below under failoverMu.
+		// clusterID is set by master when a cluster is started.
+		// clusterID is not preserved during HotRestart.
+		// In split brain, both sides have the same clusterID
+		clusterIDChanged := m.clusterID != nil && *m.clusterID != newClusterID
+		if clusterIDChanged {
+			// If the cluster ID has changed that means we have a connection to wrong cluster.
+			// It could also mean a cluster restart.
+			// We should not stay connected to this new connection, so we disconnect.
+			// In the restart scenario, we just force the disconnect event handler to trigger a reconnection.
+			conn.close(nil)
+			m.clusterIDMu.Unlock()
+			return fmt.Errorf("connection does not belong to this cluster: %w", hzerrors.ErrIllegalState)
+		}
+		if m.connMap.IsEmpty() {
+			// the first connection that opens a connection to the new cluster should set clusterID
+			m.clusterID = &newClusterID
+		}
+		m.connMap.AddConnection(conn, connAddr)
+		m.clusterIDMu.Unlock()
+
 		m.logger.Debug(func() string {
 			return fmt.Sprintf("opened connection to: %s", connAddr)
 		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 		return nil
 	case credentialsFailed:
-		return fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication)
+		return cb.WrapNonRetryableError(fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication))
 	case serializationVersionMismatch:
-		return fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication)
+		return cb.WrapNonRetryableError(fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication))
 	case notAllowedInCluster:
 		return cb.WrapNonRetryableError(hzerrors.ErrClientNotAllowedInCluster)
 	}
@@ -456,16 +541,17 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 }
 
 func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {
-	if creds, ok := m.credentials.(*security.UsernamePasswordCredentials); ok {
-		return m.createAuthenticationRequest(creds)
+	clusterName := m.failoverService.Current().ClusterName
+	credentials := m.failoverService.Current().Credentials
+	if creds, ok := credentials.(*security.UsernamePasswordCredentials); ok {
+		return m.createAuthenticationRequest(clusterName, creds)
 	}
 	panic("only username password credentials are supported")
-
 }
 
-func (m *ConnectionManager) createAuthenticationRequest(creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
+func (m *ConnectionManager) createAuthenticationRequest(clusterName string, creds *security.UsernamePasswordCredentials) *proto.ClientMessage {
 	return codec.EncodeClientAuthenticationRequest(
-		m.clusterConfig.Name,
+		clusterName,
 		creds.Username(),
 		creds.Password(),
 		m.clientUUID,
@@ -500,7 +586,6 @@ func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	case <-time.After(time.Duration(m.clusterConfig.HeartbeatInterval)):
 		return
 	}
-
 }
 
 func (m *ConnectionManager) logStatus() {
@@ -536,7 +621,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 			return
 		case <-ticker.C:
 			// TODO: very inefficent, fix this
-			// find connections which exists in the cluster but not in the connection manager
+			// find connections which exist in the cluster but not in the connection manager
 			for _, addr := range m.clusterService.MemberAddrs() {
 				m.checkFixConnection(addr)
 			}
@@ -610,10 +695,10 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	return remaining
 }
 
-func (m *connectionMap) CloseAll() {
+func (m *connectionMap) CloseAll(err error) {
 	m.mu.RLock()
 	for _, conn := range m.addrToConn {
-		conn.close(nil)
+		conn.close(err)
 	}
 	m.mu.RUnlock()
 }
@@ -664,6 +749,12 @@ func (m *connectionMap) Connections() []*Connection {
 	}
 	m.mu.RUnlock()
 	return conns
+}
+
+func (m *connectionMap) IsEmpty() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.connToAddr) == 0
 }
 
 func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Service) []pubcluster.Address {

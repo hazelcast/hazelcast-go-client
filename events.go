@@ -134,6 +134,8 @@ const (
 	LifecycleStateConnected
 	// LifecycleStateDisconnected signals that the client disconnected from the cluster.
 	LifecycleStateDisconnected
+	// LifecycleStateChangedCluster signals that the client is connected to a new cluster.
+	LifecycleStateChangedCluster
 )
 
 // LifecycleStateChangeHandler is called when a lifecycle event occurs.
