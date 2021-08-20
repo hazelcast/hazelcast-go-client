@@ -113,7 +113,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 
 type ConnectionManager struct {
 	logger               ilogger.Logger
-	clusterIDMu          *sync.Mutex
+	clusterViewMu        *sync.Mutex
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
@@ -126,6 +126,8 @@ type ConnectionManager struct {
 	clusterConfig        *pubcluster.Config
 	cb                   *cb.CircuitBreaker
 	failoverService      *FailoverService
+	clusterViewConn      *Connection // protected by clusterViewMu
+	clusterIDMu          *sync.Mutex
 	clusterID            *types.UUID // protected by clusterIDMu
 	requestCh            chan<- invocation.Invocation
 	prevClusterID        *types.UUID // protected by clusterIDMu
@@ -158,6 +160,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		failoverService:      bundle.FailoverService,
 		failoverEnabled:      bundle.FailoverEnabled,
 		clusterIDMu:          &sync.Mutex{},
+		clusterViewMu:        &sync.Mutex{},
 	}
 	return manager
 }
@@ -333,7 +336,11 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 }
 
 func (m *ConnectionManager) removeConnection(conn *Connection) {
-	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
+	remaining := m.connMap.RemoveConnection(conn)
+	// re-register the cluster view listener if necessary
+	m.tryListenToClusterViewOnRandomConn(context.TODO(), conn)
+	// trigger re-connection
+	if remaining == 0 {
 		m.eventDispatcher.Publish(NewDisconnected())
 	}
 }
@@ -400,12 +407,9 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 		return "", errors.New("could not find any seed addresses")
 	}
 	var initialAddr pubcluster.Address
-	var conn *Connection
 	for _, addr := range seedAddrs {
-		if conn, err = m.ensureConnection(ctx, addr); err != nil {
+		if _, err := m.ensureConnection(ctx, addr); err != nil {
 			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-		} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
-			m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
 		} else if initialAddr == "" {
 			initialAddr = addr
 		}
@@ -436,7 +440,42 @@ func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubc
 		conn.close(nil)
 		return nil, err
 	}
+	// make sure to register the cluster view listener
+	m.tryListenToClusterView(ctx, conn)
 	return conn, nil
+}
+
+func (m *ConnectionManager) tryListenToClusterView(ctx context.Context, conn *Connection) {
+	m.clusterViewMu.Lock()
+	if m.clusterViewConn != nil {
+		// already registered/registering to another connection
+		m.clusterViewMu.Unlock()
+		return
+	}
+	m.clusterViewConn = conn
+	if err := m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+		m.logger.Errorf("could not send member list view request to %v: %w", conn.Endpoint(), err)
+		m.clusterViewMu.Unlock()
+		m.tryListenToClusterViewOnRandomConn(ctx, conn)
+		return
+	}
+	m.clusterViewMu.Unlock()
+}
+
+func (m *ConnectionManager) tryListenToClusterViewOnRandomConn(ctx context.Context, oldConn *Connection) {
+	m.clusterViewMu.Lock()
+	if m.clusterViewConn == nil || m.clusterViewConn != oldConn {
+		// somebody else is already trying to re-register
+		// or the connection didn't have the listener
+		m.clusterViewMu.Unlock()
+		return
+	}
+	m.clusterViewConn = nil
+	m.clusterViewMu.Unlock()
+	conn := m.connMap.RandomConn()
+	if conn != nil {
+		m.tryListenToClusterView(ctx, conn)
+	}
 }
 
 func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Connection {

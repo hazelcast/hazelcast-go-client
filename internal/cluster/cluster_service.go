@@ -122,7 +122,7 @@ func (s *Service) Reset() {
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
-	s.logger.Debug(func() string { return fmt.Sprintf("%d: members updated", conn.connectionID) })
+	s.logger.Debug(func() string { return fmt.Sprintf("%d: received members view version: %d", conn.connectionID, version) })
 	added, removed := s.membersMap.Update(memberInfos, version)
 	if len(added) > 0 {
 		s.eventDispatcher.Publish(NewMembersAdded(added))
@@ -199,7 +199,8 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
-			if m.addMember(&member) {
+			memberCopy := member
+			if m.addMember(&memberCopy) {
 				added = append(added, member)
 			}
 			newUUIDs[member.UUID] = struct{}{}
@@ -211,6 +212,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 				removed = append(removed, *member)
 			}
 		}
+		m.version = version
 	}
 	return
 }
