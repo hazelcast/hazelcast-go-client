@@ -29,7 +29,7 @@ import (
 
 type proxyManager struct {
 	mu              *sync.RWMutex
-	proxies         map[string]*proxy
+	proxies         map[string]interface{}
 	invocationProxy *proxy
 	serviceBundle   creationBundle
 	refIDGenerator  *iproxy.ReferenceIDGenerator
@@ -39,7 +39,7 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 	bundle.Check()
 	pm := &proxyManager{
 		mu:             &sync.RWMutex{},
-		proxies:        map[string]*proxy{},
+		proxies:        map[string]interface{}{},
 		serviceBundle:  bundle,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
 	}
@@ -53,59 +53,73 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 }
 
 func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameMap, name); err != nil {
-		return nil, err
-	} else {
+	p, err := m.proxyFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
 		return newMap(p), nil
+	})
+	if err != nil {
+		return nil, err
 	}
+	return p.(*Map), nil
 }
 
 func (m *proxyManager) getReplicatedMap(ctx context.Context, name string) (*ReplicatedMap, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameReplicatedMap, name); err != nil {
-		return nil, err
-	} else {
+	p, err := m.proxyFor(ctx, ServiceNameReplicatedMap, name, func(p *proxy) (interface{}, error) {
 		return newReplicatedMap(p, m.refIDGenerator)
+	})
+	if err != nil {
+		return nil, err
 	}
+	return p.(*ReplicatedMap), nil
 }
 
 func (m *proxyManager) getQueue(ctx context.Context, name string) (*Queue, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameQueue, name); err != nil {
-		return nil, err
-	} else {
+	p, err := m.proxyFor(ctx, ServiceNameQueue, name, func(p *proxy) (interface{}, error) {
 		return newQueue(p)
+	})
+	if err != nil {
+		return nil, err
 	}
+	return p.(*Queue), nil
 }
 
 func (m *proxyManager) getTopic(ctx context.Context, name string) (*Topic, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameTopic, name); err != nil {
-		return nil, err
-	} else {
+	p, err := m.proxyFor(ctx, ServiceNameTopic, name, func(p *proxy) (interface{}, error) {
 		return newTopic(p)
+	})
+	if err != nil {
+		return nil, err
 	}
+	return p.(*Topic), nil
 }
 
 func (m *proxyManager) getList(ctx context.Context, name string) (*List, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameList, name); err != nil {
-		return nil, err
-	} else {
+	p, err := m.proxyFor(ctx, ServiceNameList, name, func(p *proxy) (interface{}, error) {
 		return newList(p)
+	})
+	if err != nil {
+		return nil, err
 	}
+	return p.(*List), nil
 }
 
 func (m *proxyManager) getSet(ctx context.Context, name string) (*Set, error) {
-	if p, err := m.proxyFor(ctx, ServiceNameSet, name); err != nil {
-		return nil, err
-	} else {
+	p, err := m.proxyFor(ctx, ServiceNameSet, name, func(p *proxy) (interface{}, error) {
 		return newSet(p)
+	})
+	if err != nil {
+		return nil, err
 	}
+	return p.(*Set), nil
 }
 
 func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounter, error) {
-	if p, err := m.proxyFor(ctx, ServiceNamePNCounter, name); err != nil {
-		return nil, err
-	} else {
+	p, err := m.proxyFor(ctx, ServiceNamePNCounter, name, func(p *proxy) (interface{}, error) {
 		return newPNCounter(p), nil
+	})
+	if err != nil {
+		return nil, err
 	}
+	return p.(*PNCounter), nil
 }
 
 func (m *proxyManager) getFlakeIDGenerator(ctx context.Context, name string) (*FlakeIdGenerator, error) {
@@ -156,13 +170,24 @@ func (m *proxyManager) remove(serviceName string, objectName string) bool {
 	return true
 }
 
-func (m *proxyManager) proxyFor(ctx context.Context, serviceName string, objectName string) (*proxy, error) {
+func (m *proxyManager) proxyFor(
+	ctx context.Context,
+	serviceName string,
+	objectName string,
+	wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
+
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
-	obj, ok := m.proxies[name]
+	wrapper, ok := m.proxies[name]
 	m.mu.RUnlock()
 	if ok {
-		return obj, nil
+		return wrapper, nil
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if wrapper, ok := m.proxies[name]; ok {
+		// someone has already created the proxy
+		return wrapper, nil
 	}
 	p, err := newProxy(ctx, m.serviceBundle, serviceName, objectName, m.refIDGenerator, func() bool {
 		return m.remove(serviceName, objectName)
@@ -170,10 +195,12 @@ func (m *proxyManager) proxyFor(ctx context.Context, serviceName string, objectN
 	if err != nil {
 		return nil, err
 	}
-	m.mu.Lock()
-	m.proxies[name] = p
-	m.mu.Unlock()
-	return p, nil
+	wrapper, err = wrapProxyFn(p)
+	if err != nil {
+		return nil, err
+	}
+	m.proxies[name] = wrapper
+	return wrapper, nil
 }
 
 func makeProxyName(serviceName string, objectName string) string {
