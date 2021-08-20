@@ -366,3 +366,71 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 		assert.NotContains(t, objects, setInfo)
 	})
 }
+
+func TestClient_GetProxyInstance(t *testing.T) {
+	testCases := []struct {
+		getFn func(ctx context.Context, client *hz.Client, name string) (interface{}, error)
+		name  string
+	}{
+		{
+			name: "map",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetMap(ctx, name)
+			},
+		},
+		{
+			name: "replicated-map",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetReplicatedMap(ctx, name)
+			},
+		},
+		{
+			name: "list",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetList(ctx, name)
+			},
+		},
+		{
+			name: "queue",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetQueue(ctx, name)
+			},
+		},
+		{
+			name: "topic",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetTopic(ctx, name)
+			},
+		},
+		{
+			name: "set",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetSet(ctx, name)
+			},
+		},
+		{
+			name: "pn-counter",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetPNCounter(ctx, name)
+			},
+		},
+	}
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				dsName := it.NewUniqueObjectName(tc.name)
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				p1, err := tc.getFn(ctx, client, dsName)
+				if err != nil {
+					t.Fatal(err)
+				}
+				p2, err := tc.getFn(ctx, client, dsName)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assert.Same(t, p1, p2, "same proxy struct instances expected")
+			})
+		}
+	})
+}
