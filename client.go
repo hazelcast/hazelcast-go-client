@@ -201,8 +201,8 @@ func (c *Client) GetPNCounter(ctx context.Context, name string) (*PNCounter, err
 	return c.proxyManager.getPNCounter(ctx, name)
 }
 
-// GetPNCounter returns a PNCounter instance.
-func (c *Client) GetFlakeIDGenerator(ctx context.Context, name string) (*FlakeIdGenerator, error) {
+// GetFlakeIDGenerator returns a FlakeIDGenerator instance.
+func (c *Client) GetFlakeIDGenerator(ctx context.Context, name string) (*FlakeIDGenerator, error) {
 	if atomic.LoadInt32(&c.state) != ready {
 		return nil, hzerrors.ErrClientNotActive
 	}

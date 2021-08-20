@@ -122,18 +122,14 @@ func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounte
 	return p.(*PNCounter), nil
 }
 
-func (m *proxyManager) getFlakeIDGenerator(ctx context.Context, name string) (*FlakeIdGenerator, error) {
-	// TODO: need to preserve the batch state for consecutive calls.
-	//  https://github.com/hazelcast/hazelcast-go-client/issues/609
-	config := newDefaultFlakeIDGeneratorConfig()
-	if c, ok := m.serviceBundle.Config.FlakeIDGeneratorConfigs[name]; ok {
-		config = c
-	}
-	if p, err := m.proxyFor(ctx, ServiceNameFlakeIDGenerator, name); err != nil {
+func (m *proxyManager) getFlakeIDGenerator(ctx context.Context, name string) (*FlakeIDGenerator, error) {
+	p, err := m.proxyFor(ctx, ServiceNamePNCounter, name, func(p *proxy) (interface{}, error) {
+		return newFlakeIdGenerator(p, m.serviceBundle.Config.getFlakeIDGeneratorConfig(name), flakeIDBatchFromMemberFn), nil
+	})
+	if err != nil {
 		return nil, err
-	} else {
-		return newFlakeIdGenerator(p, config, defaultNewFlakeIDBatchFn), nil
 	}
+	return p.(*FlakeIDGenerator), nil
 }
 
 func (m *proxyManager) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {

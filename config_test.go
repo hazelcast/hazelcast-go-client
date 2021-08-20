@@ -81,7 +81,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	"FlakeIDGeneratorConfigs": {
 		"bar": {
 			"PrefetchCount": 42,
-			"PrefetchExpiration": "42s"
+			"PrefetchExpiry": "42s"
 		}
 	}
 }
@@ -102,7 +102,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	assert.Equal(t, true, config.Stats.Enabled)
 	assert.Equal(t, types.Duration(2*time.Minute), config.Stats.Period)
 	assert.Equal(t, int32(42), config.FlakeIDGeneratorConfigs["bar"].PrefetchCount)
-	assert.Equal(t, types.Duration(42*time.Second), config.FlakeIDGeneratorConfigs["bar"].PrefetchExpiration)
+	assert.Equal(t, types.Duration(42*time.Second), config.FlakeIDGeneratorConfigs["bar"].PrefetchExpiry)
 }
 
 func TestMarshalDefaultConfig(t *testing.T) {
@@ -115,16 +115,12 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	assertStringEquivalent(t, target, string(b))
 }
 
-func TestFlakeIDGeneratorConfig(t *testing.T) {
-	const (
-		defaultFlakeIDPrefetchCount  = 100
-		defaultFlakeIDPrefetchExpiry = types.Duration(10 * time.Minute)
-	)
+func TestValidateFlakeIDGeneratorConfig(t *testing.T) {
 	testCases := []struct {
 		name                     string
 		config                   hazelcast.FlakeIDGeneratorConfig
-		expectPrefetchCount      int32
 		expectPrefetchExpiration types.Duration
+		expectPrefetchCount      int32
 		expectErr                bool
 	}{
 		{
@@ -136,13 +132,13 @@ func TestFlakeIDGeneratorConfig(t *testing.T) {
 			name:                     "ValidPrefetchCount_1",
 			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchCount: 1},
 			expectPrefetchCount:      1,
-			expectPrefetchExpiration: defaultFlakeIDPrefetchExpiry,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
 		},
 		{
 			name:                     "ValidPrefetchCount_100_000",
 			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchCount: 100_000},
 			expectPrefetchCount:      100_000,
-			expectPrefetchExpiration: defaultFlakeIDPrefetchExpiry,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
 		},
 		{
 			name:      "InvalidPrefetchCount",
@@ -151,32 +147,32 @@ func TestFlakeIDGeneratorConfig(t *testing.T) {
 		},
 		{
 			name:      "NegativePrefetchExpiration",
-			config:    hazelcast.FlakeIDGeneratorConfig{PrefetchExpiration: types.Duration(-1)},
+			config:    hazelcast.FlakeIDGeneratorConfig{PrefetchExpiry: types.Duration(-1)},
 			expectErr: true,
 		},
 		{
 			name:                     "ZeroPrefetchExpiration",
-			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchExpiration: types.Duration(0)},
-			expectPrefetchCount:      defaultFlakeIDPrefetchCount,
-			expectPrefetchExpiration: defaultFlakeIDPrefetchExpiry,
+			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchExpiry: types.Duration(0)},
+			expectPrefetchCount:      hazelcast.DefaultFlakeIDPrefetchCount,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
 		},
 		{
 			name:                     "PositivePrefetchExpiration",
-			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchExpiration: types.Duration(1)},
-			expectPrefetchCount:      defaultFlakeIDPrefetchCount,
+			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchExpiry: types.Duration(1)},
+			expectPrefetchCount:      hazelcast.DefaultFlakeIDPrefetchCount,
 			expectPrefetchExpiration: types.Duration(1),
 		},
 		{
 			name:                     "ZeroValuedConfiguration",
 			config:                   hazelcast.FlakeIDGeneratorConfig{},
-			expectPrefetchCount:      defaultFlakeIDPrefetchCount,
-			expectPrefetchExpiration: defaultFlakeIDPrefetchExpiry,
+			expectPrefetchCount:      hazelcast.DefaultFlakeIDPrefetchCount,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
 		},
 		{
 			name: "ValidCustomConfiguration",
 			config: hazelcast.FlakeIDGeneratorConfig{
-				PrefetchCount:      42,
-				PrefetchExpiration: types.Duration(42),
+				PrefetchCount:  42,
+				PrefetchExpiry: types.Duration(42),
 			},
 			expectPrefetchCount:      42,
 			expectPrefetchExpiration: types.Duration(42),
@@ -189,10 +185,25 @@ func TestFlakeIDGeneratorConfig(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expectPrefetchCount, tc.config.PrefetchCount)
-				assert.Equal(t, tc.expectPrefetchExpiration, tc.config.PrefetchExpiration)
+				assert.Equal(t, tc.expectPrefetchExpiration, tc.config.PrefetchExpiry)
 			}
 		})
 	}
+}
+
+func TestGetFlakeIDGeneratorConfig(t *testing.T) {
+	config := hazelcast.Config{}
+	custom := hazelcast.FlakeIDGeneratorConfig{PrefetchCount: 42, PrefetchExpiry: 24}
+	defaultFlakeIDConfig := hazelcast.FlakeIDGeneratorConfig{
+		PrefetchCount:  hazelcast.DefaultFlakeIDPrefetchCount,
+		PrefetchExpiry: hazelcast.DefaultFlakeIDPrefetchExpiry,
+	}
+	config.FlakeIDGeneratorConfigs = map[string]hazelcast.FlakeIDGeneratorConfig{}
+	config.FlakeIDGeneratorConfigs["custom"] = custom
+
+	assert.NoError(t, config.Validate())
+	assert.Equal(t, custom, config.GetFlakeIDGeneratorConfig("custom"))
+	assert.Equal(t, defaultFlakeIDConfig, config.GetFlakeIDGeneratorConfig("foo"))
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {

@@ -65,6 +65,31 @@ func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
 	}
 }
 
+func TestIsWithinInclusiveRangeInt32(t *testing.T) {
+	testCases := []struct {
+		start  int32
+		number int32
+		end    int32
+		valid  bool
+	}{
+		{start: 10, number: 20, end: 30, valid: true},
+		{start: -30, number: -20, end: -10, valid: true},
+		{start: 0, number: 0, end: 10, valid: true},
+		{start: 0, number: 10, end: 10, valid: true},
+		{start: 0, number: -1, end: 10, valid: false},
+		{start: 0, number: 11, end: 10, valid: false},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			if err := IsWithinInclusiveRangeInt32(tc.number, tc.start, tc.end); tc.valid {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
 func TestNonNegativeDuration(t *testing.T) {
 	v := types.Duration(-1)
 	if err := NonNegativeDuration(&v, 5*time.Second, "invalid"); !errors.Is(err, hzerrors.ErrIllegalArgument) {

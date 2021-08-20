@@ -2,6 +2,7 @@ package hazelcast
 
 import (
 	"context"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -9,11 +10,21 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
-const invalidFlakeId int64 = -1
+const invalidFlakeID int64 = math.MinInt64
 
-type newFlakeIDBatchFn func(ctx context.Context, f *FlakeIdGenerator) (flakeIdBatch, error)
+type newFlakeIDBatchFn func(ctx context.Context, f *FlakeIDGenerator) (flakeIDBatch, error)
 
-type FlakeIdGenerator struct {
+/*
+FlakeIDGenerator is a cluster-wide unique ID generator.
+
+Generated IDs are are k-ordered (roughly ordered) and in the range [0, math.MaxInt64].
+They can be negative only if members are explicitly configured with a future epoch start value.
+For details, see: https://docs.hazelcast.com/imdg/latest/data-structures/flake-id-generator.html
+
+Instead of asking cluster for each ID, they are fetched in batches and then served.
+Batch size and expiry duration can be configured via FlakeIDGeneratorConfig.
+*/
+type FlakeIDGenerator struct {
 	*proxy
 	mu         *sync.Mutex
 	batch      atomic.Value
@@ -21,33 +32,23 @@ type FlakeIdGenerator struct {
 	config     FlakeIDGeneratorConfig
 }
 
-func newFlakeIdGenerator(p *proxy, config FlakeIDGeneratorConfig, newBatchFn newFlakeIDBatchFn) *FlakeIdGenerator {
-	f := &FlakeIdGenerator{
-		proxy:      p,
-		mu:         &sync.Mutex{},
-		batch:      atomic.Value{},
-		newBatchFn: newBatchFn,
-		config:     config,
-	}
-	f.batch.Store(flakeIdBatch{})
-	return f
-}
-
-func (f *FlakeIdGenerator) NewId(ctx context.Context) (int64, error) {
+// NewId generates and returns a cluster-wide unique ID.
+func (f *FlakeIDGenerator) NewId(ctx context.Context) (int64, error) {
 	for {
-		batch := f.batch.Load().(flakeIdBatch)
-		id := batch.next()
-		if id != invalidFlakeId {
+		batch := f.batch.Load().(flakeIDBatch)
+		id := batch.nextID()
+		if id != invalidFlakeID {
 			return id, nil
 		}
 		f.mu.Lock()
-		if batch != f.batch.Load().(flakeIdBatch) {
+		if batch != f.batch.Load().(flakeIDBatch) {
+			// batch has already been refreshed
 			f.mu.Unlock()
 			continue
 		}
 		if b, err := f.newBatchFn(ctx, f); err != nil {
 			f.mu.Unlock()
-			return invalidFlakeId, err
+			return 0, err
 		} else {
 			f.batch.Store(b)
 			f.mu.Unlock()
@@ -55,39 +56,53 @@ func (f *FlakeIdGenerator) NewId(ctx context.Context) (int64, error) {
 	}
 }
 
-func defaultNewFlakeIDBatchFn(ctx context.Context, f *FlakeIdGenerator) (flakeIdBatch, error) {
+func newFlakeIdGenerator(p *proxy, config FlakeIDGeneratorConfig, newBatchFn newFlakeIDBatchFn) *FlakeIDGenerator {
+	f := &FlakeIDGenerator{
+		proxy:      p,
+		mu:         &sync.Mutex{},
+		batch:      atomic.Value{},
+		newBatchFn: newBatchFn,
+		config:     config,
+	}
+	// Store an invalid batch to fetch an actual batch lazily. The
+	// very first FlakeIDGenerator.NewId call will update the batch.
+	f.batch.Store(flakeIDBatch{})
+	return f
+}
+
+func flakeIDBatchFromMemberFn(ctx context.Context, f *FlakeIDGenerator) (flakeIDBatch, error) {
 	request := codec.EncodeFlakeIdGeneratorNewIdBatchRequest(f.name, f.config.PrefetchCount)
 	resp, err := f.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
-		return flakeIdBatch{}, err
+		return flakeIDBatch{}, err
 	}
 	base, inc, size := codec.DecodeFlakeIdGeneratorNewIdBatchResponse(resp)
-	return flakeIdBatch{
+	return flakeIDBatch{
 		base:      base,
 		increment: inc,
 		size:      size,
 		index:     new(int32),
-		expiresAt: time.Now().Add(time.Duration(f.config.PrefetchExpiration)),
+		expiresAt: time.Now().Add(time.Duration(f.config.PrefetchExpiry)),
 	}, nil
 }
 
-type flakeIdBatch struct {
+type flakeIDBatch struct {
+	expiresAt time.Time
+	index     *int32
 	base      int64
 	increment int64
 	size      int32
-	index     *int32
-	expiresAt time.Time
 }
 
-func (f *flakeIdBatch) next() int64 {
+func (f *flakeIDBatch) nextID() int64 {
 	if time.Now().After(f.expiresAt) {
-		return invalidFlakeId
+		return invalidFlakeID
 	}
 	var idx int32
 	for {
 		idx = atomic.LoadInt32(f.index)
 		if idx == f.size {
-			return invalidFlakeId
+			return invalidFlakeID
 		}
 		if atomic.CompareAndSwapInt32(f.index, idx, idx+1) {
 			return f.base + int64(idx)*f.increment

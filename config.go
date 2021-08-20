@@ -31,13 +31,13 @@ import (
 type Config struct {
 	lifecycleListeners      map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners     map[types.UUID]cluster.MembershipStateChangeHandler
+	FlakeIDGeneratorConfigs map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 	Labels                  []string                          `json:",omitempty"`
 	ClientName              string                            `json:",omitempty"`
 	Logger                  logger.Config                     `json:",omitempty"`
 	Serialization           serialization.Config              `json:",omitempty"`
 	Cluster                 cluster.Config                    `json:",omitempty"`
 	Stats                   StatsConfig                       `json:",omitempty"`
-	FlakeIDGeneratorConfigs map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.
@@ -78,18 +78,21 @@ func (c *Config) Clone() Config {
 	c.ensureMembershipListeners()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
-	newFlakeIDConfigs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGeneratorConfigs))
-	for k, v := range c.FlakeIDGeneratorConfigs {
-		newFlakeIDConfigs[k] = v
+	var newFlakeIDConfigs map[string]FlakeIDGeneratorConfig
+	if c.FlakeIDGeneratorConfigs != nil {
+		newFlakeIDConfigs = make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGeneratorConfigs))
+		for k, v := range c.FlakeIDGeneratorConfigs {
+			newFlakeIDConfigs[k] = v
+		}
 	}
 	return Config{
 		ClientName:              c.ClientName,
 		Labels:                  newLabels,
+		FlakeIDGeneratorConfigs: newFlakeIDConfigs,
 		Cluster:                 c.Cluster.Clone(),
 		Serialization:           c.Serialization.Clone(),
 		Logger:                  c.Logger.Clone(),
 		Stats:                   c.Stats.clone(),
-		FlakeIDGeneratorConfigs: newFlakeIDConfigs,
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -131,6 +134,16 @@ func (c *Config) ensureMembershipListeners() {
 	}
 }
 
+func (c *Config) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorConfig {
+	if conf, ok := c.FlakeIDGeneratorConfigs[name]; ok {
+		return conf
+	}
+	return FlakeIDGeneratorConfig{
+		PrefetchCount:  defaultFlakeIDPrefetchCount,
+		PrefetchExpiry: defaultFlakeIDPrefetchExpiry,
+	}
+}
+
 // StatsConfig contains configuration for Management Center.
 type StatsConfig struct {
 	// Enabled enables collecting statistics.
@@ -152,38 +165,28 @@ func (c *StatsConfig) Validate() error {
 }
 
 const (
-	defaultFlakeIDPrefetchCount  = 100
 	maxFlakeIDPrefetchCount      = 100_000
+	defaultFlakeIDPrefetchCount  = 100
 	defaultFlakeIDPrefetchExpiry = types.Duration(10 * time.Minute)
 )
 
 // FlakeIDGeneratorConfig configures pre-fetching behavior for FlakeIDGenerator.
 type FlakeIDGeneratorConfig struct {
-	// PrefetchCount defines the number of pre-fetched IDs from cluster. Defaults to 100.
+	// PrefetchCount defines the number of pre-fetched IDs from cluster.
+	// The allowed range is [1, 100_000] and defaults to 100.
 	PrefetchCount int32 `json:",omitempty"`
-	// PrefetchExpiration defines the expiry duration of pre-fetched IDs. Defaults to 10 minutes.
-	PrefetchExpiration types.Duration `json:",omitempty"`
-}
-
-func (f FlakeIDGeneratorConfig) clone() FlakeIDGeneratorConfig {
-	return f
+	// PrefetchExpiry defines the expiry duration of pre-fetched IDs. Defaults to 10 minutes.
+	PrefetchExpiry types.Duration `json:",omitempty"`
 }
 
 func (f *FlakeIDGeneratorConfig) Validate() error {
 	if f.PrefetchCount == 0 {
 		f.PrefetchCount = defaultFlakeIDPrefetchCount
-	} else if err := validate.ValidateWithinInclusiveRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
+	} else if err := validate.IsWithinInclusiveRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
 		return err
 	}
-	if err := validate.NonNegativeDuration(&f.PrefetchExpiration, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
+	if err := validate.NonNegativeDuration(&f.PrefetchExpiry, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
 		return err
 	}
 	return nil
-}
-
-func newDefaultFlakeIDGeneratorConfig() FlakeIDGeneratorConfig {
-	return FlakeIDGeneratorConfig{
-		PrefetchCount:      defaultFlakeIDPrefetchCount,
-		PrefetchExpiration: defaultFlakeIDPrefetchExpiry,
-	}
 }
