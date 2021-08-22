@@ -87,7 +87,7 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 		client := MustClient(hz.StartNewClientWithConfig(ctx, config))
 		defer func() {
 			if err := client.Shutdown(ctx); err != nil {
-				t.Logf("Test warning, client not shutdown: %s", err.Error())
+				t.Logf("Test warning, client did not shut down: %s", err.Error())
 			}
 		}()
 		f(t, client)
@@ -257,12 +257,12 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 		} else if !ping {
 			panic("remote controller not accesible")
 		}
-		if launchDefaultCluster {
-			if SSLEnabled() {
-				defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
-			} else {
-				defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
-			}
+	}
+	if launchDefaultCluster && defaultTestCluster == nil {
+		if SSLEnabled() {
+			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
+		} else {
+			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
 		}
 	}
 	return rc
