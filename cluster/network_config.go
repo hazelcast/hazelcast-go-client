@@ -77,13 +77,9 @@ func (c *NetworkConfig) Validate() error {
 			Max: defaultPortRangeMax,
 		}
 	}
-
-	// validate port range
 	if err := c.validatePortRange(); err != nil {
 		return err
 	}
-
-	// validate addresses
 	if len(c.Addresses) == 0 {
 		c.Addresses = []string{defaultAddress}
 	} else {
