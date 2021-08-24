@@ -44,7 +44,7 @@ func TestNewConfig_SetAddress(t *testing.T) {
 	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 }
 
-// NewConfig Validate scenarios
+//newConfigValidateScenario to validate NewConfig scenarios
 type newConfigValidateScenario struct {
 	inputAddr         string
 	inputPortRange    *cluster.PortRange
@@ -198,7 +198,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"PortRange":{},"SSL":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
+	target := `{"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 

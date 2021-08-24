@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/portrangeutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util"
 	"math"
 	"math/rand"
 	"sync"
@@ -92,7 +92,7 @@ func tryConnectAddress(
 	}
 	var initialAddr pubcluster.Address
 	if port == 0 { // we need to try all addresses in port range
-		for _, currAddr := range portrangeutil.GetAddresses(host, portRange) {
+		for _, currAddr := range util.GetAddresses(host, portRange) {
 			currentAddrRet, connErr := connMember(ctx, m, currAddr)
 			if connErr == nil {
 				initialAddr = currentAddrRet

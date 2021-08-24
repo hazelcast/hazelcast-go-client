@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -113,5 +114,6 @@ func (c *NetworkConfig) validatePortRange() error {
 	if c.PortRange.Min > 0 && c.PortRange.Max > c.PortRange.Min {
 		return nil
 	}
-	return fmt.Errorf("invalid port range: '%d-%d'", c.PortRange.Min, c.PortRange.Max)
+	return fmt.Errorf("invalid port range: %d-%d: %w", c.PortRange.Min, c.PortRange.Max, hzerrors.ErrIllegalArgument)
+
 }
