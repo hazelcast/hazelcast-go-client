@@ -33,7 +33,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
-	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -108,12 +107,6 @@ func newClient(config Config) (*Client, error) {
 		return nil, err
 	}
 	clientLogger := ilogger.NewWithLevel(logLevel)
-	// TODO: Move addrProviderTranslator to createComponents
-	// Not doing that right now, because of the event dispatchers.
-	addrProvider, addrTranslator, err := addrProviderTranslator(context.Background(), &config.Cluster, clientLogger)
-	if err != nil {
-		return nil, err
-	}
 	serializationService, err := serialization.NewService(&config.Serialization)
 	if err != nil {
 		return nil, err
@@ -134,7 +127,7 @@ func newClient(config Config) (*Client, error) {
 	}
 	c.addConfigEvents(&config)
 	c.subscribeUserEvents()
-	c.createComponents(&config, addrProvider, addrTranslator)
+	c.createComponents(&config)
 	return c, nil
 }
 
@@ -220,7 +213,7 @@ func (c *Client) start(ctx context.Context) error {
 	}
 	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
-	if err := c.connectionManager.Start(ctx, false); err != nil {
+	if err := c.connectionManager.Start(ctx); err != nil {
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
 		return err
@@ -398,6 +391,9 @@ func (c *Client) subscribeUserEvents() {
 	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateDisconnected))
 	})
+	c.eventDispatcher.SubscribeSync(icluster.EventChangedCluster, event.DefaultSubscriptionID, func(event event.Event) {
+		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateChangedCluster))
+	})
 	c.eventDispatcher.SubscribeSync(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
 		c.userEventDispatcher.Publish(event)
 	})
@@ -406,13 +402,7 @@ func (c *Client) subscribeUserEvents() {
 	})
 }
 
-func (c *Client) makeCredentials(config *Config) *security.UsernamePasswordCredentials {
-	securityConfig := config.Cluster.Security
-	return security.NewUsernamePasswordCredentials(securityConfig.Credentials.Username, securityConfig.Credentials.Password)
-}
-
-func (c *Client) createComponents(config *Config, addrProvider icluster.AddressProvider, addrTranslator icluster.AddressTranslator) {
-	credentials := c.makeCredentials(config)
+func (c *Client) createComponents(config *Config) {
 	requestCh := make(chan invocation.Invocation, 1024)
 	urgentRequestCh := make(chan invocation.Invocation, 1024)
 	responseCh := make(chan *proto.ClientMessage, 1024)
@@ -422,15 +412,26 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		Logger:          c.logger,
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
+	var failoverConfigs []cluster.Config
+	maxTryCount := 0
+	if config.Failover.Enabled {
+		maxTryCount = config.Failover.TryCount
+		failoverConfigs = config.Failover.Configs
+	}
+	failoverService := icluster.NewFailoverService(c.logger,
+		maxTryCount, config.Cluster, failoverConfigs, addrProviderTranslator,
+		func() bool {
+			state := atomic.LoadInt32(&c.state)
+			return state != stopping && state != stopped
+		})
 	clusterService := icluster.NewService(icluster.CreationBundle{
-		AddrProvider:      addrProvider,
 		RequestCh:         urgentRequestCh,
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   c.eventDispatcher,
 		PartitionService:  partitionService,
 		Logger:            c.logger,
 		Config:            &config.Cluster,
-		AddressTranslator: addrTranslator,
+		FailoverService:   failoverService,
 	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
 		RequestCh:            urgentRequestCh,
@@ -442,9 +443,9 @@ func (c *Client) createComponents(config *Config, addrProvider icluster.AddressP
 		EventDispatcher:      c.eventDispatcher,
 		InvocationFactory:    invocationFactory,
 		ClusterConfig:        &config.Cluster,
-		Credentials:          credentials,
 		ClientName:           c.name,
-		AddrTranslator:       addrTranslator,
+		FailoverService:      failoverService,
+		FailoverEnabled:      config.Failover.Enabled,
 		Labels:               config.Labels,
 	})
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
@@ -504,28 +505,21 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	// try to reboot cluster connection
 	c.connectionManager.Stop()
 	c.clusterService.Reset()
-	if err := c.connectionManager.Start(ctx, true); err != nil {
-		c.logger.Errorf("cannot reboot cluster, shutting down: %w", err)
+	c.partitionService.Reset()
+	if err := c.connectionManager.Start(ctx); err != nil {
+		c.logger.Errorf("cannot reconnect to cluster, shutting down: %w", err)
 		c.Shutdown(ctx)
 	}
 }
 
-func addrProviderTranslator(ctx context.Context, config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator, error) {
+func addrProviderTranslator(config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator) {
 	if config.Cloud.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
-		nodes, err := dc.DiscoverNodes(ctx)
-		if err != nil {
-			return nil, nil, err
-		}
-		pr, err := cloud.NewAddressProvider(dc, nodes)
-		if err != nil {
-			return nil, nil, err
-		}
-		return pr, cloud.NewAddressTranslator(dc, nodes), nil
+		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)
 	}
 	pr := icluster.NewDefaultAddressProvider(&config.Network)
 	if config.Discovery.UsePublicIP {
-		return pr, icluster.NewDefaultPublicAddressTranslator(), nil
+		return pr, icluster.NewDefaultPublicAddressTranslator()
 	}
-	return pr, icluster.NewDefaultAddressTranslator(), nil
+	return pr, icluster.NewDefaultAddressTranslator()
 }

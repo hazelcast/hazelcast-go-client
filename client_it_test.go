@@ -18,6 +18,7 @@ package hazelcast_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"reflect"
@@ -30,7 +31,9 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -264,6 +267,7 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 		hz.LifecycleStateConnected,
 		hz.LifecycleStateStarted,
 		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateChangedCluster,
 		hz.LifecycleStateConnected,
 		hz.LifecycleStateDisconnected,
 		hz.LifecycleStateShuttingDown,
@@ -317,6 +321,7 @@ func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 		hz.LifecycleStateConnected,
 		hz.LifecycleStateStarted,
 		hz.LifecycleStateDisconnected,
+		hz.LifecycleStateChangedCluster,
 		hz.LifecycleStateConnected,
 		hz.LifecycleStateDisconnected,
 		hz.LifecycleStateShuttingDown,
@@ -406,4 +411,145 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 		assert.NotContains(t, objects, mapInfo)
 		assert.NotContains(t, objects, setInfo)
 	})
+}
+
+func TestClient_GetProxyInstance(t *testing.T) {
+	testCases := []struct {
+		getFn func(ctx context.Context, client *hz.Client, name string) (interface{}, error)
+		name  string
+	}{
+		{
+			name: "map",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetMap(ctx, name)
+			},
+		},
+		{
+			name: "replicated-map",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetReplicatedMap(ctx, name)
+			},
+		},
+		{
+			name: "list",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetList(ctx, name)
+			},
+		},
+		{
+			name: "queue",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetQueue(ctx, name)
+			},
+		},
+		{
+			name: "topic",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetTopic(ctx, name)
+			},
+		},
+		{
+			name: "set",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetSet(ctx, name)
+			},
+		},
+		{
+			name: "pn-counter",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetPNCounter(ctx, name)
+			},
+		},
+	}
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				dsName := it.NewUniqueObjectName(tc.name)
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				p1, err := tc.getFn(ctx, client, dsName)
+				if err != nil {
+					t.Fatal(err)
+				}
+				p2, err := tc.getFn(ctx, client, dsName)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assert.Same(t, p1, p2, "same proxy struct instances expected")
+			})
+		}
+	})
+}
+
+func TestClientFailover_OSSCluster(t *testing.T) {
+	it.SkipIf(t, "enterprise")
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("failover-test-cluster", 15701, it.MemberCount())
+	defer cls.Shutdown()
+	config := cls.DefaultConfig()
+	config.Failover.Enabled = true
+	config.Failover.TryCount = 1
+	failoverConfig := config.Cluster
+	failoverConfig.Name = "backup-failover-test-cluster"
+	config.Failover.SetConfigs(failoverConfig)
+	_, err := hz.StartNewClientWithConfig(ctx, config)
+	if !errors.Is(err, hzerrors.ErrIllegalState) {
+		t.Fatalf("should have returned a client illegal state error")
+	}
+}
+
+func TestClientFailover_EECluster(t *testing.T) {
+	it.SkipIf(t, "oss")
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("failover-test-cluster", 15701, it.MemberCount())
+	defer cls.Shutdown()
+	config := cls.DefaultConfig()
+	config.Failover.Enabled = true
+	config.Failover.TryCount = 1
+	// move the main cluster config to failover config list
+	config.Failover.SetConfigs(config.Cluster)
+	// use a non-existing cluster in the main cluster config
+	config.Cluster.Name = "non-existing-failover-test-cluster"
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatalf("should have connected to failover cluster")
+	}
+	if err := c.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClientFailover_EECluster_Reconnection(t *testing.T) {
+	it.SkipIf(t, "oss")
+	ctx := context.Background()
+	cls1 := it.StartNewClusterWithOptions("failover-test-cluster1", 15701, it.MemberCount())
+	cls2 := it.StartNewClusterWithOptions("failover-test-cluster2", 15702, it.MemberCount())
+	defer cls2.Shutdown()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	config := cls1.DefaultConfig()
+	config.Logger.Level = logger.DebugLevel
+	config.Failover.Enabled = true
+	config.Failover.TryCount = 1
+	failoverConfig := config.Cluster
+	failoverConfig.Name = "failover-test-cluster2"
+	failoverConfig.Network.SetAddresses(fmt.Sprintf("localhost:%d", 15702))
+	config.Failover.SetConfigs(failoverConfig)
+	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+		if event.State == hz.LifecycleStateChangedCluster {
+			wg.Done()
+		}
+	})
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// shut down the first cluster
+	cls1.Shutdown()
+	// the client should reconnect to the second cluster
+	wg.Wait()
+	assert.True(t, c.Running())
+	if err := c.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 }
