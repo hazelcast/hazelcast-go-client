@@ -35,7 +35,7 @@ func TestFlakeIDGenerator_NewId(t *testing.T) {
 		}
 		ids := map[int64]struct{}{}
 		for i := 0; i < idCount; i++ {
-			if id, err := f.NewId(ctx); err != nil {
+			if id, err := f.NewID(ctx); err != nil {
 				t.Fatal(err)
 			} else {
 				ids[id] = struct{}{}

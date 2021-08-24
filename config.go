@@ -29,16 +29,16 @@ import (
 // Config contains configuration for a client.
 // Zero value of Config is the default configuration.
 type Config struct {
-	lifecycleListeners      map[types.UUID]LifecycleStateChangeHandler
-	membershipListeners     map[types.UUID]cluster.MembershipStateChangeHandler
-	FlakeIDGeneratorConfigs map[string]FlakeIDGeneratorConfig `json:",omitempty"`
-	Labels                  []string                          `json:",omitempty"`
-	ClientName              string                            `json:",omitempty"`
-	Logger                  logger.Config                     `json:",omitempty"`
-	Failover                cluster.FailoverConfig            `json:",omitempty"`
-	Serialization           serialization.Config              `json:",omitempty"`
-	Cluster                 cluster.Config                    `json:",omitempty"`
-	Stats                   StatsConfig                       `json:",omitempty"`
+	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
+	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
+	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
+	Labels              []string                          `json:",omitempty"`
+	ClientName          string                            `json:",omitempty"`
+	Logger              logger.Config                     `json:",omitempty"`
+	Failover            cluster.FailoverConfig            `json:",omitempty"`
+	Serialization       serialization.Config              `json:",omitempty"`
+	Cluster             cluster.Config                    `json:",omitempty"`
+	Stats               StatsConfig                       `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.
@@ -79,22 +79,19 @@ func (c *Config) Clone() Config {
 	c.ensureMembershipListeners()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
-	var newFlakeIDConfigs map[string]FlakeIDGeneratorConfig
-	if c.FlakeIDGeneratorConfigs != nil {
-		newFlakeIDConfigs = make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGeneratorConfigs))
-		for k, v := range c.FlakeIDGeneratorConfigs {
-			newFlakeIDConfigs[k] = v
-		}
+	newFlakeIDConfigs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGenerators))
+	for k, v := range c.FlakeIDGenerators {
+		newFlakeIDConfigs[k] = v
 	}
 	return Config{
-		ClientName:              c.ClientName,
-		Labels:                  newLabels,
-		FlakeIDGeneratorConfigs: newFlakeIDConfigs,
-		Cluster:                 c.Cluster.Clone(),
-		Failover:                c.Failover.Clone(),
-		Serialization:           c.Serialization.Clone(),
-		Logger:                  c.Logger.Clone(),
-		Stats:                   c.Stats.clone(),
+		ClientName:        c.ClientName,
+		Labels:            newLabels,
+		FlakeIDGenerators: newFlakeIDConfigs,
+		Cluster:           c.Cluster.Clone(),
+		Failover:          c.Failover.Clone(),
+		Serialization:     c.Serialization.Clone(),
+		Logger:            c.Logger.Clone(),
+		Stats:             c.Stats.clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -119,7 +116,10 @@ func (c *Config) Validate() error {
 	if err := c.Stats.Validate(); err != nil {
 		return err
 	}
-	for _, v := range c.FlakeIDGeneratorConfigs {
+	if c.FlakeIDGenerators == nil {
+		c.FlakeIDGenerators = map[string]FlakeIDGeneratorConfig{}
+	}
+	for _, v := range c.FlakeIDGenerators {
 		if err := v.Validate(); err != nil {
 			return err
 		}
@@ -139,14 +139,16 @@ func (c *Config) ensureMembershipListeners() {
 	}
 }
 
-func (c *Config) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorConfig {
-	if conf, ok := c.FlakeIDGeneratorConfigs[name]; ok {
-		return conf
+func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchExpiry types.Duration) error {
+	idConfig := FlakeIDGeneratorConfig{PrefetchCount: prefetchCount, PrefetchExpiry: prefetchExpiry}
+	if err := idConfig.Validate(); err != nil {
+		return err
 	}
-	return FlakeIDGeneratorConfig{
-		PrefetchCount:  defaultFlakeIDPrefetchCount,
-		PrefetchExpiry: defaultFlakeIDPrefetchExpiry,
+	if c.FlakeIDGenerators == nil {
+		c.FlakeIDGenerators = map[string]FlakeIDGeneratorConfig{}
 	}
+	c.FlakeIDGenerators[name] = idConfig
+	return nil
 }
 
 // StatsConfig contains configuration for Management Center.
@@ -175,7 +177,7 @@ const (
 	defaultFlakeIDPrefetchExpiry = types.Duration(10 * time.Minute)
 )
 
-// FlakeIDGeneratorConfig configures pre-fetching behavior for FlakeIDGenerator.
+// FlakeIDGeneratorConfig contains configuration for the pre-fetching behavior of FlakeIDGenerator.
 type FlakeIDGeneratorConfig struct {
 	// PrefetchCount defines the number of pre-fetched IDs from cluster.
 	// The allowed range is [1, 100_000] and defaults to 100.

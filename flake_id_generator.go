@@ -48,27 +48,32 @@ type FlakeIDGenerator struct {
 	config     FlakeIDGeneratorConfig
 }
 
-// NewId generates and returns a cluster-wide unique ID.
-func (f *FlakeIDGenerator) NewId(ctx context.Context) (int64, error) {
+// NewID generates and returns a cluster-wide unique ID.
+func (f *FlakeIDGenerator) NewID(ctx context.Context) (int64, error) {
 	for {
 		batch := f.batch.Load().(flakeIDBatch)
 		id := batch.nextID()
 		if id != invalidFlakeID {
 			return id, nil
 		}
-		f.mu.Lock()
-		if batch != f.batch.Load().(flakeIDBatch) {
-			// batch has already been refreshed
-			f.mu.Unlock()
-			continue
-		}
-		if b, err := f.newBatchFn(ctx, f); err != nil {
-			f.mu.Unlock()
+		if err := f.tryUpdateBatch(ctx, batch); err != nil {
 			return 0, err
-		} else {
-			f.batch.Store(b)
-			f.mu.Unlock()
 		}
+	}
+}
+
+func (f *FlakeIDGenerator) tryUpdateBatch(ctx context.Context, current flakeIDBatch) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if current != f.batch.Load().(flakeIDBatch) {
+		// batch has already been refreshed
+		return nil
+	}
+	if b, err := f.newBatchFn(ctx, f); err != nil {
+		return err
+	} else {
+		f.batch.Store(b)
+		return nil
 	}
 }
 
@@ -81,7 +86,7 @@ func newFlakeIdGenerator(p *proxy, config FlakeIDGeneratorConfig, newBatchFn new
 		config:     config,
 	}
 	// Store an invalid batch to fetch an actual batch lazily. The
-	// very first FlakeIDGenerator.NewId call will update the batch.
+	// very first FlakeIDGenerator.NewID call will update the batch.
 	f.batch.Store(flakeIDBatch{})
 	return f
 }

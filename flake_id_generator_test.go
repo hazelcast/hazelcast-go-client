@@ -39,18 +39,17 @@ func TestFlakeIDGenerator_ExpiredBatch(t *testing.T) {
 		if once {
 			once = false
 			return hazelcast.FlakeIDBatch(batch1), nil
-		} else {
-			return hazelcast.FlakeIDBatch(batch2), nil
 		}
+		return hazelcast.FlakeIDBatch(batch2), nil
 	})
 
-	id1, err := f.NewId(ctx)
+	id1, err := f.NewID(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), id1)
 
 	time.Sleep(expiry * 2)
 
-	id2, err := f.NewId(ctx)
+	id2, err := f.NewID(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(20), id2)
 }
@@ -68,18 +67,17 @@ func TestFlakeIDGenerator_UsedBatch(t *testing.T) {
 		if once {
 			once = false
 			return hazelcast.FlakeIDBatch(batch1), nil
-		} else {
-			return hazelcast.FlakeIDBatch(batch2), nil
 		}
+		return hazelcast.FlakeIDBatch(batch2), nil
 	})
 
-	id1, err := f.NewId(ctx)
+	id1, err := f.NewID(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), id1)
-	id2, err := f.NewId(ctx)
+	id2, err := f.NewID(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), id2)
-	id3, err := f.NewId(ctx)
+	id3, err := f.NewID(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(20), id3)
 }
@@ -143,8 +141,8 @@ func TestFlakeIDBatch_ConcurrentCalls(t *testing.T) {
 		results            = make(chan int64, size)
 	)
 	wg := sync.WaitGroup{}
+	wg.Add(parallelism)
 	for i := 0; i < parallelism; i++ {
-		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for i := 0; i < idPerRoutine; i++ {
@@ -153,12 +151,12 @@ func TestFlakeIDBatch_ConcurrentCalls(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+	close(results)
 	assert.Equal(t, int(size), len(results))
-	lookup := make(map[int64]struct{})
-	for i := 0; i < int(size); i++ {
-		id := <-results
+	lookup := map[int64]struct{}{}
+	for id := range results {
 		if _, ok := lookup[id]; ok {
-			t.Fatalf("dublicated flake id: %d", id)
+			t.Fatalf("duplicated flake id: %d", id)
 		}
 		lookup[id] = struct{}{}
 	}
