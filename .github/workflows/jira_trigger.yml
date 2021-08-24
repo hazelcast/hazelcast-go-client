@@ -1,0 +1,40 @@
+on:
+  issues:
+    types: [labeled]
+
+name: Create Issue from Label
+
+jobs:
+  build:
+    if: ${{ github.event.label.name == 'to-jira' }}
+    runs-on: ubuntu-latest
+    name: Create Issue
+    steps:
+     - name: Checkout
+       uses: actions/checkout@master
+      
+     - name: Login
+       uses: atlassian/gajira-login@master
+       env:
+        JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        
+     - name: Create
+       id: create
+       uses: atlassian/gajira-create@master
+       with:
+         project: API
+         issuetype: Bug
+         summary: | 
+          ${{ github.event.issue.title }} [GH-${{ github.event.issue.number }}]
+         description: |
+          *URL:* ${{ github.event.issue.html_url }}
+          *Created By:* ${{ github.event.issue.user.login }}
+          ${{ github.event.issue.body }}
+         fields: '{"labels": ["GitHub","Go"]}'
+     - name: Transition Issue
+       uses: atlassian/gajira-transition@master
+       with:
+        issue: ${{ steps.create.outputs.issue }}
+        transition: "To Do"
