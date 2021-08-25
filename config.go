@@ -139,6 +139,7 @@ func (c *Config) ensureMembershipListeners() {
 	}
 }
 
+// AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
 func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchExpiry types.Duration) error {
 	idConfig := FlakeIDGeneratorConfig{PrefetchCount: prefetchCount, PrefetchExpiry: prefetchExpiry}
 	if err := idConfig.Validate(); err != nil {
