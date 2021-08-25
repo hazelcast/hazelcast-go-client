@@ -51,7 +51,7 @@ type FlakeIDGenerator struct {
 // NewID generates and returns a cluster-wide unique ID.
 func (f *FlakeIDGenerator) NewID(ctx context.Context) (int64, error) {
 	for {
-		batch := f.batch.Load().(flakeIDBatch)
+		batch := f.batch.Load().(*flakeIDBatch)
 		id := batch.nextID()
 		if id != invalidFlakeID {
 			return id, nil
@@ -62,17 +62,17 @@ func (f *FlakeIDGenerator) NewID(ctx context.Context) (int64, error) {
 	}
 }
 
-func (f *FlakeIDGenerator) tryUpdateBatch(ctx context.Context, current flakeIDBatch) error {
+func (f *FlakeIDGenerator) tryUpdateBatch(ctx context.Context, current *flakeIDBatch) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if current != f.batch.Load().(flakeIDBatch) {
+	if current != f.batch.Load().(*flakeIDBatch) {
 		// batch has already been refreshed
 		return nil
 	}
 	if b, err := f.newBatchFn(ctx, f); err != nil {
 		return err
 	} else {
-		f.batch.Store(b)
+		f.batch.Store(&b)
 		return nil
 	}
 }
@@ -87,7 +87,7 @@ func newFlakeIdGenerator(p *proxy, config FlakeIDGeneratorConfig, newBatchFn new
 	}
 	// Store an invalid batch to fetch an actual batch lazily. The
 	// very first FlakeIDGenerator.NewID call will update the batch.
-	f.batch.Store(flakeIDBatch{})
+	f.batch.Store(&flakeIDBatch{})
 	return f
 }
 
@@ -101,32 +101,27 @@ func flakeIDBatchFromMemberFn(ctx context.Context, f *FlakeIDGenerator) (flakeID
 	return flakeIDBatch{
 		base:      base,
 		increment: inc,
-		size:      size,
-		index:     new(int32),
+		size:      int64(size),
+		index:     -1, // to serve index 0 during atomic increment.
 		expiresAt: time.Now().Add(time.Duration(f.config.PrefetchExpiry)),
 	}, nil
 }
 
 type flakeIDBatch struct {
 	expiresAt time.Time
-	index     *int32
+	index     int64
 	base      int64
 	increment int64
-	size      int32
+	size      int64
 }
 
 func (f *flakeIDBatch) nextID() int64 {
 	if time.Now().After(f.expiresAt) {
 		return invalidFlakeID
 	}
-	var idx int32
-	for {
-		idx = atomic.LoadInt32(f.index)
-		if idx == f.size {
-			return invalidFlakeID
-		}
-		if atomic.CompareAndSwapInt32(f.index, idx, idx+1) {
-			return f.base + int64(idx)*f.increment
-		}
+	idx := atomic.AddInt64(&f.index, 1)
+	if idx >= f.size {
+		return invalidFlakeID
 	}
+	return f.base + idx*f.increment
 }

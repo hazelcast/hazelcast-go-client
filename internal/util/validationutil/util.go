@@ -36,7 +36,7 @@ func ValidateAsNonNegativeInt32(n int) (int32, error) {
 	return int32(n), nil
 }
 
-func IsWithinInclusiveRangeInt32(n, start, end int32) error {
+func WithinRangeInt32(n, start, end int32) error {
 	if n < start || n > end {
 		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("number %d is out of range [%d,%d]", n, start, end), nil)
 	}

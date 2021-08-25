@@ -81,7 +81,7 @@ func TestIsWithinInclusiveRangeInt32(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			if err := IsWithinInclusiveRangeInt32(tc.number, tc.start, tc.end); tc.valid {
+			if err := WithinRangeInt32(tc.number, tc.start, tc.end); tc.valid {
 				assert.NoError(t, err)
 			} else {
 				assert.Error(t, err)

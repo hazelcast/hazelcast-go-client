@@ -63,7 +63,7 @@ func TestFlakeIDGenerator_UsedBatch(t *testing.T) {
 		batch2 = hazelcast.NewFlakeIDBatch(20, 1, 2, expiry)
 	)
 
-	f := hazelcast.NewFlakeIdGenerator(hazelcast.FlakeIDGeneratorConfig{}, func(_ context.Context, _ *hazelcast.FlakeIDGenerator) (hazelcast.FlakeIDBatch, error) {
+	f := hazelcast.NewFlakeIdGenerator(hazelcast.FlakeIDGeneratorConfig{}, func(context.Context, *hazelcast.FlakeIDGenerator) (hazelcast.FlakeIDBatch, error) {
 		if once {
 			once = false
 			return hazelcast.FlakeIDBatch(batch1), nil

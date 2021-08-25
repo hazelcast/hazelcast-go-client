@@ -189,7 +189,7 @@ type FlakeIDGeneratorConfig struct {
 func (f *FlakeIDGeneratorConfig) Validate() error {
 	if f.PrefetchCount == 0 {
 		f.PrefetchCount = defaultFlakeIDPrefetchCount
-	} else if err := validate.IsWithinInclusiveRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
+	} else if err := validate.WithinRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
 		return err
 	}
 	if err := validate.NonNegativeDuration(&f.PrefetchExpiry, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {

@@ -44,10 +44,10 @@ func NewFlakeIdGenerator(config FlakeIDGeneratorConfig, newBatchFn NewFlakeIDBat
 func NewFlakeIDBatch(base, increment int64, size int32, expiry time.Duration) flakeIDBatch {
 	return flakeIDBatch{
 		expiresAt: time.Now().Add(expiry),
-		index:     new(int32),
+		index:     -1,
 		base:      base,
 		increment: increment,
-		size:      size,
+		size:      int64(size),
 	}
 }
 
