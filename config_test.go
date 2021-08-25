@@ -248,6 +248,13 @@ func TestConfig_AddFlakeIDGenerator(t *testing.T) {
 	}
 }
 
+func TestConfig_AddExistingFlakeIDGenerator(t *testing.T) {
+	config := hazelcast.Config{}
+	assert.NoError(t, config.AddFlakeIDGenerator("foo", 1, 1))
+	err := config.AddFlakeIDGenerator("foo", 2, 2)
+	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
+}
+
 func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, "", c.ClientName)
 	assert.Equal(t, []string(nil), c.Labels)

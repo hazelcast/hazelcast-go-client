@@ -17,9 +17,11 @@
 package hazelcast
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -116,9 +118,7 @@ func (c *Config) Validate() error {
 	if err := c.Stats.Validate(); err != nil {
 		return err
 	}
-	if c.FlakeIDGenerators == nil {
-		c.FlakeIDGenerators = map[string]FlakeIDGeneratorConfig{}
-	}
+	c.ensureFlakeIDGenerators()
 	for _, v := range c.FlakeIDGenerators {
 		if err := v.Validate(); err != nil {
 			return err
@@ -139,14 +139,22 @@ func (c *Config) ensureMembershipListeners() {
 	}
 }
 
+func (c *Config) ensureFlakeIDGenerators() {
+	if c.FlakeIDGenerators == nil {
+		c.FlakeIDGenerators = map[string]FlakeIDGeneratorConfig{}
+	}
+}
+
+// AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
 func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchExpiry types.Duration) error {
+	if _, ok := c.FlakeIDGenerators[name]; ok {
+		return hzerrors.NewIllegalArgumentError(fmt.Sprintf("config already exists for %s", name), nil)
+	}
 	idConfig := FlakeIDGeneratorConfig{PrefetchCount: prefetchCount, PrefetchExpiry: prefetchExpiry}
 	if err := idConfig.Validate(); err != nil {
 		return err
 	}
-	if c.FlakeIDGenerators == nil {
-		c.FlakeIDGenerators = map[string]FlakeIDGeneratorConfig{}
-	}
+	c.ensureFlakeIDGenerators()
 	c.FlakeIDGenerators[name] = idConfig
 	return nil
 }
