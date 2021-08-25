@@ -36,6 +36,13 @@ func ValidateAsNonNegativeInt32(n int) (int32, error) {
 	return int32(n), nil
 }
 
+func WithinRangeInt32(n, start, end int32) error {
+	if n < start || n > end {
+		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("number %d is out of range [%d,%d]", n, start, end), nil)
+	}
+	return nil
+}
+
 func NonNegativeDuration(v *types.Duration, d time.Duration, msg string) error {
 	if *v < 0 {
 		return fmt.Errorf("%s: %w", msg, hzerrors.ErrIllegalArgument)
