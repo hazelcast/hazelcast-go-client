@@ -24,9 +24,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 )
 
-// Responsible for cluster failover state and attempts management.
+// FailoverService is responsible for cluster failover state and attempts management.
 type FailoverService struct {
-	isClientRunningFn func() bool
+	clientRunningFn   func() bool
 	candidateClusters []CandidateCluster
 	maxTryCount       int
 	index             uint64
@@ -60,7 +60,7 @@ func NewFailoverService(
 	}
 
 	return &FailoverService{
-		isClientRunningFn: isClientRunningFn,
+		clientRunningFn:   isClientRunningFn,
 		maxTryCount:       maxTryCount,
 		candidateClusters: candidateClusters,
 	}
@@ -72,7 +72,7 @@ func makeCredentials(config *pubcluster.SecurityConfig) *security.UsernamePasswo
 
 func (s *FailoverService) TryNextCluster(fn func(next *CandidateCluster) (pubcluster.Address, bool)) (pubcluster.Address, bool) {
 	tryCount := 0
-	for s.isClientRunningFn() && tryCount < s.maxTryCount {
+	for s.clientRunningFn() && tryCount < s.maxTryCount {
 		for i := 0; i < len(s.candidateClusters); i++ {
 			if addr, connected := fn(s.Next()); connected {
 				return addr, true

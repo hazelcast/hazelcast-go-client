@@ -524,7 +524,6 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		}
 		m.connMap.AddConnection(conn, connAddr)
 		m.clusterIDMu.Unlock()
-
 		m.logger.Debug(func() string {
 			return fmt.Sprintf("opened connection to: %s", connAddr)
 		})
