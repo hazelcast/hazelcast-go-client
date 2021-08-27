@@ -122,6 +122,16 @@ func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounte
 	return p.(*PNCounter), nil
 }
 
+func (m *proxyManager) getFlakeIDGenerator(ctx context.Context, name string) (*FlakeIDGenerator, error) {
+	p, err := m.proxyFor(ctx, ServiceNamePNCounter, name, func(p *proxy) (interface{}, error) {
+		return newFlakeIdGenerator(p, m.getFlakeIDGeneratorConfig(name), flakeIDBatchFromMemberFn), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return p.(*FlakeIDGenerator), nil
+}
+
 func (m *proxyManager) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
 	return m.invocationProxy.invokeOnRandomTarget(ctx, request, handler)
 }
@@ -187,6 +197,16 @@ func (m *proxyManager) proxyFor(
 	}
 	m.proxies[name] = wrapper
 	return wrapper, nil
+}
+
+func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorConfig {
+	if conf, ok := m.serviceBundle.Config.FlakeIDGenerators[name]; ok {
+		return conf
+	}
+	return FlakeIDGeneratorConfig{
+		PrefetchCount:  defaultFlakeIDPrefetchCount,
+		PrefetchExpiry: defaultFlakeIDPrefetchExpiry,
+	}
 }
 
 func makeProxyName(serviceName string, objectName string) string {

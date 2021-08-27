@@ -17,9 +17,11 @@
 package hazelcast
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -31,13 +33,14 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	ClientName          string                 `json:",omitempty"`
-	Logger              logger.Config          `json:",omitempty"`
-	Failover            cluster.FailoverConfig `json:",omitempty"`
-	Labels              []string               `json:",omitempty"`
-	Serialization       serialization.Config   `json:",omitempty"`
-	Cluster             cluster.Config         `json:",omitempty"`
-	Stats               StatsConfig            `json:",omitempty"`
+	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
+	Labels              []string                          `json:",omitempty"`
+	ClientName          string                            `json:",omitempty"`
+	Logger              logger.Config                     `json:",omitempty"`
+	Failover            cluster.FailoverConfig            `json:",omitempty"`
+	Serialization       serialization.Config              `json:",omitempty"`
+	Cluster             cluster.Config                    `json:",omitempty"`
+	Stats               StatsConfig                       `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.
@@ -78,14 +81,19 @@ func (c *Config) Clone() Config {
 	c.ensureMembershipListeners()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
+	newFlakeIDConfigs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGenerators))
+	for k, v := range c.FlakeIDGenerators {
+		newFlakeIDConfigs[k] = v
+	}
 	return Config{
-		ClientName:    c.ClientName,
-		Labels:        newLabels,
-		Cluster:       c.Cluster.Clone(),
-		Failover:      c.Failover.Clone(),
-		Serialization: c.Serialization.Clone(),
-		Logger:        c.Logger.Clone(),
-		Stats:         c.Stats.clone(),
+		ClientName:        c.ClientName,
+		Labels:            newLabels,
+		FlakeIDGenerators: newFlakeIDConfigs,
+		Cluster:           c.Cluster.Clone(),
+		Failover:          c.Failover.Clone(),
+		Serialization:     c.Serialization.Clone(),
+		Logger:            c.Logger.Clone(),
+		Stats:             c.Stats.clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -110,6 +118,12 @@ func (c *Config) Validate() error {
 	if err := c.Stats.Validate(); err != nil {
 		return err
 	}
+	c.ensureFlakeIDGenerators()
+	for _, v := range c.FlakeIDGenerators {
+		if err := v.Validate(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -123,6 +137,26 @@ func (c *Config) ensureMembershipListeners() {
 	if c.membershipListeners == nil {
 		c.membershipListeners = map[types.UUID]cluster.MembershipStateChangeHandler{}
 	}
+}
+
+func (c *Config) ensureFlakeIDGenerators() {
+	if c.FlakeIDGenerators == nil {
+		c.FlakeIDGenerators = map[string]FlakeIDGeneratorConfig{}
+	}
+}
+
+// AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
+func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchExpiry types.Duration) error {
+	if _, ok := c.FlakeIDGenerators[name]; ok {
+		return hzerrors.NewIllegalArgumentError(fmt.Sprintf("config already exists for %s", name), nil)
+	}
+	idConfig := FlakeIDGeneratorConfig{PrefetchCount: prefetchCount, PrefetchExpiry: prefetchExpiry}
+	if err := idConfig.Validate(); err != nil {
+		return err
+	}
+	c.ensureFlakeIDGenerators()
+	c.FlakeIDGenerators[name] = idConfig
+	return nil
 }
 
 // StatsConfig contains configuration for Management Center.
@@ -140,6 +174,33 @@ func (c StatsConfig) clone() StatsConfig {
 // Validate validates the stats configuration and replaces missing configuration with defaults.
 func (c *StatsConfig) Validate() error {
 	if err := validate.NonNegativeDuration(&c.Period, 5*time.Second, "invalid period"); err != nil {
+		return err
+	}
+	return nil
+}
+
+const (
+	maxFlakeIDPrefetchCount      = 100_000
+	defaultFlakeIDPrefetchCount  = 100
+	defaultFlakeIDPrefetchExpiry = types.Duration(10 * time.Minute)
+)
+
+// FlakeIDGeneratorConfig contains configuration for the pre-fetching behavior of FlakeIDGenerator.
+type FlakeIDGeneratorConfig struct {
+	// PrefetchCount defines the number of pre-fetched IDs from cluster.
+	// The allowed range is [1, 100_000] and defaults to 100.
+	PrefetchCount int32 `json:",omitempty"`
+	// PrefetchExpiry defines the expiry duration of pre-fetched IDs. Defaults to 10 minutes.
+	PrefetchExpiry types.Duration `json:",omitempty"`
+}
+
+func (f *FlakeIDGeneratorConfig) Validate() error {
+	if f.PrefetchCount == 0 {
+		f.PrefetchCount = defaultFlakeIDPrefetchCount
+	} else if err := validate.WithinRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
+		return err
+	}
+	if err := validate.NonNegativeDuration(&f.PrefetchExpiry, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
 		return err
 	}
 	return nil

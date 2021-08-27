@@ -18,6 +18,7 @@ package hazelcast_test
 
 import (
 	"encoding/json"
+	"errors"
 	"sort"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -172,6 +174,12 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	"Stats": {
 		"Enabled": true,
 		"Period": "2m"
+	},
+	"FlakeIDGenerators": {
+		"bar": {
+			"PrefetchCount": 42,
+			"PrefetchExpiry": "42s"
+		}
 	}
 }
 `
@@ -190,6 +198,8 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	assert.Equal(t, cluster.ReconnectModeOff, config.Cluster.ConnectionStrategy.ReconnectMode)
 	assert.Equal(t, true, config.Stats.Enabled)
 	assert.Equal(t, types.Duration(2*time.Minute), config.Stats.Period)
+	assert.Equal(t, int32(42), config.FlakeIDGenerators["bar"].PrefetchCount)
+	assert.Equal(t, types.Duration(42*time.Second), config.FlakeIDGenerators["bar"].PrefetchExpiry)
 }
 
 func TestMarshalDefaultConfig(t *testing.T) {
@@ -200,6 +210,144 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	}
 	target := `{"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
+}
+
+func TestValidateFlakeIDGeneratorConfig(t *testing.T) {
+	testCases := []struct {
+		expectErr                error
+		name                     string
+		config                   hazelcast.FlakeIDGeneratorConfig
+		expectPrefetchExpiration types.Duration
+		expectPrefetchCount      int32
+	}{
+		{
+			name:      "NegativePrefetchCount",
+			config:    hazelcast.FlakeIDGeneratorConfig{PrefetchCount: -1},
+			expectErr: hzerrors.ErrIllegalArgument,
+		},
+		{
+			name:                     "ValidPrefetchCount_1",
+			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchCount: 1},
+			expectPrefetchCount:      1,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
+		},
+		{
+			name:                     "ValidPrefetchCount_100_000",
+			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchCount: 100_000},
+			expectPrefetchCount:      100_000,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
+		},
+		{
+			name:      "InvalidPrefetchCount",
+			config:    hazelcast.FlakeIDGeneratorConfig{PrefetchCount: 100_001},
+			expectErr: hzerrors.ErrIllegalArgument,
+		},
+		{
+			name:      "NegativePrefetchExpiration",
+			config:    hazelcast.FlakeIDGeneratorConfig{PrefetchExpiry: types.Duration(-1)},
+			expectErr: hzerrors.ErrIllegalArgument,
+		},
+		{
+			name:                     "ZeroPrefetchExpiration",
+			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchExpiry: types.Duration(0)},
+			expectPrefetchCount:      hazelcast.DefaultFlakeIDPrefetchCount,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
+		},
+		{
+			name:                     "PositivePrefetchExpiration",
+			config:                   hazelcast.FlakeIDGeneratorConfig{PrefetchExpiry: types.Duration(1)},
+			expectPrefetchCount:      hazelcast.DefaultFlakeIDPrefetchCount,
+			expectPrefetchExpiration: types.Duration(1),
+		},
+		{
+			name:                     "ZeroValuedConfiguration",
+			config:                   hazelcast.FlakeIDGeneratorConfig{},
+			expectPrefetchCount:      hazelcast.DefaultFlakeIDPrefetchCount,
+			expectPrefetchExpiration: hazelcast.DefaultFlakeIDPrefetchExpiry,
+		},
+		{
+			name: "ValidCustomConfiguration",
+			config: hazelcast.FlakeIDGeneratorConfig{
+				PrefetchCount:  42,
+				PrefetchExpiry: types.Duration(42),
+			},
+			expectPrefetchCount:      42,
+			expectPrefetchExpiration: types.Duration(42),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.config.Validate(); tc.expectErr != nil {
+				assert.True(t, errors.Is(err, tc.expectErr))
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expectPrefetchCount, tc.config.PrefetchCount)
+				assert.Equal(t, tc.expectPrefetchExpiration, tc.config.PrefetchExpiry)
+			}
+		})
+	}
+}
+
+func TestConfig_AddFlakeIDGenerator(t *testing.T) {
+	testCases := []struct {
+		expectErr      error
+		prefetchExpiry types.Duration
+		expectExpiry   types.Duration
+		prefetchCount  int32
+		expectCount    int32
+	}{
+		{
+			prefetchExpiry: 42,
+			expectExpiry:   42,
+			prefetchCount:  0,
+			expectCount:    hazelcast.DefaultFlakeIDPrefetchCount,
+		},
+		{
+			prefetchExpiry: 0,
+			expectExpiry:   hazelcast.DefaultFlakeIDPrefetchExpiry,
+			prefetchCount:  42,
+			expectCount:    42,
+		},
+		{
+			expectErr:      hzerrors.ErrIllegalArgument,
+			prefetchExpiry: 42,
+			prefetchCount:  -1,
+		},
+		{
+			expectErr:      hzerrors.ErrIllegalArgument,
+			prefetchExpiry: -1,
+			prefetchCount:  42,
+		},
+		{
+			prefetchExpiry: 42,
+			expectExpiry:   42,
+			prefetchCount:  42,
+			expectCount:    42,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			config := hazelcast.Config{}
+			err := config.AddFlakeIDGenerator("foo", tc.prefetchCount, tc.prefetchExpiry)
+			if tc.expectErr != nil {
+				_, ok := config.FlakeIDGenerators["foo"]
+				assert.False(t, ok)
+				assert.True(t, errors.Is(err, tc.expectErr))
+			} else {
+				idConf, ok := config.FlakeIDGenerators["foo"]
+				assert.True(t, ok)
+				assert.Equal(t, tc.expectCount, idConf.PrefetchCount)
+				assert.Equal(t, tc.expectExpiry, idConf.PrefetchExpiry)
+			}
+		})
+	}
+}
+
+func TestConfig_AddExistingFlakeIDGenerator(t *testing.T) {
+	config := hazelcast.Config{}
+	assert.NoError(t, config.AddFlakeIDGenerator("foo", 1, 1))
+	err := config.AddFlakeIDGenerator("foo", 2, 2)
+	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {
