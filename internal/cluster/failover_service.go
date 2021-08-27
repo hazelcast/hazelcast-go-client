@@ -39,13 +39,9 @@ type CandidateCluster struct {
 	ClusterName       string
 }
 
-func NewFailoverService(
-	logger ilogger.Logger,
-	maxTryCount int,
-	rootConfig pubcluster.Config,
-	foConfigs []pubcluster.Config,
-	addrProviderTranslatorFn func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator),
-	clientRunningFn func() bool) *FailoverService {
+type addrFun func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator)
+
+func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun, clientRunningFn func() bool) *FailoverService {
 	candidates := []CandidateCluster{}
 	configs := []pubcluster.Config{}
 	if len(foConfigs) > 0 {
@@ -59,13 +55,13 @@ func NewFailoverService(
 			ClusterName: c.Name,
 			Credentials: makeCredentials(&c.Security),
 		}
-		ctx.AddressProvider, ctx.AddressTranslator = addrProviderTranslatorFn(&c, logger)
+		ctx.AddressProvider, ctx.AddressTranslator = addrFn(&c, logger)
 		candidates = append(candidates, ctx)
 	}
 
 	return &FailoverService{
 		clientRunningFn:   clientRunningFn,
-		maxTryCount:       maxTryCount,
+		maxTryCount:       maxTries,
 		candidateClusters: candidates,
 	}
 }
