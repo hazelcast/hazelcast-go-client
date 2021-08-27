@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/util"
 	"math"
 	"math/rand"
 	"sync"
@@ -58,6 +59,58 @@ const (
 const (
 	serializationVersion = 1
 )
+
+type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
+
+func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error) {
+	var initialAddr pubcluster.Address
+	var conn *Connection
+	var err error
+	if conn, err = m.ensureConnection(ctx, addr); err != nil {
+		m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
+	} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
+		m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
+	} else if initialAddr == "" {
+		initialAddr = addr
+	}
+	if initialAddr == "" {
+		return "", fmt.Errorf("cannot connect to address in the cluster: %w", err)
+	}
+	return initialAddr, nil
+}
+
+func tryConnectAddress(
+	ctx context.Context,
+	m *ConnectionManager,
+	portRange pubcluster.PortRange,
+	addr pubcluster.Address,
+	connMember connectMemberFunc,
+) (pubcluster.Address, error) {
+	host, port, err := internal.ParseAddr(addr.String())
+	if err != nil {
+		return "", err
+	}
+	var initialAddr pubcluster.Address
+	if port == 0 { // we need to try all addresses in port range
+		for _, currAddr := range util.GetAddresses(host, portRange) {
+			currentAddrRet, connErr := connMember(ctx, m, currAddr)
+			if connErr == nil {
+				initialAddr = currentAddrRet
+				break
+			} else {
+				err = connErr
+			}
+		}
+	} else {
+		initialAddr, err = connMember(ctx, m, addr)
+	}
+
+	if initialAddr == "" {
+		return initialAddr, fmt.Errorf("cannot connect to any address in the cluster: %w", err)
+	}
+
+	return initialAddr, nil
+}
 
 type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
@@ -400,18 +453,14 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 		return "", errors.New("could not find any seed addresses")
 	}
 	var initialAddr pubcluster.Address
-	var conn *Connection
 	for _, addr := range seedAddrs {
-		if conn, err = m.ensureConnection(ctx, addr); err != nil {
-			m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-		} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
-			m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
-		} else if initialAddr == "" {
-			initialAddr = addr
+		initialAddr, err = tryConnectAddress(ctx, m, m.clusterConfig.Network.PortRange, addr, connectMember)
+		if err != nil {
+			return "", err
 		}
 	}
 	if initialAddr == "" {
-		return "", fmt.Errorf("cannot connect to any address in the cluster: %w", err)
+		return "", err
 	}
 	return initialAddr, nil
 }

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -96,6 +97,24 @@ func TestClientRunning(t *testing.T) {
 		}
 		assert.False(t, client.Running())
 	})
+}
+
+func TestClientPortRangeAllAddresses(t *testing.T) {
+	portRangeConnectivityTest(t, func(validPort int) []string {
+		return []string{"127.0.0.1", "localhost", "0.0.0.0"}
+	}, 4, 3)
+}
+
+func TestClientPortRangeMultipleAddresses(t *testing.T) {
+	portRangeConnectivityTest(t, func(validPort int) []string {
+		return []string{"127.0.0.1", "localhost", fmt.Sprintf("0.0.0.0:%d", validPort)}
+	}, 4, 3)
+}
+
+func TestClientPortRangeSingleAddress(t *testing.T) {
+	portRangeConnectivityTest(t, func(validPort int) []string {
+		return []string{fmt.Sprintf("localhost:%d", validPort), "127.0.0.1", fmt.Sprintf("0.0.0.0:%d", validPort)}
+	}, 4, 3)
 }
 
 func TestClientMemberEvents(t *testing.T) {
@@ -327,6 +346,27 @@ func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
 	cls.Shutdown()
 	time.Sleep(100 * time.Millisecond)
 	assert.Equal(t, false, c.Running())
+}
+
+// portRangeConnectivityTest sets up a port range where we can make sure,that our port will be in the range
+// and we can test the connectivity try
+func portRangeConnectivityTest(t *testing.T, getAddresses func(validPort int) []string, portsToTryBefore int, portsToTryAfter int) {
+	it.TesterWithConfigBuilder(t, func(config *hz.Config) {
+		clusterAddress := config.Cluster.Network.Addresses[0]
+		_, port, err := internal.ParseAddr(clusterAddress)
+		if err != nil {
+			t.Fatal(err)
+		}
+		config.Cluster.Network.SetAddresses(getAddresses(port)...)
+		config.Cluster.Network.SetPortRange(port-portsToTryBefore, port+portsToTryAfter)
+	},
+		func(t *testing.T, client *hz.Client) {
+			assert.True(t, client.Running())
+			if err := client.Shutdown(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			assert.False(t, client.Running())
+		})
 }
 
 func TestClient_GetDistributedObjects(t *testing.T) {
