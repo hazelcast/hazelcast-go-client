@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -25,12 +26,29 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-const defaultAddress = "127.0.0.1:5701"
+const (
+	defaultAddress      = "127.0.0.1:5701"
+	defaultPortRangeMin = 5701
+	defaultPortRangeMax = 5703
+)
 
 type NetworkConfig struct {
 	SSL               SSLConfig      `json:",omitempty"`
 	Addresses         []string       `json:",omitempty"`
+	PortRange         PortRange      `json:",omitempty"`
 	ConnectionTimeout types.Duration `json:",omitempty"`
+}
+
+type PortRange struct {
+	Min int `json:",omitempty"`
+	Max int `json:",omitempty"`
+}
+
+func (pr *PortRange) Clone() PortRange {
+	return PortRange{
+		Min: pr.Min,
+		Max: pr.Max,
+	}
 }
 
 func (c *NetworkConfig) Clone() NetworkConfig {
@@ -40,16 +58,38 @@ func (c *NetworkConfig) Clone() NetworkConfig {
 		Addresses:         addrs,
 		ConnectionTimeout: c.ConnectionTimeout,
 		SSL:               c.SSL.Clone(),
+		PortRange:         c.PortRange.Clone(),
+	}
+}
+
+func (c *NetworkConfig) SetPortRange(min int, max int) {
+	c.PortRange = PortRange{
+		Min: min,
+		Max: max,
 	}
 }
 
 func (c *NetworkConfig) Validate() error {
+	// set port range defaults if needed
+	if c.PortRange.Min == 0 && c.PortRange.Max == 0 {
+		c.PortRange = PortRange{
+			Min: defaultPortRangeMin,
+			Max: defaultPortRangeMax,
+		}
+	}
+	if err := c.validatePortRange(); err != nil {
+		return err
+	}
 	if len(c.Addresses) == 0 {
 		c.Addresses = []string{defaultAddress}
 	} else {
-		for _, addr := range c.Addresses {
-			if err := checkAddress(addr); err != nil {
-				return fmt.Errorf("invalid address %s: %w", addr, err)
+		for i, addr := range c.Addresses {
+			host, port, err := internal.ParseAddr(addr)
+			if err != nil {
+				return fmt.Errorf("invalid address '%s': %w", addr, err)
+			}
+			if port == 0 { // we do not have any port defined
+				c.Addresses[i] = fmt.Sprintf("%s:%d", host, port)
 			}
 		}
 	}
@@ -65,7 +105,11 @@ func (c *NetworkConfig) SetAddresses(addrs ...string) {
 	c.Addresses = addrs
 }
 
-func checkAddress(addr string) error {
-	_, _, err := internal.ParseAddr(addr)
-	return err
+// validatePortRange validates whether the port range given is valid or not
+func (c *NetworkConfig) validatePortRange() error {
+	if c.PortRange.Min > 0 && c.PortRange.Max > c.PortRange.Min {
+		return nil
+	}
+	return fmt.Errorf("invalid port range: %d-%d: %w", c.PortRange.Min, c.PortRange.Max, hzerrors.ErrIllegalArgument)
+
 }

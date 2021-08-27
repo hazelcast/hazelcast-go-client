@@ -46,6 +46,101 @@ func TestNewConfig_SetAddress(t *testing.T) {
 	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 }
 
+//newConfigValidateScenario to validate NewConfig scenarios
+type newConfigValidateScenario struct {
+	inputAddr         string
+	inputPortRange    *cluster.PortRange
+	outputAddr        string
+	errEmpty          bool
+	expectedPortRange cluster.PortRange
+}
+
+var validateAddressScenarios = []newConfigValidateScenario{
+	{
+		inputAddr:         "192.168.1.2",
+		outputAddr:        "192.168.1.2:0",
+		errEmpty:          true,
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
+	},
+	{
+		inputAddr:         "192.168.1.2:",
+		outputAddr:        "192.168.1.2:",
+		errEmpty:          false,
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
+	},
+	{
+		inputAddr:         "192.168.1.2:0",
+		outputAddr:        "192.168.1.2:0",
+		errEmpty:          true,
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
+	},
+	{
+		inputAddr:         "192.168.1.2:1234",
+		outputAddr:        "192.168.1.2:1234",
+		errEmpty:          true,
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
+	},
+	{
+		inputAddr:         "192.168.1.2:-1",
+		outputAddr:        "192.168.1.2:-1",
+		errEmpty:          false,
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
+	},
+	{
+		inputAddr:         "192.168.1.2",
+		outputAddr:        "192.168.1.2:0",
+		errEmpty:          true,
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
+	},
+	{
+		inputAddr:         "192.168.1.2",
+		outputAddr:        "192.168.1.2:0",
+		errEmpty:          true,
+		inputPortRange:    &cluster.PortRange{Min: 5701, Max: 5705},
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5705},
+	},
+	{
+		inputAddr:         "192.168.1.2:0",
+		outputAddr:        "192.168.1.2:0",
+		errEmpty:          true,
+		inputPortRange:    &cluster.PortRange{Min: 5701, Max: 5705},
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5705},
+	},
+	{
+		inputAddr:         "192.168.1.2",
+		outputAddr:        "192.168.1.2",
+		errEmpty:          false,
+		inputPortRange:    &cluster.PortRange{Min: -1, Max: 5705},
+		expectedPortRange: cluster.PortRange{Min: -1, Max: 5705},
+	},
+	{
+		inputAddr:         "192.168.1.2",
+		outputAddr:        "192.168.1.2",
+		errEmpty:          false,
+		inputPortRange:    &cluster.PortRange{Min: 5701, Max: 5700},
+		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5700},
+	},
+}
+
+func TestNewConfig_Validate(t *testing.T) {
+	for _, scenario := range validateAddressScenarios {
+		config := hazelcast.NewConfig()
+		config.Cluster.Network.SetAddresses(scenario.inputAddr)
+		assert.Equal(t, []string{scenario.inputAddr}, config.Cluster.Network.Addresses)
+		if scenario.inputPortRange != nil {
+			config.Cluster.Network.SetPortRange(scenario.inputPortRange.Min, scenario.inputPortRange.Max)
+		}
+		err := config.Cluster.Network.Validate()
+		if scenario.errEmpty {
+			assert.Nil(t, err)
+		} else {
+			assert.NotNil(t, err)
+		}
+		assert.Equal(t, []string{scenario.outputAddr}, config.Cluster.Network.Addresses)
+		assert.Equal(t, scenario.expectedPortRange, config.Cluster.Network.PortRange)
+	}
+}
+
 func TestUnMarshalDefaultJSONConfig(t *testing.T) {
 	var config hazelcast.Config
 	if err := json.Unmarshal([]byte("{}"), &config); err != nil {
@@ -113,7 +208,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Discovery":{},"Network":{"SSL":{}},"ConnectionStrategy":{"Retry":{}}},"Failover":{},"Stats":{}}`
+	target := `{"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 

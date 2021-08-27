@@ -14,35 +14,18 @@
  * limitations under the License.
  */
 
-package internal
+package util
 
 import (
-	"fmt"
-	"net"
-	"strconv"
-	"strings"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
 const defaultHost = "127.0.0.1"
 
-func ParseAddr(addr string) (string, int, error) {
-	if addr == "" || strings.TrimSpace(addr) == "" {
-		return defaultHost, 0, nil
+func GetAddresses(host string, portRange pubcluster.PortRange) []pubcluster.Address {
+	var addrs []pubcluster.Address
+	for i := portRange.Min; i <= portRange.Max; i++ {
+		addrs = append(addrs, pubcluster.NewAddress(host, int32(i)))
 	}
-	if !strings.Contains(addr, ":") {
-		return addr, 0, nil
-	}
-	if host, port, err := net.SplitHostPort(addr); err != nil {
-		return "", 0, err
-	} else if portInt, err := strconv.Atoi(port); err != nil {
-		return "", 0, err
-	} else {
-		if host == "" || strings.TrimSpace(host) == "" {
-			host = defaultHost
-		}
-		if portInt < 0 { // port number should be more than 0
-			return "", 0, fmt.Errorf("invalid port number: '%d'", portInt)
-		}
-		return host, portInt, nil
-	}
+	return addrs
 }
