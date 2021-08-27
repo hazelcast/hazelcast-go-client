@@ -43,26 +43,30 @@ func NewFailoverService(
 	logger ilogger.Logger,
 	maxTryCount int,
 	rootConfig pubcluster.Config,
-	failoverConfigs []pubcluster.Config,
+	foConfigs []pubcluster.Config,
 	addrProviderTranslatorFn func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator),
-	isClientRunningFn func() bool) *FailoverService {
-
-	candidateClusters := []CandidateCluster{}
-	configs := []pubcluster.Config{rootConfig}
-	configs = append(configs, failoverConfigs...)
+	clientRunningFn func() bool) *FailoverService {
+	candidates := []CandidateCluster{}
+	configs := []pubcluster.Config{}
+	if len(foConfigs) > 0 {
+		configs = foConfigs
+	} else {
+		configs = append(configs, rootConfig)
+	}
+	configs = append(configs, foConfigs...)
 	for _, c := range configs {
 		ctx := CandidateCluster{
 			ClusterName: c.Name,
 			Credentials: makeCredentials(&c.Security),
 		}
 		ctx.AddressProvider, ctx.AddressTranslator = addrProviderTranslatorFn(&c, logger)
-		candidateClusters = append(candidateClusters, ctx)
+		candidates = append(candidates, ctx)
 	}
 
 	return &FailoverService{
-		clientRunningFn:   isClientRunningFn,
+		clientRunningFn:   clientRunningFn,
 		maxTryCount:       maxTryCount,
-		candidateClusters: candidateClusters,
+		candidateClusters: candidates,
 	}
 }
 
