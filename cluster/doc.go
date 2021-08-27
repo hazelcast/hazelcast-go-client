@@ -17,6 +17,12 @@
 /*
 Package cluster contains functions and types needed to connect to a Hazelcast cluster.
 
+Port Range
+
+Port Range configuration allows you to specify the port range for cluster addresses where you did not specify any port.
+If no port range was specified and also no port was set on an address, then the default port range will be applied (5701-5703).
+If you use a port range in any way, then the client will try all the ports for a given address until it is able to connect to the right member.
+
 Load Balancer
 
 Load balancer configuration allows you to specify which cluster address to send next operation.
