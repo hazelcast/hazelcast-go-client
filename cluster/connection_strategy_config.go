@@ -73,7 +73,8 @@ func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {
 }
 
 func (c *ConnectionStrategyConfig) Validate() error {
-	if err := validate.NonNegativeDuration(&c.Timeout, 1<<63-1, "invalid timeout"); err != nil {
+	// we set the default to 0 in order to be able to override it in failover and cluster configs
+	if err := validate.NonNegativeDuration(&c.Timeout, 0, "invalid timeout"); err != nil {
 		return err
 	}
 	return c.Retry.Validate()

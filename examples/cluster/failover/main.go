@@ -25,6 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 /*
@@ -37,7 +38,7 @@ In order to test this example:
 
 */
 
-var loggingLevel = logger.WarnLevel
+var loggingLevel = logger.DebugLevel
 
 func makeKeyValue(i int) (key string, value string) {
 	key = fmt.Sprintf("key-%d", i)
@@ -48,9 +49,12 @@ func makeKeyValue(i int) (key string, value string) {
 func updateFailover(fo *cluster.FailoverConfig) {
 	cluster1 := cluster.Config{Name: "dev1"}
 	cluster1.Network.SetAddresses("localhost:5701")
+	cluster1.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
 	cluster2 := cluster.Config{Name: "dev2"}
 	cluster2.Network.SetAddresses("localhost:5702")
+	cluster2.ConnectionStrategy.Timeout = types.Duration(15 * time.Second)
 	fo.Enabled = true
+	fo.TryCount = 3
 	fo.SetConfigs(cluster1, cluster2)
 }
 

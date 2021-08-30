@@ -20,8 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/util"
-	"math"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -39,6 +37,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/util"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -125,7 +124,7 @@ type ConnectionManagerCreationBundle struct {
 	FailoverService      *FailoverService
 	ClientName           string
 	Labels               []string
-	FailoverEnabled      bool
+	FailoverConfig       *pubcluster.FailoverConfig
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
@@ -162,6 +161,9 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.FailoverService == nil {
 		panic("FailoverService is nil")
 	}
+	if b.FailoverConfig == nil {
+		panic("FailoverConfig is nil")
+	}
 }
 
 type ConnectionManager struct {
@@ -177,7 +179,6 @@ type ConnectionManager struct {
 	connMap              *connectionMap
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
-	cb                   *cb.CircuitBreaker
 	failoverService      *FailoverService
 	clusterID            *types.UUID // protected by clusterIDMu
 	requestCh            chan<- invocation.Invocation
@@ -188,7 +189,8 @@ type ConnectionManager struct {
 	nextConnID           int64
 	state                int32
 	smartRouting         bool
-	failoverEnabled      bool
+	failoverConfig       *pubcluster.FailoverConfig
+	randGen              *rand.Rand
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
@@ -209,8 +211,9 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		smartRouting:         !bundle.ClusterConfig.Unisocket,
 		logger:               bundle.Logger,
 		failoverService:      bundle.FailoverService,
-		failoverEnabled:      bundle.FailoverEnabled,
+		failoverConfig:       bundle.FailoverConfig,
 		clusterIDMu:          &sync.Mutex{},
+		randGen:              rand.New(rand.NewSource(time.Now().Unix())),
 	}
 	return manager
 }
@@ -302,12 +305,6 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 
 func (m *ConnectionManager) reset() {
 	m.doneCh = make(chan struct{}, 1)
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	m.cb = cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt32),
-		cb.MaxFailureCount(3),
-		cb.RetryPolicy(makeRetryPolicy(r, &m.clusterConfig.ConnectionStrategy.Retry)),
-	)
 	m.startCh = make(chan struct{}, 1)
 	m.clusterIDMu.Lock()
 	if m.clusterID != nil {
@@ -396,40 +393,37 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("ConnectionManager: trying to connect to cluster: %s", current.ClusterName)
 	})
-	maxAttempts := math.MaxInt32
-	if m.failoverEnabled {
-		// when failover configs are provided, we want to switch between alternative clusters
-		maxAttempts = 1
-	}
 	// try the current cluster
-	addr, err := m.tryConnectCandidateCluster(ctx, current, maxAttempts)
+	addr, err := m.tryConnectCandidateCluster(ctx, current, current.ConnectionStrategy)
 	if err == nil {
 		return addr, nil
 	}
-	// try all of the next alternative clusters
-	addr, ok := m.failoverService.TryNextCluster(func(next *CandidateCluster) (pubcluster.Address, bool) {
-		m.logger.Infof("trying to connect to next cluster: %s", next.ClusterName)
-		if addr, err := m.tryConnectCandidateCluster(ctx, next, maxAttempts); err == nil {
-			m.logger.Infof("successfully connected to cluster: %s", next.ClusterName)
-			return addr, true
+	if m.failoverConfig.Enabled {
+		// try all of the next alternative clusters
+		addr, ok := m.failoverService.TryNextCluster(func(next *CandidateCluster) (pubcluster.Address, bool) {
+			m.logger.Infof("trying to connect to next cluster: %s", next.ClusterName)
+			if addr, err := m.tryConnectCandidateCluster(ctx, next, next.ConnectionStrategy); err == nil {
+				m.logger.Infof("successfully connected to cluster: %s", next.ClusterName)
+				return addr, true
+			}
+			return "", false
+		})
+		if ok {
+			return addr, nil
 		}
-		return "", false
-	})
-	if ok {
-		return addr, nil
 	}
 	// notify if no successful cluster connection was established
 	return "", fmt.Errorf("cannot connect to any cluster: %w", hzerrors.ErrIllegalState)
 }
 
-func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, maxAttempts int) (pubcluster.Address, error) {
-	addr, err := m.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if attempt == maxAttempts {
-			m.logger.Debug(func() string {
-				return fmt.Sprintf("ConnectionManager: giving up connection attempts to cluster: %s", cluster.ClusterName)
-			})
-			return "", cb.WrapNonRetryableError(fmt.Errorf("giving up connection attempts to cluster: %w", hzerrors.ErrIllegalState))
-		}
+func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {
+	cbr := cb.NewCircuitBreaker(
+		cb.MaxRetries(m.failoverConfig.TryCount),
+		cb.Timeout(time.Duration(cs.Timeout)),
+		cb.MaxFailureCount(3),
+		cb.RetryPolicy(makeRetryPolicy(m.randGen, &cs.Retry)),
+	)
+	addr, err := cbr.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		addr, err := m.connectCluster(ctx, cluster)
 		if err != nil {
 			m.logger.Debug(func() string {
@@ -532,7 +526,7 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
 	// TODO: use memberUUID v
 	status, address, _, _, serverHazelcastVersion, partitionCount, newClusterID, failoverSupported := codec.DecodeClientAuthenticationResponse(result)
-	if m.failoverEnabled && !failoverSupported {
+	if m.failoverConfig.Enabled && !failoverSupported {
 		m.logger.Warnf("cluster does not support failover: this feature is available in Hazelcast Enterprise")
 		status = notAllowedInCluster
 	}

@@ -38,6 +38,7 @@ type CircuitBreaker struct {
 	StateChangeHandler  EventHandler
 	MaxRetries          int
 	ResetTimeout        time.Duration
+	Deadline            time.Time
 	MaxFailureCount     int32
 	CurrentFailureCount int32
 	State               int32
@@ -59,6 +60,7 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 		MaxRetries:         opts.MaxRetries,
 		MaxFailureCount:    opts.MaxFailureCount,
 		ResetTimeout:       opts.ResetTimeout,
+		Deadline:           time.Now().Add(opts.Timeout),
 		RetryPolicyFunc:    retryPolicyFunc,
 		StateChangeHandler: opts.StateChangeHandler,
 		State:              StateClosed,
@@ -103,6 +105,10 @@ loop:
 			err = ctx.Err()
 			break loop
 		default:
+			if time.Now().After(cb.Deadline) {
+				err = ErrDeadlineExceeded
+				break loop
+			}
 			result, err = tryHandler(ctx, attempt)
 			if err == nil || contextErr(err) {
 				break loop
@@ -128,7 +134,7 @@ func (cb *CircuitBreaker) notifyFailed() {
 		if cb.ResetTimeout > 0 {
 			cb.openCircuit()
 		} else {
-			cb.resetTimeout()
+			cb.reset()
 		}
 	}
 }
@@ -151,13 +157,13 @@ func (cb *CircuitBreaker) closeCircuit() {
 	if !atomic.CompareAndSwapInt32(&cb.State, StateOpen, StateClosed) {
 		return
 	}
-	cb.resetTimeout()
+	cb.reset()
 	if cb.StateChangeHandler != nil {
 		cb.StateChangeHandler(StateClosed)
 	}
 }
 
-func (cb *CircuitBreaker) resetTimeout() {
+func (cb *CircuitBreaker) reset() {
 	atomic.StoreInt32(&cb.CurrentFailureCount, 0)
 }
 

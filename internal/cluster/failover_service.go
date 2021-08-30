@@ -33,10 +33,11 @@ type FailoverService struct {
 }
 
 type CandidateCluster struct {
-	AddressProvider   AddressProvider
-	AddressTranslator AddressTranslator
-	Credentials       security.Credentials
-	ClusterName       string
+	AddressProvider    AddressProvider
+	AddressTranslator  AddressTranslator
+	Credentials        security.Credentials
+	ClusterName        string
+	ConnectionStrategy *pubcluster.ConnectionStrategyConfig
 }
 
 type addrFun func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator)
@@ -49,14 +50,16 @@ func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubclust
 	} else {
 		configs = append(configs, rootConfig)
 	}
-	configs = append(configs, foConfigs...)
 	for _, c := range configs {
-		ctx := CandidateCluster{
-			ClusterName: c.Name,
-			Credentials: makeCredentials(&c.Security),
+		// copy c to a local variable in order to be able to take its address below
+		cv := c
+		cc := CandidateCluster{
+			ClusterName:        c.Name,
+			Credentials:        makeCredentials(&c.Security),
+			ConnectionStrategy: &cv.ConnectionStrategy,
 		}
-		ctx.AddressProvider, ctx.AddressTranslator = addrFn(&c, logger)
-		candidates = append(candidates, ctx)
+		cc.AddressProvider, cc.AddressTranslator = addrFn(&c, logger)
+		candidates = append(candidates, cc)
 	}
 
 	return &FailoverService{

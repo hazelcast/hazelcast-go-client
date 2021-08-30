@@ -22,6 +22,8 @@ import (
 	"reflect"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // FailoverConfig allows configuring multiple client configs to be used
@@ -79,7 +81,8 @@ func (c *FailoverConfig) Clone() FailoverConfig {
 	}
 }
 
-func (c *FailoverConfig) Validate(rootConfig Config) error {
+func (c *FailoverConfig) Validate(root Config) error {
+	// TODO: move code that references root config to the main config
 	if !c.Enabled {
 		return nil
 	}
@@ -92,12 +95,19 @@ func (c *FailoverConfig) Validate(rootConfig Config) error {
 	if len(c.Configs) == 0 {
 		return fmt.Errorf("at least one failover cluster config expected: %w", hzerrors.ErrIllegalArgument)
 	}
-	for i, cc := range c.Configs {
-		if err := cc.Validate(); err != nil {
+	for i := range c.Configs {
+		ccp := &c.Configs[i]
+		// if a cluster connection timeout was not specified, set it to default.
+		t := ccp.ConnectionStrategy.Timeout
+		if t == 0 {
+			t = types.Duration(internal.DefaultConnectionTimeoutWithFailover)
+		}
+		if err := ccp.Validate(); err != nil {
 			return err
 		}
+		ccp.ConnectionStrategy.Timeout = t
 		// validate diffs in the cluster configs
-		if !equalConfigs(rootConfig, cc) {
+		if !equalConfigs(root, *ccp) {
 			return fmt.Errorf("cluster config %d has unallowed differences with the first config: %w",
 				i, hzerrors.ErrIllegalArgument)
 		}
@@ -118,12 +128,14 @@ func equalConfigs(c1, c2 Config) bool {
 // * Network.SSL
 // * Network.Addresses
 // * Cloud
+// * ConnectionStrategy
 func sanitizedConfig(c Config) Config {
 	c.Name = ""
 	c.Security = SecurityConfig{}
 	c.Network.SSL = SSLConfig{}
 	c.Network.Addresses = nil
 	c.Cloud = CloudConfig{}
+	c.ConnectionStrategy = ConnectionStrategyConfig{}
 	return c
 }
 

@@ -27,6 +27,7 @@ type CircuitBreakerOptions struct {
 	StateChangeHandler EventHandler
 	MaxRetries         int
 	ResetTimeout       time.Duration
+	Timeout            time.Duration
 	MaxFailureCount    int32
 }
 
@@ -47,6 +48,7 @@ func DefaultCircuitBreakerOptions() *CircuitBreakerOptions {
 		MaxRetries:      0,
 		MaxFailureCount: 0,
 		ResetTimeout:    0,
+		Timeout:         time.Duration(1<<63 - 1),
 		RetryPolicyFunc: func(tries int) time.Duration {
 			return 0
 		},
@@ -79,6 +81,13 @@ func MaxFailureCount(failureCount int) CircuitBreakerOptionFunc {
 func ResetTimeout(timeout time.Duration) CircuitBreakerOptionFunc {
 	return func(opts *CircuitBreakerOptions) error {
 		opts.ResetTimeout = timeout
+		return nil
+	}
+}
+
+func Timeout(timeout time.Duration) CircuitBreakerOptionFunc {
+	return func(opts *CircuitBreakerOptions) error {
+		opts.Timeout = timeout
 		return nil
 	}
 }
