@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -417,8 +418,12 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 }
 
 func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {
+	tryCount := math.MaxInt32
+	if m.failoverConfig.Enabled {
+		tryCount = m.failoverConfig.TryCount
+	}
 	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(m.failoverConfig.TryCount),
+		cb.MaxRetries(tryCount),
 		cb.Timeout(time.Duration(cs.Timeout)),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(makeRetryPolicy(m.randGen, &cs.Retry)),

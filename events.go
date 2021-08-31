@@ -116,6 +116,8 @@ func (s LifecycleState) String() string {
 		return "client connected"
 	case LifecycleStateDisconnected:
 		return "client disconnected"
+	case LifecycleStateChangedCluster:
+		return "changed cluster"
 	default:
 		return "UNKNOWN"
 	}
