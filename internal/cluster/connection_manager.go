@@ -114,18 +114,18 @@ func tryConnectAddress(
 
 type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
-	ClusterService       *Service
+	RequestCh            chan<- invocation.Invocation
 	ResponseCh           chan<- *proto.ClientMessage
 	PartitionService     *PartitionService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
-	RequestCh            chan<- invocation.Invocation
+	ClusterService       *Service
 	SerializationService *iserialization.Service
 	EventDispatcher      *event.DispatchService
 	FailoverService      *FailoverService
+	FailoverConfig       *pubcluster.FailoverConfig
 	ClientName           string
 	Labels               []string
-	FailoverConfig       *pubcluster.FailoverConfig
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
@@ -169,7 +169,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 
 type ConnectionManager struct {
 	logger               ilogger.Logger
-	clusterIDMu          *sync.Mutex
+	failoverConfig       *pubcluster.FailoverConfig
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
 	eventDispatcher      *event.DispatchService
@@ -180,18 +180,18 @@ type ConnectionManager struct {
 	connMap              *connectionMap
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
-	failoverService      *FailoverService
-	clusterID            *types.UUID // protected by clusterIDMu
+	clusterIDMu          *sync.Mutex
+	clusterID            *types.UUID
 	requestCh            chan<- invocation.Invocation
-	prevClusterID        *types.UUID // protected by clusterIDMu
+	prevClusterID        *types.UUID
+	failoverService      *FailoverService
+	randGen              *rand.Rand
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
 	nextConnID           int64
 	state                int32
 	smartRouting         bool
-	failoverConfig       *pubcluster.FailoverConfig
-	randGen              *rand.Rand
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {

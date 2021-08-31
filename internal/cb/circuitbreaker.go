@@ -34,15 +34,14 @@ type EventHandler func(state int32)
 type RetryPolicyFunc func(currentTry int) time.Duration
 
 type CircuitBreaker struct {
+	Deadline            time.Time
 	RetryPolicyFunc     RetryPolicyFunc
 	StateChangeHandler  EventHandler
 	MaxRetries          int
 	ResetTimeout        time.Duration
-	Deadline            time.Time
 	MaxFailureCount     int32
 	CurrentFailureCount int32
 	State               int32
-	// TODO: add a setting for failure window
 }
 
 func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {

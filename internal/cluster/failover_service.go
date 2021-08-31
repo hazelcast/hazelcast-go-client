@@ -36,8 +36,8 @@ type CandidateCluster struct {
 	AddressProvider    AddressProvider
 	AddressTranslator  AddressTranslator
 	Credentials        security.Credentials
-	ClusterName        string
 	ConnectionStrategy *pubcluster.ConnectionStrategyConfig
+	ClusterName        string
 }
 
 type addrFun func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator)
