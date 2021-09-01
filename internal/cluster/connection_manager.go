@@ -390,37 +390,30 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.Address, error) {
-	current := m.failoverService.Current()
-	m.logger.Trace(func() string {
-		return fmt.Sprintf("ConnectionManager: trying to connect to cluster: %s", current.ClusterName)
-	})
-	// try the current cluster
-	addr, err := m.tryConnectCandidateCluster(ctx, current, current.ConnectionStrategy)
-	if err == nil {
-		return addr, nil
-	}
+	tryCount := math.MaxInt64
 	if m.failoverConfig.Enabled {
-		// try all of the next alternative clusters
-		addr, ok := m.failoverService.TryNextCluster(func(next *CandidateCluster) (pubcluster.Address, bool) {
-			m.logger.Infof("trying to connect to next cluster: %s", next.ClusterName)
-			if addr, err := m.tryConnectCandidateCluster(ctx, next, next.ConnectionStrategy); err == nil {
-				m.logger.Infof("successfully connected to cluster: %s", next.ClusterName)
-				return addr, true
-			}
-			return "", false
-		})
-		if ok {
+		tryCount = m.failoverConfig.TryCount
+	}
+	var nonRetryableErr cb.NonRetryableError
+	for i := 1; i <= tryCount; i++ {
+		next := m.failoverService.Next()
+		m.logger.Infof("trying to connect to cluster: %s", next.ClusterName)
+		addr, err := m.tryConnectCandidateCluster(ctx, next, next.ConnectionStrategy)
+		if err == nil {
+			m.logger.Infof("connected to cluster: %s", m.failoverService.Current().ClusterName)
 			return addr, nil
 		}
+		if nonRetryableErr.Is(err) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+			break
+		}
 	}
-	// notify if no successful cluster connection was established
 	return "", fmt.Errorf("cannot connect to any cluster: %w", hzerrors.ErrIllegalState)
 }
 
 func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {
 	tryCount := math.MaxInt32
 	if m.failoverConfig.Enabled {
-		tryCount = m.failoverConfig.TryCount
+		tryCount = 1
 	}
 	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(tryCount),
@@ -432,7 +425,7 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 		addr, err := m.connectCluster(ctx, cluster)
 		if err != nil {
 			m.logger.Debug(func() string {
-				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt, err.Error())
+				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt+1, err.Error())
 			})
 		}
 		return addr, err

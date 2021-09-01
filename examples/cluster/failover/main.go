@@ -54,12 +54,12 @@ func updateFailover(fo *cluster.FailoverConfig) {
 	cluster2.Network.SetAddresses("localhost:5702")
 	cluster2.ConnectionStrategy.Timeout = types.Duration(15 * time.Second)
 	fo.Enabled = true
-	fo.TryCount = 3
+	fo.TryCount = 100
 	fo.SetConfigs(cluster1, cluster2)
 }
 
 func getClient(ctx context.Context) *hazelcast.Client {
-	config := hazelcast.NewConfig()
+	config := hazelcast.Config{}
 	config.Logger.Level = loggingLevel
 	updateFailover(&config.Failover)
 	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
@@ -70,7 +70,8 @@ func getClient(ctx context.Context) *hazelcast.Client {
 }
 
 func main() {
-	ctx := context.TODO()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	client := getClient(ctx)
 	m, err := client.GetMap(ctx, "sample-map")
 	if err != nil {
