@@ -26,7 +26,6 @@ import (
 
 // FailoverService is responsible for cluster failover state and attempts management.
 type FailoverService struct {
-	clientRunningFn   func() bool
 	candidateClusters []CandidateCluster
 	maxTryCount       int
 	index             uint64
@@ -42,7 +41,7 @@ type CandidateCluster struct {
 
 type addrFun func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator)
 
-func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun, clientRunningFn func() bool) *FailoverService {
+func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun) *FailoverService {
 	candidates := []CandidateCluster{}
 	configs := []pubcluster.Config{}
 	if len(foConfigs) > 0 {
@@ -63,7 +62,6 @@ func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubclust
 	}
 
 	return &FailoverService{
-		clientRunningFn:   clientRunningFn,
 		maxTryCount:       maxTries,
 		candidateClusters: candidates,
 	}

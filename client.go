@@ -428,11 +428,7 @@ func (c *Client) createComponents(config *Config) {
 		failoverConfigs = config.Failover.Configs
 	}
 	failoverService := icluster.NewFailoverService(c.logger,
-		maxTryCount, config.Cluster, failoverConfigs, addrProviderTranslator,
-		func() bool {
-			state := atomic.LoadInt32(&c.state)
-			return state != stopping && state != stopped
-		})
+		maxTryCount, config.Cluster, failoverConfigs, addrProviderTranslator)
 	clusterService := icluster.NewService(icluster.CreationBundle{
 		RequestCh:         urgentRequestCh,
 		InvocationFactory: invocationFactory,
