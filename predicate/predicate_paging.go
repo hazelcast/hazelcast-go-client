@@ -11,12 +11,12 @@ import (
 )
 
 type predPaging struct {
-	internalPredicate Predicate
 	comparator        serialization.IdentifiedDataSerializable
+	internalPredicate Predicate
 	iterationType     IterationType
+	anchorList        []types.Entry
 	pageSize          int32
 	page              int32
-	anchorList        []types.Entry
 }
 
 func Paging(pageSize int32) *predPaging {

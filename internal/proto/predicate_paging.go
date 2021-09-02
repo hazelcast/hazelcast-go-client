@@ -5,13 +5,13 @@ import (
 )
 
 type PagingPredicateHolder struct {
-	AnchorDataListHolder AnchorDataListHolder
+	PartitionKeyData     *serialization.Data
 	PredicateData        *serialization.Data
 	ComparatorData       *serialization.Data
+	AnchorDataListHolder AnchorDataListHolder
 	PageSize             int32
 	Page                 int32
 	IterationTypeId      byte
-	PartitionKeyData     *serialization.Data
 }
 
 func NewPagingPredicateHolder(
