@@ -19,6 +19,7 @@ package cb
 import "errors"
 
 var ErrCircuitOpen = errors.New("circuit open")
+var ErrDeadlineExceeded = errors.New("deadline exceeded")
 
 type NonRetryableError struct {
 	Err error

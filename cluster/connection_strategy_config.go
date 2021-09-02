@@ -63,6 +63,7 @@ type ConnectionStrategyConfig struct {
 	// Retry contains the backoff configuration.
 	Retry ConnectionRetryConfig
 	// Timeout is the maximum time before giving up reconnecting to a cluster.
+	// Default is 0, infinite duration when failover is not enabled and 120 seconds when it is enabled.
 	Timeout types.Duration `json:",omitempty"`
 	// ReconnectMode enables or disables reconnecting to a cluster.
 	ReconnectMode ReconnectMode `json:",omitempty"`
@@ -73,7 +74,8 @@ func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {
 }
 
 func (c *ConnectionStrategyConfig) Validate() error {
-	if err := validate.NonNegativeDuration(&c.Timeout, 1<<63-1, "invalid timeout"); err != nil {
+	// we set the default to 0 in order to be able to override it in failover and cluster configs
+	if err := validate.NonNegativeDuration(&c.Timeout, 0, "invalid timeout"); err != nil {
 		return err
 	}
 	return c.Retry.Validate()

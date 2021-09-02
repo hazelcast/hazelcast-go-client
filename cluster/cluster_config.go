@@ -19,6 +19,7 @@ package cluster
 import (
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -73,13 +74,16 @@ func (c *Config) Validate() error {
 	if c.Name == "" {
 		c.Name = defaultName
 	}
-	if err := validate.NonNegativeDuration(&c.HeartbeatInterval, 5*time.Second, "invalid heartbeat interval"); err != nil {
+	err := validate.NonNegativeDuration(&c.HeartbeatInterval, 5*time.Second, "invalid heartbeat interval")
+	if err != nil {
 		return err
 	}
-	if err := validate.NonNegativeDuration(&c.HeartbeatTimeout, 60*time.Second, "invalid heartbeat timeout"); err != nil {
+	err = validate.NonNegativeDuration(&c.HeartbeatTimeout, 60*time.Second, "invalid heartbeat timeout")
+	if err != nil {
 		return err
 	}
-	if err := validate.NonNegativeDuration(&c.InvocationTimeout, 120*time.Second, "invalid heartbeat timeout"); err != nil {
+	err = validate.NonNegativeDuration(&c.InvocationTimeout, 120*time.Second, "invalid heartbeat timeout")
+	if err != nil {
 		return err
 	}
 	if c.loadBalancer == nil {
@@ -99,6 +103,10 @@ func (c *Config) Validate() error {
 	}
 	if err := c.ConnectionStrategy.Validate(); err != nil {
 		return err
+	}
+	if c.ConnectionStrategy.Timeout == 0 {
+		// infinity
+		c.ConnectionStrategy.Timeout = types.Duration(internal.DefaultConnectionTimeoutWithoutFailover)
 	}
 	return nil
 }

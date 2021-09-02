@@ -24,45 +24,46 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 )
 
-// Responsible for cluster failover state and attempts management.
+// FailoverService is responsible for cluster failover state and attempts management.
 type FailoverService struct {
-	isClientRunningFn func() bool
 	candidateClusters []CandidateCluster
 	maxTryCount       int
 	index             uint64
 }
 
 type CandidateCluster struct {
-	AddressProvider   AddressProvider
-	AddressTranslator AddressTranslator
-	Credentials       security.Credentials
-	ClusterName       string
+	AddressProvider    AddressProvider
+	AddressTranslator  AddressTranslator
+	Credentials        security.Credentials
+	ConnectionStrategy *pubcluster.ConnectionStrategyConfig
+	ClusterName        string
 }
 
-func NewFailoverService(
-	logger ilogger.Logger,
-	maxTryCount int,
-	rootConfig pubcluster.Config,
-	failoverConfigs []pubcluster.Config,
-	addrProviderTranslatorFn func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator),
-	isClientRunningFn func() bool) *FailoverService {
+type addrFun func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator)
 
-	candidateClusters := []CandidateCluster{}
-	configs := []pubcluster.Config{rootConfig}
-	configs = append(configs, failoverConfigs...)
+func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun) *FailoverService {
+	candidates := []CandidateCluster{}
+	configs := []pubcluster.Config{}
+	if len(foConfigs) > 0 {
+		configs = foConfigs
+	} else {
+		configs = append(configs, rootConfig)
+	}
 	for _, c := range configs {
-		ctx := CandidateCluster{
-			ClusterName: c.Name,
-			Credentials: makeCredentials(&c.Security),
+		// copy c to a local variable in order to be able to take its address below
+		cv := c
+		cc := CandidateCluster{
+			ClusterName:        c.Name,
+			Credentials:        makeCredentials(&c.Security),
+			ConnectionStrategy: &cv.ConnectionStrategy,
 		}
-		ctx.AddressProvider, ctx.AddressTranslator = addrProviderTranslatorFn(&c, logger)
-		candidateClusters = append(candidateClusters, ctx)
+		cc.AddressProvider, cc.AddressTranslator = addrFn(&c, logger)
+		candidates = append(candidates, cc)
 	}
 
 	return &FailoverService{
-		isClientRunningFn: isClientRunningFn,
-		maxTryCount:       maxTryCount,
-		candidateClusters: candidateClusters,
+		maxTryCount:       maxTries,
+		candidateClusters: candidates,
 	}
 }
 
@@ -70,25 +71,11 @@ func makeCredentials(config *pubcluster.SecurityConfig) *security.UsernamePasswo
 	return security.NewUsernamePasswordCredentials(config.Credentials.Username, config.Credentials.Password)
 }
 
-func (s *FailoverService) TryNextCluster(fn func(next *CandidateCluster) (pubcluster.Address, bool)) (pubcluster.Address, bool) {
-	tryCount := 0
-	for s.isClientRunningFn() && tryCount < s.maxTryCount {
-		for i := 0; i < len(s.candidateClusters); i++ {
-			if addr, connected := fn(s.Next()); connected {
-				return addr, true
-			}
-		}
-		tryCount++
-	}
-	return "", false
-}
-
 func (s *FailoverService) Current() *CandidateCluster {
 	idx := atomic.LoadUint64(&s.index)
 	return &s.candidateClusters[idx%uint64(len(s.candidateClusters))]
 }
 
-func (s *FailoverService) Next() *CandidateCluster {
-	idx := atomic.AddUint64(&s.index, 1)
-	return &s.candidateClusters[idx%uint64(len(s.candidateClusters))]
+func (s *FailoverService) Next() {
+	atomic.AddUint64(&s.index, 1)
 }

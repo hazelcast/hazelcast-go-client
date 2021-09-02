@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -90,10 +91,10 @@ type Client struct {
 }
 
 func newClient(config Config) (*Client, error) {
+	config = config.Clone()
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
-	config = config.Clone()
 	id := atomic.AddInt32(&nextId, 1)
 	name := ""
 	if config.ClientName != "" {
@@ -421,17 +422,13 @@ func (c *Client) createComponents(config *Config) {
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
 	var failoverConfigs []cluster.Config
-	maxTryCount := 0
+	maxTryCount := math.MaxInt64
 	if config.Failover.Enabled {
 		maxTryCount = config.Failover.TryCount
 		failoverConfigs = config.Failover.Configs
 	}
 	failoverService := icluster.NewFailoverService(c.logger,
-		maxTryCount, config.Cluster, failoverConfigs, addrProviderTranslator,
-		func() bool {
-			state := atomic.LoadInt32(&c.state)
-			return state != stopping && state != stopped
-		})
+		maxTryCount, config.Cluster, failoverConfigs, addrProviderTranslator)
 	clusterService := icluster.NewService(icluster.CreationBundle{
 		RequestCh:         urgentRequestCh,
 		InvocationFactory: invocationFactory,
@@ -453,7 +450,7 @@ func (c *Client) createComponents(config *Config) {
 		ClusterConfig:        &config.Cluster,
 		ClientName:           c.name,
 		FailoverService:      failoverService,
-		FailoverEnabled:      config.Failover.Enabled,
+		FailoverConfig:       &config.Failover,
 		Labels:               config.Labels,
 	})
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{

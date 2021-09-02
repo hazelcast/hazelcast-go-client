@@ -34,6 +34,7 @@ type EventHandler func(state int32)
 type RetryPolicyFunc func(currentTry int) time.Duration
 
 type CircuitBreaker struct {
+	Deadline            time.Time
 	RetryPolicyFunc     RetryPolicyFunc
 	StateChangeHandler  EventHandler
 	MaxRetries          int
@@ -41,7 +42,6 @@ type CircuitBreaker struct {
 	MaxFailureCount     int32
 	CurrentFailureCount int32
 	State               int32
-	// TODO: add a setting for failure window
 }
 
 func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
@@ -59,6 +59,7 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 		MaxRetries:         opts.MaxRetries,
 		MaxFailureCount:    opts.MaxFailureCount,
 		ResetTimeout:       opts.ResetTimeout,
+		Deadline:           MakeDeadline(opts.Timeout),
 		RetryPolicyFunc:    retryPolicyFunc,
 		StateChangeHandler: opts.StateChangeHandler,
 		State:              StateClosed,
@@ -103,6 +104,10 @@ loop:
 			err = ctx.Err()
 			break loop
 		default:
+			if time.Now().After(cb.Deadline) {
+				err = ErrDeadlineExceeded
+				break loop
+			}
 			result, err = tryHandler(ctx, attempt)
 			if err == nil || contextErr(err) {
 				break loop
@@ -128,7 +133,7 @@ func (cb *CircuitBreaker) notifyFailed() {
 		if cb.ResetTimeout > 0 {
 			cb.openCircuit()
 		} else {
-			cb.resetTimeout()
+			cb.reset()
 		}
 	}
 }
@@ -151,16 +156,27 @@ func (cb *CircuitBreaker) closeCircuit() {
 	if !atomic.CompareAndSwapInt32(&cb.State, StateOpen, StateClosed) {
 		return
 	}
-	cb.resetTimeout()
+	cb.reset()
 	if cb.StateChangeHandler != nil {
 		cb.StateChangeHandler(StateClosed)
 	}
 }
 
-func (cb *CircuitBreaker) resetTimeout() {
+func (cb *CircuitBreaker) reset() {
 	atomic.StoreInt32(&cb.CurrentFailureCount, 0)
 }
 
 func contextErr(err error) bool {
 	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+}
+
+func MakeDeadline(timeout time.Duration) time.Time {
+	// limit timeout so it doesn't overflow the deadline
+	now := time.Now()
+	maxTime := time.Unix(1<<63-62135596801, 999999999)
+	maxTimeout := maxTime.Sub(now)
+	if maxTimeout <= timeout {
+		return maxTime
+	}
+	return now.Add(timeout)
 }

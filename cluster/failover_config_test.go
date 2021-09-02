@@ -18,11 +18,14 @@ package cluster_test
 
 import (
 	"errors"
+	"log"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -90,6 +93,25 @@ func TestFailoverConfigValidate_ConfigsWithUnallowedDifferences(t *testing.T) {
 	if !errors.Is(c.Validate(rootConfig), hzerrors.ErrIllegalArgument) {
 		t.Fatalf("should fail as ErrIllegalArgument")
 	}
+}
+
+func TestFailoverConfig_Validate_DefaultClusterTimeout(t *testing.T) {
+	// if cluster timeout was not specified, it should be set to the default
+	config1 := cluster.Config{}
+	config2 := cluster.Config{}
+	config2.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+	foConfig := cluster.FailoverConfig{}
+	foConfig.SetConfigs(config1, config2)
+	foConfig.Enabled = true
+	rootConfig := cluster.Config{}
+	if err := rootConfig.Validate(); err != nil {
+		log.Fatal(err)
+	}
+	if err := foConfig.Validate(rootConfig); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, types.Duration(120*time.Second), foConfig.Configs[0].ConnectionStrategy.Timeout)
+	assert.Equal(t, types.Duration(5*time.Second), foConfig.Configs[1].ConnectionStrategy.Timeout)
 }
 
 func emptyClusterConfig() cluster.Config {

@@ -23,13 +23,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultConfig(t *testing.T) {
@@ -375,7 +375,7 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, "", c.Cluster.Cloud.Token)
 
 	assert.Equal(t, cluster.ReconnectModeOn, c.Cluster.ConnectionStrategy.ReconnectMode)
-	assert.Equal(t, types.Duration(9223372036854775807), c.Cluster.ConnectionStrategy.Timeout)
+	assert.Equal(t, types.Duration(internal.DefaultConnectionTimeoutWithoutFailover), c.Cluster.ConnectionStrategy.Timeout)
 	cr := &c.Cluster.ConnectionStrategy.Retry
 	assert.Equal(t, types.Duration(1*time.Second), cr.InitialBackoff)
 	assert.Equal(t, types.Duration(30*time.Second), cr.MaxBackoff)
@@ -390,6 +390,7 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 
 	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
 
+	assert.Equal(t, false, c.Failover.Enabled)
 }
 
 func assertStringEquivalent(t *testing.T, s1, s2 string) {
