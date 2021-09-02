@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package proxy
+package proto
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -36,7 +35,7 @@ func NewVectorClock() VectorClock {
 	return map[types.UUID]int64{}
 }
 
-func NewVectorClockFromPairs(pairs []proto.Pair) VectorClock {
+func NewVectorClockFromPairs(pairs []Pair) VectorClock {
 	vc := map[types.UUID]int64{}
 	for _, p := range pairs {
 		vc[p.Key().(types.UUID)] = p.Value().(int64)
@@ -48,10 +47,10 @@ func (vc VectorClock) SetReplicaTimestamp(id types.UUID, ts int64) {
 	vc[id] = ts
 }
 
-func (vc VectorClock) EntrySet() []proto.Pair {
-	entries := make([]proto.Pair, 0, len(vc))
+func (vc VectorClock) EntrySet() []Pair {
+	entries := make([]Pair, 0, len(vc))
 	for id, ts := range vc {
-		entries = append(entries, proto.NewPair(id, ts))
+		entries = append(entries, NewPair(id, ts))
 	}
 	return entries
 }

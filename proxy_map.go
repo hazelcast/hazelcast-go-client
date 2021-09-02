@@ -378,15 +378,30 @@ func (m *Map) GetEntrySet(ctx context.Context) ([]types.Entry, error) {
 }
 
 // GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
-func (m *Map) GetEntrySetWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]types.Entry, error) {
-	if predData, err := m.validateAndSerialize(predicate); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapEntriesWithPredicateRequest(m.name, predData)
-		if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (m *Map) GetEntrySetWithPredicate(ctx context.Context, pred predicate.Predicate) ([]types.Entry, error) {
+	if predicate.IsPagingPredicate(pred) {
+		if predicateData, err := predicate.SerializePagingPredicate(pred, predicate.VALUE, m.convertToData); err != nil {
 			return nil, err
 		} else {
-			return m.convertPairsToEntries(codec.DecodeMapEntriesWithPredicateResponse(response))
+			request := codec.EncodeMapEntriesWithPagingPredicateRequest(m.name, predicateData)
+			if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+				return nil, err
+			} else {
+				res, updatedAnchorList := codec.DecodeMapEntriesWithPagingPredicateResponse(response)
+				predicate.UpdateAnchorList(pred, updatedAnchorList, m.convertToObject)
+				return m.convertPairsToEntries(res)
+			}
+		}
+	} else {
+		if predData, err := m.validateAndSerialize(pred); err != nil {
+			return nil, err
+		} else {
+			request := codec.EncodeMapEntriesWithPredicateRequest(m.name, predData)
+			if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+				return nil, err
+			} else {
+				return m.convertPairsToEntries(codec.DecodeMapEntriesWithPredicateResponse(response))
+			}
 		}
 	}
 }
@@ -453,15 +468,30 @@ func (m *Map) GetKeySet(ctx context.Context) ([]interface{}, error) {
 }
 
 // GetKeySetWithPredicate returns keys contained in this map
-func (m *Map) GetKeySetWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]interface{}, error) {
-	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapKeySetWithPredicateRequest(m.name, predicateData)
-		if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (m *Map) GetKeySetWithPredicate(ctx context.Context, pred predicate.Predicate) ([]interface{}, error) {
+	if predicate.IsPagingPredicate(pred) {
+		if predicateData, err := predicate.SerializePagingPredicate(pred, predicate.VALUE, m.convertToData); err != nil {
 			return nil, err
 		} else {
-			return m.convertToObjects(codec.DecodeMapKeySetWithPredicateResponse(response))
+			request := codec.EncodeMapKeySetWithPagingPredicateRequest(m.name, predicateData)
+			if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+				return nil, err
+			} else {
+				res, updatedAnchorList := codec.DecodeMapKeySetWithPagingPredicateResponse(response)
+				predicate.UpdateAnchorList(pred, updatedAnchorList, m.convertToObject)
+				return m.convertToObjects(res)
+			}
+		}
+	} else {
+		if predicateData, err := m.validateAndSerializePredicate(pred); err != nil {
+			return nil, err
+		} else {
+			request := codec.EncodeMapKeySetWithPredicateRequest(m.name, predicateData)
+			if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+				return nil, err
+			} else {
+				return m.convertToObjects(codec.DecodeMapKeySetWithPredicateResponse(response))
+			}
 		}
 	}
 }
@@ -477,15 +507,30 @@ func (m *Map) GetValues(ctx context.Context) ([]interface{}, error) {
 }
 
 // GetValuesWithPredicate returns a list clone of the values contained in this map
-func (m *Map) GetValuesWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]interface{}, error) {
-	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapValuesWithPredicateRequest(m.name, predicateData)
-		if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (m *Map) GetValuesWithPredicate(ctx context.Context, pred predicate.Predicate) ([]interface{}, error) {
+	if predicate.IsPagingPredicate(pred) {
+		if predicateData, err := predicate.SerializePagingPredicate(pred, predicate.VALUE, m.convertToData); err != nil {
 			return nil, err
 		} else {
-			return m.convertToObjects(codec.DecodeMapValuesWithPredicateResponse(response))
+			request := codec.EncodeMapValuesWithPagingPredicateRequest(m.name, predicateData)
+			if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+				return nil, err
+			} else {
+				res, updatedAnchorList := codec.DecodeMapValuesWithPagingPredicateResponse(response)
+				predicate.UpdateAnchorList(pred, updatedAnchorList, m.convertToObject)
+				return m.convertToObjects(res)
+			}
+		}
+	} else {
+		if predicateData, err := m.validateAndSerializePredicate(pred); err != nil {
+			return nil, err
+		} else {
+			request := codec.EncodeMapValuesWithPredicateRequest(m.name, predicateData)
+			if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
+				return nil, err
+			} else {
+				return m.convertToObjects(codec.DecodeMapValuesWithPredicateResponse(response))
+			}
 		}
 	}
 }

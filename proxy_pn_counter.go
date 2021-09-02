@@ -26,7 +26,6 @@ import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -56,7 +55,7 @@ For details see https://docs.hazelcast.com/imdg/latest/data-structures/pn-counte
 */
 type PNCounter struct {
 	*proxy
-	clock  iproxy.VectorClock
+	clock  proto.VectorClock
 	target *cluster.MemberInfo
 	mu     *sync.Mutex
 }
@@ -64,7 +63,7 @@ type PNCounter struct {
 func newPNCounter(p *proxy) *PNCounter {
 	return &PNCounter{
 		proxy: p,
-		clock: iproxy.NewVectorClock(),
+		clock: proto.NewVectorClock(),
 		mu:    &sync.Mutex{},
 	}
 }
@@ -88,7 +87,7 @@ func (pn *PNCounter) Get(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	value, timestamps, _ := codec.DecodePNCounterGetResponse(resp)
-	pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
+	pn.updateClock(proto.NewVectorClockFromPairs(timestamps))
 	return value, nil
 }
 
@@ -120,7 +119,7 @@ func (pn *PNCounter) IncrementAndGet(ctx context.Context) (int64, error) {
 // Reset resets the observed state by this PN counter.
 func (pn *PNCounter) Reset() {
 	pn.mu.Lock()
-	pn.clock = iproxy.NewVectorClock()
+	pn.clock = proto.NewVectorClock()
 	pn.mu.Unlock()
 }
 
@@ -148,7 +147,7 @@ func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) 
 	return target, entries, nil
 }
 
-func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
+func (pn *PNCounter) updateClock(clock proto.VectorClock) {
 	pn.mu.Lock()
 	defer pn.mu.Unlock()
 	// TODO: implement this properly
@@ -166,7 +165,7 @@ func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool)
 		return 0, err
 	}
 	value, timestamps, _ := codec.DecodePNCounterAddResponse(resp)
-	pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
+	pn.updateClock(proto.NewVectorClockFromPairs(timestamps))
 	return value, nil
 }
 

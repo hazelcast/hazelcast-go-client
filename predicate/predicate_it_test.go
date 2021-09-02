@@ -190,7 +190,20 @@ func TestPredicate_True(t *testing.T) {
 		serialization.JSON(`{"a": 15, "b": "value2", "c": false}`),
 	}
 	check(t, pred, target)
+}
 
+func TestPredicate_ValuesPaging(t *testing.T) {
+	pred := predicate.Paging(3)
+	target := []interface{}{int64(1), int64(2), int64(3)}
+	checkPagingPredicate(t, pred, target)
+
+	pred.NextPage()
+	target = []interface{}{int64(4), int64(5), int64(6)}
+	checkPagingPredicate(t, pred, target)
+
+	pred.PrevPage()
+	target = []interface{}{int64(1), int64(2), int64(3)}
+	checkPagingPredicate(t, pred, target)
 }
 
 func check(t *testing.T, pred predicate.Predicate, target []interface{}) {
@@ -212,6 +225,31 @@ func createFixture(m *hz.Map) {
 		serialization.JSON(`{"a": 10, "b": "value1", "c": true}`),
 		serialization.JSON(`{"a": 15, "b": "value2", "c": false}`),
 	}
+	for i, v := range values {
+		it.Must(m.Set(context.Background(), fmt.Sprintf("k%d", i), v))
+	}
+	if it.MustValue(m.Size(context.Background())) != len(values) {
+		panic(fmt.Sprintf("expected %d values", len(values)))
+	}
+}
+
+// The paging predicate needs a separate check and fixture since the paging predicate
+// does not support JSON.
+func checkPagingPredicate(t *testing.T, pred predicate.Predicate, target []interface{}) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		createPagingPredicateFixture(m)
+		values := it.MustValue(m.GetValuesWithPredicate(context.Background(), pred))
+		if !assert.Subset(t, target, values) {
+			t.FailNow()
+		}
+		if !assert.Subset(t, values, target) {
+			t.FailNow()
+		}
+	})
+}
+
+func createPagingPredicateFixture(m *hz.Map) {
+	values := []interface{}{1, 2, 3, 4, 5, 6, 7, 8}
 	for i, v := range values {
 		it.Must(m.Set(context.Background(), fmt.Sprintf("k%d", i), v))
 	}
