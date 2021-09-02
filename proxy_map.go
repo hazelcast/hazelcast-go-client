@@ -380,7 +380,7 @@ func (m *Map) GetEntrySet(ctx context.Context) ([]types.Entry, error) {
 // GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
 func (m *Map) GetEntrySetWithPredicate(ctx context.Context, pred predicate.Predicate) ([]types.Entry, error) {
 	if predicate.IsPagingPredicate(pred) {
-		if predicateData, err := predicate.SerializePagingPredicate(pred, predicate.VALUE, m.convertToData); err != nil {
+		if predicateData, err := predicate.SerializePagingPredicate(pred, predicate.ENTRY, m.convertToData); err != nil {
 			return nil, err
 		} else {
 			request := codec.EncodeMapEntriesWithPagingPredicateRequest(m.name, predicateData)
@@ -470,7 +470,7 @@ func (m *Map) GetKeySet(ctx context.Context) ([]interface{}, error) {
 // GetKeySetWithPredicate returns keys contained in this map
 func (m *Map) GetKeySetWithPredicate(ctx context.Context, pred predicate.Predicate) ([]interface{}, error) {
 	if predicate.IsPagingPredicate(pred) {
-		if predicateData, err := predicate.SerializePagingPredicate(pred, predicate.VALUE, m.convertToData); err != nil {
+		if predicateData, err := predicate.SerializePagingPredicate(pred, predicate.KEY, m.convertToData); err != nil {
 			return nil, err
 		} else {
 			request := codec.EncodeMapKeySetWithPagingPredicateRequest(m.name, predicateData)
