@@ -22,6 +22,8 @@ import (
 	"time"
 )
 
+const maxDuration int64 = 1<<63 - 1
+
 type CircuitBreakerOptions struct {
 	RetryPolicyFunc    RetryPolicyFunc
 	StateChangeHandler EventHandler
@@ -48,7 +50,7 @@ func DefaultCircuitBreakerOptions() *CircuitBreakerOptions {
 		MaxRetries:      0,
 		MaxFailureCount: 0,
 		ResetTimeout:    0,
-		Timeout:         time.Duration(1<<63 - 1),
+		Timeout:         time.Duration(maxDuration),
 		RetryPolicyFunc: func(tries int) time.Duration {
 			return 0
 		},
