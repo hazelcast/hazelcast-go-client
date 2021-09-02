@@ -91,10 +91,10 @@ type Client struct {
 }
 
 func newClient(config Config) (*Client, error) {
+	config = config.Clone()
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
-	config = config.Clone()
 	id := atomic.AddInt32(&nextId, 1)
 	name := ""
 	if config.ClientName != "" {

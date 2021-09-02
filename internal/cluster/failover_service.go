@@ -73,17 +73,11 @@ func makeCredentials(config *pubcluster.SecurityConfig) *security.UsernamePasswo
 	return security.NewUsernamePasswordCredentials(config.Credentials.Username, config.Credentials.Password)
 }
 
-func (s *FailoverService) TryNextCluster(fn func(next *CandidateCluster) (pubcluster.Address, error)) (pubcluster.Address, error) {
-	return fn(s.Next())
-}
-
 func (s *FailoverService) Current() *CandidateCluster {
 	idx := atomic.LoadUint64(&s.index)
 	return &s.candidateClusters[idx%uint64(len(s.candidateClusters))]
 }
 
-func (s *FailoverService) Next() *CandidateCluster {
-	// get and increment
-	idx := atomic.AddUint64(&s.index, 1) - 1
-	return &s.candidateClusters[idx%uint64(len(s.candidateClusters))]
+func (s *FailoverService) Next() {
+	atomic.AddUint64(&s.index, 1)
 }

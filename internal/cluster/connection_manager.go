@@ -396,9 +396,9 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	}
 	var nonRetryableErr cb.NonRetryableError
 	for i := 1; i <= tryCount; i++ {
-		next := m.failoverService.Next()
-		m.logger.Infof("trying to connect to cluster: %s", next.ClusterName)
-		addr, err := m.tryConnectCandidateCluster(ctx, next, next.ConnectionStrategy)
+		cluster := m.failoverService.Current()
+		m.logger.Infof("trying to connect to cluster: %s", cluster.ClusterName)
+		addr, err := m.tryConnectCandidateCluster(ctx, cluster, cluster.ConnectionStrategy)
 		if err == nil {
 			m.logger.Infof("connected to cluster: %s", m.failoverService.Current().ClusterName)
 			return addr, nil
@@ -406,6 +406,7 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 		if nonRetryableErr.Is(err) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 			break
 		}
+		m.failoverService.Next()
 	}
 	return "", fmt.Errorf("cannot connect to any cluster: %w", hzerrors.ErrIllegalState)
 }
@@ -496,11 +497,12 @@ func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Co
 }
 
 func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) error {
-	m.logger.Trace(func() string {
-		return fmt.Sprintf("authenticate: local: %s; remote: %s; addr: %s",
-			conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.Endpoint())
+	cluster := m.failoverService.Current()
+	m.logger.Debug(func() string {
+		return fmt.Sprintf("authenticate: cluster name: %s; local: %s; remote: %s; addr: %s",
+			cluster.ClusterName, conn.socket.LocalAddr(), conn.socket.RemoteAddr(), conn.Endpoint())
 	})
-	credentials := m.failoverService.Current().Credentials
+	credentials := cluster.Credentials
 	credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
