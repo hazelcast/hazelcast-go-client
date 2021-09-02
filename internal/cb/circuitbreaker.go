@@ -59,7 +59,7 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 		MaxRetries:         opts.MaxRetries,
 		MaxFailureCount:    opts.MaxFailureCount,
 		ResetTimeout:       opts.ResetTimeout,
-		Deadline:           time.Now().Add(opts.Timeout),
+		Deadline:           MakeDeadline(opts.Timeout),
 		RetryPolicyFunc:    retryPolicyFunc,
 		StateChangeHandler: opts.StateChangeHandler,
 		State:              StateClosed,
@@ -168,4 +168,15 @@ func (cb *CircuitBreaker) reset() {
 
 func contextErr(err error) bool {
 	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+}
+
+func MakeDeadline(timeout time.Duration) time.Time {
+	// limit timeout so it doesn't overflow the deadline
+	now := time.Now()
+	maxTime := time.Unix(1<<63-62135596801, 999999999)
+	maxTimeout := maxTime.Sub(now)
+	if maxTimeout <= timeout {
+		return maxTime
+	}
+	return now.Add(timeout)
 }

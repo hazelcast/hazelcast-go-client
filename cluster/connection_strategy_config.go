@@ -63,6 +63,7 @@ type ConnectionStrategyConfig struct {
 	// Retry contains the backoff configuration.
 	Retry ConnectionRetryConfig
 	// Timeout is the maximum time before giving up reconnecting to a cluster.
+	// Default is 0, infinite duration.
 	Timeout types.Duration `json:",omitempty"`
 	// ReconnectMode enables or disables reconnecting to a cluster.
 	ReconnectMode ReconnectMode `json:",omitempty"`

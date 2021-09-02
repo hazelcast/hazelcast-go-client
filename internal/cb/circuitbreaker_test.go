@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 )
 
@@ -124,4 +126,13 @@ func TestCancelFuture(t *testing.T) {
 	if atomic.LoadInt32(&funcCancelled) != 1 {
 		t.Fatalf("try handler was not cancelled")
 	}
+}
+
+func TestMakeDeadline(t *testing.T) {
+	deadline := cb.MakeDeadline(time.Duration(cb.MaxDuration))
+	assert.Equal(t, time.Unix(1<<63-62135596801, 999999999), deadline)
+
+	now := time.Now()
+	deadline = cb.MakeDeadline(100 * time.Hour)
+	assert.InDelta(t, now.Add(100*time.Hour).UnixNano(), deadline.UnixNano(), 1000)
 }

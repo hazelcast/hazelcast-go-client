@@ -221,8 +221,6 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 
 func (m *ConnectionManager) Start(ctx context.Context) error {
 	m.reset()
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(m.clusterConfig.ConnectionStrategy.Timeout))
-	defer cancel()
 	return m.start(ctx)
 }
 
@@ -390,11 +388,10 @@ func (m *ConnectionManager) removeConnection(conn *Connection) {
 }
 
 func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.Address, error) {
-	tryCount := math.MaxInt64
+	tryCount := 1
 	if m.failoverConfig.Enabled {
 		tryCount = m.failoverConfig.TryCount
 	}
-	var nonRetryableErr cb.NonRetryableError
 	for i := 1; i <= tryCount; i++ {
 		cluster := m.failoverService.Current()
 		m.logger.Infof("trying to connect to cluster: %s", cluster.ClusterName)
@@ -403,7 +400,7 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 			m.logger.Infof("connected to cluster: %s", m.failoverService.Current().ClusterName)
 			return addr, nil
 		}
-		if nonRetryableErr.Is(err) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		if nonRetryableConnectionErr(err) {
 			break
 		}
 		m.failoverService.Next()
@@ -412,12 +409,12 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 }
 
 func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {
-	tryCount := math.MaxInt32
+	retries := math.MaxInt32
 	if m.failoverConfig.Enabled {
-		tryCount = 1
+		retries = 1
 	}
 	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(tryCount),
+		cb.MaxRetries(retries),
 		cb.Timeout(time.Duration(cs.Timeout)),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(makeRetryPolicy(m.randGen, &cs.Retry)),
@@ -850,4 +847,9 @@ func (m *connectionMap) removeAddr(addr pubcluster.Address) {
 			break
 		}
 	}
+}
+
+func nonRetryableConnectionErr(err error) bool {
+	var ne cb.NonRetryableError
+	return ne.Is(err) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.Is(err, cb.ErrDeadlineExceeded)
 }
