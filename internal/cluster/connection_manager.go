@@ -315,7 +315,7 @@ func (m *ConnectionManager) reset() {
 }
 
 func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
-	m.logger.Trace(func() string { return "ConnectionManager.handleInitialMembersAdded" })
+	m.logger.Trace(func() string { return "connectionManager.handleInitialMembersAdded" })
 	m.handleMembersAdded(e)
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersAdded)
 	m.eventDispatcher.Subscribe(EventMembersRemoved, event.DefaultSubscriptionID, m.handleMembersRemoved)
@@ -324,12 +324,14 @@ func (m *ConnectionManager) handleInitialMembersAdded(e event.Event) {
 }
 
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
-	m.logger.Trace(func() string { return "ConnectionManager.handleMembersAdded" })
 	// do not add new members in non-smart mode
 	if !m.smartRouting && m.connMap.Len() > 0 {
 		return
 	}
 	if e, ok := event.(*MembersAdded); ok {
+		m.logger.Trace(func() string {
+			return fmt.Sprintf("connectionManager.handleMembersAdded: %v", e.Members)
+		})
 		missingAddrs := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
 		for _, addr := range missingAddrs {
 			if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
@@ -338,16 +340,23 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 				m.logger.Infof("connectionManager member added: %s", addr.String())
 			}
 		}
+		return
 	}
+	m.logger.Warnf("connectionManager.handleMembersAdded: expected *MembersAdded event")
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
-	if e, ok := event.(MembersRemoved); ok {
+	if e, ok := event.(*MembersRemoved); ok {
+		m.logger.Trace(func() string {
+			return fmt.Sprintf("connectionManager.handleMembersRemoved: %v", e.Members)
+		})
 		removedConns := m.connMap.FindRemovedConns(e.Members)
 		for _, conn := range removedConns {
 			m.removeConnection(conn)
 		}
+		return
 	}
+	m.logger.Warnf("connectionManager.handleMembersRemoved: expected *MembersRemoved event")
 }
 
 func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
@@ -423,7 +432,7 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 		addr, err := m.connectCluster(ctx, cluster)
 		if err != nil {
 			m.logger.Debug(func() string {
-				return fmt.Sprintf("ConnectionManager: error connecting to cluster, attempt %d: %s", attempt+1, err.Error())
+				return fmt.Sprintf("connectionManager: error connecting to cluster, attempt %d: %s", attempt+1, err.Error())
 			})
 		}
 		return addr, err
@@ -539,7 +548,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		}
 
 		m.logger.Trace(func() string {
-			return fmt.Sprintf("ConnectionManager: checking the cluster: %v, current cluster: %v", newClusterID, m.clusterID)
+			return fmt.Sprintf("connectionManager: checking the cluster: %v, current cluster: %v", newClusterID, m.clusterID)
 		})
 		m.clusterIDMu.Lock()
 		// clusterID is nil only at the start of the client,
