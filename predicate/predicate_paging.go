@@ -6,6 +6,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -131,16 +132,24 @@ func (p predPaging) String() string {
 		p.internalPredicate.String(), p.pageSize, p.page)
 }
 
-func SerializePagingPredicate(
+func ValidateAndSerializePagingPredicate(
 	pred Predicate,
 	iterationType IterationType,
 	toData func(interface{}) (*iserialization.Data, error)) (proto.PagingPredicateHolder, error) {
+
+	if nilutil.IsNil(pred) {
+		return proto.PagingPredicateHolder{}, hzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
+	}
 
 	p, ok := pred.(*predPaging)
 	if !ok {
 		return proto.PagingPredicateHolder{}, hzerrors.NewSerializationError("Non-paging predicate found unexpectedly, use IsPagingPredicate() to check for predicate", nil)
 	}
 	p.iterationType = iterationType
+
+	if IsPagingPredicate(p.internalPredicate) {
+		return proto.PagingPredicateHolder{}, hzerrors.NewIllegalArgumentError("Nested paging predicates are not supported", nil)
+	}
 
 	internalPredicateData, err := toData(p.internalPredicate)
 	if err != nil {
