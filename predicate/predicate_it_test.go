@@ -25,6 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -197,21 +198,65 @@ func TestPredicate_ValuesPaging(t *testing.T) {
 	assert.Equal(t, 0, len(pred.AnchorList()))
 
 	target := []interface{}{int64(1), int64(2), int64(3)}
-	checkPagingPredicate(t, pred, target)
+	checkPagingPredicateValues(t, pred, target)
 	assert.Equal(t, 1, len(pred.AnchorList()))
 
 	pred.NextPage()
 	target = []interface{}{int64(4), int64(5), int64(6)}
-	checkPagingPredicate(t, pred, target)
+	checkPagingPredicateValues(t, pred, target)
 	assert.Equal(t, 2, len(pred.AnchorList()))
 
 	pred.PrevPage()
 	target = []interface{}{int64(1), int64(2), int64(3)}
-	checkPagingPredicate(t, pred, target)
+	checkPagingPredicateValues(t, pred, target)
 
 	pred.SetPage(2)
 	target = []interface{}{int64(7), int64(8)}
-	checkPagingPredicate(t, pred, target)
+	checkPagingPredicateValues(t, pred, target)
+}
+
+func TestPredicate_KeySetPaging(t *testing.T) {
+	pred := predicate.Paging(3)
+	assert.Equal(t, 0, len(pred.AnchorList()))
+
+	target := []interface{}{"k0", "k1", "k2"}
+	checkPagingPredicateKeySet(t, pred, target)
+	assert.Equal(t, 1, len(pred.AnchorList()))
+
+	pred.NextPage()
+	target = []interface{}{"k3", "k4", "k5"}
+	checkPagingPredicateKeySet(t, pred, target)
+	assert.Equal(t, 2, len(pred.AnchorList()))
+
+	pred.PrevPage()
+	target = []interface{}{"k0", "k1", "k2"}
+	checkPagingPredicateKeySet(t, pred, target)
+
+	pred.SetPage(2)
+	target = []interface{}{"k6", "k7"}
+	checkPagingPredicateKeySet(t, pred, target)
+}
+
+func TestPredicate_EntrySetPaging(t *testing.T) {
+	pred := predicate.Paging(2)
+	assert.Equal(t, 0, len(pred.AnchorList()))
+
+	target := []interface{}{types.NewEntry("k0", int64(1)), types.NewEntry("k1", int64(2))}
+	checkPagingPredicateEntrySet(t, pred, target)
+	assert.Equal(t, 1, len(pred.AnchorList()))
+
+	pred.NextPage()
+	target = []interface{}{types.NewEntry("k2", int64(3)), types.NewEntry("k3", int64(4))}
+	checkPagingPredicateEntrySet(t, pred, target)
+	assert.Equal(t, 2, len(pred.AnchorList()))
+
+	pred.PrevPage()
+	target = []interface{}{types.NewEntry("k0", int64(1)), types.NewEntry("k1", int64(2))}
+	checkPagingPredicateEntrySet(t, pred, target)
+
+	pred.SetPage(2)
+	target = []interface{}{types.NewEntry("k4", int64(5)), types.NewEntry("k5", int64(6))}
+	checkPagingPredicateEntrySet(t, pred, target)
 }
 
 func check(t *testing.T, pred predicate.Predicate, target []interface{}) {
@@ -241,9 +286,7 @@ func createFixture(m *hz.Map) {
 	}
 }
 
-// The paging predicate needs a separate check and fixture since the paging predicate
-// does not support JSON.
-func checkPagingPredicate(t *testing.T, pred predicate.Predicate, target []interface{}) {
+func checkPagingPredicateValues(t *testing.T, pred predicate.Predicate, target []interface{}) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		createPagingPredicateFixture(m)
 		values := it.MustValue(m.GetValuesWithPredicate(context.Background(), pred))
@@ -256,6 +299,34 @@ func checkPagingPredicate(t *testing.T, pred predicate.Predicate, target []inter
 	})
 }
 
+func checkPagingPredicateKeySet(t *testing.T, pred predicate.Predicate, target []interface{}) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		createPagingPredicateFixture(m)
+		values := it.MustValue(m.GetKeySetWithPredicate(context.Background(), pred))
+		if !assert.Subset(t, target, values) {
+			t.FailNow()
+		}
+		if !assert.Subset(t, values, target) {
+			t.FailNow()
+		}
+	})
+}
+
+func checkPagingPredicateEntrySet(t *testing.T, pred predicate.Predicate, target []interface{}) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		createPagingPredicateFixture(m)
+		values := it.MustValue(m.GetEntrySetWithPredicate(context.Background(), pred))
+		if !assert.Subset(t, target, values) {
+			t.FailNow()
+		}
+		if !assert.Subset(t, values, target) {
+			t.FailNow()
+		}
+	})
+}
+
+// The paging predicate needs a separate fixture because the paging predicate
+// does not support JSON.
 func createPagingPredicateFixture(m *hz.Map) {
 	values := []interface{}{1, 2, 3, 4, 5, 6, 7, 8}
 	for i, v := range values {
