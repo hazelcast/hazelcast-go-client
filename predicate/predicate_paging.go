@@ -20,6 +20,7 @@ type predPaging struct {
 	page              int32
 }
 
+// Paging creates a paging predicate with a given page size.
 func Paging(pageSize int32) *predPaging {
 	return &predPaging{
 		internalPredicate: True(),
@@ -31,6 +32,7 @@ func Paging(pageSize int32) *predPaging {
 	}
 }
 
+// PagingWithPredicate creates a paging predicate with a given page size and a given inner predicate.
 func PagingWithPredicate(internalPredicate Predicate, pageSize int32) *predPaging {
 	return &predPaging{
 		internalPredicate: internalPredicate,
@@ -42,6 +44,7 @@ func PagingWithPredicate(internalPredicate Predicate, pageSize int32) *predPagin
 	}
 }
 
+// IterationType allows the paging predicate to be used to fetch values, a keyset or an entryset.
 type IterationType string
 
 const (
@@ -50,7 +53,7 @@ const (
 	ENTRY               = "ENTRY"
 )
 
-func IterationTypeToId(t IterationType) int8 {
+func iterationTypeToId(t IterationType) int8 {
 	switch t {
 	case KEY:
 		return 0
@@ -63,22 +66,27 @@ func IterationTypeToId(t IterationType) int8 {
 	}
 }
 
+// NextPage sets the page of the paging predicate to the next page to fetch the next results in the following operation.
 func (p *predPaging) NextPage() {
 	p.page++
 }
 
+// PrevPage sets the page of the paging predicate to the previous page to fetch the previous results in the following operation.
 func (p *predPaging) PrevPage() {
 	p.page--
 }
 
+// SetPage sets the page to a given page number to fetch the results at that page in the following operation.
 func (p *predPaging) SetPage(page int32) {
 	p.page = page
 }
 
+// GetPage return the current page of the paging predicate.
 func (p predPaging) GetPage() int32 {
 	return p.page
 }
 
+// AnchorList returns the anchor list of the paging predicate containing the first item of every page fetched with the predicate.
 func (p predPaging) AnchorList() []types.Entry {
 	return p.anchorList
 }
@@ -89,10 +97,6 @@ func (p predPaging) FactoryID() int32 {
 
 func (p predPaging) ClassID() int32 {
 	return 15
-}
-
-func (p *predPaging) SetAnchorList(anchorList []types.Entry) {
-	p.anchorList = anchorList
 }
 
 func (p predPaging) ReadData(input serialization.DataInput) {
@@ -170,7 +174,7 @@ func ValidateAndSerializePagingPredicate(
 		comparatorData,
 		p.pageSize,
 		p.page,
-		byte(IterationTypeToId(p.iterationType)),
+		byte(iterationTypeToId(p.iterationType)),
 		nil), nil
 }
 
@@ -251,6 +255,6 @@ func UpdateAnchorList(
 	if err != nil {
 		return err
 	}
-	p.SetAnchorList(a)
+	p.anchorList = a
 	return nil
 }
