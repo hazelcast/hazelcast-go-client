@@ -194,15 +194,23 @@ func TestPredicate_True(t *testing.T) {
 
 func TestPredicate_ValuesPaging(t *testing.T) {
 	pred := predicate.Paging(3)
+	assert.Equal(t, 0, len(pred.AnchorList()))
+
 	target := []interface{}{int64(1), int64(2), int64(3)}
 	checkPagingPredicate(t, pred, target)
+	assert.Equal(t, 1, len(pred.AnchorList()))
 
 	pred.NextPage()
 	target = []interface{}{int64(4), int64(5), int64(6)}
 	checkPagingPredicate(t, pred, target)
+	assert.Equal(t, 2, len(pred.AnchorList()))
 
 	pred.PrevPage()
 	target = []interface{}{int64(1), int64(2), int64(3)}
+	checkPagingPredicate(t, pred, target)
+
+	pred.SetPage(2)
+	target = []interface{}{int64(7), int64(8)}
 	checkPagingPredicate(t, pred, target)
 }
 
