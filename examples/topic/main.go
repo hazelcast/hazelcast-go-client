@@ -25,7 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Get a random map.
+	// Get a random topic
 	rand.Seed(time.Now().Unix())
 	topicName := fmt.Sprintf("sample-%d", rand.Int())
 	topic, err := client.GetTopic(ctx, topicName)
