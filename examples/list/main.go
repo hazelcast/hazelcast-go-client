@@ -43,4 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(size)
+
+	// Shutdown client
+	client.Shutdown(ctx)
 }

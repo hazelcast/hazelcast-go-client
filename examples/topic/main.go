@@ -40,4 +40,7 @@ func main() {
 	for i := 0; i < messageCount; i++ {
 		topic.Publish(ctx, fmt.Sprintf("Message %d", i))
 	}
+
+	// Shutdown client
+	client.Shutdown(ctx)
 }

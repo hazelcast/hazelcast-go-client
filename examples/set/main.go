@@ -41,4 +41,7 @@ func main() {
 	for _, val := range items {
 		fmt.Println(val)
 	}
+
+	// Shutdown client
+	client.Shutdown(ctx)
 }
