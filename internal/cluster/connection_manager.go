@@ -60,6 +60,10 @@ const (
 	serializationVersion = 1
 )
 
+const (
+	clusterConnectionFixTimeout = 10 * time.Second
+)
+
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
 func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error) {
@@ -679,8 +683,12 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 
 func (m *ConnectionManager) checkFixConnection(addr pubcluster.Address) {
 	if conn := m.connMap.GetConnectionForAddr(addr); conn == nil {
-		m.logger.Infof("found a broken connection to: %s, trying to fix it.", addr)
-		if _, err := connectMember(context.TODO(), m, addr); err != nil {
+		m.logger.Debug(func() string {
+			return fmt.Sprintf("found a broken connection to: %s, trying to fix it.", addr)
+		})
+		ctx, cancel := context.WithTimeout(context.Background(), clusterConnectionFixTimeout)
+		defer cancel()
+		if _, err := connectMember(ctx, m, addr); err != nil {
 			m.logger.Debug(func() string {
 				return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
 			})
