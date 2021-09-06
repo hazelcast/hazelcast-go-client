@@ -199,10 +199,11 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
-			if m.addMember(&member) {
-				added = append(added, member)
+			mc := member
+			if m.addMember(&mc) {
+				added = append(added, mc)
 			}
-			newUUIDs[member.UUID] = struct{}{}
+			newUUIDs[mc.UUID] = struct{}{}
 		}
 		removed = []pubcluster.MemberInfo{}
 		for _, member := range m.members {
@@ -220,14 +221,6 @@ func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 	member := m.members[uuid]
 	m.membersMu.RUnlock()
 	return member
-}
-
-func (m *membersMap) RemoveMembersWithAddr(addr pubcluster.Address) {
-	m.membersMu.Lock()
-	if uuid, ok := m.addrToMemberUUID[addr]; ok {
-		m.removeMember(m.members[uuid])
-	}
-	m.membersMu.Unlock()
 }
 
 func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.MemberInfo)) {
