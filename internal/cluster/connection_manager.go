@@ -250,6 +250,10 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	}
 	m.eventDispatcher.Publish(NewConnected(addr))
 	go m.heartbeat()
+	if m.smartRouting {
+		// fix broken connections only in the smart mode
+		go m.detectFixBrokenConnections()
+	}
 	if m.logger.CanLogDebug() {
 		go m.logStatus()
 	}
@@ -651,6 +655,34 @@ func (m *ConnectionManager) logStatus() {
 				m.logger.Debug(func() string {
 					return fmt.Sprintf("connection to address: %+v", connToAddr)
 				})
+			})
+		}
+	}
+}
+
+func (m *ConnectionManager) detectFixBrokenConnections() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-m.doneCh:
+			return
+		case <-ticker.C:
+			// TODO: very inefficent, fix this
+			// find connections which exist in the cluster but not in the connection manager
+			for _, addr := range m.clusterService.MemberAddrs() {
+				m.checkFixConnection(addr)
+			}
+		}
+	}
+}
+
+func (m *ConnectionManager) checkFixConnection(addr pubcluster.Address) {
+	if conn := m.connMap.GetConnectionForAddr(addr); conn == nil {
+		m.logger.Infof("found a broken connection to: %s, trying to fix it.", addr)
+		if _, err := connectMember(context.TODO(), m, addr); err != nil {
+			m.logger.Debug(func() string {
+				return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
 			})
 		}
 	}
