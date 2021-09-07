@@ -18,7 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Get a random replicated map
+	// Get a random map
 	rand.Seed(time.Now().Unix())
 	mapName := fmt.Sprintf("sample-%d", rand.Int())
 	m, err := client.GetMap(ctx, mapName)
