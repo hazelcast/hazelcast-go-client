@@ -30,8 +30,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const factoryID = 1
-const employeeClassID = 1
+const (
+	factoryID         = 1
+	employeeClassID   = 1
+	baseObjectClassID = 2
+)
 
 type EmployeePortable struct {
 	Name string
@@ -62,6 +65,9 @@ type MyPortableFactory struct {
 func (m MyPortableFactory) Create(classID int32) serialization.Portable {
 	if classID == employeeClassID {
 		return &EmployeePortable{}
+	}
+	if classID == baseObjectClassID {
+		return &BaseObject{}
 	}
 	return nil
 }
@@ -99,10 +105,13 @@ func main() {
 	config := hazelcast.NewConfig()
 	config.Serialization.PortableVersion = 1
 	config.Serialization.SetPortableFactories(&MyPortableFactory{})
-	classDefinition := serialization.NewClassDefinition(1, 1, 1)
-	classDefinition.AddStringField("name")
-	classDefinition.AddInt32Field("age")
-	config.Serialization.SetClassDefinitions(classDefinition)
+	employeeClassDefinition := serialization.NewClassDefinition(factoryID, employeeClassID, 1)
+	employeeClassDefinition.AddStringField("name")
+	employeeClassDefinition.AddInt32Field("age")
+	config.Serialization.SetClassDefinitions(employeeClassDefinition)
+	baseObjectClassDefinition := serialization.NewClassDefinition(factoryID, baseObjectClassID, 1)
+	baseObjectClassDefinition.AddPortableField("employee", employeeClassDefinition)
+	config.Serialization.SetClassDefinitions(baseObjectClassDefinition)
 
 	// start the client with the given configuration
 	ctx := context.TODO()
