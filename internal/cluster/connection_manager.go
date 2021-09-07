@@ -422,12 +422,8 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 }
 
 func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {
-	retries := math.MaxInt32
-	if m.failoverConfig.Enabled {
-		retries = 1
-	}
 	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(retries),
+		cb.MaxRetries(math.MaxInt32),
 		cb.Timeout(time.Duration(cs.Timeout)),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(makeRetryPolicy(m.randGen, &cs.Retry)),
@@ -868,5 +864,5 @@ func (m *connectionMap) removeAddr(addr pubcluster.Address) {
 
 func nonRetryableConnectionErr(err error) bool {
 	var ne cb.NonRetryableError
-	return ne.Is(err) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || errors.Is(err, cb.ErrDeadlineExceeded)
+	return ne.Is(err) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled)
 }
