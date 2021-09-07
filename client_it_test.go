@@ -20,12 +20,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"log"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal"
 
 	"github.com/stretchr/testify/assert"
 
@@ -552,4 +554,50 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	if err := c.Shutdown(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestClientFixConnection(t *testing.T) {
+	// This test removes the member that corresponds to the connections which receives membership state changes.
+	// Once that connection is closed, another connection should be randomly selected to receive membership state changes.
+	// A new member is added to confirm that is the case.
+	const memberCount = 3
+	addedCount := int64(0)
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("600-cluster", 20701, memberCount)
+	defer cls.Shutdown()
+	config := hz.Config{}
+	config.Cluster.Network.SetAddresses("localhost:20702")
+	config.Cluster.Name = "600-cluster"
+	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		log.Printf("===\n\n%s member: %s\n\n===", event.State.String(), event.Member.UUID)
+		if event.State == cluster.MembershipStateAdded {
+			atomic.AddInt64(&addedCount, 1)
+		}
+	})
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	client, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Shutdown(ctx)
+	// terminate the member that corresponds to the connection which receives cluster membership updates
+	mUUID := cls.MemberUUIDs[1]
+	log.Printf("===\n\nTerminated member: %s\n\n===", mUUID)
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, mUUID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !ok {
+		log.Fatalf("could not terminate member: %s", err.Error())
+	}
+	time.Sleep(10 * time.Second)
+	m, err := cls.RC.StartMember(ctx, cls.ClusterID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("===\n\nStarted member: %s\n\n===", m.UUID)
+	time.Sleep(10 * time.Second)
+	assert.Equal(t, int64(memberCount+1), atomic.LoadInt64(&addedCount))
 }
