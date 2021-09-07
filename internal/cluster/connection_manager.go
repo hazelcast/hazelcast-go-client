@@ -679,8 +679,7 @@ func (m *ConnectionManager) checkFixConnection(addr pubcluster.Address) {
 		m.logger.Debug(func() string {
 			return fmt.Sprintf("found a broken connection to: %s, trying to fix it.", addr)
 		})
-		ctx, cancel := context.WithTimeout(context.Background(), clusterConnectionFixTimeout)
-		defer cancel()
+		ctx := context.Background()
 		if _, err := connectMember(ctx, m, addr); err != nil {
 			m.logger.Debug(func() string {
 				return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
