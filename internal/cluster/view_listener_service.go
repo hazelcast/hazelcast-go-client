@@ -19,7 +19,6 @@ func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *even
 		cs:         cs,
 		cm:         cm,
 		dispatcher: dispatcher,
-		connID:     -1,
 	}
 	dispatcher.Subscribe(EventConnectionOpened, event.DefaultSubscriptionID, vs.handleConnectionOpened)
 	dispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, vs.handleConnectionClosed)
@@ -39,7 +38,7 @@ func (vs *ViewListenerService) handleConnectionClosed(event event.Event) {
 }
 
 func (vs *ViewListenerService) tryRegister(conn *Connection) {
-	if !atomic.CompareAndSwapInt64(&vs.connID, -1, conn.connectionID) {
+	if !atomic.CompareAndSwapInt64(&vs.connID, 0, conn.connectionID) {
 		return
 	}
 	if err := vs.cs.sendMemberListViewRequest(context.Background(), conn); err != nil {
@@ -48,7 +47,7 @@ func (vs *ViewListenerService) tryRegister(conn *Connection) {
 }
 
 func (vs *ViewListenerService) tryReregisterToRandomConnection(oldConn *Connection) {
-	if !atomic.CompareAndSwapInt64(&vs.connID, oldConn.connectionID, -1) {
+	if !atomic.CompareAndSwapInt64(&vs.connID, oldConn.connectionID, 0) {
 		return
 	}
 	if conn := vs.cm.RandomConnection(); conn != nil {

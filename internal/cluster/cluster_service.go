@@ -122,7 +122,9 @@ func (s *Service) Reset() {
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
-	s.logger.Debug(func() string { return fmt.Sprintf("%d: members updated", conn.connectionID) })
+	s.logger.Debug(func() string {
+		return fmt.Sprintf("%d: members updated: %v", conn.connectionID, memberInfos)
+	})
 	added, removed := s.membersMap.Update(memberInfos, version)
 	if len(added) > 0 {
 		s.eventDispatcher.Publish(NewMembersAdded(added))
@@ -133,7 +135,9 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 }
 
 func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
-	s.logger.Trace(func() string { return "cluster.Service.sendMemberListViewRequest" })
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("%d: cluster.Service.sendMemberListViewRequest", conn.connectionID)
+	})
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {

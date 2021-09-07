@@ -60,10 +60,6 @@ const (
 	serializationVersion = 1
 )
 
-const (
-	clusterConnectionFixTimeout = 10 * time.Second
-)
-
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
 func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error) {
