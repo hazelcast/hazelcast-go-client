@@ -74,36 +74,10 @@ type BaseObject struct {
 	Employee *EmployeePortable
 }
 
-func (b BaseObject) FactoryID() int32 {
-	return factoryID
-}
-
-func (b BaseObject) ClassID() int32 {
-	return 2
-}
-
-func (b BaseObject) WritePortable(writer serialization.PortableWriter) {
-	if b.Employee == nil {
-		writer.WriteNilPortable("employee", factoryID, employeeClassID)
-		return
-	}
-	writer.WritePortable("employee", b.Employee)
-}
-
-func (b *BaseObject) ReadPortable(reader serialization.PortableReader) {
-	b.Employee = reader.ReadPortable("employee").(*EmployeePortable)
-}
-
 func main() {
 	// create the configuration
-	config := hazelcast.NewConfig()
-	config.Serialization.PortableVersion = 1
+	config := hazelcast.Config{}
 	config.Serialization.SetPortableFactories(&MyPortableFactory{})
-	classDefinition := serialization.NewClassDefinition(1, 1, 1)
-	classDefinition.AddStringField("name")
-	classDefinition.AddInt32Field("age")
-	config.Serialization.SetClassDefinitions(classDefinition)
-
 	// start the client with the given configuration
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
@@ -125,17 +99,6 @@ func main() {
 	} else {
 		fmt.Println(v)
 	}
-	// set / get portable serialized nullable value
-	baseObj := &BaseObject{Employee: employee}
-	if err := m.Set(ctx, "base-obj", baseObj); err != nil {
-		log.Fatal(err)
-	}
-	if v, err := m.Get(ctx, "base-obj"); err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Println(v)
-	}
-	// stop the client
 	time.Sleep(1 * time.Second)
 	client.Shutdown(ctx)
 }

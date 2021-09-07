@@ -99,8 +99,12 @@ func (ps *PortableSerializer) createNewPortableInstance(factoryID int32, classID
 }
 
 func (ps *PortableSerializer) Write(output serialization.DataOutput, i interface{}) {
-	output.WriteInt32(i.(serialization.Portable).FactoryID())
-	output.WriteInt32(i.(serialization.Portable).ClassID())
+	p, ok := i.(serialization.Portable)
+	if !ok {
+		panic("not a portable")
+	}
+	output.WriteInt32(p.FactoryID())
+	output.WriteInt32(p.ClassID())
 	ps.WriteObject(output, i)
 }
 
