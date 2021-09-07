@@ -80,6 +80,7 @@ type Client struct {
 	connectionManager       *icluster.ConnectionManager
 	clusterService          *icluster.Service
 	partitionService        *icluster.PartitionService
+	viewListenerService     *icluster.ViewListenerService
 	invocationService       *invocation.Service
 	serializationService    *serialization.Service
 	eventDispatcher         *event.DispatchService
@@ -458,6 +459,7 @@ func (c *Client) createComponents(config *Config) {
 		FailoverConfig:       &config.Failover,
 		Labels:               config.Labels,
 	})
+	viewListener := icluster.NewViewListenerService(clusterService, connectionManager, c.eventDispatcher)
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
@@ -499,6 +501,7 @@ func (c *Client) createComponents(config *Config) {
 	c.invocationService = invocationService
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
+	c.viewListenerService = viewListener
 }
 
 func (c *Client) clusterDisconnected(e event.Event) {

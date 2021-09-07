@@ -68,12 +68,9 @@ type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubc
 
 func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error) {
 	var initialAddr pubcluster.Address
-	var conn *Connection
 	var err error
-	if conn, err = m.ensureConnection(ctx, addr); err != nil {
+	if _, err = m.ensureConnection(ctx, addr); err != nil {
 		m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-	} else if err = m.clusterService.sendMemberListViewRequest(ctx, conn); err != nil {
-		m.logger.Errorf("could not send member list view request to %s: %w", addr.String(), err)
 	} else if initialAddr == "" {
 		initialAddr = addr
 	}

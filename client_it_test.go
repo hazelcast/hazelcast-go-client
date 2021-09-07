@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -32,6 +31,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -552,4 +552,9 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	if err := c.Shutdown(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestClientVersion(t *testing.T) {
+	// adding this test here, so there's no "unused lint warning.
+	assert.Equal(t, "1.1.0", hz.ClientVersion)
 }
