@@ -524,7 +524,7 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	it.SkipIf(t, "oss")
 	ctx := context.Background()
 	cls1 := it.StartNewClusterWithOptions("failover-test-cluster1", 15701, it.MemberCount())
-	cls2 := it.StartNewClusterWithOptions("failover-test-cluster2", 15702, it.MemberCount())
+	cls2 := it.StartNewClusterWithOptions("failover-test-cluster2", 16701, it.MemberCount())
 	defer cls2.Shutdown()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -597,7 +597,7 @@ func TestClientFixConnection(t *testing.T) {
 		log.Fatal(err)
 	}
 	log.Printf("===\n\nStarted member: %s\n\n===", m.UUID)
-	time.Sleep(10 * time.Second)
+	time.Sleep(20 * time.Second)
 	assert.Equal(t, int64(memberCount+1), atomic.LoadInt64(&addedCount))
 }
 
