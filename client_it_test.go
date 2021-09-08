@@ -309,7 +309,7 @@ func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 	cls.Shutdown()
 	time.Sleep(1 * time.Second)
 
-	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	cls = it.StartNewClusterWithOptions(clusterName, 11701, 3)
 	time.Sleep(5 * time.Second)
 	// start shutting down members one by one
 	for _, uuid := range cls.MemberUUIDs {
