@@ -293,61 +293,6 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	}, "target : %v, events %v ", target, events)
 }
 
-func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
-	ctx := context.Background()
-	clusterName := fmt.Sprintf("go-cli-test-cluster-%d", idGen.NextID())
-	cls := it.StartNewClusterWithOptions(clusterName, 11701, 3)
-	mu := &sync.Mutex{}
-	var events []hz.LifecycleState
-	config := cls.DefaultConfig()
-	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
-		mu.Lock()
-		events = append(events, event.State)
-		mu.Unlock()
-	})
-	c, err := hz.StartNewClientWithConfig(ctx, config)
-	if err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(5 * time.Second)
-
-	// start shutting down members one by one
-	for _, uuid := range cls.MemberUUIDs {
-		time.Sleep(1 * time.Second)
-		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
-	}
-	time.Sleep(1 * time.Second)
-	cls.Shutdown()
-	time.Sleep(1 * time.Second)
-
-	cls = it.StartNewClusterWithOptions(clusterName, 11701, 3)
-	time.Sleep(5 * time.Second)
-	// start shutting down members one by one
-	for _, uuid := range cls.MemberUUIDs {
-		time.Sleep(1 * time.Second)
-		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
-	}
-	time.Sleep(1 * time.Second)
-	c.Shutdown(ctx)
-
-	mu.Lock()
-	defer mu.Unlock()
-	target := []hz.LifecycleState{
-		hz.LifecycleStateStarting,
-		hz.LifecycleStateConnected,
-		hz.LifecycleStateStarted,
-		hz.LifecycleStateDisconnected,
-		hz.LifecycleStateChangedCluster,
-		hz.LifecycleStateConnected,
-		hz.LifecycleStateDisconnected,
-		hz.LifecycleStateShuttingDown,
-		hz.LifecycleStateShutDown,
-	}
-	t.Logf("target : %v", target)
-	t.Logf("events : %v", events)
-	assert.Equal(t, target, events)
-}
-
 func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
