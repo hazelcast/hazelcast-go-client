@@ -767,20 +767,31 @@ func (m *connectionMap) RandomConn() *Connection {
 	if len(m.addrs) == 0 {
 		return nil
 	}
-	var addr pubcluster.Address
 	if len(m.addrs) == 1 {
-		addr = m.addrs[0]
-	} else {
+		addr := m.addrs[0]
+		conn := m.addrToConn[addr]
+		if conn != nil && atomic.LoadInt32(&conn.status) == open {
+			return conn
+		}
+		return nil
+	}
+	var addr pubcluster.Address
+	for {
+		// there is a chance that retrieved connection is closed and not yet removed
+		// loop to ensure that an open connection or nil is returned
 		addr = m.lb.OneOf(m.addrs)
-	}
-	conn := m.addrToConn[addr]
-	if conn != nil {
-		return conn
-	}
-	// if the connection was not found by using the load balancer, select a random one.
-	for _, conn = range m.addrToConn {
-		// Go randomizes maps, this is random enough for now.
-		return conn
+		conn := m.addrToConn[addr]
+		if conn != nil && atomic.LoadInt32(&conn.status) == open {
+			return conn
+		}
+		// if the connection was not found by using the load balancer, select a random one.
+		for _, conn = range m.addrToConn {
+			// Go randomizes maps, this is random enough for now.
+			if atomic.LoadInt32(&conn.status) == open {
+				return conn
+			}
+		}
+		break
 	}
 	return nil
 }

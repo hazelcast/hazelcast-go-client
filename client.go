@@ -459,7 +459,7 @@ func (c *Client) createComponents(config *Config) {
 		FailoverConfig:       &config.Failover,
 		Labels:               config.Labels,
 	})
-	viewListener := icluster.NewViewListenerService(clusterService, connectionManager, c.eventDispatcher)
+	viewListener := icluster.NewViewListenerService(clusterService, connectionManager, c.eventDispatcher, c.logger)
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,

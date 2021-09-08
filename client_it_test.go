@@ -34,9 +34,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
+
+var idGen = proxy.ReferenceIDGenerator{}
 
 func TestClientLifecycleEvents(t *testing.T) {
 	receivedStates := []hz.LifecycleState{}
@@ -281,7 +284,8 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 
 func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	clusterName := fmt.Sprintf("go-cli-test-cluster-%d", idGen.NextID())
+	cls := it.StartNewClusterWithOptions(clusterName, 11701, 3)
 	mu := &sync.Mutex{}
 	var events []hz.LifecycleState
 	config := cls.DefaultConfig()
@@ -555,6 +559,10 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	}
 }
 
+func highlight(t *testing.T, format string, args ...interface{}) {
+	log.Printf("\n===\n%s\n===", fmt.Sprintf(format, args...))
+}
+
 func TestClientFixConnection(t *testing.T) {
 	// This test removes the member that corresponds to the connections which receives membership state changes.
 	// Once that connection is closed, another connection should be randomly selected to receive membership state changes.
@@ -562,13 +570,17 @@ func TestClientFixConnection(t *testing.T) {
 	const memberCount = 3
 	addedCount := int64(0)
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("600-cluster", 20701, memberCount)
+	id := idGen.NextID()
+	clusterName := fmt.Sprintf("600-cluster-%d", id)
+	log.Println("Cluster name:", clusterName)
+	port := 20701 + id*10
+	cls := it.StartNewClusterWithOptions(clusterName, int(port), memberCount)
 	defer cls.Shutdown()
 	config := hz.Config{}
-	config.Cluster.Network.SetAddresses("localhost:20702")
-	config.Cluster.Name = "600-cluster"
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port+1))
+	config.Cluster.Name = clusterName
 	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
-		log.Printf("===\n\n%s member: %s\n\n===", event.State.String(), event.Member.UUID)
+		highlight(t, "%s member: %s", event.State.String(), event.Member.UUID)
 		if event.State == cluster.MembershipStateAdded {
 			atomic.AddInt64(&addedCount, 1)
 		}
@@ -583,7 +595,7 @@ func TestClientFixConnection(t *testing.T) {
 	defer client.Shutdown(ctx)
 	// terminate the member that corresponds to the connection which receives cluster membership updates
 	mUUID := cls.MemberUUIDs[1]
-	log.Printf("===\n\nTerminated member: %s\n\n===", mUUID)
+	highlight(t, "Terminated member: %s", mUUID)
 	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, mUUID)
 	if err != nil {
 		log.Fatal(err)
@@ -591,13 +603,12 @@ func TestClientFixConnection(t *testing.T) {
 	if !ok {
 		log.Fatalf("could not terminate member: %s", err.Error())
 	}
-	time.Sleep(10 * time.Second)
 	m, err := cls.RC.StartMember(ctx, cls.ClusterID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("===\n\nStarted member: %s\n\n===", m.UUID)
-	time.Sleep(20 * time.Second)
+	highlight(t, "Started member: %s", m.UUID)
+	time.Sleep(30 * time.Second)
 	assert.Equal(t, int64(memberCount+1), atomic.LoadInt64(&addedCount))
 }
 
