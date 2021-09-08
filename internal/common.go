@@ -20,8 +20,6 @@ const (
 	// ClientType is used in the Management
 	ClientType         = "GOO"
 	AggregateFactoryID = -29
-
-	// ClientVersion is the build time version
-	// TODO: This should be replaced with a build time version variable, BuildInfo etc.
+	// ClientVersion should be manually set
 	ClientVersion = "1.1.0"
 )

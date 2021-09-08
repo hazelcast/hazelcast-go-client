@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal"
+	"log"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -32,10 +32,14 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
+
+var idGen = proxy.ReferenceIDGenerator{}
 
 func TestClientLifecycleEvents(t *testing.T) {
 	receivedStates := []hz.LifecycleState{}
@@ -280,7 +284,8 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 
 func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	clusterName := fmt.Sprintf("go-cli-test-cluster-%d", idGen.NextID())
+	cls := it.StartNewClusterWithOptions(clusterName, 11701, 3)
 	mu := &sync.Mutex{}
 	var events []hz.LifecycleState
 	config := cls.DefaultConfig()
@@ -304,7 +309,7 @@ func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
 	cls.Shutdown()
 	time.Sleep(1 * time.Second)
 
-	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, 3)
+	cls = it.StartNewClusterWithOptions(clusterName, 11701, 3)
 	time.Sleep(5 * time.Second)
 	// start shutting down members one by one
 	for _, uuid := range cls.MemberUUIDs {
@@ -523,7 +528,7 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	it.SkipIf(t, "oss")
 	ctx := context.Background()
 	cls1 := it.StartNewClusterWithOptions("failover-test-cluster1", 15701, it.MemberCount())
-	cls2 := it.StartNewClusterWithOptions("failover-test-cluster2", 15702, it.MemberCount())
+	cls2 := it.StartNewClusterWithOptions("failover-test-cluster2", 16701, it.MemberCount())
 	defer cls2.Shutdown()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -552,4 +557,62 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	if err := c.Shutdown(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func highlight(t *testing.T, format string, args ...interface{}) {
+	log.Printf("\n===\n%s\n===", fmt.Sprintf(format, args...))
+}
+
+func TestClientFixConnection(t *testing.T) {
+	// This test removes the member that corresponds to the connections which receives membership state changes.
+	// Once that connection is closed, another connection should be randomly selected to receive membership state changes.
+	// A new member is added to confirm that is the case.
+	const memberCount = 3
+	addedCount := int64(0)
+	ctx := context.Background()
+	id := idGen.NextID()
+	clusterName := fmt.Sprintf("600-cluster-%d", id)
+	log.Println("Cluster name:", clusterName)
+	port := 20701 + id*10
+	cls := it.StartNewClusterWithOptions(clusterName, int(port), memberCount)
+	defer cls.Shutdown()
+	config := hz.Config{}
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port+1))
+	config.Cluster.Name = clusterName
+	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		highlight(t, "%s member: %s", event.State.String(), event.Member.UUID)
+		if event.State == cluster.MembershipStateAdded {
+			atomic.AddInt64(&addedCount, 1)
+		}
+	})
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	client, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Shutdown(ctx)
+	// terminate the member that corresponds to the connection which receives cluster membership updates
+	mUUID := cls.MemberUUIDs[1]
+	highlight(t, "Terminated member: %s", mUUID)
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, mUUID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !ok {
+		log.Fatalf("could not terminate member: %s", err.Error())
+	}
+	m, err := cls.RC.StartMember(ctx, cls.ClusterID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	highlight(t, "Started member: %s", m.UUID)
+	time.Sleep(30 * time.Second)
+	assert.Equal(t, int64(memberCount+1), atomic.LoadInt64(&addedCount))
+}
+
+func TestClientVersion(t *testing.T) {
+	// adding this test here, so there's no "unused lint warning.
+	assert.Equal(t, "1.1.0", hz.ClientVersion)
 }

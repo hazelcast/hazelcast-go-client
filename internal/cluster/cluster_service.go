@@ -122,7 +122,9 @@ func (s *Service) Reset() {
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
-	s.logger.Debug(func() string { return fmt.Sprintf("%d: members updated", conn.connectionID) })
+	s.logger.Debug(func() string {
+		return fmt.Sprintf("%d: members updated: %v", conn.connectionID, memberInfos)
+	})
 	added, removed := s.membersMap.Update(memberInfos, version)
 	if len(added) > 0 {
 		s.eventDispatcher.Publish(NewMembersAdded(added))
@@ -133,7 +135,9 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 }
 
 func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
-	s.logger.Trace(func() string { return "cluster.Service.sendMemberListViewRequest" })
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("%d: cluster.Service.sendMemberListViewRequest", conn.connectionID)
+	})
 	request := codec.EncodeClientAddClusterViewListenerRequest()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
@@ -199,10 +203,11 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
-			if m.addMember(&member) {
-				added = append(added, member)
+			mc := member
+			if m.addMember(&mc) {
+				added = append(added, mc)
 			}
-			newUUIDs[member.UUID] = struct{}{}
+			newUUIDs[mc.UUID] = struct{}{}
 		}
 		removed = []pubcluster.MemberInfo{}
 		for _, member := range m.members {
@@ -220,14 +225,6 @@ func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 	member := m.members[uuid]
 	m.membersMu.RUnlock()
 	return member
-}
-
-func (m *membersMap) RemoveMembersWithAddr(addr pubcluster.Address) {
-	m.membersMu.Lock()
-	if uuid, ok := m.addrToMemberUUID[addr]; ok {
-		m.removeMember(m.members[uuid])
-	}
-	m.membersMu.Unlock()
 }
 
 func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.MemberInfo)) {

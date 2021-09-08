@@ -26,6 +26,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -37,6 +38,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/types"
+)
+
+const (
+	ClientVersion = internal.ClientVersion
 )
 
 var nextId int32
@@ -75,6 +80,7 @@ type Client struct {
 	connectionManager       *icluster.ConnectionManager
 	clusterService          *icluster.Service
 	partitionService        *icluster.PartitionService
+	viewListenerService     *icluster.ViewListenerService
 	invocationService       *invocation.Service
 	serializationService    *serialization.Service
 	eventDispatcher         *event.DispatchService
@@ -453,6 +459,7 @@ func (c *Client) createComponents(config *Config) {
 		FailoverConfig:       &config.Failover,
 		Labels:               config.Labels,
 	})
+	viewListener := icluster.NewViewListenerService(clusterService, connectionManager, c.eventDispatcher, c.logger)
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
 		ConnectionManager: connectionManager,
 		ClusterService:    clusterService,
@@ -494,6 +501,7 @@ func (c *Client) createComponents(config *Config) {
 	c.invocationService = invocationService
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
+	c.viewListenerService = viewListener
 }
 
 func (c *Client) clusterDisconnected(e event.Event) {
