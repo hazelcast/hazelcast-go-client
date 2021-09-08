@@ -16,4 +16,5 @@
 
 MEMBER_COUNT=3
 TEST_FLAGS=
-env MEMBER_COUNT=${MEMBER_COUNT} go test ${TEST_FLAGS} -count=1 -coverpkg "$(go list ./... | grep -v /internal/it | grep -v /benchmarks | grep -v /stress_tests | grep -v /soak_tests | grep -v /examples | grep -v /cmd | tr "\n" ",")" -coverprofile=coverage.out ./...
+GO_FILES=$(go list ./... | grep -v org-website | grep -v /internal/it | grep -v /benchmarks | grep -v /stress_tests | grep -v /soak_tests | grep -v /examples | grep -v /cmd)
+env MEMBER_COUNT=${MEMBER_COUNT} go test ${TEST_FLAGS} -count=1 -coverpkg $(${GO_FILES} | tr "\n" ",") -coverprofile=coverage.out ${GO_FILES}
