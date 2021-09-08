@@ -242,8 +242,26 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	mu := &sync.Mutex{}
 	events := []hz.LifecycleState{}
 	config := cls.DefaultConfig()
+	disconnectedWaitGroup := sync.WaitGroup{}
+	disconnectedWaitGroup.Add(1)
+	reconnectedWaitGroup := sync.WaitGroup{}
+	reconnectedWaitGroup.Add(1)
+	connectedCount := 0
+	disconnectedCount := 0
 	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 		mu.Lock()
+		if hz.LifecycleStateDisconnected == event.State {
+			disconnectedCount++
+			if disconnectedCount == 1 {
+				disconnectedWaitGroup.Done()
+			}
+		}
+		if hz.LifecycleStateConnected == event.State {
+			connectedCount++
+			if connectedCount == 2 {
+				reconnectedWaitGroup.Done()
+			}
+		}
 		events = append(events, event.State)
 		mu.Unlock()
 	})
@@ -251,11 +269,10 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(5 * time.Second)
 	cls.Shutdown()
-	time.Sleep(5 * time.Second)
+	disconnectedWaitGroup.Wait()
 	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
-	time.Sleep(5 * time.Second)
+	reconnectedWaitGroup.Wait()
 	cls.Shutdown()
 	c.Shutdown(ctx)
 	mu.Lock()
@@ -271,9 +288,9 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 		hz.LifecycleStateShuttingDown,
 		hz.LifecycleStateShutDown,
 	}
-	t.Logf("target : %v", target)
-	t.Logf("events : %v", events)
-	assert.Equal(t, target, events)
+	it.Eventually(t, func() bool {
+		return reflect.DeepEqual(target, events)
+	}, "target : %v, events %v ", target, events)
 }
 
 func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
