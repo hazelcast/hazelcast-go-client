@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"math/rand"
 	"os"
 	"reflect"
@@ -30,14 +31,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
-
 	"go.uber.org/goleak"
 
 	"github.com/apache/thrift/lib/go/thrift"
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -383,4 +383,17 @@ func getDefaultClient(config *hz.Config) *hz.Client {
 		panic(err)
 	}
 	return client
+}
+
+// Eventually asserts that given condition will be met in 2 minutes,
+// checking target function every 200 milliseconds.
+func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
+	assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs)
+}
+
+// Never asserts that the given condition doesn't satisfy in 3 seconds,
+// checking target function every 200 milliseconds.
+//
+func Never(t *testing.T, condition func() bool, msgAndArgs ...interface{}) bool {
+	return assert.Never(t, condition, time.Second*3, time.Millisecond*200, msgAndArgs)
 }

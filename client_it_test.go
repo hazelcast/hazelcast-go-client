@@ -73,11 +73,9 @@ func TestClientLifecycleEvents(t *testing.T) {
 			receivedStates = []hz.LifecycleState{}
 			receivedStatesMu.Unlock()
 		}()
-		time.Sleep(1 * time.Millisecond)
 		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Millisecond)
 		targetStates := []hz.LifecycleState{
 			hz.LifecycleStateStarting,
 			hz.LifecycleStateConnected,
@@ -85,11 +83,12 @@ func TestClientLifecycleEvents(t *testing.T) {
 			hz.LifecycleStateShuttingDown,
 			hz.LifecycleStateShutDown,
 		}
-		receivedStatesMu.RLock()
-		defer receivedStatesMu.RUnlock()
-		if !reflect.DeepEqual(targetStates, receivedStates) {
-			t.Fatalf("target %v != %v", targetStates, receivedStates)
-		}
+
+		it.Eventually(t, func() bool {
+			receivedStatesMu.RLock()
+			defer receivedStatesMu.RUnlock()
+			return reflect.DeepEqual(targetStates, receivedStates)
+		}, "target %v != %v", targetStates, receivedStates)
 	})
 }
 
@@ -187,12 +186,6 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		object  string
 		count   int
 	}
-	createDestroyMap := func(client *hz.Client, mapName string) {
-		m := it.MustValue(client.GetMap(context.Background(), mapName)).(*hz.Map)
-		time.Sleep(100 * time.Millisecond)
-		it.Must(m.Destroy(context.Background()))
-		time.Sleep(100 * time.Millisecond)
-	}
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		var created, destroyed objInfo
 		mu := &sync.Mutex{}
@@ -214,31 +207,32 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		createDestroyMap(client, "dolistener-tester")
+		m := it.MustValue(client.GetMap(context.Background(), "dolistener-tester")).(*hz.Map)
+		it.Must(m.Destroy(context.Background()))
+
 		targetObjInfo := objInfo{service: hz.ServiceNameMap, object: "dolistener-tester", count: 1}
-		mu.Lock()
-		if !assert.Equal(t, targetObjInfo, created) {
-			t.FailNow()
-		}
-		if !assert.Equal(t, targetObjInfo, destroyed) {
-			t.FailNow()
-		}
-		mu.Unlock()
+		it.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			if !assert.Equal(t, targetObjInfo, created) {
+				return false
+			}
+			return assert.Equal(t, targetObjInfo, destroyed)
+		})
 
 		if err := client.RemoveDistributedObjectListener(context.Background(), subID); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		createDestroyMap(client, "dolistener-tester")
-		mu.Lock()
-		if !assert.Equal(t, targetObjInfo, created) {
-			t.FailNow()
-		}
-		if !assert.Equal(t, targetObjInfo, destroyed) {
-			t.FailNow()
-		}
-		mu.Unlock()
+		m = it.MustValue(client.GetMap(context.Background(), "dolistener-tester")).(*hz.Map)
+		it.Must(m.Destroy(context.Background()))
+		it.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			if !assert.Equal(t, targetObjInfo, created) {
+				return false
+			}
+			return assert.Equal(t, targetObjInfo, destroyed)
+		})
 	})
 }
 

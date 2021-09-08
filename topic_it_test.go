@@ -18,11 +18,9 @@ package hazelcast_test
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -41,8 +39,8 @@ func TestTopic_Publish(t *testing.T) {
 		if err = tp.Publish(context.Background(), "HEY!"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		assert.Equal(t, "value1", handlerValue.Load())
+		it.Eventually(t, func() bool { return assert.Equal(t, "value1", handlerValue.Load()) })
+
 		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
@@ -50,8 +48,7 @@ func TestTopic_Publish(t *testing.T) {
 		if err = tp.Publish(context.Background(), "HEY!"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		assert.Equal(t, "base-value", handlerValue.Load())
+		it.Never(t, func() bool { return "base-value" != handlerValue.Load() })
 	})
 }
 func TestTopic_PublishAll(t *testing.T) {
@@ -66,15 +63,14 @@ func TestTopic_PublishAll(t *testing.T) {
 		if err = tp.PublishAll(context.Background(), "v1", "v2", "v3"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		assert.Equal(t, int32(3), atomic.LoadInt32(&handlerValue))
+		it.Eventually(t, func() bool { return assert.Equal(t, int32(3), atomic.LoadInt32(&handlerValue)) })
+
 		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		if err = tp.PublishAll(context.Background(), "v4", "v5", "v6"); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		assert.Equal(t, int32(3), atomic.LoadInt32(&handlerValue))
+		it.Never(t, func() bool { return int32(3) != atomic.LoadInt32(&handlerValue) })
 	})
 }
