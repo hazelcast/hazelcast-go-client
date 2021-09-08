@@ -69,4 +69,6 @@ func main() {
 	if replaced {
 		fmt.Println("Replaced value")
 	}
+	// Shutdown client
+	client.Shutdown(ctx)
 }

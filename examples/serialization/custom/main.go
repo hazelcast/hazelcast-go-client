@@ -77,4 +77,6 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Surname of stored employee:", value.(Employee).Surname)
+	// Shutdown client
+	client.Shutdown(ctx)
 }
