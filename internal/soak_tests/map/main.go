@@ -33,11 +33,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/serialization"
-
-	"github.com/hazelcast/hazelcast-go-client/predicate"
-
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/predicate"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const displayDur = 10 * time.Second
