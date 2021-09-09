@@ -272,6 +272,28 @@ func (m *Map) ExecuteOnEntries(ctx context.Context, entryProcessor interface{}) 
 	}
 }
 
+// ExecuteOnKey applies the user defined EntryProcessor to the entry with the specified key in the map.
+func (m *Map) ExecuteOnKey(ctx context.Context, entryProcessor interface{}, key interface{}) (interface{}, error) {
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+
+	lid := extractLockID(ctx)
+
+	request := codec.EncodeMapExecuteOnKeyRequest(m.name, processorData, keyData, lid)
+	if resp, err := m.invokeOnKey(ctx, request, keyData); err != nil {
+		return nil, err
+	} else {
+		respData := codec.DecodeMapExecuteOnKeyResponse(resp)
+		return m.convertToObject(respData)
+	}
+}
+
 // Flush flushes all the local dirty entries.
 func (m *Map) Flush(ctx context.Context) error {
 	request := codec.EncodeMapFlushRequest(m.name)
