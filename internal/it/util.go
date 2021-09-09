@@ -21,7 +21,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"math/rand"
 	"os"
 	"reflect"
@@ -31,13 +30,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/goleak"
 
-	"github.com/apache/thrift/lib/go/thrift"
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/stretchr/testify/assert"
 )
 
 const (

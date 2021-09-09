@@ -18,9 +18,10 @@ package hazelcast_test
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
