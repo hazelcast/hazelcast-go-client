@@ -37,7 +37,7 @@ func EncodeFlakeIdGeneratorNewIdBatchRequest(name string, batchSize int32) *prot
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, FlakeIdGeneratorNewIdBatchCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchCodecRequestBatchSizeOffset, batchSize)
+	EncodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchCodecRequestBatchSizeOffset, batchSize)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(FlakeIdGeneratorNewIdBatchCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -51,9 +51,9 @@ func DecodeFlakeIdGeneratorNewIdBatchResponse(clientMessage *proto.ClientMessage
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	base = FixSizedTypesCodec.DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBaseOffset)
-	increment = FixSizedTypesCodec.DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseIncrementOffset)
-	batchSize = FixSizedTypesCodec.DecodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBatchSizeOffset)
+	base = DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBaseOffset)
+	increment = DecodeLong(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseIncrementOffset)
+	batchSize = DecodeInt(initialFrame.Content, FlakeIdGeneratorNewIdBatchResponseBatchSizeOffset)
 
 	return base, increment, batchSize
 }

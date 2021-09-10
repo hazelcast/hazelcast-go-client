@@ -33,7 +33,7 @@ var ErrorHolderCodec errorholderCodec
 func EncodeErrorHolder(clientMessage *proto.ClientMessage, errorHolder proto.ErrorHolder) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, ErrorHolderCodecErrorCodeInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset, int32(errorHolder.ErrorCode))
+	EncodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset, int32(errorHolder.ErrorCode))
 	clientMessage.AddFrame(initialFrame)
 
 	EncodeString(clientMessage, errorHolder.ClassName)
@@ -47,7 +47,7 @@ func DecodeErrorHolder(frameIterator *proto.ForwardFrameIterator) proto.ErrorHol
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
-	errorCode := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset)
+	errorCode := DecodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset)
 
 	className := DecodeString(frameIterator)
 	message := DecodeNullableForString(frameIterator)

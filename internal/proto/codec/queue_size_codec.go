@@ -49,5 +49,5 @@ func DecodeQueueSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, QueueSizeResponseResponseOffset)
+	return DecodeInt(initialFrame.Content, QueueSizeResponseResponseOffset)
 }

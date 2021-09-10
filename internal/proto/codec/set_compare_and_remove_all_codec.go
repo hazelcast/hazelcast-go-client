@@ -54,5 +54,5 @@ func DecodeSetCompareAndRemoveAllResponse(clientMessage *proto.ClientMessage) bo
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SetCompareAndRemoveAllResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, SetCompareAndRemoveAllResponseResponseOffset)
 }

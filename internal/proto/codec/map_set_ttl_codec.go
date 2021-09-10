@@ -51,7 +51,7 @@ func EncodeMapSetTtlRequest(name string, key serialization.Data, ttl int64) *pro
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapSetTtlCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapSetTtlCodecRequestTtlOffset, ttl)
+	EncodeLong(initialFrame.Content, MapSetTtlCodecRequestTtlOffset, ttl)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapSetTtlCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -66,5 +66,5 @@ func DecodeMapSetTtlResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapSetTtlResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MapSetTtlResponseResponseOffset)
 }

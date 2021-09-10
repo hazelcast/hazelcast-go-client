@@ -48,9 +48,9 @@ func EncodePNCounterAddRequest(name string, delta int64, getBeforeUpdate bool, r
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, PNCounterAddCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, PNCounterAddCodecRequestDeltaOffset, delta)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, PNCounterAddCodecRequestGetBeforeUpdateOffset, getBeforeUpdate)
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterAddCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
+	EncodeLong(initialFrame.Content, PNCounterAddCodecRequestDeltaOffset, delta)
+	EncodeBoolean(initialFrame.Content, PNCounterAddCodecRequestGetBeforeUpdateOffset, getBeforeUpdate)
+	EncodeUUID(initialFrame.Content, PNCounterAddCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(PNCounterAddCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -65,8 +65,8 @@ func DecodePNCounterAddResponse(clientMessage *proto.ClientMessage) (value int64
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	value = FixSizedTypesCodec.DecodeLong(initialFrame.Content, PNCounterAddResponseValueOffset)
-	replicaCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterAddResponseReplicaCountOffset)
+	value = DecodeLong(initialFrame.Content, PNCounterAddResponseValueOffset)
+	replicaCount = DecodeInt(initialFrame.Content, PNCounterAddResponseReplicaCountOffset)
 	replicaTimestamps = DecodeEntryListUUIDLong(frameIterator)
 
 	return value, replicaTimestamps, replicaCount

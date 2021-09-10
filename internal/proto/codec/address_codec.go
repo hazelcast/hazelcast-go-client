@@ -35,7 +35,7 @@ func DecodeAddress(frameIterator *proto.ForwardFrameIterator) cluster.Address {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
-	port := FixSizedTypesCodec.DecodeInt(initialFrame.Content, AddressCodecPortFieldOffset)
+	port := DecodeInt(initialFrame.Content, AddressCodecPortFieldOffset)
 
 	host := DecodeString(frameIterator)
 	FastForwardToEndFrame(frameIterator)

@@ -42,8 +42,8 @@ func EncodeMapTryRemoveRequest(name string, key serialization.Data, threadId int
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapTryRemoveCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestThreadIdOffset, threadId)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestTimeoutOffset, timeout)
+	EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapTryRemoveCodecRequestTimeoutOffset, timeout)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapTryRemoveCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -58,5 +58,5 @@ func DecodeMapTryRemoveResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapTryRemoveResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MapTryRemoveResponseResponseOffset)
 }

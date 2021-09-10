@@ -46,7 +46,7 @@ func EncodeReplicatedMapAddEntryListenerRequest(name string, localOnly bool) *pr
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapAddEntryListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ReplicatedMapAddEntryListenerCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, ReplicatedMapAddEntryListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapAddEntryListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -60,7 +60,7 @@ func DecodeReplicatedMapAddEntryListenerResponse(clientMessage *proto.ClientMess
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerResponseResponseOffset)
 }
 
 func HandleReplicatedMapAddEntryListener(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
@@ -68,9 +68,9 @@ func HandleReplicatedMapAddEntryListener(clientMessage *proto.ClientMessage, han
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ReplicatedMapAddEntryListenerCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ReplicatedMapAddEntryListenerEventEntryEventTypeOffset)
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerEventEntryUuidOffset)
-		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ReplicatedMapAddEntryListenerEventEntryNumberOfAffectedEntriesOffset)
+		eventType := DecodeInt(initialFrame.Content, ReplicatedMapAddEntryListenerEventEntryEventTypeOffset)
+		uuid := DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerEventEntryUuidOffset)
+		numberOfAffectedEntries := DecodeInt(initialFrame.Content, ReplicatedMapAddEntryListenerEventEntryNumberOfAffectedEntriesOffset)
 		key := DecodeNullableForData(frameIterator)
 		value := DecodeNullableForData(frameIterator)
 		oldValue := DecodeNullableForData(frameIterator)

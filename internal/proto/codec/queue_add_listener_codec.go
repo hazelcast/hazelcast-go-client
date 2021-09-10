@@ -46,8 +46,8 @@ func EncodeQueueAddListenerRequest(name string, includeValue bool, localOnly boo
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, QueueAddListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, QueueAddListenerCodecRequestIncludeValueOffset, includeValue)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, QueueAddListenerCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, QueueAddListenerCodecRequestIncludeValueOffset, includeValue)
+	EncodeBoolean(initialFrame.Content, QueueAddListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueAddListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -61,7 +61,7 @@ func DecodeQueueAddListenerResponse(clientMessage *proto.ClientMessage) types.UU
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, QueueAddListenerResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, QueueAddListenerResponseResponseOffset)
 }
 
 func HandleQueueAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item serialization.Data, uuid types.UUID, eventType int32)) {
@@ -69,8 +69,8 @@ func HandleQueueAddListener(clientMessage *proto.ClientMessage, handleItemEvent 
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == QueueAddListenerCodecEventItemMessageType {
 		initialFrame := frameIterator.Next()
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, QueueAddListenerEventItemUuidOffset)
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, QueueAddListenerEventItemEventTypeOffset)
+		uuid := DecodeUUID(initialFrame.Content, QueueAddListenerEventItemUuidOffset)
+		eventType := DecodeInt(initialFrame.Content, QueueAddListenerEventItemEventTypeOffset)
 		item := DecodeNullableForData(frameIterator)
 		handleItemEvent(item, uuid, eventType)
 		return

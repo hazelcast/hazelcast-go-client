@@ -53,5 +53,5 @@ func DecodeReplicatedMapContainsValueResponse(clientMessage *proto.ClientMessage
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ReplicatedMapContainsValueResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ReplicatedMapContainsValueResponseResponseOffset)
 }

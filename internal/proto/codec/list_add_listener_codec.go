@@ -46,8 +46,8 @@ func EncodeListAddListenerRequest(name string, includeValue bool, localOnly bool
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ListAddListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestIncludeValueOffset, includeValue)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestIncludeValueOffset, includeValue)
+	EncodeBoolean(initialFrame.Content, ListAddListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListAddListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -61,7 +61,7 @@ func DecodeListAddListenerResponse(clientMessage *proto.ClientMessage) types.UUI
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, ListAddListenerResponseResponseOffset)
 }
 
 func HandleListAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item serialization.Data, uuid types.UUID, eventType int32)) {
@@ -69,8 +69,8 @@ func HandleListAddListener(clientMessage *proto.ClientMessage, handleItemEvent f
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ListAddListenerCodecEventItemMessageType {
 		initialFrame := frameIterator.Next()
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerEventItemUuidOffset)
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ListAddListenerEventItemEventTypeOffset)
+		uuid := DecodeUUID(initialFrame.Content, ListAddListenerEventItemUuidOffset)
+		eventType := DecodeInt(initialFrame.Content, ListAddListenerEventItemEventTypeOffset)
 		item := DecodeNullableForData(frameIterator)
 		handleItemEvent(item, uuid, eventType)
 		return

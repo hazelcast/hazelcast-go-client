@@ -55,5 +55,5 @@ func DecodeQueueAddAllResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, QueueAddAllResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, QueueAddAllResponseResponseOffset)
 }

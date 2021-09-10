@@ -208,7 +208,7 @@ func TestFixSizedTypesCodec_EncodeInt(t *testing.T) {
 	buffer := make([]byte, 4)
 	offset := int32(0)
 	value := int32(100)
-	FixSizedTypesCodec.EncodeInt(buffer, offset, value)
+	EncodeInt(buffer, offset, value)
 	assert.Equal(t, binary.LittleEndian.Uint32(buffer), uint32(100))
 }
 
@@ -216,8 +216,8 @@ func TestFixSizedTypesCodec_DecodeInt(t *testing.T) {
 	buffer := make([]byte, 4)
 	offset := int32(0)
 	value := int32(100)
-	FixSizedTypesCodec.EncodeInt(buffer, offset, value)
-	decodeInt := FixSizedTypesCodec.DecodeInt(buffer, offset)
+	EncodeInt(buffer, offset, value)
+	decodeInt := DecodeInt(buffer, offset)
 	assert.Equal(t, decodeInt, value)
 }
 
@@ -225,7 +225,7 @@ func TestFixSizedTypesCodec_EncodeLong(t *testing.T) {
 	buffer := make([]byte, 8)
 	offset := int32(0)
 	value := int64(100000000000000000)
-	FixSizedTypesCodec.EncodeLong(buffer, offset, value)
+	EncodeLong(buffer, offset, value)
 	assert.Equal(t, int64(binary.LittleEndian.Uint64(buffer[offset:])), value)
 }
 
@@ -233,37 +233,37 @@ func TestFixSizedTypesCodec_DecodeLong(t *testing.T) {
 	buffer := make([]byte, 8)
 	offset := int32(0)
 	value := int64(100000000000000000)
-	FixSizedTypesCodec.EncodeLong(buffer, offset, value)
-	decodeLong := FixSizedTypesCodec.DecodeLong(buffer, offset)
+	EncodeLong(buffer, offset, value)
+	decodeLong := DecodeLong(buffer, offset)
 	assert.Equal(t, decodeLong, value)
 }
 
 func TestFixSizedTypesCodec_EncodeBool(t *testing.T) {
 	buffer := make([]byte, 1)
 	offset := int32(0)
-	FixSizedTypesCodec.EncodeBoolean(buffer, offset, true)
+	EncodeBoolean(buffer, offset, true)
 	assert.True(t, buffer[offset] == 1)
 }
 
 func TestFixSizedTypesCodec_EncodeBool_When_Value_Is_False(t *testing.T) {
 	buffer := make([]byte, 1)
 	offset := int32(0)
-	FixSizedTypesCodec.EncodeBoolean(buffer, offset, false)
+	EncodeBoolean(buffer, offset, false)
 	assert.True(t, buffer[offset] == 0)
 }
 
 func TestFixSizedTypesCodec_EncodeByte(t *testing.T) {
 	buffer := make([]byte, 1)
 	offset := int32(0)
-	FixSizedTypesCodec.EncodeByte(buffer, offset, 'b')
+	EncodeByte(buffer, offset, 'b')
 	assert.Equal(t, string(buffer[0]), "b")
 }
 
 func TestFixSizedTypesCodec_DecodeByte(t *testing.T) {
 	buffer := make([]byte, 1)
 	offset := int32(0)
-	FixSizedTypesCodec.EncodeByte(buffer, offset, 'b')
-	decodeByte := FixSizedTypesCodec.DecodeByte(buffer, offset)
+	EncodeByte(buffer, offset, 'b')
+	decodeByte := DecodeByte(buffer, offset)
 	assert.Equal(t, string(decodeByte), "b")
 }
 
@@ -271,26 +271,26 @@ func TestFixSizedTypesCodec_EncodeUUID(t *testing.T) {
 	buffer := make([]byte, proto.UUIDSizeInBytes)
 	offset := int32(0)
 	uuid := types.NewUUID()
-	FixSizedTypesCodec.EncodeUUID(buffer, offset, uuid)
-	assert.Equal(t, FixSizedTypesCodec.DecodeBoolean(buffer, offset), false)
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(buffer, offset+proto.BooleanSizeInBytes), int64(uuid.MostSignificantBits()))
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(buffer, offset+proto.BooleanSizeInBytes+proto.LongSizeInBytes), int64(uuid.LeastSignificantBits()))
+	EncodeUUID(buffer, offset, uuid)
+	assert.Equal(t, DecodeBoolean(buffer, offset), false)
+	assert.Equal(t, DecodeLong(buffer, offset+proto.BooleanSizeInBytes), int64(uuid.MostSignificantBits()))
+	assert.Equal(t, DecodeLong(buffer, offset+proto.BooleanSizeInBytes+proto.LongSizeInBytes), int64(uuid.LeastSignificantBits()))
 }
 
 func TestFixSizedTypesCodec_EncodeUUID_When_UUID_Is_Nil(t *testing.T) {
 	buffer := make([]byte, proto.UUIDSizeInBytes)
 	offset := int32(0)
-	FixSizedTypesCodec.EncodeUUID(buffer, offset, types.UUID{})
-	assert.Equal(t, FixSizedTypesCodec.DecodeBoolean(buffer, offset), true)
+	EncodeUUID(buffer, offset, types.UUID{})
+	assert.Equal(t, DecodeBoolean(buffer, offset), true)
 }
 
 func TestFixSizedTypesCodec_DecodeUUID(t *testing.T) {
 	buffer := make([]byte, proto.UUIDSizeInBytes)
 	offset := int32(0)
 	uuid := types.NewUUID()
-	FixSizedTypesCodec.EncodeUUID(buffer, offset, uuid)
-	decodeUUID := FixSizedTypesCodec.DecodeUUID(buffer, offset)
-	assert.Equal(t, FixSizedTypesCodec.DecodeBoolean(buffer, offset), false)
+	EncodeUUID(buffer, offset, uuid)
+	decodeUUID := DecodeUUID(buffer, offset)
+	assert.Equal(t, DecodeBoolean(buffer, offset), false)
 	assert.Equal(t, uuid, decodeUUID)
 	assert.Equal(t, uuid.String(), decodeUUID.String())
 	assert.Equal(t, uuid.MostSignificantBits(), decodeUUID.MostSignificantBits())
@@ -318,9 +318,9 @@ func TestListUUIDCodec_Encode(t *testing.T) {
 	entries = append(entries, value1, value2)
 	EncodeListUUID(message, entries)
 	frame := message.FrameIterator().Next()
-	decodeUUID1 := FixSizedTypesCodec.DecodeUUID(frame.Content, 0)
+	decodeUUID1 := DecodeUUID(frame.Content, 0)
 	assert.Equal(t, value1.String(), decodeUUID1.String())
-	decodeUUID2 := FixSizedTypesCodec.DecodeUUID(frame.Content, 17)
+	decodeUUID2 := DecodeUUID(frame.Content, 17)
 	assert.Equal(t, value2.String(), decodeUUID2.String())
 }
 
@@ -330,9 +330,9 @@ func TestListIntegerCodec_Encode(t *testing.T) {
 	entries = append(entries, 1, 2, 3)
 	EncodeListInteger(clientMessage, entries)
 	frame := clientMessage.FrameIterator().Next()
-	assert.Equal(t, FixSizedTypesCodec.DecodeInt(frame.Content, 0), int32(1))
-	assert.Equal(t, FixSizedTypesCodec.DecodeInt(frame.Content, 4), int32(2))
-	assert.Equal(t, FixSizedTypesCodec.DecodeInt(frame.Content, 8), int32(3))
+	assert.Equal(t, DecodeInt(frame.Content, 0), int32(1))
+	assert.Equal(t, DecodeInt(frame.Content, 4), int32(2))
+	assert.Equal(t, DecodeInt(frame.Content, 8), int32(3))
 }
 
 func TestListIntegerCodec_Decode(t *testing.T) {
@@ -352,9 +352,9 @@ func TestListLongCodec_Encode(t *testing.T) {
 	entries = append(entries, 1, 2, 3)
 	EncodeListLong(message, entries)
 	frame := message.FrameIterator().Next()
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(frame.Content, 0), int64(1))
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(frame.Content, 8), int64(2))
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(frame.Content, 16), int64(3))
+	assert.Equal(t, DecodeLong(frame.Content, 0), int64(1))
+	assert.Equal(t, DecodeLong(frame.Content, 8), int64(2))
+	assert.Equal(t, DecodeLong(frame.Content, 16), int64(3))
 }
 
 func TestListLongCodec_Decode(t *testing.T) {
@@ -378,11 +378,11 @@ func TestEntryListUUIDListIntegerCodec_Encode(t *testing.T) {
 	iterator := clientMessage.FrameIterator()
 	assert.Equal(t, iterator.Next().IsBeginFrame(), true)
 	integerValues := iterator.Next()
-	assert.Equal(t, FixSizedTypesCodec.DecodeInt(integerValues.Content, 0), int32(1))
-	assert.Equal(t, FixSizedTypesCodec.DecodeInt(integerValues.Content, 4), int32(2))
-	assert.Equal(t, FixSizedTypesCodec.DecodeInt(integerValues.Content, 8), int32(3))
+	assert.Equal(t, DecodeInt(integerValues.Content, 0), int32(1))
+	assert.Equal(t, DecodeInt(integerValues.Content, 4), int32(2))
+	assert.Equal(t, DecodeInt(integerValues.Content, 8), int32(3))
 	assert.Equal(t, iterator.Next().IsEndFrame(), true)
-	uuid := FixSizedTypesCodec.DecodeUUID(iterator.Next().Content, 0)
+	uuid := DecodeUUID(iterator.Next().Content, 0)
 	assert.Equal(t, uuid.String(), key.String())
 }
 
@@ -407,9 +407,9 @@ func TestLongArrayCodec_Encode(t *testing.T) {
 	entries = append(entries, 1, 2, 3)
 	EncodeLongArray(clientMessage, entries)
 	frame := clientMessage.FrameIterator().Next()
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(frame.Content, 0), int64(1))
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(frame.Content, 8), int64(2))
-	assert.Equal(t, FixSizedTypesCodec.DecodeLong(frame.Content, 16), int64(3))
+	assert.Equal(t, DecodeLong(frame.Content, 0), int64(1))
+	assert.Equal(t, DecodeLong(frame.Content, 8), int64(2))
+	assert.Equal(t, DecodeLong(frame.Content, 16), int64(3))
 }
 
 func TestLongArrayCodec_Decode(t *testing.T) {

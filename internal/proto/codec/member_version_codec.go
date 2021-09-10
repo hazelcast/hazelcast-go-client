@@ -36,9 +36,9 @@ var MemberVersionCodec memberversionCodec
 func EncodeMemberVersion(clientMessage *proto.ClientMessage, memberVersion pubcluster.MemberVersion) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberVersionCodecPatchInitialFrameSize))
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.Major)
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset, memberVersion.Minor)
-	FixSizedTypesCodec.EncodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset, memberVersion.Patch)
+	EncodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset, memberVersion.Major)
+	EncodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset, memberVersion.Minor)
+	EncodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset, memberVersion.Patch)
 	clientMessage.AddFrame(initialFrame)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
@@ -48,9 +48,9 @@ func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) pubcluster.M
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
-	major := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset)
-	minor := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset)
-	patch := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset)
+	major := DecodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset)
+	minor := DecodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset)
+	patch := DecodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset)
 	FastForwardToEndFrame(frameIterator)
 	return NewMemberVersion(major, minor, patch)
 }

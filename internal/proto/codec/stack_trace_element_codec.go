@@ -28,7 +28,7 @@ const (
 func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceElement ihzerrors.StackTraceElement) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, StackTraceElementCodecLineNumberInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset, int32(stackTraceElement.LineNumber))
+	EncodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset, int32(stackTraceElement.LineNumber))
 	clientMessage.AddFrame(initialFrame)
 
 	EncodeString(clientMessage, stackTraceElement.ClassName)
@@ -42,7 +42,7 @@ func DecodeStackTraceElement(frameIterator *proto.ForwardFrameIterator) ihzerror
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
-	lineNumber := FixSizedTypesCodec.DecodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset)
+	lineNumber := DecodeInt(initialFrame.Content, StackTraceElementCodecLineNumberFieldOffset)
 
 	className := DecodeString(frameIterator)
 	methodName := DecodeString(frameIterator)

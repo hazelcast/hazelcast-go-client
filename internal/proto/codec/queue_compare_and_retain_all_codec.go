@@ -53,5 +53,5 @@ func DecodeQueueCompareAndRetainAllResponse(clientMessage *proto.ClientMessage) 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, QueueCompareAndRetainAllResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, QueueCompareAndRetainAllResponseResponseOffset)
 }

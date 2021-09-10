@@ -52,5 +52,5 @@ func DecodeMapIsLockedResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapIsLockedResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MapIsLockedResponseResponseOffset)
 }

@@ -37,7 +37,7 @@ func EncodeMapReplaceRequest(name string, key serialization.Data, value serializ
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapReplaceCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapReplaceCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapReplaceCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapReplaceCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

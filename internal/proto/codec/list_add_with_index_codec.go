@@ -38,7 +38,7 @@ func EncodeListAddWithIndexRequest(name string, index int32, value serialization
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ListAddWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ListAddWithIndexCodecRequestIndexOffset, index)
+	EncodeInt(initialFrame.Content, ListAddWithIndexCodecRequestIndexOffset, index)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListAddWithIndexCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -46,8 +46,8 @@ func EncodeSetAddListenerRequest(name string, includeValue bool, localOnly bool)
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, SetAddListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SetAddListenerCodecRequestIncludeValueOffset, includeValue)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SetAddListenerCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, SetAddListenerCodecRequestIncludeValueOffset, includeValue)
+	EncodeBoolean(initialFrame.Content, SetAddListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(SetAddListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -61,7 +61,7 @@ func DecodeSetAddListenerResponse(clientMessage *proto.ClientMessage) types.UUID
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, SetAddListenerResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, SetAddListenerResponseResponseOffset)
 }
 
 func HandleSetAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item serialization.Data, uuid types.UUID, eventType int32)) {
@@ -69,8 +69,8 @@ func HandleSetAddListener(clientMessage *proto.ClientMessage, handleItemEvent fu
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == SetAddListenerCodecEventItemMessageType {
 		initialFrame := frameIterator.Next()
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, SetAddListenerEventItemUuidOffset)
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, SetAddListenerEventItemEventTypeOffset)
+		uuid := DecodeUUID(initialFrame.Content, SetAddListenerEventItemUuidOffset)
+		eventType := DecodeInt(initialFrame.Content, SetAddListenerEventItemEventTypeOffset)
 		item := DecodeNullableForData(frameIterator)
 		handleItemEvent(item, uuid, eventType)
 		return

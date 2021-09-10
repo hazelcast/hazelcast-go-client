@@ -37,7 +37,7 @@ func EncodeMapFetchKeysRequest(name string, iterationPointers []proto.Pair, batc
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapFetchKeysCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapFetchKeysCodecRequestBatchOffset, batch)
+	EncodeInt(initialFrame.Content, MapFetchKeysCodecRequestBatchOffset, batch)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapFetchKeysCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -38,7 +38,7 @@ func EncodeMapExecuteOnKeyRequest(name string, entryProcessor serialization.Data
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapExecuteOnKeyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapExecuteOnKeyCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapExecuteOnKeyCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapExecuteOnKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

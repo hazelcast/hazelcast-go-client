@@ -38,7 +38,7 @@ func EncodeQueueRemoveListenerRequest(name string, registrationId types.UUID) *p
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, QueueRemoveListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, QueueRemoveListenerCodecRequestRegistrationIdOffset, registrationId)
+	EncodeUUID(initialFrame.Content, QueueRemoveListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueRemoveListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -52,5 +52,5 @@ func DecodeQueueRemoveListenerResponse(clientMessage *proto.ClientMessage) bool 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, QueueRemoveListenerResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, QueueRemoveListenerResponseResponseOffset)
 }

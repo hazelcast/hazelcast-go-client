@@ -35,8 +35,8 @@ var MemberInfoCodec memberinfoCodec
 func EncodeMemberInfo(clientMessage *proto.ClientMessage, memberInfo cluster.MemberInfo) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, MemberInfoCodecLiteMemberInitialFrameSize))
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.UUID)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset, memberInfo.LiteMember)
+	EncodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset, memberInfo.UUID)
+	EncodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset, memberInfo.LiteMember)
 	clientMessage.AddFrame(initialFrame)
 
 	EncodeAddress(clientMessage, memberInfo.Address)
@@ -51,8 +51,8 @@ func DecodeMemberInfo(frameIterator *proto.ForwardFrameIterator) cluster.MemberI
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
-	uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset)
-	liteMember := FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset)
+	uuid := DecodeUUID(initialFrame.Content, MemberInfoCodecUuidFieldOffset)
+	liteMember := DecodeBoolean(initialFrame.Content, MemberInfoCodecLiteMemberFieldOffset)
 
 	address := DecodeAddress(frameIterator)
 	attributes := DecodeMapForStringAndString(frameIterator)

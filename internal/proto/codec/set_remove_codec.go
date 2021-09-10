@@ -54,5 +54,5 @@ func DecodeSetRemoveResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SetRemoveResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, SetRemoveResponseResponseOffset)
 }

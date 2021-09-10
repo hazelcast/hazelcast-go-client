@@ -39,7 +39,7 @@ func EncodeMapContainsKeyRequest(name string, key serialization.Data, threadId i
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapContainsKeyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapContainsKeyCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapContainsKeyCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapContainsKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -54,5 +54,5 @@ func DecodeMapContainsKeyResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapContainsKeyResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MapContainsKeyResponseResponseOffset)
 }

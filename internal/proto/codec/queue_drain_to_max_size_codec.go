@@ -41,7 +41,7 @@ func EncodeQueueDrainToMaxSizeRequest(name string, maxSize int32) *proto.ClientM
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, QueueDrainToMaxSizeCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, QueueDrainToMaxSizeCodecRequestMaxSizeOffset, maxSize)
+	EncodeInt(initialFrame.Content, QueueDrainToMaxSizeCodecRequestMaxSizeOffset, maxSize)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueDrainToMaxSizeCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

@@ -42,7 +42,7 @@ func EncodeMapDeleteRequest(name string, key serialization.Data, threadId int64)
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapDeleteCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapDeleteCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapDeleteCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapDeleteCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

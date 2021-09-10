@@ -51,5 +51,5 @@ func DecodeListSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, ListSizeResponseResponseOffset)
+	return DecodeInt(initialFrame.Content, ListSizeResponseResponseOffset)
 }

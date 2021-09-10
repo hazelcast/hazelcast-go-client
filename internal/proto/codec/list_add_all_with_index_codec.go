@@ -43,7 +43,7 @@ func EncodeListAddAllWithIndexRequest(name string, index int32, valueList []seri
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ListAddAllWithIndexCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ListAddAllWithIndexCodecRequestIndexOffset, index)
+	EncodeInt(initialFrame.Content, ListAddAllWithIndexCodecRequestIndexOffset, index)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ListAddAllWithIndexCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -58,5 +58,5 @@ func DecodeListAddAllWithIndexResponse(clientMessage *proto.ClientMessage) bool 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ListAddAllWithIndexResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ListAddAllWithIndexResponseResponseOffset)
 }

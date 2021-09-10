@@ -47,8 +47,8 @@ func EncodeReplicatedMapAddNearCacheEntryListenerRequest(name string, includeVal
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ReplicatedMapAddNearCacheEntryListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerCodecRequestIncludeValueOffset, includeValue)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerCodecRequestIncludeValueOffset, includeValue)
+	EncodeBoolean(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ReplicatedMapAddNearCacheEntryListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -62,7 +62,7 @@ func DecodeReplicatedMapAddNearCacheEntryListenerResponse(clientMessage *proto.C
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerResponseResponseOffset)
 }
 
 func HandleReplicatedMapAddNearCacheEntryListener(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
@@ -70,9 +70,9 @@ func HandleReplicatedMapAddNearCacheEntryListener(clientMessage *proto.ClientMes
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ReplicatedMapAddNearCacheEntryListenerCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryEventTypeOffset)
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryUuidOffset)
-		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryNumberOfAffectedEntriesOffset)
+		eventType := DecodeInt(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryEventTypeOffset)
+		uuid := DecodeUUID(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryUuidOffset)
+		numberOfAffectedEntries := DecodeInt(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryNumberOfAffectedEntriesOffset)
 		key := DecodeNullableForData(frameIterator)
 		value := DecodeNullableForData(frameIterator)
 		oldValue := DecodeNullableForData(frameIterator)

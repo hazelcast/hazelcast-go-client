@@ -38,7 +38,7 @@ func EncodeClientRemoveDistributedObjectListenerRequest(registrationId types.UUI
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ClientRemoveDistributedObjectListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, ClientRemoveDistributedObjectListenerCodecRequestRegistrationIdOffset, registrationId)
+	EncodeUUID(initialFrame.Content, ClientRemoveDistributedObjectListenerCodecRequestRegistrationIdOffset, registrationId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientRemoveDistributedObjectListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -50,5 +50,5 @@ func DecodeClientRemoveDistributedObjectListenerResponse(clientMessage *proto.Cl
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ClientRemoveDistributedObjectListenerResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ClientRemoveDistributedObjectListenerResponseResponseOffset)
 }

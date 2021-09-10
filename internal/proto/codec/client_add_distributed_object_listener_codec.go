@@ -41,7 +41,7 @@ func EncodeClientAddDistributedObjectListenerRequest(localOnly bool) *proto.Clie
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, ClientAddDistributedObjectListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, ClientAddDistributedObjectListenerCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, ClientAddDistributedObjectListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(ClientAddDistributedObjectListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -53,7 +53,7 @@ func DecodeClientAddDistributedObjectListenerResponse(clientMessage *proto.Clien
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerResponseResponseOffset)
 }
 
 func HandleClientAddDistributedObjectListener(clientMessage *proto.ClientMessage, handleDistributedObjectEvent func(name string, serviceName string, eventType string, source types.UUID)) {
@@ -61,7 +61,7 @@ func HandleClientAddDistributedObjectListener(clientMessage *proto.ClientMessage
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddDistributedObjectListenerCodecEventDistributedObjectMessageType {
 		initialFrame := frameIterator.Next()
-		source := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerEventDistributedObjectSourceOffset)
+		source := DecodeUUID(initialFrame.Content, ClientAddDistributedObjectListenerEventDistributedObjectSourceOffset)
 		name := DecodeString(frameIterator)
 		serviceName := DecodeString(frameIterator)
 		eventType := DecodeString(frameIterator)

@@ -40,7 +40,7 @@ func EncodeQueueOfferRequest(name string, value serialization.Data, timeoutMilli
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, QueueOfferCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, QueueOfferCodecRequestTimeoutMillisOffset, timeoutMillis)
+	EncodeLong(initialFrame.Content, QueueOfferCodecRequestTimeoutMillisOffset, timeoutMillis)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(QueueOfferCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -55,5 +55,5 @@ func DecodeQueueOfferResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, QueueOfferResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, QueueOfferResponseResponseOffset)
 }

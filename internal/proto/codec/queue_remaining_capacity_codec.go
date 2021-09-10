@@ -51,5 +51,5 @@ func DecodeQueueRemainingCapacityResponse(clientMessage *proto.ClientMessage) in
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, QueueRemainingCapacityResponseResponseOffset)
+	return DecodeInt(initialFrame.Content, QueueRemainingCapacityResponseResponseOffset)
 }

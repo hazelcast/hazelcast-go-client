@@ -49,9 +49,9 @@ func EncodeMapAddEntryListenerToKeyWithPredicateRequest(name string, key seriali
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapAddEntryListenerToKeyWithPredicateCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestIncludeValueOffset, includeValue)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestListenerFlagsOffset, listenerFlags)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestIncludeValueOffset, includeValue)
+	EncodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestListenerFlagsOffset, listenerFlags)
+	EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapAddEntryListenerToKeyWithPredicateCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -67,7 +67,7 @@ func DecodeMapAddEntryListenerToKeyWithPredicateResponse(clientMessage *proto.Cl
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateResponseResponseOffset)
 }
 
 func HandleMapAddEntryListenerToKeyWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
@@ -75,9 +75,9 @@ func HandleMapAddEntryListenerToKeyWithPredicate(clientMessage *proto.ClientMess
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerToKeyWithPredicateCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryEventTypeOffset)
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryUuidOffset)
-		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryNumberOfAffectedEntriesOffset)
+		eventType := DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryEventTypeOffset)
+		uuid := DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryUuidOffset)
+		numberOfAffectedEntries := DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryNumberOfAffectedEntriesOffset)
 		key := DecodeNullableForData(frameIterator)
 		value := DecodeNullableForData(frameIterator)
 		oldValue := DecodeNullableForData(frameIterator)

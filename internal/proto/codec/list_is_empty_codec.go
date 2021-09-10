@@ -50,5 +50,5 @@ func DecodeListIsEmptyResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ListIsEmptyResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ListIsEmptyResponseResponseOffset)
 }

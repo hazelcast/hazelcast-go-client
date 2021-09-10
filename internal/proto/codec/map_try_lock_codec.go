@@ -45,10 +45,10 @@ func EncodeMapTryLockRequest(name string, key serialization.Data, threadId int64
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapTryLockCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestThreadIdOffset, threadId)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestLeaseOffset, lease)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestTimeoutOffset, timeout)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapTryLockCodecRequestReferenceIdOffset, referenceId)
+	EncodeLong(initialFrame.Content, MapTryLockCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapTryLockCodecRequestLeaseOffset, lease)
+	EncodeLong(initialFrame.Content, MapTryLockCodecRequestTimeoutOffset, timeout)
+	EncodeLong(initialFrame.Content, MapTryLockCodecRequestReferenceIdOffset, referenceId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapTryLockCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -63,5 +63,5 @@ func DecodeMapTryLockResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapTryLockResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MapTryLockResponseResponseOffset)
 }

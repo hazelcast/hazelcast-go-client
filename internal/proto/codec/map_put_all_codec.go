@@ -42,7 +42,7 @@ func EncodeMapPutAllRequest(name string, entries []proto.Pair, triggerMapLoader 
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapPutAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapPutAllCodecRequestTriggerMapLoaderOffset, triggerMapLoader)
+	EncodeBoolean(initialFrame.Content, MapPutAllCodecRequestTriggerMapLoaderOffset, triggerMapLoader)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapPutAllCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

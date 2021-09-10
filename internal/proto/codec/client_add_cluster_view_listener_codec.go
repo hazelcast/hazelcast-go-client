@@ -57,14 +57,14 @@ func HandleClientAddClusterViewListener(clientMessage *proto.ClientMessage, hand
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ClientAddClusterViewListenerCodecEventMembersViewMessageType {
 		initialFrame := frameIterator.Next()
-		version := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventMembersViewVersionOffset)
+		version := DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventMembersViewVersionOffset)
 		memberInfos := DecodeListMultiFrameForMemberInfo(frameIterator)
 		handleMembersViewEvent(version, memberInfos)
 		return
 	}
 	if messageType == ClientAddClusterViewListenerCodecEventPartitionsViewMessageType {
 		initialFrame := frameIterator.Next()
-		version := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventPartitionsViewVersionOffset)
+		version := DecodeInt(initialFrame.Content, ClientAddClusterViewListenerEventPartitionsViewVersionOffset)
 		partitions := DecodeEntryListUUIDListInteger(frameIterator)
 		handlePartitionsViewEvent(version, partitions)
 		return

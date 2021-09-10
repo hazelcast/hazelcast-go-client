@@ -50,5 +50,5 @@ func DecodeReplicatedMapIsEmptyResponse(clientMessage *proto.ClientMessage) bool
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ReplicatedMapIsEmptyResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, ReplicatedMapIsEmptyResponseResponseOffset)
 }

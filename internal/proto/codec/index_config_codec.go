@@ -34,7 +34,7 @@ var IndexConfigCodec indexconfigCodec
 func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig types.IndexConfig) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, IndexConfigCodecTypeInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, int32(indexConfig.Type))
+	EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, int32(indexConfig.Type))
 	clientMessage.AddFrame(initialFrame)
 
 	EncodeNullableForString(clientMessage, indexConfig.Name)
@@ -48,7 +48,7 @@ func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) types.IndexCon
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
-	_type := FixSizedTypesCodec.DecodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset)
+	_type := DecodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset)
 
 	name := DecodeNullableForString(frameIterator)
 	attributes := DecodeListMultiFrameForString(frameIterator)

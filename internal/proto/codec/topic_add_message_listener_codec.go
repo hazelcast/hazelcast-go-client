@@ -46,7 +46,7 @@ func EncodeTopicAddMessageListenerRequest(name string, localOnly bool) *proto.Cl
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, TopicAddMessageListenerCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, TopicAddMessageListenerCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, TopicAddMessageListenerCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(TopicAddMessageListenerCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -60,7 +60,7 @@ func DecodeTopicAddMessageListenerResponse(clientMessage *proto.ClientMessage) t
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseOffset)
 }
 
 func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid types.UUID)) {
@@ -68,8 +68,8 @@ func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTop
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == TopicAddMessageListenerCodecEventTopicMessageType {
 		initialFrame := frameIterator.Next()
-		publishTime := FixSizedTypesCodec.DecodeLong(initialFrame.Content, TopicAddMessageListenerEventTopicPublishTimeOffset)
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerEventTopicUuidOffset)
+		publishTime := DecodeLong(initialFrame.Content, TopicAddMessageListenerEventTopicPublishTimeOffset)
+		uuid := DecodeUUID(initialFrame.Content, TopicAddMessageListenerEventTopicUuidOffset)
 		item := DecodeData(frameIterator)
 		handleTopicEvent(item, publishTime, uuid)
 		return

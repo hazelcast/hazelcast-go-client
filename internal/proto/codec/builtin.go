@@ -266,8 +266,8 @@ func EncodeListIntegerIntegerInteger(message *proto.ClientMessage, entries []pro
 	entryCount := len(entries)
 	frame := proto.NewFrame(make([]byte, entryCount*proto.EntrySizeInBytes))
 	for i := 0; i < entryCount; i++ {
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key.(int32))
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value.(int32))
+		EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key.(int32))
+		EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value.(int32))
 	}
 	message.AddFrame(frame)
 }
@@ -277,8 +277,8 @@ func DecodeListIntegerIntegerInteger(frameIterator *proto.ForwardFrameIterator) 
 	itemCount := len(frame.Content) / proto.EntrySizeInBytes
 	result := make([]proto.Pair, itemCount)
 	for i := 0; i < itemCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
+		key := DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
+		value := DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
 		result = append(result, proto.Pair{Key: key, Value: value})
 	}
 	return result
@@ -291,8 +291,8 @@ func EncodeEntryListUUIDLong(message *proto.ClientMessage, entries []proto.Pair)
 	for i, entry := range entries {
 		key := entry.Key.(types.UUID)
 		value := entry.Value.(int64)
-		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.EntrySizeInBytes), key)
-		FixSizedTypesCodec.EncodeLong(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
+		EncodeUUID(content, int32(i*proto.EntrySizeInBytes), key)
+		EncodeLong(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
 	message.AddFrame(newFrame)
 }
@@ -304,8 +304,8 @@ func EncodeEntryListIntegerInteger(message *proto.ClientMessage, entries []proto
 	for i, entry := range entries {
 		key := entry.Key.(int32)
 		value := entry.Value.(int32)
-		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes), key)
-		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
+		EncodeInt(content, int32(i*proto.EntrySizeInBytes), key)
+		EncodeInt(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
 	message.AddFrame(newFrame)
 }
@@ -315,8 +315,8 @@ func DecodeEntryListUUIDLong(frameIterator *proto.ForwardFrameIterator) []proto.
 	itemCount := len(nextFrame.Content) / proto.EntrySizeInBytes
 	content := make([]proto.Pair, itemCount)
 	for i := 0; i < itemCount; i++ {
-		uuid := FixSizedTypesCodec.DecodeUUID(nextFrame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeLong(nextFrame.Content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes))
+		uuid := DecodeUUID(nextFrame.Content, int32(i*proto.EntrySizeInBytes))
+		value := DecodeLong(nextFrame.Content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes))
 		content[i] = proto.Pair{Key: uuid, Value: value}
 	}
 	return content
@@ -327,8 +327,8 @@ func DecodeEntryListIntegerInteger(frameIterator *proto.ForwardFrameIterator) []
 	itemCount := len(nextFrame.Content) / proto.EntrySizeInBytes
 	content := make([]proto.Pair, itemCount)
 	for i := 0; i < itemCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
+		key := DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes))
+		value := DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
 		content[i] = proto.Pair{Key: key, Value: value}
 	}
 	return content
@@ -365,8 +365,8 @@ func DecodeEntryListIntegerUUID(frameIterator *proto.ForwardFrameIterator) []pro
 	entryCount := len(frame.Content) / proto.EntrySizeInBytes
 	result := make([]proto.Pair, entryCount)
 	for i := 0; i < entryCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeUUID(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
+		key := DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
+		value := DecodeUUID(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
 		result[i] = proto.Pair{Key: key, Value: value}
 	}
 	return result
@@ -377,35 +377,30 @@ func DecodeEntryListIntegerLong(iterator *proto.ForwardFrameIterator) []proto.Pa
 	entryCount := len(frame.Content) / proto.EntrySizeInBytes
 	result := make([]proto.Pair, entryCount)
 	for i := 0; i < entryCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeLong(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
+		key := DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
+		value := DecodeLong(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
 		result[i] = proto.Pair{Key: key, Value: value}
 	}
 	return result
 }
 
-// fixSizedTypesCodec
-type fixSizedTypesCodec struct{}
-
-var FixSizedTypesCodec fixSizedTypesCodec
-
-func (fixSizedTypesCodec) EncodeInt(buffer []byte, offset, value int32) {
+func EncodeInt(buffer []byte, offset, value int32) {
 	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
 }
 
-func (fixSizedTypesCodec) DecodeInt(buffer []byte, offset int32) int32 {
+func DecodeInt(buffer []byte, offset int32) int32 {
 	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
 }
 
-func (fixSizedTypesCodec) EncodeLong(buffer []byte, offset int32, value int64) {
+func EncodeLong(buffer []byte, offset int32, value int64) {
 	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
 }
 
-func (fixSizedTypesCodec) DecodeLong(buffer []byte, offset int32) int64 {
+func DecodeLong(buffer []byte, offset int32) int64 {
 	return int64(binary.LittleEndian.Uint64(buffer[offset:]))
 }
 
-func (fixSizedTypesCodec) EncodeBoolean(buffer []byte, offset int32, value bool) {
+func EncodeBoolean(buffer []byte, offset int32, value bool) {
 	if value {
 		buffer[offset] = 1
 	} else {
@@ -413,39 +408,38 @@ func (fixSizedTypesCodec) EncodeBoolean(buffer []byte, offset int32, value bool)
 	}
 }
 
-func (fixSizedTypesCodec) DecodeBoolean(buffer []byte, offset int32) bool {
+func DecodeBoolean(buffer []byte, offset int32) bool {
 	return buffer[offset] == 1
 }
 
-func (fixSizedTypesCodec) EncodeByte(buffer []byte, offset int32, value byte) {
+func EncodeByte(buffer []byte, offset int32, value byte) {
 	buffer[offset] = value
 }
 
-func (fixSizedTypesCodec) DecodeByte(buffer []byte, offset int32) byte {
+func DecodeByte(buffer []byte, offset int32) byte {
 	return buffer[offset]
 }
 
-func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
+func EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
 	isNullEncode := uuid.Default()
-	FixSizedTypesCodec.EncodeBoolean(buffer, offset, isNullEncode)
+	EncodeBoolean(buffer, offset, isNullEncode)
 	if isNullEncode {
 		return
 	}
 	bufferOffset := offset + proto.BooleanSizeInBytes
-	FixSizedTypesCodec.EncodeLong(buffer, bufferOffset, int64(uuid.MostSignificantBits()))
-	FixSizedTypesCodec.EncodeLong(buffer, bufferOffset+proto.LongSizeInBytes, int64(uuid.LeastSignificantBits()))
+	EncodeLong(buffer, bufferOffset, int64(uuid.MostSignificantBits()))
+	EncodeLong(buffer, bufferOffset+proto.LongSizeInBytes, int64(uuid.LeastSignificantBits()))
 }
 
-func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) types.UUID {
-	isNull := FixSizedTypesCodec.DecodeBoolean(buffer, offset)
+func DecodeUUID(buffer []byte, offset int32) types.UUID {
+	isNull := DecodeBoolean(buffer, offset)
 	if isNull {
 		return types.UUID{}
 	}
-
 	mostSignificantOffset := offset + proto.BooleanSizeInBytes
 	leastSignificantOffset := mostSignificantOffset + proto.LongSizeInBytes
-	mostSignificant := uint64(FixSizedTypesCodec.DecodeLong(buffer, mostSignificantOffset))
-	leastSignificant := uint64(FixSizedTypesCodec.DecodeLong(buffer, leastSignificantOffset))
+	mostSignificant := uint64(DecodeLong(buffer, mostSignificantOffset))
+	leastSignificant := uint64(DecodeLong(buffer, leastSignificantOffset))
 
 	return types.NewUUIDWith(mostSignificant, leastSignificant)
 }
@@ -455,7 +449,7 @@ func EncodeListInteger(message *proto.ClientMessage, entries []int32) {
 	content := make([]byte, itemCount*proto.IntSizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i := 0; i < itemCount; i++ {
-		FixSizedTypesCodec.EncodeInt(newFrame.Content, int32(i*proto.IntSizeInBytes), entries[i])
+		EncodeInt(newFrame.Content, int32(i*proto.IntSizeInBytes), entries[i])
 	}
 	message.AddFrame(newFrame)
 }
@@ -465,7 +459,7 @@ func DecodeListInteger(frameIterator *proto.ForwardFrameIterator) []int32 {
 	itemCount := len(frame.Content) / proto.IntSizeInBytes
 	result := make([]int32, itemCount)
 	for i := 0; i < itemCount; i++ {
-		result[i] = FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.IntSizeInBytes))
+		result[i] = DecodeInt(frame.Content, int32(i*proto.IntSizeInBytes))
 	}
 	return result
 }
@@ -474,7 +468,7 @@ func EncodeListLong(message *proto.ClientMessage, entries []int64) {
 	itemCount := len(entries)
 	frame := proto.NewFrame(make([]byte, itemCount*proto.LongSizeInBytes))
 	for i := 0; i < itemCount; i++ {
-		FixSizedTypesCodec.EncodeLong(frame.Content, int32(i*proto.LongSizeInBytes), entries[i])
+		EncodeLong(frame.Content, int32(i*proto.LongSizeInBytes), entries[i])
 	}
 	message.AddFrame(frame)
 }
@@ -484,7 +478,7 @@ func DecodeListLong(frameIterator *proto.ForwardFrameIterator) []int64 {
 	itemCount := len(frame.Content) / proto.LongSizeInBytes
 	result := make([]int64, itemCount)
 	for i := 0; i < itemCount; i++ {
-		result[i] = FixSizedTypesCodec.DecodeLong(frame.Content, int32(i*proto.LongSizeInBytes))
+		result[i] = DecodeLong(frame.Content, int32(i*proto.LongSizeInBytes))
 	}
 	return result
 }
@@ -644,7 +638,7 @@ func EncodeListUUID(message *proto.ClientMessage, entries []types.UUID) {
 	content := make([]byte, itemCount*proto.UUIDSizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i := 0; i < itemCount; i++ {
-		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.UUIDSizeInBytes), entries[i])
+		EncodeUUID(content, int32(i*proto.UUIDSizeInBytes), entries[i])
 	}
 	message.AddFrame(newFrame)
 }
@@ -654,7 +648,7 @@ func DecodeListUUID(frameIterator *proto.ForwardFrameIterator) []types.UUID {
 	itemCount := len(frame.Content) / proto.UUIDSizeInBytes
 	result := make([]types.UUID, itemCount)
 	for i := 0; i < itemCount; i++ {
-		result[i] = FixSizedTypesCodec.DecodeUUID(frame.Content, int32(i*proto.UUIDSizeInBytes))
+		result[i] = DecodeUUID(frame.Content, int32(i*proto.UUIDSizeInBytes))
 	}
 	return result
 }
@@ -663,7 +657,7 @@ func EncodeLongArray(message *proto.ClientMessage, entries []int64) {
 	itemCount := len(entries)
 	frame := proto.NewFrame(make([]byte, itemCount*proto.LongSizeInBytes))
 	for i := 0; i < itemCount; i++ {
-		FixSizedTypesCodec.EncodeLong(frame.Content, int32(i*proto.LongSizeInBytes), entries[i])
+		EncodeLong(frame.Content, int32(i*proto.LongSizeInBytes), entries[i])
 	}
 	message.AddFrame(frame)
 }
@@ -673,7 +667,7 @@ func DecodeLongArray(frameIterator *proto.ForwardFrameIterator) []int64 {
 	itemCount := len(frame.Content) / proto.LongSizeInBytes
 	result := make([]int64, itemCount)
 	for i := 0; i < itemCount; i++ {
-		result[i] = FixSizedTypesCodec.DecodeLong(frame.Content, int32(i*proto.LongSizeInBytes))
+		result[i] = DecodeLong(frame.Content, int32(i*proto.LongSizeInBytes))
 	}
 	return result
 }
@@ -806,7 +800,7 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 	}
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, AddressCodecPortInitialFrameSize))
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, int32(port))
+	EncodeInt(initialFrame.Content, AddressCodecPortFieldOffset, int32(port))
 	clientMessage.AddFrame(initialFrame)
 	EncodeString(clientMessage, host)
 	clientMessage.AddFrame(proto.EndFrame.Copy())

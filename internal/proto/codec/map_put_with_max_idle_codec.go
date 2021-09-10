@@ -42,9 +42,9 @@ func EncodeMapPutWithMaxIdleRequest(name string, key serialization.Data, value s
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapPutWithMaxIdleCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutWithMaxIdleCodecRequestThreadIdOffset, threadId)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutWithMaxIdleCodecRequestTtlOffset, ttl)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutWithMaxIdleCodecRequestMaxIdleOffset, maxIdle)
+	EncodeLong(initialFrame.Content, MapPutWithMaxIdleCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapPutWithMaxIdleCodecRequestTtlOffset, ttl)
+	EncodeLong(initialFrame.Content, MapPutWithMaxIdleCodecRequestMaxIdleOffset, maxIdle)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapPutWithMaxIdleCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

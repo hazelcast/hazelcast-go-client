@@ -40,7 +40,7 @@ func EncodeMapEvictRequest(name string, key serialization.Data, threadId int64) 
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapEvictCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapEvictCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapEvictCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapEvictCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -55,5 +55,5 @@ func DecodeMapEvictResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapEvictResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MapEvictResponseResponseOffset)
 }

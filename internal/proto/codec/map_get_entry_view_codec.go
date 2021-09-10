@@ -42,7 +42,7 @@ func EncodeMapGetEntryViewRequest(name string, key serialization.Data, threadId 
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapGetEntryViewCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapGetEntryViewCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapGetEntryViewCodecRequestThreadIdOffset, threadId)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapGetEntryViewCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -57,7 +57,7 @@ func DecodeMapGetEntryViewResponse(clientMessage *proto.ClientMessage) (response
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	maxIdle = FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapGetEntryViewResponseMaxIdleOffset)
+	maxIdle = DecodeLong(initialFrame.Content, MapGetEntryViewResponseMaxIdleOffset)
 	response = DecodeNullableForSimpleEntryView(frameIterator)
 
 	return response, maxIdle

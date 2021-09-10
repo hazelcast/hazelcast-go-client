@@ -49,9 +49,9 @@ func EncodeMapAddEntryListenerToKeyRequest(name string, key serialization.Data, 
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapAddEntryListenerToKeyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyCodecRequestIncludeValueOffset, includeValue)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, MapAddEntryListenerToKeyCodecRequestListenerFlagsOffset, listenerFlags)
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyCodecRequestLocalOnlyOffset, localOnly)
+	EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyCodecRequestIncludeValueOffset, includeValue)
+	EncodeInt(initialFrame.Content, MapAddEntryListenerToKeyCodecRequestListenerFlagsOffset, listenerFlags)
+	EncodeBoolean(initialFrame.Content, MapAddEntryListenerToKeyCodecRequestLocalOnlyOffset, localOnly)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapAddEntryListenerToKeyCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -66,7 +66,7 @@ func DecodeMapAddEntryListenerToKeyResponse(clientMessage *proto.ClientMessage) 
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyResponseResponseOffset)
+	return DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyResponseResponseOffset)
 }
 
 func HandleMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
@@ -74,9 +74,9 @@ func HandleMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEn
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerToKeyCodecEventEntryMessageType {
 		initialFrame := frameIterator.Next()
-		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyEventEntryEventTypeOffset)
-		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyEventEntryUuidOffset)
-		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyEventEntryNumberOfAffectedEntriesOffset)
+		eventType := DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyEventEntryEventTypeOffset)
+		uuid := DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyEventEntryUuidOffset)
+		numberOfAffectedEntries := DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyEventEntryNumberOfAffectedEntriesOffset)
 		key := DecodeNullableForData(frameIterator)
 		value := DecodeNullableForData(frameIterator)
 		oldValue := DecodeNullableForData(frameIterator)

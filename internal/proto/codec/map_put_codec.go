@@ -41,8 +41,8 @@ func EncodeMapPutRequest(name string, key serialization.Data, value serializatio
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapPutCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutCodecRequestThreadIdOffset, threadId)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, MapPutCodecRequestTtlOffset, ttl)
+	EncodeLong(initialFrame.Content, MapPutCodecRequestThreadIdOffset, threadId)
+	EncodeLong(initialFrame.Content, MapPutCodecRequestTtlOffset, ttl)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(MapPutCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)

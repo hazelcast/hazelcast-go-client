@@ -51,5 +51,5 @@ func DecodeMapRemoveInterceptorResponse(clientMessage *proto.ClientMessage) bool
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, MapRemoveInterceptorResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, MapRemoveInterceptorResponseResponseOffset)
 }

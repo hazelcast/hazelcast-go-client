@@ -45,7 +45,7 @@ func EncodePNCounterGetRequest(name string, replicaTimestamps []proto.Pair, targ
 	clientMessage.SetRetryable(true)
 
 	initialFrame := proto.NewFrameWith(make([]byte, PNCounterGetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeUUID(initialFrame.Content, PNCounterGetCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
+	EncodeUUID(initialFrame.Content, PNCounterGetCodecRequestTargetReplicaUUIDOffset, targetReplicaUUID)
 	clientMessage.AddFrame(initialFrame)
 	clientMessage.SetMessageType(PNCounterGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
@@ -60,8 +60,8 @@ func DecodePNCounterGetResponse(clientMessage *proto.ClientMessage) (value int64
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	value = FixSizedTypesCodec.DecodeLong(initialFrame.Content, PNCounterGetResponseValueOffset)
-	replicaCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterGetResponseReplicaCountOffset)
+	value = DecodeLong(initialFrame.Content, PNCounterGetResponseValueOffset)
+	replicaCount = DecodeInt(initialFrame.Content, PNCounterGetResponseReplicaCountOffset)
 	replicaTimestamps = DecodeEntryListUUIDLong(frameIterator)
 
 	return value, replicaTimestamps, replicaCount

@@ -51,5 +51,5 @@ func DecodePNCounterGetConfiguredReplicaCountResponse(clientMessage *proto.Clien
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, PNCounterGetConfiguredReplicaCountResponseResponseOffset)
+	return DecodeInt(initialFrame.Content, PNCounterGetConfiguredReplicaCountResponseResponseOffset)
 }

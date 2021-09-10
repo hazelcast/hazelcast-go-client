@@ -51,5 +51,5 @@ func DecodeMapSizeResponse(clientMessage *proto.ClientMessage) int32 {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapSizeResponseResponseOffset)
+	return DecodeInt(initialFrame.Content, MapSizeResponseResponseOffset)
 }
