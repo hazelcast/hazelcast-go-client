@@ -538,7 +538,6 @@ func TestMap_Flush(t *testing.T) {
 }
 
 // TODO: Test Map AddInterceptor
-// TODO: Test Map ExecuteOnEntries
 // TODO: Test Map TryPut
 // TODO: Test Map TryPutWithTimeout
 // TODO: Test Map TryRemove
@@ -1057,6 +1056,22 @@ func TestMap_SetTTL(t *testing.T) {
 	})
 }
 
+func TestMap_ExecuteOnEntries(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
+	}
+	it.MapTesterWithConfig(t, cb, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "my-key", "my-value"))
+		vs, err := m.ExecuteOnEntries(ctx, &SimpleEntryProcessor{value: "test"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		target := []types.Entry{{Key: "my-key", Value: "test"}}
+		assert.Equal(t, target, vs)
+	})
+}
+
 // ==== Reliability Tests ====
 
 func TestMapSetGet1000(t *testing.T) {
@@ -1136,4 +1151,41 @@ func putSampleKeyValues(m *hz.Map, count int) []interface{} {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+const simpleEntryProcessorFactoryID = 66
+const simpleEntryProcessorClassID = 1
+
+type SimpleEntryProcessor struct {
+	value string
+}
+
+func (s SimpleEntryProcessor) FactoryID() int32 {
+	return simpleEntryProcessorFactoryID
+}
+
+func (s SimpleEntryProcessor) ClassID() int32 {
+	return simpleEntryProcessorClassID
+}
+
+func (s SimpleEntryProcessor) WriteData(output serialization.DataOutput) {
+	output.WriteString(s.value)
+}
+
+func (s *SimpleEntryProcessor) ReadData(input serialization.DataInput) {
+	s.value = input.ReadString()
+}
+
+type SimpleEntryProcessorFactory struct {
+}
+
+func (f SimpleEntryProcessorFactory) Create(id int32) serialization.IdentifiedDataSerializable {
+	if id == simpleEntryProcessorClassID {
+		return &SimpleEntryProcessor{}
+	}
+	panic(fmt.Sprintf("unknown class ID: %d", id))
+}
+
+func (f SimpleEntryProcessorFactory) FactoryID() int32 {
+	return simpleEntryProcessorFactoryID
 }
