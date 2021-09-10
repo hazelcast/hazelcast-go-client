@@ -53,6 +53,19 @@ const (
 	IterationTypeEntry
 )
 
+func (t IterationType) String() string {
+	switch t {
+	case IterationTypeKey:
+		return "KEY"
+	case IterationTypeValue:
+		return "VALUE"
+	case IterationTypeEntry:
+		return "ENTRY"
+	default:
+		panic("unknown iteration type")
+	}
+}
+
 // NextPage sets the page of the paging predicate to the next page to fetch the next results in the following operation.
 func (p *predPaging) NextPage() {
 	p.page++
