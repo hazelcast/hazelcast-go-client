@@ -37,7 +37,7 @@ func EncodeErrorHolder(clientMessage *proto.ClientMessage, errorHolder proto.Err
 	clientMessage.AddFrame(initialFrame)
 
 	EncodeString(clientMessage, errorHolder.ClassName)
-	CodecUtil.EncodeNullableForString(clientMessage, errorHolder.Message)
+	EncodeNullableForString(clientMessage, errorHolder.Message)
 	EncodeListMultiFrameForStackTraceElement(clientMessage, errorHolder.StackTraceElements)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
@@ -50,8 +50,8 @@ func DecodeErrorHolder(frameIterator *proto.ForwardFrameIterator) proto.ErrorHol
 	errorCode := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset)
 
 	className := DecodeString(frameIterator)
-	message := CodecUtil.DecodeNullableForString(frameIterator)
+	message := DecodeNullableForString(frameIterator)
 	stackTraceElements := DecodeListMultiFrameForStackTraceElement(frameIterator)
-	CodecUtil.FastForwardToEndFrame(frameIterator)
+	FastForwardToEndFrame(frameIterator)
 	return proto.NewErrorHolder(errorCode, className, message, stackTraceElements)
 }

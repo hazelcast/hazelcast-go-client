@@ -52,5 +52,5 @@ func DecodeListGetResponse(clientMessage *proto.ClientMessage) serialization.Dat
 	// empty initial frame
 	frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }

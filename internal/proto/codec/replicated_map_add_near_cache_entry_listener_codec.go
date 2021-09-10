@@ -73,10 +73,10 @@ func HandleReplicatedMapAddNearCacheEntryListener(clientMessage *proto.ClientMes
 		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryEventTypeOffset)
 		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryUuidOffset)
 		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ReplicatedMapAddNearCacheEntryListenerEventEntryNumberOfAffectedEntriesOffset)
-		key := CodecUtil.DecodeNullableForData(frameIterator)
-		value := CodecUtil.DecodeNullableForData(frameIterator)
-		oldValue := CodecUtil.DecodeNullableForData(frameIterator)
-		mergingValue := CodecUtil.DecodeNullableForData(frameIterator)
+		key := DecodeNullableForData(frameIterator)
+		value := DecodeNullableForData(frameIterator)
+		oldValue := DecodeNullableForData(frameIterator)
+		mergingValue := DecodeNullableForData(frameIterator)
 		handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
 		return
 	}

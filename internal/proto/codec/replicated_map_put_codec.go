@@ -56,5 +56,5 @@ func DecodeReplicatedMapPutResponse(clientMessage *proto.ClientMessage) serializ
 	// empty initial frame
 	frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }

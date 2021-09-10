@@ -63,6 +63,6 @@ func DecodeMemberInfo(frameIterator *proto.ForwardFrameIterator) cluster.MemberI
 		addressMap = DecodeMapForEndpointQualifierAndAddress(frameIterator)
 		isAddressMapExists = true
 	}
-	CodecUtil.FastForwardToEndFrame(frameIterator)
+	FastForwardToEndFrame(frameIterator)
 	return NewMemberInfo(address, uuid, attributes, liteMember, version, isAddressMapExists, addressMap)
 }

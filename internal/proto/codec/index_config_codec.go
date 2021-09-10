@@ -37,9 +37,9 @@ func EncodeIndexConfig(clientMessage *proto.ClientMessage, indexConfig types.Ind
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset, int32(indexConfig.Type))
 	clientMessage.AddFrame(initialFrame)
 
-	CodecUtil.EncodeNullableForString(clientMessage, indexConfig.Name)
+	EncodeNullableForString(clientMessage, indexConfig.Name)
 	EncodeListMultiFrameForString(clientMessage, indexConfig.Attributes)
-	CodecUtil.EncodeNullableForBitmapIndexOptions(clientMessage, &indexConfig.BitmapIndexOptions)
+	EncodeNullableForBitmapIndexOptions(clientMessage, &indexConfig.BitmapIndexOptions)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -50,9 +50,9 @@ func DecodeIndexConfig(frameIterator *proto.ForwardFrameIterator) types.IndexCon
 	initialFrame := frameIterator.Next()
 	_type := FixSizedTypesCodec.DecodeInt(initialFrame.Content, IndexConfigCodecTypeFieldOffset)
 
-	name := CodecUtil.DecodeNullableForString(frameIterator)
+	name := DecodeNullableForString(frameIterator)
 	attributes := DecodeListMultiFrameForString(frameIterator)
-	bitmapIndexOptions := CodecUtil.DecodeNullableForBitmapIndexOptions(frameIterator)
-	CodecUtil.FastForwardToEndFrame(frameIterator)
+	bitmapIndexOptions := DecodeNullableForBitmapIndexOptions(frameIterator)
+	FastForwardToEndFrame(frameIterator)
 	return types.IndexConfig{Name: name, Type: types.IndexType(_type), Attributes: attributes, BitmapIndexOptions: bitmapIndexOptions}
 }

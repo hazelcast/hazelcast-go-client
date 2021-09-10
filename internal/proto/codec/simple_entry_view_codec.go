@@ -78,6 +78,6 @@ func DecodeSimpleEntryView(frameIterator *proto.ForwardFrameIterator) *types.Sim
 
 	key := DecodeData(frameIterator)
 	value := DecodeData(frameIterator)
-	CodecUtil.FastForwardToEndFrame(frameIterator)
+	FastForwardToEndFrame(frameIterator)
 	return types.NewSimpleEntryView(key, value, cost, creationTime, expirationTime, hits, lastAccessTime, lastStoredTime, lastUpdateTime, version, ttl, maxIdle)
 }

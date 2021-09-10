@@ -39,7 +39,7 @@ func NewVectorClock() VectorClock {
 func NewVectorClockFromPairs(pairs []proto.Pair) VectorClock {
 	vc := map[types.UUID]int64{}
 	for _, p := range pairs {
-		vc[p.Key().(types.UUID)] = p.Value().(int64)
+		vc[p.Key.(types.UUID)] = p.Value.(int64)
 	}
 	return vc
 }
@@ -51,7 +51,7 @@ func (vc VectorClock) SetReplicaTimestamp(id types.UUID, ts int64) {
 func (vc VectorClock) EntrySet() []proto.Pair {
 	entries := make([]proto.Pair, 0, len(vc))
 	for id, ts := range vc {
-		entries = append(entries, proto.NewPair(id, ts))
+		entries = append(entries, proto.Pair{Key: id, Value: ts})
 	}
 	return entries
 }

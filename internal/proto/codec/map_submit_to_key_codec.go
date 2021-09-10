@@ -56,5 +56,5 @@ func DecodeMapSubmitToKeyResponse(clientMessage *proto.ClientMessage) serializat
 	// empty initial frame
 	frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }

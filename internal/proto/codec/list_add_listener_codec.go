@@ -71,7 +71,7 @@ func HandleListAddListener(clientMessage *proto.ClientMessage, handleItemEvent f
 		initialFrame := frameIterator.Next()
 		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerEventItemUuidOffset)
 		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, ListAddListenerEventItemEventTypeOffset)
-		item := CodecUtil.DecodeNullableForData(frameIterator)
+		item := DecodeNullableForData(frameIterator)
 		handleItemEvent(item, uuid, eventType)
 		return
 	}

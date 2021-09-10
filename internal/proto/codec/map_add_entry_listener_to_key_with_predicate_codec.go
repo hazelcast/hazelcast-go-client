@@ -78,10 +78,10 @@ func HandleMapAddEntryListenerToKeyWithPredicate(clientMessage *proto.ClientMess
 		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryEventTypeOffset)
 		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryUuidOffset)
 		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyWithPredicateEventEntryNumberOfAffectedEntriesOffset)
-		key := CodecUtil.DecodeNullableForData(frameIterator)
-		value := CodecUtil.DecodeNullableForData(frameIterator)
-		oldValue := CodecUtil.DecodeNullableForData(frameIterator)
-		mergingValue := CodecUtil.DecodeNullableForData(frameIterator)
+		key := DecodeNullableForData(frameIterator)
+		value := DecodeNullableForData(frameIterator)
+		oldValue := DecodeNullableForData(frameIterator)
+		mergingValue := DecodeNullableForData(frameIterator)
 		handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
 		return
 	}

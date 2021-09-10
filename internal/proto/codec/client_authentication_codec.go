@@ -53,8 +53,8 @@ func EncodeClientAuthenticationRequest(clusterName string, username string, pass
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, clusterName)
-	CodecUtil.EncodeNullableForString(clientMessage, username)
-	CodecUtil.EncodeNullableForString(clientMessage, password)
+	EncodeNullableForString(clientMessage, username)
+	EncodeNullableForString(clientMessage, password)
 	EncodeString(clientMessage, clientType)
 	EncodeString(clientMessage, clientHazelcastVersion)
 	EncodeString(clientMessage, clientName)
@@ -73,7 +73,7 @@ func DecodeClientAuthenticationResponse(clientMessage *proto.ClientMessage) (sta
 	partitionCount = FixSizedTypesCodec.DecodeInt(initialFrame.Content, ClientAuthenticationResponsePartitionCountOffset)
 	clusterId = FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ClientAuthenticationResponseClusterIdOffset)
 	failoverSupported = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, ClientAuthenticationResponseFailoverSupportedOffset)
-	address = CodecUtil.DecodeNullableForAddress(frameIterator)
+	address = DecodeNullableForAddress(frameIterator)
 	serverHazelcastVersion = DecodeString(frameIterator)
 
 	return status, address, memberUuid, serializationVersion, serverHazelcastVersion, partitionCount, clusterId, failoverSupported

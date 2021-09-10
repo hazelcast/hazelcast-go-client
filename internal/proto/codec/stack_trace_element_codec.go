@@ -33,7 +33,7 @@ func EncodeStackTraceElement(clientMessage *proto.ClientMessage, stackTraceEleme
 
 	EncodeString(clientMessage, stackTraceElement.ClassName)
 	EncodeString(clientMessage, stackTraceElement.MethodName)
-	CodecUtil.EncodeNullableForString(clientMessage, stackTraceElement.FileName)
+	EncodeNullableForString(clientMessage, stackTraceElement.FileName)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -46,7 +46,7 @@ func DecodeStackTraceElement(frameIterator *proto.ForwardFrameIterator) ihzerror
 
 	className := DecodeString(frameIterator)
 	methodName := DecodeString(frameIterator)
-	fileName := CodecUtil.DecodeNullableForString(frameIterator)
-	CodecUtil.FastForwardToEndFrame(frameIterator)
+	fileName := DecodeNullableForString(frameIterator)
+	FastForwardToEndFrame(frameIterator)
 	return proto.NewStackTraceElement(className, methodName, fileName, lineNumber)
 }

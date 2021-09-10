@@ -355,9 +355,9 @@ func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, e
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
-				if key, err = m.convertToObject(pair.Key().(serialization.Data)); err != nil {
+				if key, err = m.convertToObject(pair.Key.(serialization.Data)); err != nil {
 					return nil, err
-				} else if value, err = m.convertToObject(pair.Value().(serialization.Data)); err != nil {
+				} else if value, err = m.convertToObject(pair.Value.(serialization.Data)); err != nil {
 					return nil, err
 				}
 				result = append(result, types.NewEntry(key, value))

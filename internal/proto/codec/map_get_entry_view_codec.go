@@ -58,7 +58,7 @@ func DecodeMapGetEntryViewResponse(clientMessage *proto.ClientMessage) (response
 	initialFrame := frameIterator.Next()
 
 	maxIdle = FixSizedTypesCodec.DecodeLong(initialFrame.Content, MapGetEntryViewResponseMaxIdleOffset)
-	response = CodecUtil.DecodeNullableForSimpleEntryView(frameIterator)
+	response = DecodeNullableForSimpleEntryView(frameIterator)
 
 	return response, maxIdle
 }

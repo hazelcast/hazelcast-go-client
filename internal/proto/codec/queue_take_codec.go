@@ -50,5 +50,5 @@ func DecodeQueueTakeResponse(clientMessage *proto.ClientMessage) serialization.D
 	// empty initial frame
 	frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }

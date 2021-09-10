@@ -51,6 +51,6 @@ func DecodeMemberVersion(frameIterator *proto.ForwardFrameIterator) pubcluster.M
 	major := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecMajorFieldOffset)
 	minor := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecMinorFieldOffset)
 	patch := FixSizedTypesCodec.DecodeByte(initialFrame.Content, MemberVersionCodecPatchFieldOffset)
-	CodecUtil.FastForwardToEndFrame(frameIterator)
+	FastForwardToEndFrame(frameIterator)
 	return NewMemberVersion(major, minor, patch)
 }

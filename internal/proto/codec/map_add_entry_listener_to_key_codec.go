@@ -77,10 +77,10 @@ func HandleMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEn
 		eventType := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyEventEntryEventTypeOffset)
 		uuid := FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyEventEntryUuidOffset)
 		numberOfAffectedEntries := FixSizedTypesCodec.DecodeInt(initialFrame.Content, MapAddEntryListenerToKeyEventEntryNumberOfAffectedEntriesOffset)
-		key := CodecUtil.DecodeNullableForData(frameIterator)
-		value := CodecUtil.DecodeNullableForData(frameIterator)
-		oldValue := CodecUtil.DecodeNullableForData(frameIterator)
-		mergingValue := CodecUtil.DecodeNullableForData(frameIterator)
+		key := DecodeNullableForData(frameIterator)
+		value := DecodeNullableForData(frameIterator)
+		oldValue := DecodeNullableForData(frameIterator)
+		mergingValue := DecodeNullableForData(frameIterator)
 		handleEntryEvent(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries)
 		return
 	}

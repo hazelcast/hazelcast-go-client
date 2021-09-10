@@ -37,7 +37,7 @@ func EncodeEndpointQualifier(clientMessage *proto.ClientMessage, endpointQualifi
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, EndpointQualifierCodecTypeFieldOffset, int32(endpointQualifier.Type))
 	clientMessage.AddFrame(initialFrame)
 
-	CodecUtil.EncodeNullableForString(clientMessage, endpointQualifier.Identifier)
+	EncodeNullableForString(clientMessage, endpointQualifier.Identifier)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -48,7 +48,7 @@ func DecodeEndpointQualifier(frameIterator *proto.ForwardFrameIterator) pubclust
 	initialFrame := frameIterator.Next()
 	_type := FixSizedTypesCodec.DecodeInt(initialFrame.Content, EndpointQualifierCodecTypeFieldOffset)
 
-	identifier := CodecUtil.DecodeNullableForString(frameIterator)
-	CodecUtil.FastForwardToEndFrame(frameIterator)
+	identifier := DecodeNullableForString(frameIterator)
+	FastForwardToEndFrame(frameIterator)
 	return NewEndpointQualifier(_type, identifier)
 }
