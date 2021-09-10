@@ -43,7 +43,7 @@ var CodecUtil codecUtil
 
 func (codecUtil) FastForwardToEndFrame(frameIterator *proto.ForwardFrameIterator) {
 	numberOfExpectedEndFrames := 1
-	var frame *proto.Frame
+	var frame proto.Frame
 	for numberOfExpectedEndFrames != 0 {
 		frame = frameIterator.Next()
 		if frame.IsEndFrame() {

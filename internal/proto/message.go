@@ -62,32 +62,26 @@ const (
 )
 
 var (
-	//EmptyArray = make([]byte, 0)
 	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
 	BeginFrame = NewFrameWith([]byte{}, BeginDataStructureFlag)
 	EndFrame   = NewFrameWith([]byte{}, EndDataStructureFlag)
 )
 
-func NewNullFrame() *Frame {
-	return NewFrameWith([]byte{}, IsNullFlag)
-}
-
-func NewBeginFrame() *Frame {
+func NewBeginFrame() Frame {
 	return NewFrameWith([]byte{}, BeginDataStructureFlag)
 }
 
-func NewEndFrame() *Frame {
+func NewEndFrame() Frame {
 	return NewFrameWith([]byte{}, EndDataStructureFlag)
 }
 
-// ClientMessage
 type ClientMessage struct {
 	Err       error
-	Frames    []*Frame
+	Frames    []Frame
 	Retryable bool
 }
 
-func NewClientMessage(startFrame *Frame) *ClientMessage {
+func NewClientMessage(startFrame Frame) *ClientMessage {
 	// initial backing array size is kept large enough
 	// for basic incoming messages, like map.Get()
 	m := NewClientMessageForEncode()
@@ -98,15 +92,15 @@ func NewClientMessage(startFrame *Frame) *ClientMessage {
 func NewClientMessageForEncode() *ClientMessage {
 	// initial backing array size is kept large enough
 	// for basic outbound messages, like map.Set()
-	return &ClientMessage{Frames: make([]*Frame, 0, 4)}
+	return &ClientMessage{Frames: make([]Frame, 0, 4)}
 }
 
-func NewClientMessageForDecode(frame *Frame) *ClientMessage {
+func NewClientMessageForDecode(frame Frame) *ClientMessage {
 	return NewClientMessage(frame)
 }
 
 func (m *ClientMessage) Copy() *ClientMessage {
-	frames := make([]*Frame, len(m.Frames))
+	frames := make([]Frame, len(m.Frames))
 	frames[0] = m.Frames[0].DeepCopy()
 	copy(frames[1:], m.Frames[1:])
 	return &ClientMessage{
@@ -124,7 +118,7 @@ func (m *ClientMessage) FrameIterator() *ForwardFrameIterator {
 	return NewForwardFrameIterator(m.Frames)
 }
 
-func (m *ClientMessage) AddFrame(frame *Frame) {
+func (m *ClientMessage) AddFrame(frame Frame) {
 	m.Frames = append(m.Frames, frame)
 }
 
@@ -208,19 +202,18 @@ func (m *ClientMessage) HasUnFragmentedMessageFlags() bool {
 	return m.Frames[0].HasUnFragmentedMessageFlags()
 }
 
-// ForwardFrameIterator
 type ForwardFrameIterator struct {
-	frames []*Frame
+	frames []Frame
 	next   int
 }
 
-func NewForwardFrameIterator(frames []*Frame) *ForwardFrameIterator {
+func NewForwardFrameIterator(frames []Frame) *ForwardFrameIterator {
 	return &ForwardFrameIterator{frames: frames}
 }
 
-func (it *ForwardFrameIterator) Next() *Frame {
+func (it *ForwardFrameIterator) Next() Frame {
 	if it.next >= len(it.frames) {
-		return nil
+		return Frame{}
 	}
 	result := it.frames[it.next]
 	it.next++
@@ -231,7 +224,7 @@ func (it *ForwardFrameIterator) HasNext() bool {
 	return it.next < len(it.frames)
 }
 
-func (it *ForwardFrameIterator) PeekNext() *Frame {
+func (it *ForwardFrameIterator) PeekNext() Frame {
 	return it.frames[it.next]
 }
 
@@ -241,24 +234,24 @@ type Frame struct {
 }
 
 // NewFrame creates a Frame with content
-func NewFrame(content []byte) *Frame {
-	return &Frame{Content: content, flags: DefaultFlags}
+func NewFrame(content []byte) Frame {
+	return Frame{Content: content, flags: DefaultFlags}
 }
 
 // NewFrameWith creates a Frame with content and flags
-func NewFrameWith(content []byte, flags uint16) *Frame {
-	return &Frame{Content: content, flags: flags}
+func NewFrameWith(content []byte, flags uint16) Frame {
+	return Frame{Content: content, flags: flags}
 }
 
 // Copy frame
-func (frame *Frame) Copy() *Frame {
+func (frame Frame) Copy() Frame {
 	// TODO: Remove this function
 	// Copying is not required except the first frame.
 	//T his is a placeholder function until the protocol generator is changed to reflect that.
 	return frame
 }
 
-func (frame *Frame) DeepCopy() *Frame {
+func (frame *Frame) DeepCopy() Frame {
 	newContent := make([]byte, len(frame.Content))
 	copy(newContent, frame.Content)
 	return NewFrameWith(newContent, frame.flags)
