@@ -364,7 +364,7 @@ func TestMap_GetValuesWithPredicate(t *testing.T) {
 		it.Must(m.Set(context.Background(), "k1", serialization.JSON(`{"A": 10, "B": 200}`)))
 		it.Must(m.Set(context.Background(), "k2", serialization.JSON(`{"A": 10, "B": 30}`)))
 		it.Must(m.Set(context.Background(), "k3", serialization.JSON(`{"A": 5, "B": 200}`)))
-		time.Sleep(1 * time.Second)
+
 		it.AssertEquals(t, serialization.JSON(`{"A": 10, "B": 200}`), it.MustValue(m.Get(context.Background(), "k1")))
 		it.AssertEquals(t, serialization.JSON(`{"A": 10, "B": 30}`), it.MustValue(m.Get(context.Background(), "k2")))
 		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get(context.Background(), "k3")))
