@@ -325,8 +325,8 @@ func checkPagingPredicateEntrySet(t *testing.T, pred predicate.Predicate, target
 	})
 }
 
-// The paging predicate needs a separate fixture because the paging predicate
-// does not support JSON.
+// createPagingPredicateFixture creats a fixture specifically for paging predicate.
+// A seperate fucntion is required because the paging predicate does not support JSON.
 func createPagingPredicateFixture(m *hz.Map) {
 	values := []interface{}{1, 2, 3, 4, 5, 6, 7, 8}
 	for i, v := range values {

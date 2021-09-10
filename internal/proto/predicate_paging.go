@@ -14,23 +14,15 @@ type PagingPredicateHolder struct {
 	IterationTypeId      byte
 }
 
-func NewPagingPredicateHolder(
-	anchorDataListHolder AnchorDataListHolder,
-	predicateData *serialization.Data,
-	comparatorData *serialization.Data,
-	pageSize int32,
-	page int32,
-	iterationTypeId byte,
-	partitionKeyData *serialization.Data) PagingPredicateHolder {
-
+func NewPagingPredicateHolder(a AnchorDataListHolder, pred *serialization.Data, c *serialization.Data, ps int32, p int32, i byte, pkd *serialization.Data) PagingPredicateHolder {
 	return PagingPredicateHolder{
-		AnchorDataListHolder: anchorDataListHolder,
-		PredicateData:        predicateData,
-		ComparatorData:       comparatorData,
-		PageSize:             pageSize,
-		Page:                 page,
-		IterationTypeId:      iterationTypeId,
-		PartitionKeyData:     partitionKeyData,
+		AnchorDataListHolder: a,
+		PredicateData:        pred,
+		ComparatorData:       c,
+		PageSize:             ps,
+		Page:                 p,
+		IterationTypeId:      i,
+		PartitionKeyData:     pkd,
 	}
 }
 
