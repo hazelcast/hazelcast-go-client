@@ -73,11 +73,9 @@ func TestClientLifecycleEvents(t *testing.T) {
 			receivedStates = []hz.LifecycleState{}
 			receivedStatesMu.Unlock()
 		}()
-		time.Sleep(1 * time.Millisecond)
 		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Millisecond)
 		targetStates := []hz.LifecycleState{
 			hz.LifecycleStateStarting,
 			hz.LifecycleStateConnected,
@@ -85,11 +83,12 @@ func TestClientLifecycleEvents(t *testing.T) {
 			hz.LifecycleStateShuttingDown,
 			hz.LifecycleStateShutDown,
 		}
-		receivedStatesMu.RLock()
-		defer receivedStatesMu.RUnlock()
-		if !reflect.DeepEqual(targetStates, receivedStates) {
-			t.Fatalf("target %v != %v", targetStates, receivedStates)
-		}
+
+		it.Eventually(t, func() bool {
+			receivedStatesMu.RLock()
+			defer receivedStatesMu.RUnlock()
+			return reflect.DeepEqual(targetStates, receivedStates)
+		}, "target %v != %v", targetStates, receivedStates)
 	})
 }
 
@@ -187,12 +186,6 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		object  string
 		count   int
 	}
-	createDestroyMap := func(client *hz.Client, mapName string) {
-		m := it.MustValue(client.GetMap(context.Background(), mapName)).(*hz.Map)
-		time.Sleep(100 * time.Millisecond)
-		it.Must(m.Destroy(context.Background()))
-		time.Sleep(100 * time.Millisecond)
-	}
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		var created, destroyed objInfo
 		mu := &sync.Mutex{}
@@ -214,31 +207,32 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		createDestroyMap(client, "dolistener-tester")
+		m := it.MustValue(client.GetMap(context.Background(), "dolistener-tester")).(*hz.Map)
+		it.Must(m.Destroy(context.Background()))
+
 		targetObjInfo := objInfo{service: hz.ServiceNameMap, object: "dolistener-tester", count: 1}
-		mu.Lock()
-		if !assert.Equal(t, targetObjInfo, created) {
-			t.FailNow()
-		}
-		if !assert.Equal(t, targetObjInfo, destroyed) {
-			t.FailNow()
-		}
-		mu.Unlock()
+		it.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			if !assert.Equal(t, targetObjInfo, created) {
+				return false
+			}
+			return assert.Equal(t, targetObjInfo, destroyed)
+		})
 
 		if err := client.RemoveDistributedObjectListener(context.Background(), subID); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
-		createDestroyMap(client, "dolistener-tester")
-		mu.Lock()
-		if !assert.Equal(t, targetObjInfo, created) {
-			t.FailNow()
-		}
-		if !assert.Equal(t, targetObjInfo, destroyed) {
-			t.FailNow()
-		}
-		mu.Unlock()
+		m = it.MustValue(client.GetMap(context.Background(), "dolistener-tester")).(*hz.Map)
+		it.Must(m.Destroy(context.Background()))
+		it.Eventually(t, func() bool {
+			mu.Lock()
+			defer mu.Unlock()
+			if !assert.Equal(t, targetObjInfo, created) {
+				return false
+			}
+			return assert.Equal(t, targetObjInfo, destroyed)
+		})
 	})
 }
 
@@ -248,8 +242,26 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	mu := &sync.Mutex{}
 	events := []hz.LifecycleState{}
 	config := cls.DefaultConfig()
+	disconnectedWg := sync.WaitGroup{}
+	disconnectedWg.Add(1)
+	reconnectedWg := sync.WaitGroup{}
+	reconnectedWg.Add(1)
+	connectedCount := 0
+	disconnectedCount := 0
 	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 		mu.Lock()
+		if event.State == hz.LifecycleStateDisconnected {
+			disconnectedCount++
+			if disconnectedCount == 1 {
+				disconnectedWg.Done()
+			}
+		}
+		if event.State == hz.LifecycleStateConnected {
+			connectedCount++
+			if connectedCount == 2 {
+				reconnectedWg.Done()
+			}
+		}
 		events = append(events, event.State)
 		mu.Unlock()
 	})
@@ -257,11 +269,10 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(5 * time.Second)
 	cls.Shutdown()
-	time.Sleep(5 * time.Second)
+	it.WaitEventually(t, &disconnectedWg)
 	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
-	time.Sleep(5 * time.Second)
+	it.WaitEventually(t, &reconnectedWg)
 	cls.Shutdown()
 	c.Shutdown(ctx)
 	mu.Lock()
@@ -277,64 +288,9 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 		hz.LifecycleStateShuttingDown,
 		hz.LifecycleStateShutDown,
 	}
-	t.Logf("target : %v", target)
-	t.Logf("events : %v", events)
-	assert.Equal(t, target, events)
-}
-
-func TestClusterReconnection_RemoveMembersOneByOne(t *testing.T) {
-	ctx := context.Background()
-	clusterName := fmt.Sprintf("go-cli-test-cluster-%d", idGen.NextID())
-	cls := it.StartNewClusterWithOptions(clusterName, 11701, 3)
-	mu := &sync.Mutex{}
-	var events []hz.LifecycleState
-	config := cls.DefaultConfig()
-	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
-		mu.Lock()
-		events = append(events, event.State)
-		mu.Unlock()
-	})
-	c, err := hz.StartNewClientWithConfig(ctx, config)
-	if err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(5 * time.Second)
-
-	// start shutting down members one by one
-	for _, uuid := range cls.MemberUUIDs {
-		time.Sleep(1 * time.Second)
-		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
-	}
-	time.Sleep(1 * time.Second)
-	cls.Shutdown()
-	time.Sleep(1 * time.Second)
-
-	cls = it.StartNewClusterWithOptions(clusterName, 11701, 3)
-	time.Sleep(5 * time.Second)
-	// start shutting down members one by one
-	for _, uuid := range cls.MemberUUIDs {
-		time.Sleep(1 * time.Second)
-		cls.RC.ShutdownMember(ctx, cls.ClusterID, uuid)
-	}
-	time.Sleep(1 * time.Second)
-	c.Shutdown(ctx)
-
-	mu.Lock()
-	defer mu.Unlock()
-	target := []hz.LifecycleState{
-		hz.LifecycleStateStarting,
-		hz.LifecycleStateConnected,
-		hz.LifecycleStateStarted,
-		hz.LifecycleStateDisconnected,
-		hz.LifecycleStateChangedCluster,
-		hz.LifecycleStateConnected,
-		hz.LifecycleStateDisconnected,
-		hz.LifecycleStateShuttingDown,
-		hz.LifecycleStateShutDown,
-	}
-	t.Logf("target : %v", target)
-	t.Logf("events : %v", events)
-	assert.Equal(t, target, events)
+	it.Eventually(t, func() bool {
+		return reflect.DeepEqual(target, events)
+	}, "target : %v, events %v ", target, events)
 }
 
 func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
