@@ -14,10 +14,10 @@ import (
 type predPaging struct {
 	cmp      serialization.IdentifiedDataSerializable
 	pred     Predicate
-	iterType IterationType
 	anchors  []types.Entry
 	pageSize int32
 	page     int32
+	iterType IterationType
 }
 
 // Paging creates a paging predicate with a given page size.
