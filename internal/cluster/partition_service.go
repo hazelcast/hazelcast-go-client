@@ -69,7 +69,7 @@ func (s *PartitionService) PartitionCount() int32 {
 	return atomic.LoadInt32(&s.partitionCount)
 }
 
-func (s *PartitionService) GetPartitionID(keyData *iserialization.Data) (int32, error) {
+func (s *PartitionService) GetPartitionID(keyData iserialization.Data) (int32, error) {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.

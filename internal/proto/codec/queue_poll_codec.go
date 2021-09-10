@@ -48,7 +48,7 @@ func EncodeQueuePollRequest(name string, timeoutMillis int64) *proto.ClientMessa
 	return clientMessage
 }
 
-func DecodeQueuePollResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeQueuePollResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

@@ -36,7 +36,7 @@ const (
 // possible that the map explicitly mapped the key to null. The map will not contain a mapping for the specified key once the
 // call returns.
 
-func EncodeMapRemoveRequest(name string, key *iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapRemoveRequest(name string, key iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -52,7 +52,7 @@ func EncodeMapRemoveRequest(name string, key *iserialization.Data, threadId int6
 	return clientMessage
 }
 
-func DecodeMapRemoveResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeMapRemoveResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

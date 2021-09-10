@@ -36,7 +36,7 @@ const (
 // If the specified collection is also a set, this operation effectively modifies this set so that its value is the
 // intersection of the two sets.
 
-func EncodeSetCompareAndRetainAllRequest(name string, values []*serialization.Data) *proto.ClientMessage {
+func EncodeSetCompareAndRetainAllRequest(name string, values []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

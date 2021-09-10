@@ -166,7 +166,7 @@ func TestDataCodec_Decode(t *testing.T) {
 	decode := DecodeNullableData(frameIterator)
 
 	//then
-	assert.Equal(t, decode.ToByteArray(), bytes)
+	assert.Equal(t, []byte(decode), bytes)
 }
 
 func TestDataCodec_Decode_When_Data_Is_Nil(t *testing.T) {

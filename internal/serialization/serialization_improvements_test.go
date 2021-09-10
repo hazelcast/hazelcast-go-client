@@ -54,7 +54,7 @@ func TestSerializationImprovements_2_StringLength(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	slen := binary.BigEndian.Uint32(data.ToByteArray()[8:])
+	slen := binary.BigEndian.Uint32(data[8:])
 	assert.Equal(t, uint32(23), slen)
 }
 

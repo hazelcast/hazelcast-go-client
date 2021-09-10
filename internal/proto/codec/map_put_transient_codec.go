@@ -34,7 +34,7 @@ const (
 // Same as put except that MapStore, if defined, will not be called to store/persist the entry.
 // If ttl is 0, then the entry lives forever.
 
-func EncodeMapPutTransientRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
+func EncodeMapPutTransientRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

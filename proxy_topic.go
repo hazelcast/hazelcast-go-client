@@ -92,7 +92,7 @@ func (t *Topic) addListener(ctx context.Context, handler TopicMessageHandler) (t
 	addRequest := codec.EncodeTopicAddMessageListenerRequest(t.name, t.smart)
 	removeRequest := codec.EncodeTopicRemoveMessageListenerRequest(t.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleTopicAddMessageListener(msg, func(itemData *iserialization.Data, publishTime int64, uuid types.UUID) {
+		codec.HandleTopicAddMessageListener(msg, func(itemData iserialization.Data, publishTime int64, uuid types.UUID) {
 			if item, err := t.convertToObject(itemData); err != nil {
 				t.logger.Warnf("cannot convert data to Go value")
 			} else {

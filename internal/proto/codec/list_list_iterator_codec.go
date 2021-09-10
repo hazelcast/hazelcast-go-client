@@ -50,7 +50,7 @@ func EncodeListListIteratorRequest(name string, index int32) *proto.ClientMessag
 	return clientMessage
 }
 
-func DecodeListListIteratorResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeListListIteratorResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

@@ -34,7 +34,7 @@ const (
 // in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
 // QueryResultSizeExceededException if query result size limit is configured.
 
-func EncodeMapEntriesWithPredicateRequest(name string, predicate *iserialization.Data) *proto.ClientMessage {
+func EncodeMapEntriesWithPredicateRequest(name string, predicate iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

@@ -34,7 +34,7 @@ const (
 // Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
 // if this queue is empty.
 
-func EncodeQueueRemoveRequest(name string, value *iserialization.Data) *proto.ClientMessage {
+func EncodeQueueRemoveRequest(name string, value iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

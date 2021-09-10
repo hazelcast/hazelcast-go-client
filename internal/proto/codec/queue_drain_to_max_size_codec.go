@@ -51,7 +51,7 @@ func EncodeQueueDrainToMaxSizeRequest(name string, maxSize int32) *proto.ClientM
 	return clientMessage
 }
 
-func DecodeQueueDrainToMaxSizeResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeQueueDrainToMaxSizeResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

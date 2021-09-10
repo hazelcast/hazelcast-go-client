@@ -181,15 +181,15 @@ func (p *proxy) Destroy(ctx context.Context) error {
 	return nil
 }
 
-func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
+func (p *proxy) validateAndSerialize(arg1 interface{}) (iserialization.Data, error) {
 	if nilutil.IsNil(arg1) {
 		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	return p.serializationService.ToData(arg1)
 }
 
-func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *iserialization.Data,
-	arg2Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data iserialization.Data,
+	arg2Data iserialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
 		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
@@ -201,8 +201,8 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 	return
 }
 
-func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *iserialization.Data,
-	arg2Data *iserialization.Data, arg3Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data iserialization.Data,
+	arg2Data iserialization.Data, arg3Data iserialization.Data, err error) {
 	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
 		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
@@ -218,7 +218,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 	return
 }
 
-func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data iserialization.Data, err error) {
 	if nilutil.IsNil(agg) {
 		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil", nil)
 	}
@@ -226,7 +226,7 @@ func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Dat
 	return
 }
 
-func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data iserialization.Data, err error) {
 	if nilutil.IsNil(pred) {
 		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil", nil)
 	}
@@ -234,8 +234,8 @@ func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Dat
 	return
 }
 
-func (p *proxy) validateAndSerializeValues(values []interface{}) ([]*iserialization.Data, error) {
-	valuesData := make([]*iserialization.Data, len(values))
+func (p *proxy) validateAndSerializeValues(values []interface{}) ([]iserialization.Data, error) {
+	valuesData := make([]iserialization.Data, len(values))
 	for i, value := range values {
 		if data, err := p.validateAndSerialize(value); err != nil {
 			return nil, err
@@ -257,7 +257,7 @@ func (p *proxy) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMe
 	}
 }
 
-func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData *iserialization.Data) (*proto.ClientMessage, error) {
+func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData iserialization.Data) (*proto.ClientMessage, error) {
 	if partitionID, err := p.partitionService.GetPartitionID(keyData); err != nil {
 		return nil, err
 	} else {
@@ -294,11 +294,11 @@ func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.Clien
 	return inv, err
 }
 
-func (p *proxy) convertToObject(data *iserialization.Data) (interface{}, error) {
+func (p *proxy) convertToObject(data iserialization.Data) (interface{}, error) {
 	return p.serializationService.ToObject(data)
 }
 
-func (p *proxy) convertToObjects(values []*iserialization.Data) ([]interface{}, error) {
+func (p *proxy) convertToObjects(values []iserialization.Data) ([]interface{}, error) {
 	decodedValues := make([]interface{}, len(values))
 	for i, value := range values {
 		if decodedValue, err := p.convertToObject(value); err != nil {
@@ -310,7 +310,7 @@ func (p *proxy) convertToObjects(values []*iserialization.Data) ([]interface{}, 
 	return decodedValues, nil
 }
 
-func (p *proxy) convertToData(object interface{}) (*iserialization.Data, error) {
+func (p *proxy) convertToData(object interface{}) (iserialization.Data, error) {
 	return p.serializationService.ToData(object)
 }
 
@@ -335,11 +335,11 @@ func (p *proxy) partitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto
 func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error) {
 	kvPairs := make([]types.Entry, len(pairs))
 	for i, pair := range pairs {
-		key, err := p.convertToObject(pair.Key().(*iserialization.Data))
+		key, err := p.convertToObject(pair.Key().(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}
-		value, err := p.convertToObject(pair.Value().(*iserialization.Data))
+		value, err := p.convertToObject(pair.Value().(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}
@@ -377,7 +377,7 @@ func (p *proxy) stringToPartitionID(key string) (int32, error) {
 	}
 }
 
-func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue *iserialization.Data) (key, value, oldValue, mergingValue interface{}, err error) {
+func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue iserialization.Data) (key, value, oldValue, mergingValue interface{}, err error) {
 	if key, err = p.convertToObject(binKey); err != nil {
 		err = fmt.Errorf("invalid key: %w", err)
 	} else if value, err = p.convertToObject(binValue); err != nil {
@@ -392,7 +392,7 @@ func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingVal
 
 func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) entryNotifiedHandler {
 	return func(
-		binKey, binValue, binOldValue, binMergingValue *iserialization.Data,
+		binKey, binValue, binOldValue, binMergingValue iserialization.Data,
 		binEventType int32,
 		binUUID types.UUID,
 		affectedEntries int32) {
@@ -417,7 +417,7 @@ func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) e
 }
 
 type entryNotifiedHandler func(
-	binKey, binValue, binOldValue, binMergingValue *iserialization.Data,
+	binKey, binValue, binOldValue, binMergingValue iserialization.Data,
 	binEventType int32,
 	binUUID types.UUID,
 	affectedEntries int32)

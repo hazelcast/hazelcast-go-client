@@ -33,7 +33,7 @@ const (
 
 // Removes from this list all of its elements that are contained in the specified collection (optional operation).
 
-func EncodeListCompareAndRemoveAllRequest(name string, values []*iserialization.Data) *proto.ClientMessage {
+func EncodeListCompareAndRemoveAllRequest(name string, values []iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

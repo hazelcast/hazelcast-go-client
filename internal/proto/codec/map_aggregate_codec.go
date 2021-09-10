@@ -31,7 +31,7 @@ const (
 
 // Applies the aggregation logic on all map entries and returns the result
 
-func EncodeMapAggregateRequest(name string, aggregator *serialization.Data) *proto.ClientMessage {
+func EncodeMapAggregateRequest(name string, aggregator serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -46,7 +46,7 @@ func EncodeMapAggregateRequest(name string, aggregator *serialization.Data) *pro
 	return clientMessage
 }
 
-func DecodeMapAggregateResponse(clientMessage *proto.ClientMessage) *serialization.Data {
+func DecodeMapAggregateResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
