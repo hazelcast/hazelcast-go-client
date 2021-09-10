@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 // Returns the index of the last occurrence of the specified element in this list, or -1 if this list does not
 // contain the element.
 
-func EncodeListLastIndexOfRequest(name string, value iserialization.Data) *proto.ClientMessage {
+func EncodeListLastIndexOfRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

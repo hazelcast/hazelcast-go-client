@@ -20,27 +20,27 @@ import (
 	"encoding/binary"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
 	typeOffset       = 4
-	DataOffset       = 8
+	dataOffset       = 8
 	heapDataOverhead = 8
 )
 
-type Data []byte
-
-func (d Data) Type() int32 {
+func DataTypeFor(d pubserialization.Data) int32 {
 	if len(d) == 0 {
-		return TypeNil
+		// nil
+		return 0
 	}
 	return int32(binary.BigEndian.Uint32(d[typeOffset:]))
 }
 
-func (d Data) PartitionHash() int32 {
+func DataPartitionHashFor(d pubserialization.Data) int32 {
 	ds := len(d) - heapDataOverhead
 	if ds < 0 {
 		ds = 0
 	}
-	return murmur.Default3A(d, DataOffset, ds)
+	return murmur.Default3A(d, dataOffset, ds)
 }

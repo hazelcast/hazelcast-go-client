@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -31,7 +31,7 @@ const (
 
 // Inserts the specified element into this queue, waiting if necessary for space to become available.
 
-func EncodeQueuePutRequest(name string, value iserialization.Data) *proto.ClientMessage {
+func EncodeQueuePutRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

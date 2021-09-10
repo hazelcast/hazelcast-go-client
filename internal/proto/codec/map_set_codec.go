@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -35,7 +35,7 @@ const (
 // If ttl is 0, then the entry lives forever. Similar to the put operation except that set doesn't
 // return the old value, which is more efficient.
 
-func EncodeMapSetRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
+func EncodeMapSetRequest(name string, key serialization.Data, value serialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

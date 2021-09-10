@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 // elements, and others will impose restrictions on the type of elements that may be added. List classes should
 // clearly specify in their documentation any restrictions on what elements may be added.
 
-func EncodeListAddRequest(name string, value iserialization.Data) *proto.ClientMessage {
+func EncodeListAddRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

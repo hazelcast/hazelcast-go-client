@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 
 // Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
 
-func EncodeMapLoadGivenKeysRequest(name string, keys []iserialization.Data, replaceExistingValues bool) *proto.ClientMessage {
+func EncodeMapLoadGivenKeysRequest(name string, keys []serialization.Data, replaceExistingValues bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

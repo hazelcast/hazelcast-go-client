@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 
 // Returns true if this list contains all of the elements of the specified collection.
 
-func EncodeListContainsAllRequest(name string, values []iserialization.Data) *proto.ClientMessage {
+func EncodeListContainsAllRequest(name string, values []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

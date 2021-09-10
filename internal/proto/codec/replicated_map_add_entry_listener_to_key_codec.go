@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -42,7 +42,7 @@ const (
 // Adds the specified entry listener for the specified key. The listener will be notified for all
 // add/remove/update/evict events of the specified key only.
 
-func EncodeReplicatedMapAddEntryListenerToKeyRequest(name string, key iserialization.Data, localOnly bool) *proto.ClientMessage {
+func EncodeReplicatedMapAddEntryListenerToKeyRequest(name string, key serialization.Data, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -65,7 +65,7 @@ func DecodeReplicatedMapAddEntryListenerToKeyResponse(clientMessage *proto.Clien
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerToKeyResponseResponseOffset)
 }
 
-func HandleReplicatedMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEntryEvent func(key iserialization.Data, value iserialization.Data, oldValue iserialization.Data, mergingValue iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
+func HandleReplicatedMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEntryEvent func(key serialization.Data, value serialization.Data, oldValue serialization.Data, mergingValue serialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ReplicatedMapAddEntryListenerToKeyCodecEventEntryMessageType {

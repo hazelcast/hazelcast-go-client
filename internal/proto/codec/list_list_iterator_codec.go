@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -50,7 +50,7 @@ func EncodeListListIteratorRequest(name string, index int32) *proto.ClientMessag
 	return clientMessage
 }
 
-func DecodeListListIteratorResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
+func DecodeListListIteratorResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

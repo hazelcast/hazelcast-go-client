@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 // in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
 // QueryResultSizeExceededException if query result size limit is configured.
 
-func EncodeMapValuesWithPredicateRequest(name string, predicate iserialization.Data) *proto.ClientMessage {
+func EncodeMapValuesWithPredicateRequest(name string, predicate serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,7 +49,7 @@ func EncodeMapValuesWithPredicateRequest(name string, predicate iserialization.D
 	return clientMessage
 }
 
-func DecodeMapValuesWithPredicateResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
+func DecodeMapValuesWithPredicateResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

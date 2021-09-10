@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 
 // Replaces the entry for a key only if currently mapped to a given value.
 
-func EncodeMapReplaceRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapReplaceRequest(name string, key serialization.Data, value serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -49,7 +49,7 @@ func EncodeMapReplaceRequest(name string, key iserialization.Data, value iserial
 	return clientMessage
 }
 
-func DecodeMapReplaceResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeMapReplaceResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

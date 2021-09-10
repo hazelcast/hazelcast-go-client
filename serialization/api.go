@@ -16,6 +16,9 @@
 
 package serialization
 
+// Data is an already serialized object
+type Data []byte
+
 // IdentifiedDataSerializableFactory is used to create IdentifiedDataSerializable instances during deserialization.
 type IdentifiedDataSerializableFactory interface {
 	// Creates an IdentifiedDataSerializable instance using given type ID.

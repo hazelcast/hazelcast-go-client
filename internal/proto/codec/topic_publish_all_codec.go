@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -31,7 +31,7 @@ const (
 
 // Publishes all messages to all subscribers of this topic
 
-func EncodeTopicPublishAllRequest(name string, messages []iserialization.Data) *proto.ClientMessage {
+func EncodeTopicPublishAllRequest(name string, messages []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

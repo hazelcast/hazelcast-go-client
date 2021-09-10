@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 // Retains only the elements in this list that are contained in the specified collection (optional operation).
 // In other words, removes from this list all of its elements that are not contained in the specified collection.
 
-func EncodeListCompareAndRetainAllRequest(name string, values []iserialization.Data) *proto.ClientMessage {
+func EncodeListCompareAndRetainAllRequest(name string, values []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

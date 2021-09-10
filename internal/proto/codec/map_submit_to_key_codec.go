@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 // representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
 // operation of EntryProcessor.
 
-func EncodeMapSubmitToKeyRequest(name string, entryProcessor iserialization.Data, key iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapSubmitToKeyRequest(name string, entryProcessor serialization.Data, key serialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -51,7 +51,7 @@ func EncodeMapSubmitToKeyRequest(name string, entryProcessor iserialization.Data
 	return clientMessage
 }
 
-func DecodeMapSubmitToKeyResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeMapSubmitToKeyResponse(clientMessage *proto.ClientMessage) serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

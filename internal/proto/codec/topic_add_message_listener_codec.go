@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -63,7 +63,7 @@ func DecodeTopicAddMessageListenerResponse(clientMessage *proto.ClientMessage) t
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, TopicAddMessageListenerResponseResponseOffset)
 }
 
-func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTopicEvent func(item iserialization.Data, publishTime int64, uuid types.UUID)) {
+func HandleTopicAddMessageListener(clientMessage *proto.ClientMessage, handleTopicEvent func(item serialization.Data, publishTime int64, uuid types.UUID)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == TopicAddMessageListenerCodecEventTopicMessageType {

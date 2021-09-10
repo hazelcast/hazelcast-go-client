@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 // Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,
 // never blocks,and returns immediately.
 
-func EncodeMapForceUnlockRequest(name string, key iserialization.Data, referenceId int64) *proto.ClientMessage {
+func EncodeMapForceUnlockRequest(name string, key serialization.Data, referenceId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

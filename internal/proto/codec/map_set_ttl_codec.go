@@ -17,7 +17,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -46,7 +46,7 @@ const (
 // <p>
 // Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
 
-func EncodeMapSetTtlRequest(name string, key iserialization.Data, ttl int64) *proto.ClientMessage {
+func EncodeMapSetTtlRequest(name string, key serialization.Data, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

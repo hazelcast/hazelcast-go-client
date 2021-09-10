@@ -167,9 +167,9 @@ func TestCustomSerializer(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
 	service := mustValue(iserialization.NewService(config)).(*iserialization.Service)
-	data := mustValue(service.ToData(m)).(iserialization.Data)
+	data := mustValue(service.ToData(m)).(serialization.Data)
 	ret := mustValue(service.ToObject(data))
-	data2 := mustValue(service.ToData(p)).(iserialization.Data)
+	data2 := mustValue(service.ToData(p)).(serialization.Data)
 	ret2 := mustValue(service.ToObject(data2))
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
@@ -313,7 +313,7 @@ func TestIntSerializer(t *testing.T) {
 }
 
 func TestSerializeData(t *testing.T) {
-	data := iserialization.Data([]byte{10, 20, 0, 30, 5, 7, 6})
+	data := serialization.Data([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := &serialization.Config{}
 	service := mustSerializationService(iserialization.NewService(config))
 	serializedData, err := service.ToData(data)
@@ -346,7 +346,7 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
 	dataOutput.WriteString("Furkan")
-	data := iserialization.Data(dataOutput.ToBuffer())
+	data := serialization.Data(dataOutput.ToBuffer())
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")
 }
@@ -359,9 +359,9 @@ func mustValue(value interface{}, err error) interface{} {
 	return value
 }
 
-func mustData(value interface{}, err error) iserialization.Data {
+func mustData(value interface{}, err error) serialization.Data {
 	if err != nil {
 		panic(err)
 	}
-	return value.(iserialization.Data)
+	return value.(serialization.Data)
 }
