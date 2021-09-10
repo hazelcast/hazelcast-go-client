@@ -335,6 +335,12 @@ func xmlConfig(clusterName string, port int) string {
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
 			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
+					</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
         </hazelcast>
 	`, clusterName, port)
 }
@@ -365,6 +371,12 @@ func xmlSSLConfig(clusterName string, port int) string {
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
 			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
+					</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
 		</hazelcast>
 			`, clusterName, port)
 }
