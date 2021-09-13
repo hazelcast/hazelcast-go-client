@@ -539,7 +539,6 @@ func TestMap_Flush(t *testing.T) {
 
 // TODO: Test Map AddInterceptor
 // TODO: Test Map TryPut
-// TODO: Test Map ExecuteOnKey
 // TODO: Test Map TryPutWithTimeout
 // TODO: Test Map TryRemove
 // TODO: Test Map TryRemoveWithTimeout
@@ -1070,6 +1069,22 @@ func TestMap_ExecuteOnEntries(t *testing.T) {
 		}
 		target := []types.Entry{{Key: "my-key", Value: "test"}}
 		assert.Equal(t, target, vs)
+	})
+}
+
+func TestMap_ExecuteOnKey(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
+	}
+	it.MapTesterWithConfig(t, cb, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "my-key", "my-value"))
+		vs, err := m.ExecuteOnKey(ctx, &SimpleEntryProcessor{value: "test"}, "my-key")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, "test", vs)
+		assert.Equal(t, "test", it.MustValue(m.Get(ctx, "my-key")))
 	})
 }
 
