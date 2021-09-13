@@ -30,12 +30,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
-
+	"github.com/apache/thrift/lib/go/thrift"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/goleak"
 
-	"github.com/apache/thrift/lib/go/thrift"
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -335,6 +335,12 @@ func xmlConfig(clusterName string, port int) string {
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
 			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
+					</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
         </hazelcast>
 	`, clusterName, port)
 }
@@ -365,6 +371,12 @@ func xmlSSLConfig(clusterName string, port int) string {
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
 			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
+					</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
 		</hazelcast>
 			`, clusterName, port)
 }
@@ -383,4 +395,41 @@ func getDefaultClient(config *hz.Config) *hz.Client {
 		panic(err)
 	}
 	return client
+}
+
+// Eventually asserts that given condition will be met in 2 minutes,
+// checking target function every 200 milliseconds.
+func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
+	assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs)
+}
+
+// Never asserts that the given condition doesn't satisfy in 3 seconds,
+// checking target function every 200 milliseconds.
+//
+func Never(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
+	if !assert.Never(t, condition, time.Second*3, time.Millisecond*200, msgAndArgs) {
+		t.FailNow()
+	}
+}
+
+// WaitEventually waits for the waitgroup for 2 minutes
+// Fails the test if 2 mimutes is reached.
+func WaitEventually(t *testing.T, wg *sync.WaitGroup) {
+	WaitEventuallyWithTimeout(t, wg, time.Minute*2)
+}
+
+// WaitEventuallyWithTimeout waits for the waitgroup for the specified max timeout.
+// Fails the test if given timeout is reached.
+func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Duration) {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		//done successfully
+	case <-time.After(timeout):
+		t.FailNow()
+	}
 }
