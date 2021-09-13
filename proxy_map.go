@@ -282,9 +282,7 @@ func (m *Map) ExecuteOnKey(ctx context.Context, entryProcessor interface{}, key 
 	if err != nil {
 		return nil, err
 	}
-
 	lid := extractLockID(ctx)
-
 	request := codec.EncodeMapExecuteOnKeyRequest(m.name, processorData, keyData, lid)
 	if resp, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 		return nil, err
