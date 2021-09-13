@@ -1,19 +1,11 @@
 
 ---
 
-## Note to Hazelcast Go Client for Hazelcast 3 Users
-
-Support for Hazelcast 3.x ended on April 9th 2021, so Go client for Hazelcast 3 will not be updated.
-You can still use Go client for Hazelcast 3 by migrating your project to use Go modules and adding the following in your `go.mod` file:
-```
-require github.com/hazelcast/hazelcast-go-client v0.6.0
-```
-
 # Hazelcast Go Client
 
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
 
-Hazelcast Go client is a way to communicate to Hazelcast IMDG clusters and access the cluster data.
+Hazelcast Go client is a way to communicate to Hazelcast 4 and 5 clusters and access the cluster data.
 
 ## Sample Code
 
@@ -59,13 +51,14 @@ func main() {
 ## Features
 
 * Distributed, partitioned and queryable in-memory key-value store implementation, called Map.
-* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, PNCounter, Set and Topic.
+* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, PNCounter, Set and Topic and others.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
 * Go context support for all distributed data structures.
 * Hazelcast Cloud integration.
 * External smart client discovery.
 * Hazelcast Management Center integration.
 * Ability to listen to client lifecycle, cluster state, and distributed data structure events.
+* And [more](https://hazelcast.com/clients/go/#client-features)...
 
 ## Install
 
@@ -77,7 +70,7 @@ Requirements:
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
 # Depend on a specific release
-$ go get github.com/hazelcast/hazelcast-go-client@v1.0.0
+$ go get github.com/hazelcast/hazelcast-go-client@v1.1.0
 ```
 
 ## Quick Start
@@ -129,7 +122,7 @@ client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 
 ## Documentation
 
-Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.0.0).
+Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.1.0).
 
 You can view the documentation locally by using godoc:
 ```  
