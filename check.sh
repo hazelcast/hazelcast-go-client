@@ -31,8 +31,10 @@ go vet ./... 2>&1 | \
   grep -v "# github.com/hazelcast/hazelcast-go-client/internal/serialization" \
   || true
 
+# If missing install via: go get honnef.co/go/tools/cmd/staticcheck@latest
 staticcheck ./...
 
 # Ensure fields are optimally aligned
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment
+# If missing install via: go get -u golang.org/x/tools/...
 fieldalignment ./...

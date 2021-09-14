@@ -49,7 +49,7 @@ func TestTopic_Publish(t *testing.T) {
 		if err = tp.Publish(context.Background(), "HEY!"); err != nil {
 			t.Fatal(err)
 		}
-		it.Never(t, func() bool { return "base-value" != handlerValue.Load() })
+		it.Never(t, func() bool { return handlerValue.Load() != "base-value" })
 	})
 }
 func TestTopic_PublishAll(t *testing.T) {
