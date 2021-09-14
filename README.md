@@ -48,7 +48,7 @@ func main() {
 ## Features
 
 * Distributed, partitioned and queryable in-memory key-value store implementation, called Map.
-* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, PNCounter, Set and Topic and others.
+* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, PNCounter, Set, Topic and others.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
 * Go context support for all distributed data structures.
 * Hazelcast Cloud integration.
