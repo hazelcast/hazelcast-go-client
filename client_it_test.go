@@ -215,10 +215,10 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		it.Eventually(t, func() bool {
 			mu.Lock()
 			defer mu.Unlock()
-			if !assert.Equal(t, targetObjInfo, created) {
+			if targetObjInfo != created {
 				return false
 			}
-			return assert.Equal(t, targetObjInfo, destroyed)
+			return targetObjInfo == destroyed
 		})
 
 		if err := client.RemoveDistributedObjectListener(context.Background(), subID); err != nil {
@@ -229,10 +229,10 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		it.Eventually(t, func() bool {
 			mu.Lock()
 			defer mu.Unlock()
-			if !assert.Equal(t, targetObjInfo, created) {
+			if targetObjInfo != created {
 				return false
 			}
-			return assert.Equal(t, targetObjInfo, destroyed)
+			return targetObjInfo == destroyed
 		})
 	})
 }
@@ -564,7 +564,7 @@ func TestClientFixConnection(t *testing.T) {
 	}
 	highlight(t, "Started member: %s", m.UUID)
 	it.Eventually(t, func() bool {
-		return assert.Equal(t, int64(memberCount+1), atomic.LoadInt64(&addedCount))
+		return int64(memberCount+1) == atomic.LoadInt64(&addedCount)
 	})
 
 }

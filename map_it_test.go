@@ -55,12 +55,12 @@ func TestMap_Put(t *testing.T) {
 func TestMap_PutWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutWithTTL(context.Background(), "key", targetValue, 1*time.Second); err != nil {
+		if _, err := m.PutWithTTL(context.Background(), "key", targetValue, 20*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 	})
 }
@@ -72,7 +72,7 @@ func TestMap_PutWithMaxIdle(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 	})
 }
@@ -85,7 +85,7 @@ func TestMap_PutWithTTLAndMaxIdle(t *testing.T) {
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 	})
 }
@@ -112,7 +112,7 @@ func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 	})
 }
@@ -127,7 +127,7 @@ func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 	})
 }
@@ -150,7 +150,7 @@ func TestMap_PutTransientWithTTL(t *testing.T) {
 		}
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 	})
 }
@@ -163,7 +163,7 @@ func TestMap_PutTransientWithMaxIdle(t *testing.T) {
 		}
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 
 	})
@@ -178,7 +178,7 @@ func TestMap_PutTransientWithTTLAndMaxIdle(t *testing.T) {
 		}
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(context.Background(), "key")))
+			return it.MustValue(m.Get(context.Background(), "key")) == nil
 		})
 	})
 }
@@ -205,7 +205,7 @@ func TestMap_SetWithTTL(t *testing.T) {
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
+			return it.MustValue(m.Get(ctx, "key")) == nil
 		})
 	})
 }
@@ -933,7 +933,7 @@ func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
+			return it.MustValue(m.Get(ctx, "key")) == nil
 		})
 	})
 }
@@ -1050,7 +1050,7 @@ func TestMap_SetTTL(t *testing.T) {
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, nil, it.MustValue(m.Get(ctx, "key")))
+			return it.MustValue(m.Get(ctx, "key")) == nil
 		})
 	})
 }
