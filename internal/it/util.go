@@ -400,7 +400,9 @@ func getDefaultClient(config *hz.Config) *hz.Client {
 // Eventually asserts that given condition will be met in 2 minutes,
 // checking target function every 200 milliseconds.
 func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
-	assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs)
+	if !assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs) {
+		t.FailNow()
+	}
 }
 
 // Never asserts that the given condition doesn't satisfy in 3 seconds,
