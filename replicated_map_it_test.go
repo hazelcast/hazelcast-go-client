@@ -22,9 +22,6 @@ import (
 	"reflect"
 	"sync/atomic"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -50,22 +47,17 @@ func TestReplicatedMap_Clear(t *testing.T) {
 	it.ReplicatedMapTesterWithConfig(t, nil, func(t *testing.T, m *hz.ReplicatedMap) {
 		targetValue := "value"
 		it.MustValue(m.Put(context.Background(), "key", targetValue))
-		time.Sleep(1 * time.Second)
 		if ok := it.MustBool(m.ContainsKey(context.Background(), "key")); !ok {
 			t.Fatalf("key not found")
 		}
-		if ok := it.MustBool(m.ContainsValue(context.Background(), "value")); !ok {
-			t.Fatalf("value not found")
-		}
+		it.Eventually(t, func() bool { return it.MustBool(m.ContainsValue(context.Background(), "value")) })
 		if value := it.MustValue(m.Get(context.Background(), "key")); targetValue != value {
 			t.Fatalf("target %v != %v", targetValue, value)
 		}
 		if err := m.Clear(context.Background()); err != nil {
 			t.Fatal(err)
 		}
-		if value := it.MustValue(m.Get(context.Background(), "key")); nil != value {
-			t.Fatalf("target nil!= %v", value)
-		}
+		it.Eventually(t, func() bool { return it.MustValue(m.Get(context.Background(), "key")) == nil })
 	})
 }
 
@@ -97,7 +89,6 @@ func TestReplicatedMap_GetEntrySet(t *testing.T) {
 		if err := m.PutAll(context.Background(), target...); err != nil {
 			t.Fatal(err)
 		}
-		time.Sleep(1 * time.Second)
 		if entries, err := m.GetEntrySet(context.Background()); err != nil {
 			t.Fatal(err)
 		} else if !entriesEqualUnordered(target, entries) {
@@ -128,7 +119,6 @@ func TestReplicatedMap_GetValues(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.MustValue(m.Put(context.Background(), "k2", "v2"))
 		it.MustValue(m.Put(context.Background(), "k3", "v3"))
-		time.Sleep(1 * time.Second)
 		it.AssertEquals(t, "v1", it.MustValue(m.Get(context.Background(), "k1")))
 		it.AssertEquals(t, "v2", it.MustValue(m.Get(context.Background(), "k2")))
 		it.AssertEquals(t, "v3", it.MustValue(m.Get(context.Background(), "k3")))
@@ -156,7 +146,6 @@ func TestReplicatedMap_IsEmptySize(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.MustValue(m.Put(context.Background(), "k2", "v2"))
 		it.MustValue(m.Put(context.Background(), "k3", "v3"))
-		time.Sleep(1 * time.Second)
 		if value, err := m.IsEmpty(context.Background()); err != nil {
 			t.Fatal(err)
 		} else if value {
@@ -187,10 +176,7 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEvent(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 		atomic.StoreInt32(&callCount, 0)
 		if err := m.RemoveEntryListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
@@ -198,9 +184,7 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEvent(t *testing.T) {
 		if _, err := m.Put(context.Background(), "k1", "v1"); err != nil {
 			t.Fatal(err)
 		}
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Never(t, func() bool { return atomic.LoadInt32(&callCount) != 0 })
 	})
 }
 
@@ -220,10 +204,7 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithKey(t *testing.T) 
 				t.Fatal(err)
 			}
 		}
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 	})
 }
 
