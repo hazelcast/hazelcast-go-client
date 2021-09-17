@@ -52,7 +52,7 @@ const (
 )
 
 const (
-	created int32 = iota
+	starting int32 = iota
 	ready
 	stopped
 )
@@ -223,6 +223,7 @@ func (m *ConnectionManager) Start(ctx context.Context) error {
 }
 
 func (m *ConnectionManager) start(ctx context.Context) error {
+	atomic.StoreInt32(&m.state, starting)
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
 	addr, err := m.tryConnectCluster(ctx)
@@ -425,6 +426,9 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 		cb.RetryPolicy(makeRetryPolicy(m.randGen, &cs.Retry)),
 	)
 	addr, err := cbr.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if m.state == stopped {
+			return nil, cb.WrapNonRetryableError(fmt.Errorf("conectionManager is closed"))
+		}
 		addr, err := m.connectCluster(ctx, cluster)
 		if err != nil {
 			m.logger.Debug(func() string {

@@ -277,8 +277,7 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	it.WaitEventually(t, &reconnectedWg)
 	cls.Shutdown()
 	c.Shutdown(ctx)
-	mu.Lock()
-	defer mu.Unlock()
+
 	target := []hz.LifecycleState{
 		hz.LifecycleStateStarting,
 		hz.LifecycleStateConnected,
@@ -291,6 +290,8 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 		hz.LifecycleStateShutDown,
 	}
 	it.Eventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
 		return reflect.DeepEqual(target, events)
 	}, "target : %v, events %v ", target, events)
 }

@@ -254,7 +254,6 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	}
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShutDown))
-	// wait for the shut down event to be dispatched
 	c.eventDispatcher.Stop()
 	return nil
 }
