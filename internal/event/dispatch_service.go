@@ -33,9 +33,8 @@ type Event interface {
 type Handler func(event Event)
 
 const (
-	created int32 = iota
-	ready
-	stopped
+	ready   = 0
+	stopped = 1
 )
 
 type DispatchService struct {
@@ -51,10 +50,8 @@ func NewDispatchService(logger logger.Logger) *DispatchService {
 		subscriptions:     map[string]map[int64]Handler{},
 		syncSubscriptions: map[string]map[int64]Handler{},
 		eventMu:           &sync.RWMutex{},
-		state:             created,
 		logger:            logger,
 	}
-	atomic.StoreInt32(&service.state, ready)
 	return service
 }
 
