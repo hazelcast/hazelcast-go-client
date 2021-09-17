@@ -32,14 +32,6 @@ type Event interface {
 
 type Handler func(event Event)
 
-type controlType int
-
-const (
-	subscribe controlType = iota
-	subscribeSync
-	unsubscribe
-)
-
 const (
 	created int32 = iota
 	ready
@@ -49,10 +41,9 @@ const (
 type DispatchService struct {
 	logger            logger.Logger
 	syncSubscriptions map[string]map[int64]Handler
-	doneCh            chan struct{}
 	subscriptions     map[string]map[int64]Handler
-	state             int32
 	eventMu           *sync.RWMutex
+	state             int32
 }
 
 func NewDispatchService(logger logger.Logger) *DispatchService {
