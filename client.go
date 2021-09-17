@@ -31,6 +31,7 @@ import (
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -224,7 +225,7 @@ func (c *Client) start(ctx context.Context) error {
 		return nil
 	}
 	// TODO: Recover from panics and return as error
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateStarting))
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.eventDispatcher.Stop()
 		return err
@@ -234,7 +235,7 @@ func (c *Client) start(ctx context.Context) error {
 	}
 	c.eventDispatcher.Subscribe(icluster.EventDisconnected, event.DefaultSubscriptionID, c.clusterDisconnected)
 	atomic.StoreInt32(&c.state, ready)
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateStarted))
 	return nil
 }
 
@@ -245,14 +246,14 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
 		return nil
 	}
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShuttingDown))
 	c.invocationService.Stop()
 	c.connectionManager.Stop()
 	if c.statsService != nil {
 		c.statsService.Stop()
 	}
 	atomic.StoreInt32(&c.state, stopped)
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShutDown))
 	// wait for the shut down event to be dispatched
 	c.eventDispatcher.Stop()
 	return nil
@@ -342,8 +343,25 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.eventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
-		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
-			handler(*stateChangeEvent)
+		if stateChangeEvent, ok := event.(*lifecycle.InternalLifecycleStateChanged); ok {
+			switch stateChangeEvent.State {
+			case lifecycle.InternalLifecycleStateStarting:
+				handler(*newLifecycleStateChanged(LifecycleStateStarting))
+			case lifecycle.InternalLifecycleStateStarted:
+				handler(*newLifecycleStateChanged(LifecycleStateStarted))
+			case lifecycle.InternalLifecycleStateShuttingDown:
+				handler(*newLifecycleStateChanged(LifecycleStateShuttingDown))
+			case lifecycle.InternalLifecycleStateShutDown:
+				handler(*newLifecycleStateChanged(LifecycleStateShutDown))
+			case lifecycle.InternalLifecycleStateConnected:
+				handler(*newLifecycleStateChanged(LifecycleStateConnected))
+			case lifecycle.InternalLifecycleStateDisconnected:
+				handler(*newLifecycleStateChanged(LifecycleStateDisconnected))
+			case lifecycle.InternalLifecycleStateChangedCluster:
+				handler(*newLifecycleStateChanged(LifecycleStateChangedCluster))
+			default:
+				c.logger.Warnf("no corresponding hazelcast.LifecycleStateChanged event found")
+			}
 		} else {
 			c.logger.Warnf("cannot cast event to hazelcast.LifecycleStateChanged event")
 		}

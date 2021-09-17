@@ -33,6 +33,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -243,9 +244,10 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	clusterIDChanged = m.prevClusterID != nil && m.prevClusterID != m.clusterID
 	m.clusterIDMu.Unlock()
 	if clusterIDChanged {
-		m.eventDispatcher.Publish(NewChangedCluster())
+		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateChangedCluster))
 	}
 	m.eventDispatcher.Publish(NewConnected(addr))
+	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateConnected))
 	go m.heartbeat()
 	if m.smartRouting {
 		// fix broken connections only in the smart mode
@@ -390,6 +392,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
 		m.eventDispatcher.Publish(NewDisconnected())
+		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateDisconnected))
 	}
 }
 

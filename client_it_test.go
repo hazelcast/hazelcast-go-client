@@ -87,6 +87,7 @@ func TestClientLifecycleEvents(t *testing.T) {
 		it.Eventually(t, func() bool {
 			receivedStatesMu.RLock()
 			defer receivedStatesMu.RUnlock()
+			fmt.Printf("target %v != %v\n", targetStates, receivedStates)
 			return reflect.DeepEqual(targetStates, receivedStates)
 		}, "target %v != %v", targetStates, receivedStates)
 	})
