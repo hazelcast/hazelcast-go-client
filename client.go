@@ -84,7 +84,6 @@ type Client struct {
 	invocationService       *invocation.Service
 	serializationService    *serialization.Service
 	eventDispatcher         *event.DispatchService
-	userEventDispatcher     *event.DispatchService
 	proxyManager            *proxyManager
 	statsService            *stats.Service
 	clusterConfig           *cluster.Config
@@ -124,7 +123,6 @@ func newClient(config Config) (*Client, error) {
 		clusterConfig:           &config.Cluster,
 		serializationService:    serializationService,
 		eventDispatcher:         event.NewDispatchService(clientLogger),
-		userEventDispatcher:     event.NewDispatchService(clientLogger),
 		logger:                  clientLogger,
 		refIDGen:                iproxy.NewReferenceIDGenerator(1),
 		lifecyleListenerMap:     map[types.UUID]int64{},
@@ -133,7 +131,6 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMapMu: &sync.Mutex{},
 	}
 	c.addConfigEvents(&config)
-	c.subscribeUserEvents()
 	c.createComponents(&config)
 	return c, nil
 }
@@ -230,7 +227,6 @@ func (c *Client) start(ctx context.Context) error {
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.eventDispatcher.Stop()
-		c.userEventDispatcher.Stop()
 		return err
 	}
 	if c.statsService != nil {
@@ -258,9 +254,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
 	// wait for the shut down event to be dispatched
-	time.Sleep(1 * time.Millisecond)
 	c.eventDispatcher.Stop()
-	c.userEventDispatcher.Stop()
 	return nil
 }
 
@@ -292,7 +286,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 	}
 	c.lifecyleListenerMapMu.Lock()
 	if intID, ok := c.lifecyleListenerMap[subscriptionID]; ok {
-		c.userEventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, intID)
+		c.eventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, intID)
 		delete(c.lifecyleListenerMap, subscriptionID)
 	}
 	c.lifecyleListenerMapMu.Unlock()
@@ -321,8 +315,8 @@ func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	}
 	c.membershipListenerMapMu.Lock()
 	if intID, ok := c.membershipListenerMap[subscriptionID]; ok {
-		c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, intID)
-		c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, intID)
+		c.eventDispatcher.Unsubscribe(icluster.EventMembersAdded, intID)
+		c.eventDispatcher.Unsubscribe(icluster.EventMembersRemoved, intID)
 		delete(c.membershipListenerMap, subscriptionID)
 	}
 	c.membershipListenerMapMu.Unlock()
@@ -347,7 +341,7 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 }
 
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
-	c.userEventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
+	c.eventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
 			handler(*stateChangeEvent)
 		} else {
@@ -357,7 +351,7 @@ func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleSta
 }
 
 func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.MembershipStateChangeHandler) {
-	c.userEventDispatcher.SubscribeSync(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
+	c.eventDispatcher.Subscribe(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
 		if e, ok := event.(*icluster.MembersAdded); ok {
 			for _, member := range e.Members {
 				handler(cluster.MembershipStateChanged{
@@ -369,7 +363,7 @@ func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.Mem
 			c.logger.Warnf("cannot cast event to cluster.MembershipStateChanged event")
 		}
 	})
-	c.userEventDispatcher.SubscribeSync(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
+	c.eventDispatcher.Subscribe(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
 		if e, ok := event.(*icluster.MembersRemoved); ok {
 			for _, member := range e.Members {
 				handler(cluster.MembershipStateChanged{
@@ -394,27 +388,6 @@ func (c *Client) addConfigEvents(config *Config) {
 		c.addMembershipListener(subscriptionID, handler)
 		c.membershipListenerMap[uuid] = subscriptionID
 	}
-}
-
-func (c *Client) subscribeUserEvents() {
-	c.eventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(event)
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateConnected))
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateDisconnected))
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventChangedCluster, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateChangedCluster))
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(event)
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventMembersRemoved, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(event)
-	})
 }
 
 func (c *Client) createComponents(config *Config) {

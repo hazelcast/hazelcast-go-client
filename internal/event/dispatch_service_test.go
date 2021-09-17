@@ -21,12 +21,15 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 type sampleEvent struct {
+	value int
 }
 
 func (e sampleEvent) EventName() string {
@@ -42,13 +45,12 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 		wg.Done()
 	}
-	lg := logger.New()
-	service := event.NewDispatchService(lg)
+	service := event.NewDispatchService(logger.New())
 	service.Subscribe("sample.event", 100, handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
 	}
-	wg.Wait()
+	it.WaitEventually(t, wg)
 	service.Stop()
 	if int32(goroutineCount) != dispatchCount {
 		t.Fatalf("target %d != %d", goroutineCount, dispatchCount)
@@ -56,23 +58,81 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 }
 
 func TestDispatchServiceUnsubscribe(t *testing.T) {
-	lg := logger.New()
-	service := event.NewDispatchService(lg)
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	service := event.NewDispatchService(logger.New())
+	defer service.Stop()
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
+	}
+	service.Subscribe("sample.event", 100, handler)
+	service.Unsubscribe("sample.event", 100)
+	service.Publish(sampleEvent{})
+	it.Never(t, func() bool {
+		return atomic.LoadInt32(&dispatchCount) != 0
+	})
+}
+
+func TestDispatchServiceStop(t *testing.T) {
+	service := event.NewDispatchService(logger.New())
+	dispatchCount := int32(0)
+	handler := func(event event.Event) {
+		atomic.AddInt32(&dispatchCount, 1)
+	}
+	service.Subscribe("sample.event", 100, handler)
+	service.Stop()
+	assert.False(t, service.Publish(sampleEvent{}))
+	it.Never(t, func() bool {
+		return atomic.LoadInt32(&dispatchCount) != 0
+	})
+	service.Stop()
+}
+
+func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
+	// the order of events should be guaranteed when using subscribe sync
+	lg := logger.New()
+	service := event.NewDispatchService(lg)
+	wg := &sync.WaitGroup{}
+	const targetCount = 1000
+	wg.Add(targetCount)
+	var values []int
+	valuesMu := &sync.Mutex{}
+	handler := func(event event.Event) {
+		valuesMu.Lock()
+		values = append(values, event.(sampleEvent).value)
+		valuesMu.Unlock()
 		wg.Done()
 	}
 	service.Subscribe("sample.event", 100, handler)
-	service.Publish(sampleEvent{})
-	it.WaitEventually(t, wg)
-	service.Unsubscribe("sample.event", 100)
-	service.Publish(sampleEvent{})
-	it.WaitEventually(t, wg)
-	service.Stop()
-	if int32(1) != dispatchCount {
-		t.Fatalf("target 1 != %d", dispatchCount)
+	for i := 0; i < targetCount; i++ {
+		service.Publish(sampleEvent{value: i})
 	}
+	it.WaitEventually(t, wg)
+	target := make([]int, targetCount)
+	for i := 0; i < targetCount; i++ {
+		target[i] = i
+	}
+	assert.Equal(t, target, values)
+}
+
+func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
+	goroutineCount := 10000
+	dispatchCount := int32(0)
+	handler := func(event event.Event) {
+		atomic.AddInt32(&dispatchCount, 1)
+	}
+	service := event.NewDispatchService(logger.New())
+	service.Subscribe("sample.event", 100, handler)
+	go service.Stop()
+	successfulPubCnt := int32(0)
+	for i := 0; i < goroutineCount; i++ {
+		if service.Publish(sampleEvent{}) {
+			successfulPubCnt++
+		}
+	}
+	it.Eventually(t, func() bool {
+		return successfulPubCnt == atomic.LoadInt32(&dispatchCount)
+	})
+	it.Never(t, func() bool {
+		return successfulPubCnt != atomic.LoadInt32(&dispatchCount)
+	})
 }

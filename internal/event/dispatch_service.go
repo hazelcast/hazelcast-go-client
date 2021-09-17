@@ -18,9 +18,8 @@ package event
 
 import (
 	"fmt"
-	"sync/atomic"
-
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"sync"
 )
 
 const DefaultSubscriptionID = -1
@@ -31,209 +30,123 @@ type Event interface {
 
 type Handler func(event Event)
 
-type controlType int
-
-const (
-	subscribe controlType = iota
-	subscribeSync
-	unsubscribe
-)
-
-const (
-	created int32 = iota
-	ready
-	stopped
-)
-
-type controlMessage struct {
-	handler        Handler
-	eventName      string
-	controlType    controlType
-	subscriptionID int64
+type subscription struct {
+	handler   Handler
+	orderChan chan Event
 }
 
 type DispatchService struct {
-	logger            logger.Logger
-	syncSubscriptions map[string]map[int64]Handler
-	eventCh           chan Event
-	controlCh         chan controlMessage
-	doneCh            chan struct{}
-	subscriptions     map[string]map[int64]Handler
-	state             int32
+	logger        logger.Logger
+	subscriptions map[string]map[int64]subscription
+	eventMu       *sync.RWMutex
+	isClosed      bool
 }
 
 func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
-		subscriptions:     map[string]map[int64]Handler{},
-		syncSubscriptions: map[string]map[int64]Handler{},
-		eventCh:           make(chan Event, 1024),
-		controlCh:         make(chan controlMessage, 1024),
-		doneCh:            make(chan struct{}),
-		state:             created,
-		logger:            logger,
+		subscriptions: map[string]map[int64]subscription{},
+		eventMu:       &sync.RWMutex{},
+		logger:        logger,
 	}
-	startCh := make(chan struct{})
-	go service.start(startCh)
-	<-startCh
-	atomic.StoreInt32(&service.state, ready)
 	return service
 }
 
 func (s *DispatchService) Stop() {
-	// stopping a not-running service is no-op
-	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
+	s.eventMu.Lock()
+	defer s.eventMu.Unlock()
+	// stopping to a not-running service is no-op
+	if s.isClosed {
 		return
 	}
-	close(s.doneCh)
+	s.isClosed = true
+	for _, eventSubscriptions := range s.subscriptions {
+		for _, sbs := range eventSubscriptions {
+			close(sbs.orderChan)
+		}
+	}
 }
 
 // Subscribe attaches handler to listen for events with eventName.
 // Do not rely on the order of handlers, they may be shuffled.
 func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, handler Handler) {
-	// subscribing to a not-runnning service is no-op
-	if atomic.LoadInt32(&s.state) != ready {
-		return
-	}
 	if subscriptionID == DefaultSubscriptionID {
 		subscriptionID = MakeSubscriptionID(handler)
 	}
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Subscribe: %s, %d, %v", eventName, subscriptionID, handler)
 	})
-	s.controlCh <- controlMessage{
-		controlType:    subscribe,
-		eventName:      eventName,
-		subscriptionID: subscriptionID,
-		handler:        handler,
-	}
-}
+	s.eventMu.Lock()
+	defer s.eventMu.Unlock()
 
-// SubscribeSync attaches handler to listen for events with eventName.
-// Sync handlers are dispatched first, the events are ordered.
-// Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, handler Handler) {
-	// subscribing to a not-runnning service is no-op
-	if atomic.LoadInt32(&s.state) != ready {
+	// subscribing to a not-running service is no-op
+	if s.isClosed {
 		return
 	}
-	if subscriptionID == DefaultSubscriptionID {
-		subscriptionID = MakeSubscriptionID(handler)
-	}
-	s.logger.Trace(func() string {
-		return fmt.Sprintf("event.DispatchService.SubscribeSync: %s, %d, %v", eventName, subscriptionID, handler)
-	})
-	s.controlCh <- controlMessage{
-		controlType:    subscribeSync,
-		eventName:      eventName,
-		subscriptionID: subscriptionID,
-		handler:        handler,
-	}
+	s.subscribe(eventName, subscriptionID, subscription{handler: handler, orderChan: make(chan Event, 1024)})
 }
 
 func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
-	// unsubscribing from a not-runnning service is no-op
-	if atomic.LoadInt32(&s.state) != ready {
-		return
-	}
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Unsubscribe: %s, %d", eventName, subscriptionID)
 	})
-	s.controlCh <- controlMessage{
-		// TODO: rename controlType
-		controlType:    unsubscribe,
-		eventName:      eventName,
-		subscriptionID: subscriptionID,
-	}
-}
-
-func (s *DispatchService) Publish(event Event) {
-	// publishing to a not-runnning service is no-op
-	if atomic.LoadInt32(&s.state) != ready {
+	s.eventMu.Lock()
+	defer s.eventMu.Unlock()
+	// unsubscribing from a not-running service is no-op
+	if s.isClosed {
 		return
 	}
+	s.unsubscribe(eventName, subscriptionID)
+}
+
+func (s *DispatchService) Publish(event Event) bool {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
-	s.eventCh <- event
-}
+	s.eventMu.RLock()
+	defer s.eventMu.RUnlock()
+	// publishing to a not-running service is no-op
 
-func (s *DispatchService) start(startCh chan<- struct{}) {
-	startCh <- struct{}{}
-	for {
-		select {
-		case event := <-s.eventCh:
-			s.dispatch(event)
-		case control := <-s.controlCh:
-			switch control.controlType {
-			case subscribe:
-				s.subscribe(control.eventName, control.subscriptionID, control.handler)
-			case subscribeSync:
-				s.subscribeSync(control.eventName, control.subscriptionID, control.handler)
-			case unsubscribe:
-				s.unsubscribe(control.eventName, control.subscriptionID)
-			default:
-				panic(fmt.Sprintf("unknown control type: %d", control.controlType))
-			}
-		case <-s.doneCh:
-			return
-		}
+	if s.isClosed {
+		return false
 	}
+	return s.dispatch(event)
 }
 
-func (s *DispatchService) dispatch(event Event) {
+func (s *DispatchService) dispatch(event Event) bool {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.dispatch: %s", event.EventName())
 	})
-	// first dispatch sync handlers
-	if handlers, ok := s.syncSubscriptions[event.EventName()]; ok {
-		for _, handler := range handlers {
-			handler(event)
-		}
-	}
-	// then dispatch async handlers
 	if handlers, ok := s.subscriptions[event.EventName()]; ok {
 		for _, handler := range handlers {
-			go handler(event)
+			handler.orderChan <- event
 		}
+		return true
+	} else {
+		return false
 	}
 }
 
-func (s *DispatchService) subscribe(eventName string, subscriptionID int64, handler Handler) {
+func (s *DispatchService) subscribe(eventName string, subscriptionID int64, sbs subscription) {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.subscribe: %s, %d", eventName, subscriptionID)
 	})
 	subscriptionHandlers, ok := s.subscriptions[eventName]
 	if !ok {
-		subscriptionHandlers = map[int64]Handler{}
+		subscriptionHandlers = map[int64]subscription{}
 		s.subscriptions[eventName] = subscriptionHandlers
 	}
-	subscriptionHandlers[subscriptionID] = handler
-}
-
-func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, handler Handler) {
-	s.logger.Trace(func() string {
-		return fmt.Sprintf("event.DispatchService.subscribeSync: %s, %d", eventName, subscriptionID)
-	})
-	subscriptionHandlers, ok := s.syncSubscriptions[eventName]
-	if !ok {
-		subscriptionHandlers = map[int64]Handler{}
-		s.syncSubscriptions[eventName] = subscriptionHandlers
-	}
-	subscriptionHandlers[subscriptionID] = handler
+	subscriptionHandlers[subscriptionID] = sbs
+	go func() {
+		for event := range sbs.orderChan {
+			sbs.handler(event)
+		}
+	}()
 }
 
 func (s *DispatchService) unsubscribe(eventName string, subscriptionID int64) {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.unsubscribe: %s, %d", eventName, subscriptionID)
 	})
-	if handlers, ok := s.syncSubscriptions[eventName]; ok {
-		for sid := range handlers {
-			if sid == subscriptionID {
-				delete(handlers, sid)
-				return
-			}
-		}
-	}
 	if handlers, ok := s.subscriptions[eventName]; ok {
 		for sid := range handlers {
 			if sid == subscriptionID {
