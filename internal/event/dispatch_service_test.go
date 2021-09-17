@@ -20,13 +20,15 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 type sampleEvent struct {
+	value int
 }
 
 func (e sampleEvent) EventName() string {
@@ -71,9 +73,35 @@ func TestDispatchServiceUnsubscribe(t *testing.T) {
 	service.Unsubscribe("sample.event", 100)
 	service.Publish(sampleEvent{})
 	wg.Wait()
-	time.Sleep(100 * time.Millisecond)
 	service.Stop()
 	if int32(1) != dispatchCount {
 		t.Fatalf("target 1 != %d", dispatchCount)
 	}
+}
+
+func TestDispatchService_SubscribeSync(t *testing.T) {
+	// the order of events should be guaranteed when using subscribe sync
+	lg := logger.New()
+	service := event.NewDispatchService(lg)
+	wg := &sync.WaitGroup{}
+	const targetCount = 1000
+	wg.Add(targetCount)
+	var values []int
+	valuesMu := &sync.Mutex{}
+	handler := func(event event.Event) {
+		valuesMu.Lock()
+		values = append(values, event.(sampleEvent).value)
+		valuesMu.Unlock()
+		wg.Done()
+	}
+	service.SubscribeSync("sample.event", 100, handler)
+	for i := 0; i < targetCount; i++ {
+		service.Publish(sampleEvent{value: i})
+	}
+	wg.Wait()
+	target := make([]int, targetCount)
+	for i := 0; i < targetCount; i++ {
+		target[i] = i
+	}
+	assert.Equal(t, target, values)
 }
