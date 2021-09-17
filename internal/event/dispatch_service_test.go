@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
@@ -69,10 +70,10 @@ func TestDispatchServiceUnsubscribe(t *testing.T) {
 	}
 	service.Subscribe("sample.event", 100, handler)
 	service.Publish(sampleEvent{})
-	wg.Wait()
+	it.WaitEventually(t, wg)
 	service.Unsubscribe("sample.event", 100)
 	service.Publish(sampleEvent{})
-	wg.Wait()
+	it.WaitEventually(t, wg)
 	service.Stop()
 	if int32(1) != dispatchCount {
 		t.Fatalf("target 1 != %d", dispatchCount)
