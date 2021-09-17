@@ -18,6 +18,7 @@ package event
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
@@ -45,36 +46,23 @@ const (
 	stopped
 )
 
-type controlMessage struct {
-	handler        Handler
-	eventName      string
-	controlType    controlType
-	subscriptionID int64
-}
-
 type DispatchService struct {
 	logger            logger.Logger
 	syncSubscriptions map[string]map[int64]Handler
-	eventCh           chan Event
-	controlCh         chan controlMessage
 	doneCh            chan struct{}
 	subscriptions     map[string]map[int64]Handler
 	state             int32
+	eventMu           *sync.RWMutex
 }
 
 func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
 		subscriptions:     map[string]map[int64]Handler{},
 		syncSubscriptions: map[string]map[int64]Handler{},
-		eventCh:           make(chan Event, 1024),
-		controlCh:         make(chan controlMessage, 1024),
-		doneCh:            make(chan struct{}),
+		eventMu:           &sync.RWMutex{},
 		state:             created,
 		logger:            logger,
 	}
-	startCh := make(chan struct{})
-	go service.start(startCh)
-	<-startCh
 	atomic.StoreInt32(&service.state, ready)
 	return service
 }
@@ -84,7 +72,6 @@ func (s *DispatchService) Stop() {
 	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
 		return
 	}
-	close(s.doneCh)
 }
 
 // Subscribe attaches handler to listen for events with eventName.
@@ -100,12 +87,9 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Subscribe: %s, %d, %v", eventName, subscriptionID, handler)
 	})
-	s.controlCh <- controlMessage{
-		controlType:    subscribe,
-		eventName:      eventName,
-		subscriptionID: subscriptionID,
-		handler:        handler,
-	}
+	s.eventMu.Lock()
+	s.subscribe(eventName, subscriptionID, handler)
+	s.eventMu.Unlock()
 }
 
 // SubscribeSync attaches handler to listen for events with eventName.
@@ -122,12 +106,9 @@ func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, 
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.SubscribeSync: %s, %d, %v", eventName, subscriptionID, handler)
 	})
-	s.controlCh <- controlMessage{
-		controlType:    subscribeSync,
-		eventName:      eventName,
-		subscriptionID: subscriptionID,
-		handler:        handler,
-	}
+	s.eventMu.Lock()
+	s.subscribeSync(eventName, subscriptionID, handler)
+	s.eventMu.Unlock()
 }
 
 func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
@@ -138,12 +119,9 @@ func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Unsubscribe: %s, %d", eventName, subscriptionID)
 	})
-	s.controlCh <- controlMessage{
-		// TODO: rename controlType
-		controlType:    unsubscribe,
-		eventName:      eventName,
-		subscriptionID: subscriptionID,
-	}
+	s.eventMu.Lock()
+	s.unsubscribe(eventName, subscriptionID)
+	s.eventMu.Unlock()
 }
 
 func (s *DispatchService) Publish(event Event) {
@@ -154,30 +132,9 @@ func (s *DispatchService) Publish(event Event) {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
-	s.eventCh <- event
-}
-
-func (s *DispatchService) start(startCh chan<- struct{}) {
-	startCh <- struct{}{}
-	for {
-		select {
-		case event := <-s.eventCh:
-			s.dispatch(event)
-		case control := <-s.controlCh:
-			switch control.controlType {
-			case subscribe:
-				s.subscribe(control.eventName, control.subscriptionID, control.handler)
-			case subscribeSync:
-				s.subscribeSync(control.eventName, control.subscriptionID, control.handler)
-			case unsubscribe:
-				s.unsubscribe(control.eventName, control.subscriptionID)
-			default:
-				panic(fmt.Sprintf("unknown control type: %d", control.controlType))
-			}
-		case <-s.doneCh:
-			return
-		}
-	}
+	s.eventMu.RLock()
+	s.dispatch(event)
+	s.eventMu.RUnlock()
 }
 
 func (s *DispatchService) dispatch(event Event) {
