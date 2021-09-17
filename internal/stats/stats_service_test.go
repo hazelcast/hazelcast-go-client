@@ -39,15 +39,15 @@ func TestNewService(t *testing.T) {
 	srv := stats.NewService(requestCh, invFac, ed, lg, 100*time.Millisecond, "hz1")
 	srv.Start()
 	ed.Publish(cluster.NewConnected(pubcluster.NewAddress("100.200.300.400", 12345)))
-	time.Sleep(100 * time.Millisecond)
-	srv.Stop()
 	select {
 	case _, ok := <-requestCh:
 		// TODO: decode the request and check whether it's correct.
+		srv.Stop()
 		if ok != true {
 			t.Fatalf("an invocation was expected")
 		}
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(time.Minute):
+		srv.Stop()
 		t.Fatalf("invocation not received in time")
 	}
 }

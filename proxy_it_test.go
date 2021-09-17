@@ -65,7 +65,6 @@ func retryResult(t *testing.T, redo bool, target bool) {
 	time.Sleep(1 * time.Second)
 	cluster = it.StartNewCluster(1)
 	defer cluster.Shutdown()
-	time.Sleep(5 * time.Second)
 	ok := <-okCh
 	assert.Equal(t, target, ok)
 }

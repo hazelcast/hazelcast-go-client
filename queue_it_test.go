@@ -75,18 +75,13 @@ func TestQueue_AddListener(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(q.Add(context.Background(), value))
 		}
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 		atomic.StoreInt32(&callCount, 0)
 		if err = q.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(q.Add(context.Background(), "value2"))
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Never(t, func() bool { return atomic.LoadInt32(&callCount) != 0 })
 	})
 }
 
@@ -105,19 +100,13 @@ func TestQueue_AddListener_IncludeValue(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(q.Add(context.Background(), value))
 		}
-
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 		atomic.StoreInt32(&callCount, 0)
 		if err = q.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(q.Add(context.Background(), "value2"))
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Never(t, func() bool { return atomic.LoadInt32(&callCount) != 0 })
 	})
 }
 
