@@ -17,6 +17,7 @@
 package event_test
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -30,20 +31,24 @@ import (
 
 type sampleEvent struct {
 	value int
+	id    int
 }
 
 func (e sampleEvent) EventName() string {
-	return "sample.event"
+	if e.id == 0 {
+		return "sample.event"
+	}
+	return fmt.Sprintf("sample.event-%d", e.id)
 }
 
 func TestDispatchServiceSubscribePublish(t *testing.T) {
 	goroutineCount := 10000
-	wg := &sync.WaitGroup{}
-	wg.Add(goroutineCount)
+	twg := &sync.WaitGroup{}
+	twg.Add(goroutineCount)
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
-		wg.Done()
+		twg.Done()
 	}
 	lg := logger.New()
 	service := event.NewDispatchService(lg)
@@ -51,7 +56,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
 	}
-	wg.Wait()
+	twg.Wait()
 	service.Stop()
 	if int32(goroutineCount) != dispatchCount {
 		t.Fatalf("target %d != %d", goroutineCount, dispatchCount)
@@ -61,19 +66,19 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 func TestDispatchServiceUnsubscribe(t *testing.T) {
 	lg := logger.New()
 	service := event.NewDispatchService(lg)
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	twg := &sync.WaitGroup{}
+	twg.Add(1)
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
-		wg.Done()
+		twg.Done()
 	}
 	service.Subscribe("sample.event", 100, handler)
 	service.Publish(sampleEvent{})
-	it.WaitEventually(t, wg)
+	it.WaitEventually(t, twg)
 	service.Unsubscribe("sample.event", 100)
 	service.Publish(sampleEvent{})
-	it.WaitEventually(t, wg)
+	it.WaitEventually(t, twg)
 	service.Stop()
 	if int32(1) != dispatchCount {
 		t.Fatalf("target 1 != %d", dispatchCount)
@@ -105,4 +110,45 @@ func TestDispatchService_SubscribeSync(t *testing.T) {
 		target[i] = i
 	}
 	assert.Equal(t, target, values)
+}
+
+func TestDispatchService_Subscribe(t *testing.T) {
+	// The order of events of different type should be guaranteed when using subscribe.
+	// The toleration here is required for the test, since although the goroutine for a handler is guaranteed to start, it is not guaranteed to end before the next handler.
+	const outOfOrderValuesToleration = 0.6 // %0.6, 6 differences in order per 1000 events
+	lg := logger.New()
+	service := event.NewDispatchService(lg)
+	twg := &sync.WaitGroup{}
+	const targetCount = 1000
+	twg.Add(targetCount)
+	var values []int
+	valuesMu := &sync.Mutex{}
+	handler := func(event event.Event) {
+		valuesMu.Lock()
+		values = append(values, event.(sampleEvent).value)
+		valuesMu.Unlock()
+		twg.Done()
+	}
+	for i := 1; i <= targetCount; i++ {
+		service.Subscribe(fmt.Sprintf("sample.event-%d", i), int64(100+i), handler)
+	}
+	for i := 1; i <= targetCount; i++ {
+		service.Publish(sampleEvent{value: i, id: i})
+	}
+	twg.Wait()
+	target := make([]int, targetCount)
+	for i := 1; i <= targetCount; i++ {
+		target[i-1] = i
+	}
+	// tolerate some amount of out-of-order values
+	diff := 0
+	for i := 0; i < targetCount; i++ {
+		if target[i] != values[i] {
+			diff++
+		}
+	}
+	rate := 100 * float64(diff) / targetCount
+	if rate > outOfOrderValuesToleration {
+		t.Fatalf("Out of order value rate: %f", rate)
+	}
 }

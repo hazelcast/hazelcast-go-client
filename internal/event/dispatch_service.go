@@ -24,37 +24,50 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
+// DefaultSubscriptionID enables automatically setting a subscription ID.
 const DefaultSubscriptionID = -1
 
+// Event is a value published by an event publishers and delivered to one or more subscribbers via the dispatch service.
 type Event interface {
 	EventName() string
 }
 
-type Handler func(event Event)
+// SyncHandler is the type for synchronous callbacks.
+type SyncHandler func(event Event)
+
+// AsyncHandler is the type for asynchronous callbacks.
+type AsyncHandler func(event Event, wg *sync.WaitGroup)
 
 const (
 	ready   = 0
 	stopped = 1
 )
 
+type subscriptionMap map[string]*sync.Map
+
+// DispatchService delivers events from a publisher to one or more subscribers.
 type DispatchService struct {
-	logger            logger.Logger
-	syncSubscriptions map[string]map[int64]Handler
-	subscriptions     map[string]map[int64]Handler
-	eventMu           *sync.RWMutex
-	state             int32
+	logger             logger.Logger
+	asyncSubscriptions atomic.Value
+	syncSubscriptions  atomic.Value
+	subMu              *sync.Mutex
+	state              int32
 }
 
+// NewDispatchService creates a dispatch service with the given logger.
 func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
-		subscriptions:     map[string]map[int64]Handler{},
-		syncSubscriptions: map[string]map[int64]Handler{},
-		eventMu:           &sync.RWMutex{},
-		logger:            logger,
+		subMu:  &sync.Mutex{},
+		logger: logger,
 	}
+	service.asyncSubscriptions.Store(subscriptionMap{})
+	service.syncSubscriptions.Store(subscriptionMap{})
 	return service
 }
 
+// Stop terminates the dispatch service and releases the resources.
+// It is not possible to subscribe to or publish events once the dispatch service is terminated.
+// Calling Stop more than once is no-op.
 func (s *DispatchService) Stop() {
 	// stopping a not-running service is no-op
 	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
@@ -62,10 +75,12 @@ func (s *DispatchService) Stop() {
 	}
 }
 
-// Subscribe attaches handler to listen for events with eventName.
-// Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, handler Handler) {
-	// subscribing to a not-runnning service is no-op
+// Subscribe attaches a handler to listen for events with the given event name.
+// Do not rely on the subscription order of handlers, they may be called back in a random order.
+// The handler will be called in a goroutine, and the dispatch service makes sure that the corresponding goroutine is started before the goroutine for the next handler.
+// Once the goroutines for handlers start, it's up to the runtime to schedule them.
+func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, handler SyncHandler) {
+	// subscribing to a not-running service is no-op
 	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
@@ -75,15 +90,18 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Subscribe: %s, %d, %v", eventName, subscriptionID, handler)
 	})
-	s.eventMu.Lock()
-	s.subscribe(eventName, subscriptionID, handler)
-	s.eventMu.Unlock()
+	s.subscribeAsync(eventName, subscriptionID, func(event Event, wg *sync.WaitGroup) {
+		wg.Done()
+		handler(event)
+	})
 }
 
-// SubscribeSync attaches handler to listen for events with eventName.
+// SubscribeSync attaches handler to listen for events with the given event name.
 // Sync handlers are dispatched first, the events are ordered.
-// Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, handler Handler) {
+// Do not rely on the subscription order of handlers, they may be called back in a random order.
+// The handler is called in the same goroutine with the dispatch service and executes until the end of the corresponding function.
+// Make sure sync handlers do no block.
+func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, handler SyncHandler) {
 	// subscribing to a not-runnning service is no-op
 	if atomic.LoadInt32(&s.state) != ready {
 		return
@@ -94,35 +112,34 @@ func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, 
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.SubscribeSync: %s, %d, %v", eventName, subscriptionID, handler)
 	})
-	s.eventMu.Lock()
 	s.subscribeSync(eventName, subscriptionID, handler)
-	s.eventMu.Unlock()
 }
 
+// Unsubscribe detaches the handler with the given subscription ID from the given event name.
+// Detached handlers will not be called back during the dispatch for the corresponding event.
+// Detaching the handler has no effect on an already started handler.
 func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
-	// unsubscribing from a not-runnning service is no-op
+	// unsubscribing from a not-running service is no-op
 	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Unsubscribe: %s, %d", eventName, subscriptionID)
 	})
-	s.eventMu.Lock()
 	s.unsubscribe(eventName, subscriptionID)
-	s.eventMu.Unlock()
 }
 
+// Publish delivers the given event to subscribers.
+// The event will first be delivered to sync subscribers, then the other ones.
 func (s *DispatchService) Publish(event Event) {
-	// publishing to a not-runnning service is no-op
+	// publishing to a not-running service is no-op
 	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
-	s.eventMu.RLock()
 	s.dispatch(event)
-	s.eventMu.RUnlock()
 }
 
 func (s *DispatchService) dispatch(event Event) {
@@ -130,61 +147,98 @@ func (s *DispatchService) dispatch(event Event) {
 		return fmt.Sprintf("event.DispatchService.dispatch: %s", event.EventName())
 	})
 	// first dispatch sync handlers
-	if handlers, ok := s.syncSubscriptions[event.EventName()]; ok {
-		for _, handler := range handlers {
-			handler(event)
-		}
+	if handlers, ok := s.loadSyncSubs()[event.EventName()]; ok {
+		handlers.Range(func(k, v interface{}) bool {
+			v.(SyncHandler)(event)
+			return true
+		})
 	}
 	// then dispatch async handlers
-	if handlers, ok := s.subscriptions[event.EventName()]; ok {
-		for _, handler := range handlers {
-			go handler(event)
-		}
+	wg := &sync.WaitGroup{}
+	if handlers, ok := s.loadAsyncSubs()[event.EventName()]; ok {
+		handlers.Range(func(k, v interface{}) bool {
+			wg.Add(1)
+			go v.(AsyncHandler)(event, wg)
+			wg.Wait()
+			return true
+		})
 	}
 }
 
-func (s *DispatchService) subscribe(eventName string, subscriptionID int64, handler Handler) {
+func (s *DispatchService) subscribeAsync(eventName string, subscriptionID int64, handler AsyncHandler) {
 	s.logger.Trace(func() string {
-		return fmt.Sprintf("event.DispatchService.subscribe: %s, %d", eventName, subscriptionID)
+		return fmt.Sprintf("event.DispatchService.subscribeAsync: %s, %d", eventName, subscriptionID)
 	})
-	subscriptionHandlers, ok := s.subscriptions[eventName]
+	s.subMu.Lock()
+	defer s.subMu.Unlock()
+	subs := s.loadAsyncSubs()
+	handlers, ok := subs[eventName]
 	if !ok {
-		subscriptionHandlers = map[int64]Handler{}
-		s.subscriptions[eventName] = subscriptionHandlers
+		handlers = &sync.Map{}
+		subs[eventName] = handlers
 	}
-	subscriptionHandlers[subscriptionID] = handler
+	handlers.Store(subscriptionID, handler)
+	s.asyncSubscriptions.Store(subs)
 }
 
-func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, handler Handler) {
+func (s *DispatchService) subscribeSync(eventName string, subscriptionID int64, handler SyncHandler) {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.subscribeSync: %s, %d", eventName, subscriptionID)
 	})
-	subscriptionHandlers, ok := s.syncSubscriptions[eventName]
+	s.subMu.Lock()
+	defer s.subMu.Unlock()
+	subs := s.loadSyncSubs()
+	handlers, ok := subs[eventName]
 	if !ok {
-		subscriptionHandlers = map[int64]Handler{}
-		s.syncSubscriptions[eventName] = subscriptionHandlers
+		handlers = &sync.Map{}
+		subs[eventName] = handlers
 	}
-	subscriptionHandlers[subscriptionID] = handler
+	handlers.Store(subscriptionID, handler)
+	s.syncSubscriptions.Store(subs)
 }
 
 func (s *DispatchService) unsubscribe(eventName string, subscriptionID int64) {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.unsubscribe: %s, %d", eventName, subscriptionID)
 	})
-	if handlers, ok := s.syncSubscriptions[eventName]; ok {
-		for sid := range handlers {
+	s.subMu.Lock()
+	defer s.subMu.Unlock()
+	s.unsubscribeSync(eventName, subscriptionID)
+	s.unsubscribeAsync(eventName, subscriptionID)
+}
+
+func (s *DispatchService) unsubscribeSync(eventName string, subscriptionID int64) {
+	syncs := s.loadSyncSubs()
+	if handlers, ok := syncs[eventName]; ok {
+		handlers.Range(func(sid, v interface{}) bool {
 			if sid == subscriptionID {
-				delete(handlers, sid)
-				return
+				handlers.Delete(sid)
+				s.syncSubscriptions.Store(syncs)
+				return false
 			}
-		}
+			return true
+		})
 	}
-	if handlers, ok := s.subscriptions[eventName]; ok {
-		for sid := range handlers {
+}
+
+func (s *DispatchService) unsubscribeAsync(eventName string, subscriptionID int64) {
+	asyncs := s.loadAsyncSubs()
+	if handlers, ok := asyncs[eventName]; ok {
+		handlers.Range(func(sid, v interface{}) bool {
 			if sid == subscriptionID {
-				delete(handlers, sid)
-				break
+				handlers.Delete(sid)
+				s.asyncSubscriptions.Store(asyncs)
+				return false
 			}
-		}
+			return true
+		})
 	}
+}
+
+func (s *DispatchService) loadSyncSubs() subscriptionMap {
+	return s.syncSubscriptions.Load().(subscriptionMap)
+}
+
+func (s *DispatchService) loadAsyncSubs() subscriptionMap {
+	return s.asyncSubscriptions.Load().(subscriptionMap)
 }
