@@ -212,10 +212,10 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 
 func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 	if e, ok := event.(*ConnectionOpened); ok {
-		connectionCount := atomic.AddInt32(&b.connectionCount, 1)
 		b.regsMu.Lock()
 		defer b.regsMu.Unlock()
-		if !b.smart && connectionCount > 0 {
+		connCount := atomic.AddInt32(&b.connectionCount, 1)
+		if !b.smart && connCount > 0 {
 			// do not register new connections in non-smart mode
 			return
 		}
@@ -233,9 +233,7 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 }
 
 func (b *ConnectionListenerBinder) handleConnectionClosed(event event.Event) {
-	if _, ok := event.(*ConnectionOpened); ok {
-		atomic.AddInt32(&b.connectionCount, -1)
-	}
+	atomic.AddInt32(&b.connectionCount, -1)
 }
 
 func (b *ConnectionListenerBinder) sendInvocation(ctx context.Context, inv invocation.Invocation, corrID int64) error {
