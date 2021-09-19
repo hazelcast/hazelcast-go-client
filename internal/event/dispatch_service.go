@@ -99,7 +99,7 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 // SubscribeSync attaches handler to listen for events with the given event name.
 // Sync handlers are dispatched first, the events are ordered.
 // Do not rely on the subscription order of handlers, they may be called back in a random order.
-// The handler is called in the same goroutine with the dispatch service and executes until the end of the corresponding function.
+// The handler is called in the same goroutine with the caller and executes until the end.
 // Make sure sync handlers do no block.
 func (s *DispatchService) SubscribeSync(eventName string, subscriptionID int64, handler SyncHandler) {
 	// subscribing to a not-runnning service is no-op
