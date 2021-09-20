@@ -337,8 +337,8 @@ func xmlConfig(clusterName string, port int) string {
 			</map>
 			<serialization>
 				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
-					</data-serializable-factory>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
         </hazelcast>
@@ -373,8 +373,8 @@ func xmlSSLConfig(clusterName string, port int) string {
 			</map>
 			<serialization>
 				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
-					</data-serializable-factory>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
 		</hazelcast>
