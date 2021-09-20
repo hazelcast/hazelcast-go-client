@@ -44,7 +44,7 @@ type ConnectionListenerBinder struct {
 	removeCh          chan<- int64
 	regs              map[types.UUID]listenerRegistration
 	correlationIDs    map[types.UUID][]int64
-	regsMu            *sync.Mutex
+	regsMu            *sync.RWMutex
 	requestCh         chan<- invocation.Invocation
 	connectionCount   int32
 	smart             bool
@@ -66,7 +66,7 @@ func NewConnectionListenerBinder(
 		removeCh:          removeCh,
 		regs:              map[types.UUID]listenerRegistration{},
 		correlationIDs:    map[types.UUID][]int64{},
-		regsMu:            &sync.Mutex{},
+		regsMu:            &sync.RWMutex{},
 		logger:            logger,
 		smart:             smart,
 	}
@@ -212,13 +212,13 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 
 func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 	if e, ok := event.(*ConnectionOpened); ok {
-		b.regsMu.Lock()
-		defer b.regsMu.Unlock()
 		connCount := atomic.AddInt32(&b.connectionCount, 1)
 		if !b.smart && connCount > 0 {
 			// do not register new connections in non-smart mode
 			return
 		}
+		b.regsMu.RLock()
+		defer b.regsMu.RUnlock()
 		for regID, reg := range b.regs {
 			b.logger.Debug(func() string {
 				return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
@@ -232,7 +232,7 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 	}
 }
 
-func (b *ConnectionListenerBinder) handleConnectionClosed(event event.Event) {
+func (b *ConnectionListenerBinder) handleConnectionClosed(_ event.Event) {
 	atomic.AddInt32(&b.connectionCount, -1)
 }
 
