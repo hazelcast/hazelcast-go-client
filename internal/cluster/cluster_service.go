@@ -19,6 +19,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -200,6 +201,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
+		m.version = version
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
@@ -216,6 +218,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 				removed = append(removed, *member)
 			}
 		}
+		m.logMembers(version)
 	}
 	return
 }
@@ -310,4 +313,15 @@ func (m *membersMap) reset() {
 	m.addrToMemberUUID = map[pubcluster.Address]types.UUID{}
 	m.version = -1
 	m.membersMu.Unlock()
+}
+
+func (m *membersMap) logMembers(version int32) {
+	// synchronized in Update
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("\n\nMembers {size:%d, ver:%d} [\n", len(m.members), version))
+	for addr, uuid := range m.addrToMemberUUID {
+		sb.WriteString(fmt.Sprintf("\tMember %s - %s\n", addr, uuid))
+	}
+	sb.WriteString("]\n\n")
+	m.logger.Infof(sb.String())
 }
