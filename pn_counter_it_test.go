@@ -84,16 +84,16 @@ func TestPNCounter_GetAndDecrement(t *testing.T) {
 
 func TestPNCounter_GetAndIncrement(t *testing.T) {
 	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
-		v, err := pn.GetAndDecrement(context.Background())
+		v, err := pn.GetAndIncrement(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(0), v)
-		v, err = pn.GetAndDecrement(context.Background())
+		v, err = pn.GetAndIncrement(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, int64(-1), v)
+		assert.Equal(t, int64(1), v)
 	})
 }
 
@@ -154,6 +154,12 @@ func TestPNCounter_SubtractAndGet(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(-11), v)
+	})
+}
+
+func TestPNCounter_Reset(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		pn.Reset()
 	})
 }
 
