@@ -255,6 +255,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if c.statsService != nil {
 		c.statsService.Stop()
 	}
+	c.viewListenerService.Stop()
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
 	// wait for the shut down event to be dispatched
