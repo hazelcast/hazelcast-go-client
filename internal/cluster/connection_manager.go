@@ -57,7 +57,8 @@ const (
 )
 
 const (
-	serializationVersion = 1
+	serializationVersion  = 1
+	initialMembersTimeout = 120 * time.Second
 )
 
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
@@ -232,7 +233,9 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: waiting for the initial member list" })
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("getting initial member list from cluster: %w", ctx.Err())
+	case <-time.After(initialMembersTimeout):
+		return fmt.Errorf("timed out getting initial member list from cluster: %w", hzerrors.ErrIllegalState)
 	case <-m.startCh:
 		break
 	}
