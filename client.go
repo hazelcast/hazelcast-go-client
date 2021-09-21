@@ -24,6 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/sql"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -344,6 +346,14 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 		return hzerrors.ErrClientNotActive
 	}
 	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
+}
+
+func (c *Client) ExecuteSQL(ctx context.Context, sql string, params ...interface{}) (*sql.Result, error) {
+	panic("not implemented")
+}
+
+func (c *Client) ExecuteSQLStatement(ctx context.Context, statement sql.Statement) (*sql.Result, error) {
+	panic("not implemented")
 }
 
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
