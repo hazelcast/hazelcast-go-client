@@ -106,11 +106,13 @@ func TestReplicatedMap_GetKeySet(t *testing.T) {
 		it.AssertEquals(t, "v1", it.MustValue(m.Get(context.Background(), "k1")))
 		it.AssertEquals(t, "v2", it.MustValue(m.Get(context.Background(), "k2")))
 		it.AssertEquals(t, "v3", it.MustValue(m.Get(context.Background(), "k3")))
-		if keys, err := m.GetKeySet(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if !reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys)) {
-			t.Fatalf("target: %#v != %#v", targetKeySet, keys)
-		}
+		it.Eventually(t, func() bool {
+			keys, err := m.GetKeySet(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return reflect.DeepEqual(makeStringSet(targetKeySet), makeStringSet(keys))
+		})
 	})
 }
 func TestReplicatedMap_GetValues(t *testing.T) {
