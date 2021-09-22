@@ -18,6 +18,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 )
 
 const (

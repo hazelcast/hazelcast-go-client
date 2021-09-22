@@ -29,7 +29,7 @@ const (
 
 func EncodeSqlColumnMetadata(clientMessage *proto.ClientMessage, sqlColumnMetadata sql.ColumnMetadata) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
-	initialFrame := proto.NewFrame(make([]byte, SqlColumnMetadataCodecNullableInitialFrameSize))
+	initialFrame := proto.NewFrameWith(make([]byte, SqlColumnMetadataCodecNullableInitialFrameSize), proto.UnfragmentedMessage)
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset, int32(sqlColumnMetadata.Type))
 	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset, sqlColumnMetadata.Nullable)
 	clientMessage.AddFrame(initialFrame)
@@ -45,8 +45,8 @@ func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) sql.Colu
 	initialFrame := frameIterator.Next()
 	_type := FixSizedTypesCodec.DecodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset)
 	nullable := false
-	if len(initialFrame.Content) >= NULLABLE_OFFSET+BitsUtil.BOOLEAN_SIZE_IN_BYTES {
-		nullable = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, NULLABLE_OFFSET)
+	if len(initialFrame.Content) >= SqlColumnMetadataCodecNullableFieldOffset+proto.BooleanSizeInBytes {
+		nullable = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset)
 	}
 
 	name := DecodeString(frameIterator)

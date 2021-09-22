@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hazelcast/hazelcast-go-client/sql"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -548,12 +550,23 @@ func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []*iseria
 	}
 }
 
+func EncodeListMultiFrameNullableForData(message *proto.ClientMessage, values []*iserialization.Data) {
+	EncodeListMultiFrameContainsNullable(message, values, EncodeData)
+}
+
 func DecodeListMultiFrame(frameIterator *proto.ForwardFrameIterator, decoder func(frameIterator *proto.ForwardFrameIterator)) {
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		decoder(frameIterator)
 	}
 	frameIterator.Next()
+}
+
+func DecodeNullableListMultiFrame(frameIterator *proto.ForwardFrameIterator, decoder func(frameIterator *proto.ForwardFrameIterator) {
+	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+		return
+	}
+	DecodeListMultiFrame(frameIterator, decoder)
 }
 
 func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
@@ -628,6 +641,10 @@ func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFr
 	}
 	frameIterator.Next()
 	return result
+}
+
+func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []sql.ColumnMetadata {
+	return DecodeNullableListMultiFrame(frameIterator, DecodeSqlColumnMetadata)
 }
 
 func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) types.DistributedObjectInfo {

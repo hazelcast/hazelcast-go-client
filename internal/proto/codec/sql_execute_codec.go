@@ -50,7 +50,7 @@ func EncodeSqlExecuteRequest(sql string, parameters []*iserialization.Data, time
 	clientMessage.SetPartitionId(-1)
 
 	EncodeString(clientMessage, sql)
-	EncodeListMultiFrameContainsNullableForData(clientMessage, parameters)
+	EncodeListMultiFrameNullableForData(clientMessage, parameters)
 	CodecUtil.EncodeNullableForString(clientMessage, schema)
 	EncodeSqlQueryId(clientMessage, queryId)
 

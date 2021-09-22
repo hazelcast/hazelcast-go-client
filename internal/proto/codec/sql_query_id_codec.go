@@ -32,10 +32,10 @@ const (
 func EncodeSqlQueryId(clientMessage *proto.ClientMessage, sqlQueryId isql.QueryID) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, SqlQueryIdCodecLocalIdLowInitialFrameSize))
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecMemberIdHighFieldOffset, int64(sqlQueryId.MemberIdHigh))
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecMemberIdLowFieldOffset, int64(sqlQueryId.MemberIdLow))
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecLocalIdHighFieldOffset, int64(sqlQueryId.LocalIdHigh))
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecLocalIdLowFieldOffset, int64(sqlQueryId.LocalIdLow))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecMemberIdHighFieldOffset, int64(sqlQueryId.MemberIDHigh))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecMemberIdLowFieldOffset, int64(sqlQueryId.MemberIDLow))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecLocalIdHighFieldOffset, int64(sqlQueryId.LocalIDHigh))
+	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecLocalIdLowFieldOffset, int64(sqlQueryId.LocalIDLow))
 	clientMessage.AddFrame(initialFrame)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
@@ -52,9 +52,9 @@ func DecodeSqlQueryId(frameIterator *proto.ForwardFrameIterator) isql.QueryID {
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
 	return isql.QueryID{
-		MemberIdHigh: memberIdHigh,
-		MemberIdLow:  memberIdLow,
-		LocalIdHigh:  localIdHigh,
-		LocalIdLow:   localIdLow,
+		MemberIDHigh: memberIdHigh,
+		MemberIDLow:  memberIdLow,
+		LocalIDHigh:  localIdHigh,
+		LocalIDLow:   localIdLow,
 	}
 }
