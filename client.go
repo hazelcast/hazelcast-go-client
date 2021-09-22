@@ -348,11 +348,11 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
 }
 
-func (c *Client) ExecuteSQL(ctx context.Context, sql string, params ...interface{}) (*sql.Result, error) {
+func (c *Client) ExecuteSQL(ctx context.Context, sql string, params ...interface{}) (*sql.ExecResult, error) {
 	panic("not implemented")
 }
 
-func (c *Client) ExecuteSQLStatement(ctx context.Context, statement sql.Statement) (*sql.Result, error) {
+func (c *Client) QuerySQL(ctx context.Context, sql string, params ...interface{}) (*sql.QueryResult, error) {
 	panic("not implemented")
 }
 

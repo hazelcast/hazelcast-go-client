@@ -1,12 +1,11 @@
-package sql
+package sql_test
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/hazelcast/hazelcast-go-client"
+	"database/sql"
 )
 
+/*
 func ExampleResult() {
 	ctx := context.Background()
 	client, err := hazelcast.StartNewClient(ctx)
@@ -26,4 +25,35 @@ func ExampleResult() {
 		// alternative: fmt.Println(result.Row.ColumnByIndex(0))
 		// alternative: fmt.Println(result.Row.ColumnByName("foo"))
 	}
+}
+
+*/
+
+func ExampleDriver_Open() {
+	db, err := sql.Open("hazelcast", "localhost;Cluster.Unisocket=true")
+	if err != nil {
+		panic(err)
+	}
+	ctx := context.Background()
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	/*
+		rows, err := conn.QueryContext(ctx, "SELECT name FROM emp WHERE age < ?", 30)
+		if err != nil {
+			panic(err)
+		}
+		for rows.Next() {
+			if rows.Err() != nil {
+				panic(rows.Err())
+			}
+			values, err := rows.Columns()
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(values)
+		}
+	*/
 }
