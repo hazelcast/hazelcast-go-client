@@ -19,6 +19,7 @@ package codec
 import (
 	"encoding/binary"
 	"fmt"
+	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"net"
 	"strconv"
 	"strings"
@@ -619,6 +620,9 @@ func DecodeListMultiFrameForString(frameIterator *proto.ForwardFrameIterator) []
 	return result
 }
 
+func DecodeListMultiFrameContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
+}
+
 func DecodeListMultiFrameForDataContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
 	result := make([]*iserialization.Data, 0)
 	frameIterator.Next()
@@ -834,4 +838,25 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 	clientMessage.AddFrame(initialFrame)
 	EncodeString(clientMessage, host)
 	clientMessage.AddFrame(proto.EndFrame.Copy())
+}
+
+
+func DecodeSQLPage(it *proto.ForwardFrameIterator) isql.Page {
+	// begin frame
+	it.Next()
+	frame := it.Next()
+	// read the "last" flag
+	last := FixSizedTypesCodec.DecodeByte(frame.Content, 0) == 1
+	// read column types
+	types := DecodeListIntegerIntegerInteger(it)
+	cols := make([]interface{}, len(types))
+
+}
+
+func DecodeSQLColumn(type_ int32, msg *proto.ClientMessage) interface{} {
+	t := sql.ColumnType(type_)
+	switch t {
+	case sql.ColumnTypeVarchar:
+		return DecodeListMultiFrameForDataContainsNullable()
+	}
 }

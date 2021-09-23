@@ -12,3 +12,11 @@ func (r Row) ColumnByName(name string) interface{} {
 func (r Row) ColumnByIndex(index int) interface{} {
 	panic("not implemented")
 }
+
+type RowMetadata struct {
+	Columns []ColumnMetadata
+}
+
+func (m RowMetadata) ColumnByName(name string) ColumnMetadata {
+	panic("not implemented")
+}
