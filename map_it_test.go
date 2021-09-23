@@ -1073,7 +1073,7 @@ func TestMap_AddInterceptor(t *testing.T) {
 		}
 		defer func() {
 			if _, err := m.RemoveInterceptor(ctx, id); err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 		}()
 		v, err := m.Get(ctx, "foo")
