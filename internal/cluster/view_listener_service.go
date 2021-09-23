@@ -24,21 +24,16 @@ func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *even
 		dispatcher: dispatcher,
 		logger:     logger,
 	}
-	dispatcher.Subscribe(EventConnectionOpened, event.DefaultSubscriptionID, vs.handleConnectionOpened)
-	dispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, vs.handleConnectionClosed)
+	dispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, vs.handleConnectionEvent)
 	return vs
 }
 
-func (vs *ViewListenerService) handleConnectionOpened(event event.Event) {
-	vs.logger.Trace(func() string { return "cluster.ViewListenerService.handleConnectionOpened" })
-	if e, ok := event.(*ConnectionOpened); ok {
+func (vs *ViewListenerService) handleConnectionEvent(event event.Event) {
+	vs.logger.Trace(func() string { return fmt.Sprintf("cluster.ViewListenerService.handleConnectionEvent %v", event) })
+	e := event.(*ConnectionEvent)
+	if e.Opened {
 		vs.tryRegister(e.Conn)
-	}
-}
-
-func (vs *ViewListenerService) handleConnectionClosed(event event.Event) {
-	vs.logger.Trace(func() string { return "cluster.ViewListenerService.handleConnectionClosed" })
-	if e, ok := event.(*ConnectionClosed); ok {
+	} else {
 		vs.tryReregisterToRandomConnection(e.Conn)
 	}
 }

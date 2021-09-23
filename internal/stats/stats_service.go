@@ -89,7 +89,7 @@ func NewService(
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
-	ed.Subscribe(cluster.EventConnected, event.DefaultSubscriptionID, s.handleClusterConnected)
+	ed.Subscribe(cluster.EventCluster, event.DefaultSubscriptionID, s.handleClusterEvent)
 	s.addGauges()
 	return s
 }
@@ -100,8 +100,8 @@ func (s *Service) Start() {
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	subID := event.MakeSubscriptionID(s.handleClusterConnected)
-	s.ed.Unsubscribe(cluster.EventConnected, subID)
+	subID := event.MakeSubscriptionID(s.handleClusterEvent)
+	s.ed.Unsubscribe(cluster.EventCluster, subID)
 }
 
 func (s *Service) loop() {
@@ -120,11 +120,13 @@ func (s *Service) loop() {
 	}
 }
 
-func (s *Service) handleClusterConnected(event event.Event) {
-	if e, ok := event.(*cluster.Connected); ok {
-		s.clusterConnectTime.Store(time.Now())
-		s.connAddr.Store(e.Addr)
+func (s *Service) handleClusterEvent(event event.Event) {
+	e := event.(*cluster.ClusterEvent)
+	if !e.Connected {
+		return
 	}
+	s.clusterConnectTime.Store(time.Now())
+	s.connAddr.Store(*e.Addr)
 }
 
 func (s *Service) sendStats(ctx context.Context) {

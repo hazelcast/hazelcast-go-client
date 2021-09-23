@@ -68,8 +68,7 @@ func NewConnectionListenerBinder(
 		logger:            logger,
 		smart:             smart,
 	}
-	eventDispatcher.Subscribe(EventConnectionOpened, event.DefaultSubscriptionID, binder.handleConnectionOpened)
-	eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, binder.handleConnectionClosed)
+	eventDispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, binder.handleConnectionEvent)
 	return binder
 }
 
@@ -210,28 +209,35 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 	return inv, nil
 }
 
-func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
-	if e, ok := event.(*ConnectionOpened); ok {
-		connCount := atomic.AddInt32(&b.connectionCount, 1)
-		if !b.smart && connCount > 0 {
-			// do not register new connections in non-smart mode
-			return
-		}
-		b.regsMu.RLock()
-		defer b.regsMu.RUnlock()
-		for regID, reg := range b.regs {
-			b.logger.Debug(func() string {
-				return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
-			})
-			if corrIDs, err := b.sendAddListenerRequests(context.Background(), reg.addRequest, reg.handler, e.Conn); err != nil {
-				b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
-			} else {
-				b.updateCorrelationIDs(regID, corrIDs)
-			}
+func (b *ConnectionListenerBinder) handleConnectionEvent(e event.Event) {
+	cEvent := e.(*ConnectionEvent)
+	if cEvent.Opened {
+		b.handleConnectionOpened(cEvent)
+	} else {
+		b.handleConnectionClosed(cEvent)
+	}
+
+}
+func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionEvent) {
+	connectionCount := atomic.AddInt32(&b.connectionCount, 1)
+	b.regsMu.Lock()
+	defer b.regsMu.Unlock()
+	if !b.smart && connectionCount > 0 {
+		// do not register new connections in non-smart mode
+		return
+	}
+	for regID, reg := range b.regs {
+		b.logger.Debug(func() string {
+			return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
+		})
+		if corrIDs, err := b.sendAddListenerRequests(context.Background(), reg.addRequest, reg.handler, e.Conn); err != nil {
+			b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
+		} else {
+			b.updateCorrelationIDs(regID, corrIDs)
 		}
 	}
 }
 
-func (b *ConnectionListenerBinder) handleConnectionClosed(_ event.Event) {
+func (b *ConnectionListenerBinder) handleConnectionClosed(e *ConnectionEvent) {
 	atomic.AddInt32(&b.connectionCount, -1)
 }

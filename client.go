@@ -31,6 +31,7 @@ import (
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -83,7 +84,6 @@ type Client struct {
 	invocationService       *invocation.Service
 	serializationService    *serialization.Service
 	eventDispatcher         *event.DispatchService
-	userEventDispatcher     *event.DispatchService
 	proxyManager            *proxyManager
 	statsService            *stats.Service
 	heartbeatService        *icluster.HeartbeatService
@@ -124,7 +124,6 @@ func newClient(config Config) (*Client, error) {
 		clusterConfig:           &config.Cluster,
 		serializationService:    serializationService,
 		eventDispatcher:         event.NewDispatchService(clientLogger),
-		userEventDispatcher:     event.NewDispatchService(clientLogger),
 		logger:                  clientLogger,
 		refIDGen:                iproxy.NewReferenceIDGenerator(1),
 		lifecyleListenerMap:     map[types.UUID]int64{},
@@ -133,7 +132,6 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMapMu: &sync.Mutex{},
 	}
 	c.addConfigEvents(&config)
-	c.subscribeUserEvents()
 	c.createComponents(&config)
 	return c, nil
 }
@@ -226,10 +224,9 @@ func (c *Client) start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
 		return nil
 	}
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateStarting))
 	if err := c.connectionManager.Start(ctx); err != nil {
-		c.eventDispatcher.Stop()
-		c.userEventDispatcher.Stop()
+		c.eventDispatcher.Stop(ctx)
 		c.invocationService.Stop()
 		return err
 	}
@@ -237,20 +234,18 @@ func (c *Client) start(ctx context.Context) error {
 	if c.statsService != nil {
 		c.statsService.Start()
 	}
-	c.eventDispatcher.Subscribe(icluster.EventDisconnected, event.DefaultSubscriptionID, c.clusterDisconnected)
+	c.eventDispatcher.Subscribe(icluster.EventCluster, event.MakeSubscriptionID(c.handleClusterEvent), c.handleClusterEvent)
 	atomic.StoreInt32(&c.state, ready)
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarted))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateStarted))
 	return nil
 }
 
 // Shutdown disconnects the client from the cluster and frees resources allocated by the client.
 func (c *Client) Shutdown(ctx context.Context) error {
-	// Note that passed context is not used at the moment.
-	// In the future, we may need to block during shutdown, which would require a context.
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
 		return nil
 	}
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShuttingDown))
 	c.invocationService.Stop()
 	c.heartbeatService.Stop()
 	c.connectionManager.Stop()
@@ -258,11 +253,11 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		c.statsService.Stop()
 	}
 	atomic.StoreInt32(&c.state, stopped)
-	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShutDown))
-	// wait for the shut down event to be dispatched
-	time.Sleep(1 * time.Millisecond)
-	c.eventDispatcher.Stop()
-	c.userEventDispatcher.Stop()
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShutDown))
+	err := c.eventDispatcher.Stop(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -294,7 +289,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 	}
 	c.lifecyleListenerMapMu.Lock()
 	if intID, ok := c.lifecyleListenerMap[subscriptionID]; ok {
-		c.userEventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, intID)
+		c.eventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, intID)
 		delete(c.lifecyleListenerMap, subscriptionID)
 	}
 	c.lifecyleListenerMapMu.Unlock()
@@ -323,8 +318,7 @@ func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	}
 	c.membershipListenerMapMu.Lock()
 	if intID, ok := c.membershipListenerMap[subscriptionID]; ok {
-		c.userEventDispatcher.Unsubscribe(icluster.EventMembersAdded, intID)
-		c.userEventDispatcher.Unsubscribe(icluster.EventMembersRemoved, intID)
+		c.eventDispatcher.Unsubscribe(icluster.EventMembers, intID)
 		delete(c.membershipListenerMap, subscriptionID)
 	}
 	c.membershipListenerMapMu.Unlock()
@@ -349,18 +343,40 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 }
 
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
-	c.userEventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
-		if stateChangeEvent, ok := event.(*LifecycleStateChanged); ok {
-			handler(*stateChangeEvent)
-		} else {
-			c.logger.Warnf("cannot cast event to hazelcast.LifecycleStateChanged event")
+	c.eventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
+		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
+		// A better solution would have been separating lifecycle events to its own package where
+		// both internal/cluster and hazelcast packages can access(but this is an API breaking change)
+		// The workaround is that we have two lifecycle events one is internal(inside internal/cluster) other is
+		// public. This is because internal/cluster can not use hazelcast package.
+		// We map internal ones to external ones on the handler before giving them to the user here.
+		stateChangeEvent := event.(*lifecycle.InternalLifecycleStateChanged)
+		switch stateChangeEvent.State {
+		case lifecycle.InternalLifecycleStateStarting:
+			handler(*newLifecycleStateChanged(LifecycleStateStarting))
+		case lifecycle.InternalLifecycleStateStarted:
+			handler(*newLifecycleStateChanged(LifecycleStateStarted))
+		case lifecycle.InternalLifecycleStateShuttingDown:
+			handler(*newLifecycleStateChanged(LifecycleStateShuttingDown))
+		case lifecycle.InternalLifecycleStateShutDown:
+			handler(*newLifecycleStateChanged(LifecycleStateShutDown))
+		case lifecycle.InternalLifecycleStateConnected:
+			handler(*newLifecycleStateChanged(LifecycleStateConnected))
+		case lifecycle.InternalLifecycleStateDisconnected:
+			handler(*newLifecycleStateChanged(LifecycleStateDisconnected))
+		case lifecycle.InternalLifecycleStateChangedCluster:
+			handler(*newLifecycleStateChanged(LifecycleStateChangedCluster))
+		default:
+			c.logger.Warnf("no corresponding hazelcast.LifecycleStateChanged event found")
 		}
+
 	})
 }
 
 func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.MembershipStateChangeHandler) {
-	c.userEventDispatcher.SubscribeSync(icluster.EventMembersAdded, subscriptionID, func(event event.Event) {
-		if e, ok := event.(*icluster.MembersAdded); ok {
+	c.eventDispatcher.Subscribe(icluster.EventMembers, subscriptionID, func(event event.Event) {
+		e := event.(*icluster.MembersEvent)
+		if e.Added {
 			for _, member := range e.Members {
 				handler(cluster.MembershipStateChanged{
 					State:  cluster.MembershipStateAdded,
@@ -368,20 +384,14 @@ func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.Mem
 				})
 			}
 		} else {
-			c.logger.Warnf("cannot cast event to cluster.MembershipStateChanged event")
-		}
-	})
-	c.userEventDispatcher.SubscribeSync(icluster.EventMembersRemoved, subscriptionID, func(event event.Event) {
-		if e, ok := event.(*icluster.MembersRemoved); ok {
 			for _, member := range e.Members {
 				handler(cluster.MembershipStateChanged{
 					State:  cluster.MembershipStateRemoved,
 					Member: member,
 				})
 			}
-		} else {
-			c.logger.Errorf("cannot cast event to cluster.MembersRemoved event")
 		}
+
 	})
 }
 
@@ -396,27 +406,6 @@ func (c *Client) addConfigEvents(config *Config) {
 		c.addMembershipListener(subscriptionID, handler)
 		c.membershipListenerMap[uuid] = subscriptionID
 	}
-}
-
-func (c *Client) subscribeUserEvents() {
-	c.eventDispatcher.SubscribeSync(eventLifecycleEventStateChanged, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(event)
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventConnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateConnected))
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventDisconnected, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateDisconnected))
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventChangedCluster, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateChangedCluster))
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventMembersAdded, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(event)
-	})
-	c.eventDispatcher.SubscribeSync(icluster.EventMembersRemoved, event.DefaultSubscriptionID, func(event event.Event) {
-		c.userEventDispatcher.Publish(event)
-	})
 }
 
 func (c *Client) createComponents(config *Config) {
@@ -449,10 +438,13 @@ func (c *Client) createComponents(config *Config) {
 		EventDispatcher:      c.eventDispatcher,
 		InvocationFactory:    invocationFactory,
 		ClusterConfig:        &config.Cluster,
-		ClientName:           c.name,
-		FailoverService:      failoverService,
-		FailoverConfig:       &config.Failover,
-		Labels:               config.Labels,
+		IsClientShutdown: func() bool {
+			return atomic.LoadInt32(&c.state) == stopped
+		},
+		ClientName:      c.name,
+		FailoverService: failoverService,
+		FailoverConfig:  &config.Failover,
+		Labels:          config.Labels,
 	})
 	viewListener := icluster.NewViewListenerService(clusterService, connectionManager, c.eventDispatcher, c.logger)
 	invocationHandler := icluster.NewConnectionInvocationHandler(icluster.ConnectionInvocationHandlerCreationBundle{
@@ -500,14 +492,20 @@ func (c *Client) createComponents(config *Config) {
 	c.clusterService.SetInvocationService(invocationService)
 }
 
-func (c *Client) clusterDisconnected(e event.Event) {
+func (c *Client) handleClusterEvent(e event.Event) {
+	event := e.(*icluster.ClusterEvent)
+	if event.Connected {
+		return
+	}
 	if atomic.LoadInt32(&c.state) != ready {
 		return
 	}
 	ctx := context.Background()
 	if c.clusterConfig.ConnectionStrategy.ReconnectMode == cluster.ReconnectModeOff {
 		c.logger.Debug(func() string { return "reconnect mode is off, shutting down" })
-		c.Shutdown(ctx)
+		//Shutdown is blocking operation which will make sure all the event goroutines are closed.
+		//If we wait here blocking, it will be a deadlock
+		go c.Shutdown(ctx)
 		return
 	}
 	c.logger.Debug(func() string { return "cluster disconnected, rebooting" })
@@ -517,7 +515,9 @@ func (c *Client) clusterDisconnected(e event.Event) {
 	c.partitionService.Reset()
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.logger.Errorf("cannot reconnect to cluster, shutting down: %w", err)
-		c.Shutdown(ctx)
+		//Shutdown is blocking operation which will make sure all the event goroutines are closed.
+		//If we wait here blocking, it will be a deadlock
+		go c.Shutdown(ctx)
 	}
 }
 

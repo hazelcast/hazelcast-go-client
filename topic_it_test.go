@@ -21,8 +21,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
@@ -40,7 +38,7 @@ func TestTopic_Publish(t *testing.T) {
 		if err = tp.Publish(context.Background(), "HEY!"); err != nil {
 			t.Fatal(err)
 		}
-		it.Eventually(t, func() bool { return assert.Equal(t, "value1", handlerValue.Load()) })
+		it.Eventually(t, func() bool { return handlerValue.Load() == "value1" })
 
 		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
