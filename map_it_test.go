@@ -1099,6 +1099,7 @@ func TestMap_TryPut(t *testing.T) {
 		if err := m.Lock(ctx1, "foo"); err != nil {
 			t.Fatal(err)
 		}
+		defer m.Unlock(ctx1, "foo")
 		// TryPut with a different lock context returns false
 		ctx2 := m.NewLockContext(context.Background())
 		ok, err := m.TryPut(ctx2, "foo", "bar")
@@ -1121,13 +1122,6 @@ func TestMap_TryPutWithTimeout(t *testing.T) {
 		if err := m.Lock(ctx1, "foo"); err != nil {
 			t.Fatal(err)
 		}
-		// unlock 5 seconds later
-		go func() {
-			time.Sleep(5 * time.Second)
-			if err := m.Unlock(ctx1, "foo"); err != nil {
-				panic(err)
-			}
-		}()
 		// TryPut with a different lock context returns false
 		ctx2 := m.NewLockContext(context.Background())
 		ok, err := m.TryPutWithTimeout(ctx2, "foo", "bar", 1*time.Second)
@@ -1135,8 +1129,15 @@ func TestMap_TryPutWithTimeout(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, false, ok)
+		// unlock 5 seconds later
+		go func() {
+			time.Sleep(5 * time.Second)
+			if err := m.Unlock(ctx1, "foo"); err != nil {
+				panic(err)
+			}
+		}()
 		// TryPut after the timeout
-		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 10*time.Second)
+		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 2*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1178,13 +1179,6 @@ func TestMap_TryRemoveWithTimeout(t *testing.T) {
 		if err := m.Lock(ctx1, "foo"); err != nil {
 			t.Fatal(err)
 		}
-		// unlock 5 seconds later
-		go func() {
-			time.Sleep(5 * time.Second)
-			if err := m.Unlock(ctx1, "foo"); err != nil {
-				panic(err)
-			}
-		}()
 		// TryPut with a different lock context returns false
 		ctx2 := m.NewLockContext(context.Background())
 		ok, err := m.TryPutWithTimeout(ctx2, "foo", "bar", 1*time.Second)
@@ -1192,8 +1186,15 @@ func TestMap_TryRemoveWithTimeout(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, false, ok)
+		// unlock 5 seconds later
+		go func() {
+			time.Sleep(5 * time.Second)
+			if err := m.Unlock(ctx1, "foo"); err != nil {
+				panic(err)
+			}
+		}()
 		// TryPut after the timeout
-		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 10*time.Second)
+		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 2*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
