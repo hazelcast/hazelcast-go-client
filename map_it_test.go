@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -625,15 +624,15 @@ func TestMap_ForceUnlock(t *testing.T) {
 			t.Fatal(err)
 		}
 		if locked, err := cm.IsLocked(lockCtx, "k1"); err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		} else {
 			it.AssertEquals(t, true, locked)
 		}
 		if err := cm.ForceUnlock(lockCtx, "k1"); err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		if locked, err := cm.IsLocked(lockCtx, "k1"); err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		} else {
 			assert.Equal(t, false, locked)
 		}
@@ -1073,7 +1072,7 @@ func TestMap_AddInterceptor(t *testing.T) {
 		}
 		defer func() {
 			if _, err := m.RemoveInterceptor(ctx, id); err != nil {
-				log.Fatal(err)
+				t.Fatal(err)
 			}
 		}()
 		v, err := m.Get(ctx, "foo")
@@ -1083,7 +1082,7 @@ func TestMap_AddInterceptor(t *testing.T) {
 		assert.Equal(t, prefix, v)
 		ok, err := m.RemoveInterceptor(ctx, id)
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		assert.Equal(t, ok, true)
 		v, err = m.Get(ctx, "foo")

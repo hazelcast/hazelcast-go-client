@@ -19,7 +19,6 @@ package hazelcast_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync/atomic"
 	"testing"
 
@@ -123,7 +122,7 @@ func TestSet_GetAll(t *testing.T) {
 		it.MustValue(s.AddAll(context.Background(), "v1", "v2", "v3"))
 		values, err := s.GetAll(context.Background())
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		assert.ElementsMatch(t, []interface{}{"v1", "v2", "v3"}, values)
 	})
