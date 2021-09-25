@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -208,6 +209,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
+		m.version = version
 		m.orderedMembers = members
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
@@ -225,6 +227,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 				removed = append(removed, *member)
 			}
 		}
+		m.logMembers(version)
 	}
 	return
 }
@@ -322,4 +325,15 @@ func randomReplica(members []pubcluster.MemberInfo, n int, filter func(mem *pubc
 		}
 	}
 	return pubcluster.MemberInfo{}, false
+}
+
+func (m *membersMap) logMembers(version int32) {
+	// synchronized in Update
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("\n\nMembers {size:%d, ver:%d} [\n", len(m.members), version))
+	for addr, uuid := range m.addrToMemberUUID {
+		sb.WriteString(fmt.Sprintf("\tMember %s - %s\n", addr, uuid))
+	}
+	sb.WriteString("]\n\n")
+	m.logger.Infof(sb.String())
 }
