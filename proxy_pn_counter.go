@@ -59,8 +59,8 @@ type PNCounter struct {
 	*proxy
 	clock           iproxy.VectorClock
 	target          *cluster.MemberInfo
-	maxReplicaCount int32
 	mu              *sync.Mutex
+	maxReplicaCount int32
 }
 
 func newPNCounter(ctx context.Context, p *proxy) (*PNCounter, error) {

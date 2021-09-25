@@ -186,12 +186,12 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
-	failoverService  *FailoverService
 	logger           ilogger.Logger
+	failoverService  *FailoverService
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
-	orderedMembers   []pubcluster.MemberInfo
 	membersMu        *sync.RWMutex
+	orderedMembers   []pubcluster.MemberInfo
 	version          int32
 }
 
