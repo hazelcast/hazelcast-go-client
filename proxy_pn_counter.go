@@ -18,6 +18,7 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -56,17 +57,22 @@ For details see https://docs.hazelcast.com/imdg/latest/data-structures/pn-counte
 */
 type PNCounter struct {
 	*proxy
-	clock  iproxy.VectorClock
-	target *cluster.MemberInfo
-	mu     *sync.Mutex
+	clock           iproxy.VectorClock
+	target          *cluster.MemberInfo
+	maxReplicaCount int32
+	mu              *sync.Mutex
 }
 
-func newPNCounter(p *proxy) *PNCounter {
-	return &PNCounter{
+func newPNCounter(ctx context.Context, p *proxy) (*PNCounter, error) {
+	pn := &PNCounter{
 		proxy: p,
 		clock: iproxy.NewVectorClock(),
 		mu:    &sync.Mutex{},
 	}
+	if err := pn.fetchMaxConfiguredReplicaCount(ctx); err != nil {
+		return nil, err
+	}
+	return pn, nil
 }
 
 // AddAndGet adds the given value to the current value and returns the updated value.
@@ -132,20 +138,21 @@ func (pn *PNCounter) SubtractAndGet(ctx context.Context, delta int64) (int64, er
 func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) (*cluster.MemberInfo, []proto.Pair, error) {
 	pn.mu.Lock()
 	defer pn.mu.Unlock()
-	target := pn.target
-	if target == nil || targetExcluded(pn.target, excluded) {
+	if pn.target == nil || targetExcluded(pn.target, excluded) {
+		var target cluster.MemberInfo
+		var ok bool
 		if excluded == nil {
-			target = pn.clusterService.RandomDataMember()
+			target, ok = pn.clusterService.RandomReplica(int(pn.maxReplicaCount))
 		} else {
-			target = pn.clusterService.RandomDataMemberExcluding(excluded)
+			target, ok = pn.clusterService.RandomReplicaExcluding(int(pn.maxReplicaCount), excluded)
 		}
-		if target == nil {
+		if !ok {
 			return nil, nil, ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
 		}
-		pn.target = target
+		pn.target = &target
 	}
 	entries := pn.clock.EntrySet()
-	return target, entries, nil
+	return pn.target, entries, nil
 }
 
 func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
@@ -168,6 +175,16 @@ func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool)
 	value, timestamps, _ := codec.DecodePNCounterAddResponse(resp)
 	pn.updateClock(iproxy.NewVectorClockFromPairs(timestamps))
 	return value, nil
+}
+
+func (pn *PNCounter) fetchMaxConfiguredReplicaCount(ctx context.Context) error {
+	req := codec.EncodePNCounterGetConfiguredReplicaCountRequest(pn.name)
+	resp, err := pn.invokeOnRandomTarget(ctx, req, nil)
+	if err != nil {
+		return fmt.Errorf("getting configured replica count: %w", err)
+	}
+	pn.maxReplicaCount = codec.DecodePNCounterGetConfiguredReplicaCountResponse(resp)
+	return nil
 }
 
 func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target types.UUID, clocks []proto.Pair) *proto.ClientMessage) (*proto.ClientMessage, error) {

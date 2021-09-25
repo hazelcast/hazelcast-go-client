@@ -26,6 +26,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 
@@ -572,4 +573,66 @@ func TestClientFixConnection(t *testing.T) {
 func TestClientVersion(t *testing.T) {
 	// adding this test here, so there's no "unused lint warning.
 	assert.Equal(t, "1.1.0", hz.ClientVersion)
+}
+
+func TestPNCounter_Reset2(t *testing.T) {
+	const port = 30701
+	hzConfig := makeCRDTReplicationDelayedXML("test-pncounter", port)
+	cls := it.StartNewClusterWithConfig(3, hzConfig, port)
+	defer cls.Shutdown()
+	config := cls.DefaultConfig()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	defer client.Shutdown(ctx)
+	pn := it.MustValue(client.GetPNCounter(ctx, "pn1")).(*hz.PNCounter)
+	v, err := pn.IncrementAndGet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, int64(1), v)
+	replica := findPNCounterCRDTTarget(pn)
+	if replica == nil {
+		t.Fatal("could not locate PNCounter replica member")
+	}
+	ok := it.MustBool(cls.RC.TerminateMember(ctx, cls.ClusterID, replica.UUID.String()))
+	assert.Equal(t, true, ok)
+	_, err = pn.AddAndGet(ctx, 10)
+	if !errors.Is(err, hzerrors.ErrConsistencyLostException) {
+		log.Fatalf("expected hzerrors.ErrConsistencyLostException, got: %s", err.Error())
+	}
+}
+
+func makeCRDTReplicationDelayedXML(cluster string, port int) string {
+	return fmt.Sprintf(`
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+	<cluster-name>%s</cluster-name>
+	<network>
+	   <port>%d</port>
+	</network>
+    <crdt-replication>
+        <replication-period-millis>1000000</replication-period-millis>
+        <max-concurrent-replication-targets>100000</max-concurrent-replication-targets>
+    </crdt-replication>
+</hazelcast>
+`, cluster, port)
+}
+
+// findPNCounterCRDTTarget tries to locate the CRDT target for the given PNCounter
+// by locating the first *cluster.MemberInfo field.
+// This can fail on future releases of Go.
+func findPNCounterCRDTTarget(pn *hz.PNCounter) *cluster.MemberInfo {
+	pnr := reflect.ValueOf(pn).Elem()
+	tt := reflect.TypeOf(&cluster.MemberInfo{})
+	for i := 0; i < pnr.NumField(); i++ {
+		rf := pnr.Field(i)
+		if rf.Type() == tt {
+			// found the first *cluster.MemberInfo field
+			rf = reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
+			return rf.Interface().(*cluster.MemberInfo)
+		}
+	}
+	return nil
 }

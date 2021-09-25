@@ -288,6 +288,11 @@ func StartNewClusterWithOptions(clusterName string, port, memberCount int) *Test
 	return startNewCluster(rc, memberCount, config, port)
 }
 
+func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
+	ensureRemoteController(false)
+	return startNewCluster(rc, memberCount, config, port)
+}
+
 func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
 	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
@@ -316,6 +321,9 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	if SSLEnabled() {
 		config.Cluster.Network.SSL.Enabled = true
 		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+	}
+	if TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
 	}
 	return config
 }

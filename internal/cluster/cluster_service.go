@@ -19,7 +19,9 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
+	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -29,6 +31,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
+
+var commonRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 type Service struct {
 	logger            ilogger.Logger
@@ -94,12 +98,15 @@ func (s *Service) MemberAddrs() []pubcluster.Address {
 	return s.membersMap.MemberAddrs()
 }
 
-func (s *Service) RandomDataMember() *pubcluster.MemberInfo {
-	return s.membersMap.RandomDataMember()
+func (s *Service) RandomReplica(n int) (pubcluster.MemberInfo, bool) {
+	return s.membersMap.RandomReplica(n, nil)
 }
 
-func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
-	return s.membersMap.RandomDataMemberExcluding(excluded)
+func (s *Service) RandomReplicaExcluding(n int, excluded map[pubcluster.Address]struct{}) (pubcluster.MemberInfo, bool) {
+	return s.membersMap.RandomReplica(n, func(mem *pubcluster.MemberInfo) bool {
+		_, found := excluded[mem.Address]
+		return !found
+	})
 }
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
@@ -182,6 +189,7 @@ type membersMap struct {
 	logger           ilogger.Logger
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
+	orderedMembers   []pubcluster.MemberInfo
 	membersMu        *sync.RWMutex
 	version          int32
 }
@@ -200,6 +208,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
+		m.orderedMembers = members
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
@@ -243,33 +252,13 @@ func (m *membersMap) MemberAddrs() []pubcluster.Address {
 	return addrs
 }
 
-// RandomDataMember returns a data member.
-// Returns nil if no suitable data member is found.
-func (m *membersMap) RandomDataMember() *pubcluster.MemberInfo {
+// RandomReplica returns one of the replicas (first n data members).
+// filter, if provided should return true for considering the data member in the list of replicas.
+// Returns false if no suitable data member was found.
+func (m *membersMap) RandomReplica(n int, filter func(mem *pubcluster.MemberInfo) bool) (pubcluster.MemberInfo, bool) {
 	m.membersMu.RLock()
 	defer m.membersMu.RUnlock()
-	for _, mem := range m.members {
-		if !mem.LiteMember {
-			return mem
-		}
-	}
-	return nil
-}
-
-// RandomDataMemberExcluding returns a data member not excluded in the given map.
-// Returns nil if no suitable data member is found.
-// Panics if excluded map is nil.
-func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
-	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
-	for _, mem := range m.members {
-		if !mem.LiteMember {
-			if _, found := excluded[mem.Address]; !found {
-				return mem
-			}
-		}
-	}
-	return nil
+	return randomReplica(m.orderedMembers, n, filter)
 }
 
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.
@@ -310,4 +299,27 @@ func (m *membersMap) reset() {
 	m.addrToMemberUUID = map[pubcluster.Address]types.UUID{}
 	m.version = -1
 	m.membersMu.Unlock()
+}
+
+func randomReplica(members []pubcluster.MemberInfo, n int, filter func(mem *pubcluster.MemberInfo) bool) (pubcluster.MemberInfo, bool) {
+	if n > len(members) {
+		n = len(members)
+	}
+	if n == 0 {
+		return pubcluster.MemberInfo{}, false
+	}
+	// scans first n members, starting from idx, wrapping at n
+	idx := commonRand.Intn(n)
+	for i, mem := range members {
+		if mem.LiteMember {
+			continue
+		}
+		if i < idx {
+			continue
+		}
+		if filter == nil || filter(&mem) {
+			return mem, true
+		}
+	}
+	return pubcluster.MemberInfo{}, false
 }
