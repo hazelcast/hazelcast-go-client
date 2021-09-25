@@ -103,9 +103,9 @@ func (s *Service) RandomReplica(n int) (pubcluster.MemberInfo, bool) {
 	return s.membersMap.RandomReplica(n, nil)
 }
 
-func (s *Service) RandomReplicaExcluding(n int, excluded map[pubcluster.Address]struct{}) (pubcluster.MemberInfo, bool) {
+func (s *Service) RandomReplicaExcluding(n int, excluded map[types.UUID]struct{}) (pubcluster.MemberInfo, bool) {
 	return s.membersMap.RandomReplica(n, func(mem *pubcluster.MemberInfo) bool {
-		_, found := excluded[mem.Address]
+		_, found := excluded[mem.UUID]
 		return !found
 	})
 }

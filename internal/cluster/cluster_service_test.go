@@ -9,8 +9,6 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
-var testRand = rand.New(rand.NewSource(123456789012345678))
-
 func TestRandomReplica_NoMembers(t *testing.T) {
 	_, ok := randomReplica(noMembers(), 10, nil)
 	if ok {
@@ -34,6 +32,7 @@ func TestRandomReplica_OneDataMember(t *testing.T) {
 }
 
 func TestRandomReplica_FiveDataMembers(t *testing.T) {
+	resetCommonRand()
 	var replicas []string
 	target := []string{"200.200.200.200", "100.100.100.100", "100.100.100.100", "300.300.300.300", "100.100.100.100"}
 	for i := 0; i < 5; i++ {
@@ -47,6 +46,7 @@ func TestRandomReplica_FiveDataMembers(t *testing.T) {
 }
 
 func TestRandomReplica_FiveDataFourLiteMembers(t *testing.T) {
+	resetCommonRand()
 	var replicas []string
 	target := []string{"200.200.200.200", "100.100.100.100", "100.100.100.100", "200.200.200.200", "100.100.100.100"}
 	for i := 0; i < 5; i++ {
@@ -60,6 +60,7 @@ func TestRandomReplica_FiveDataFourLiteMembers(t *testing.T) {
 }
 
 func TestRandomReplicaExcluding_FiveDataFourLiteMembers(t *testing.T) {
+	resetCommonRand()
 	var replicas []string
 	target := []string{"300.300.300.300", "100.100.100.100", "100.100.100.100", "300.300.300.300", "100.100.100.100"}
 	exclude := pubcluster.Address("200.200.200.200")
@@ -117,6 +118,7 @@ func fiveDataFourLiteMembers() []pubcluster.MemberInfo {
 	}
 }
 
-func init() {
-	commonRand = testRand
+func resetCommonRand() {
+	// reset the random generator to a known state
+	commonRand = rand.New(rand.NewSource(123456789012345678))
 }

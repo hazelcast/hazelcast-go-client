@@ -135,7 +135,7 @@ func (pn *PNCounter) SubtractAndGet(ctx context.Context, delta int64) (int64, er
 	return pn.add(ctx, -1*delta, false)
 }
 
-func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) (*cluster.MemberInfo, []proto.Pair, error) {
+func (pn *PNCounter) crdtOperationTarget(excluded map[types.UUID]struct{}) (*cluster.MemberInfo, []proto.Pair) {
 	pn.mu.Lock()
 	defer pn.mu.Unlock()
 	if pn.target == nil || targetExcluded(pn.target, excluded) {
@@ -147,12 +147,11 @@ func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) 
 			target, ok = pn.clusterService.RandomReplicaExcluding(int(pn.maxReplicaCount), excluded)
 		}
 		if !ok {
-			return nil, nil, ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
+			return nil, nil
 		}
 		pn.target = &target
 	}
-	entries := pn.clock.EntrySet()
-	return pn.target, entries, nil
+	return pn.target, pn.clock.EntrySet()
 }
 
 func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
@@ -189,23 +188,25 @@ func (pn *PNCounter) fetchMaxConfiguredReplicaCount(ctx context.Context) error {
 
 func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target types.UUID, clocks []proto.Pair) *proto.ClientMessage) (*proto.ClientMessage, error) {
 	// in the best case scenario, no members will be excluded, so excluded set is nil
-	var excluded map[cluster.Address]struct{}
-	var lastAddr cluster.Address
+	var excluded map[types.UUID]struct{}
+	var lastUUID types.UUID
 	var request *proto.ClientMessage
 	return pn.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt == 1 {
 			// this is the first failure, time to allocate the excluded set
-			excluded = map[cluster.Address]struct{}{}
+			excluded = map[types.UUID]struct{}{}
 		}
 		if attempt > 0 {
 			request = request.Copy()
-			excluded[lastAddr] = struct{}{}
+			excluded[lastUUID] = struct{}{}
 		}
-		mem, clocks, err := pn.crdtOperationTarget(excluded)
-		if err != nil {
+		mem, clocks := pn.crdtOperationTarget(excluded)
+		if mem == nil {
 			// do not retry if no data members was found
+			err := ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
 			return nil, cb.WrapNonRetryableError(err)
 		}
+		lastUUID = mem.UUID
 		request = makeReq(mem.UUID, clocks)
 		inv := pn.invocationFactory.NewMemberBoundInvocation(request, mem)
 		if err := pn.sendInvocation(ctx, inv); err != nil {
@@ -215,10 +216,10 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 	})
 }
 
-func targetExcluded(target *cluster.MemberInfo, excludes map[cluster.Address]struct{}) bool {
+func targetExcluded(target *cluster.MemberInfo, excludes map[types.UUID]struct{}) bool {
 	if excludes == nil {
 		return false
 	}
-	_, found := excludes[target.Address]
+	_, found := excludes[target.UUID]
 	return found
 }
