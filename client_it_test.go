@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -604,5 +605,37 @@ func TestInvocationTimeout(t *testing.T) {
 	}
 	if !errors.Is(err, hzerrors.ErrIO) {
 		t.Fatalf("expected hzerrors.ErrIO, got: %v", err)
+	}
+}
+
+func TestClientStartShutdownMemoryLeak(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
+	defer tc.Shutdown()
+	config := tc.DefaultConfig()
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	if it.NonSmartEnabled() {
+		config.Cluster.Unisocket = true
+	}
+	ctx := context.Background()
+	var maxAlloc uint64
+	var m runtime.MemStats
+	for i := 0; i < 100; i++ {
+		client, err := hz.StartNewClientWithConfig(ctx, config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := client.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
+		runtime.ReadMemStats(&m)
+		if m.Alloc > maxAlloc {
+			maxAlloc = m.Alloc
+		}
+	}
+	const allocLimit = 4 * 1024 * 1024 // 4MB
+	if maxAlloc > allocLimit {
+		t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
 	}
 }
