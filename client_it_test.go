@@ -598,7 +598,7 @@ func TestInvocationTimeout(t *testing.T) {
 	tc.Shutdown()
 	tic := time.Now()
 	_, err = myMap.Get(ctx, "k1")
-	took := time.Now().Sub(tic)
+	took := time.Since(tic)
 	if took > timeout+1*time.Second {
 		t.Fatalf("map get took too long!: %d", took)
 	}
