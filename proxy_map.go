@@ -592,11 +592,12 @@ func (m *Map) PutAll(ctx context.Context, entries ...types.Entry) error {
 	}
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		request := codec.EncodeMapPutAllRequest(m.name, entries, true)
+		now := time.Now()
 		return m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 			if attempt > 0 {
 				request = request.Copy()
 			}
-			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
 				return nil, err
 			} else {
 				return inv.GetWithContext(ctx)

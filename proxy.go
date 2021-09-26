@@ -260,11 +260,12 @@ func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, k
 }
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	now := time.Now()
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
 		}
-		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
+		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler, now)
 		if err := p.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}
@@ -273,8 +274,9 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
+	now := time.Now()
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
 			return nil, err
 		} else {
 			return inv.GetWithContext(ctx)
@@ -282,8 +284,8 @@ func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMess
 	})
 }
 
-func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32) (invocation.Invocation, error) {
-	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
+func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32, now time.Time) (invocation.Invocation, error) {
+	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID, now)
 	err := p.sendInvocation(ctx, inv)
 	return inv, err
 }

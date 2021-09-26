@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -214,6 +215,9 @@ func (s *Service) handleError(correlationID int64, invocationErr error) {
 		s.logger.Trace(func() string {
 			return fmt.Sprintf("error invoking %d: %s", correlationID, invocationErr)
 		})
+		if time.Now().After(inv.Deadline()) {
+			invocationErr = cb.WrapNonRetryableError(invocationErr)
+		}
 		inv.Complete(&proto.ClientMessage{Err: invocationErr})
 	} else {
 		s.logger.Trace(func() string {

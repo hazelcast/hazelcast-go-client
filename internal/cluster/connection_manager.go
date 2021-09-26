@@ -502,7 +502,7 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	credentials := cluster.Credentials
 	credentials.SetEndpoint(conn.LocalAddr())
 	request := m.encodeAuthenticationRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil, time.Now())
 	m.logger.Debug(func() string {
 		return fmt.Sprintf("authentication correlation ID: %d", inv.Request().CorrelationID())
 	})
@@ -615,7 +615,7 @@ func (m *ConnectionManager) heartbeat() {
 
 func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
+	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil, time.Now())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(m.clusterConfig.HeartbeatInterval))
 	defer cancel()
 	if err := m.invocationService.SendRequest(ctx, inv); err != nil {

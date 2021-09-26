@@ -573,3 +573,36 @@ func TestClientVersion(t *testing.T) {
 	// adding this test here, so there's no "unused lint warning.
 	assert.Equal(t, "1.1.0", hz.ClientVersion)
 }
+
+func TestInvocationTimeout(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
+	defer tc.Shutdown()
+	config := tc.DefaultConfig()
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	if it.NonSmartEnabled() {
+		config.Cluster.Unisocket = true
+	}
+	const timeout = 3 * time.Second
+	config.Cluster.InvocationTimeout = types.Duration(timeout)
+	client, err := hz.StartNewClientWithConfig(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	myMap, err := client.GetMap(ctx, "my-map")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tc.Shutdown()
+	tic := time.Now()
+	_, err = myMap.Get(ctx, "k1")
+	took := time.Now().Sub(tic)
+	if took > timeout+1*time.Second {
+		t.Fatalf("map get took too long!: %d", took)
+	}
+	if !errors.Is(err, hzerrors.ErrIO) {
+		t.Fatalf("expected hzerrors.ErrIO, got: %v", err)
+	}
+}

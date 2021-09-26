@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -140,13 +141,14 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 		return fmt.Sprintf("%d: cluster.Service.sendMemberListViewRequest", conn.connectionID)
 	})
 	request := codec.EncodeClientAddClusterViewListenerRequest()
+	now := time.Now()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
 			s.handleMembersUpdated(conn, version, memberInfos)
 		}, func(version int32, partitions []proto.Pair) {
 			s.partitionService.Update(conn.connectionID, partitions, version)
 		})
-	})
+	}, now)
 	if err := s.invocationService.SendUrgentRequest(ctx, inv); err != nil {
 		return err
 	}

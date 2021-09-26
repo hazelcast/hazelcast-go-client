@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -133,8 +134,9 @@ func (b *ConnectionListenerBinder) sendAddListenerRequests(ctx context.Context, 
 	if len(conns) == 0 {
 		return nil, nil
 	}
+	now := time.Now()
 	if len(conns) == 1 {
-		inv, corrID, err := b.sendAddListenerRequest(ctx, request, handler, conns[0])
+		inv, corrID, err := b.sendAddListenerRequest(ctx, request, handler, conns[0], now)
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +146,7 @@ func (b *ConnectionListenerBinder) sendAddListenerRequests(ctx context.Context, 
 	invs := make([]invocation.Invocation, len(conns))
 	corrIDs := make([]int64, len(conns))
 	for i, conn := range conns {
-		inv, corrID, err := b.sendAddListenerRequest(ctx, request, handler, conn)
+		inv, corrID, err := b.sendAddListenerRequest(ctx, request, handler, conn, now)
 		if err != nil {
 			return nil, err
 		}
@@ -159,12 +161,8 @@ func (b *ConnectionListenerBinder) sendAddListenerRequests(ctx context.Context, 
 	return corrIDs, nil
 }
 
-func (b *ConnectionListenerBinder) sendAddListenerRequest(
-	ctx context.Context,
-	request *proto.ClientMessage,
-	handler proto.ClientMessageHandler,
-	conn *Connection) (invocation.Invocation, int64, error) {
-	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, handler)
+func (b *ConnectionListenerBinder) sendAddListenerRequest(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler, conn *Connection, start time.Time) (invocation.Invocation, int64, error) {
+	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, handler, start)
 	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
 		return nil, 0, err
 	}
@@ -176,8 +174,9 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Contex
 	if len(conns) == 0 {
 		return nil
 	}
+	now := time.Now()
 	if len(conns) == 1 {
-		inv, err := b.sendRemoveListenerRequest(ctx, request, conns[0])
+		inv, err := b.sendRemoveListenerRequest(ctx, request, conns[0], now)
 		if err != nil {
 			return err
 		}
@@ -186,7 +185,7 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Contex
 	}
 	invs := make([]invocation.Invocation, len(conns))
 	for i, conn := range conns {
-		inv, err := b.sendRemoveListenerRequest(ctx, request, conn)
+		inv, err := b.sendRemoveListenerRequest(ctx, request, conn, now)
 		if err != nil {
 			return err
 		}
@@ -200,11 +199,11 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Contex
 	return nil
 }
 
-func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context, request *proto.ClientMessage, conn *Connection) (invocation.Invocation, error) {
+func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context, request *proto.ClientMessage, conn *Connection, start time.Time) (invocation.Invocation, error) {
 	b.logger.Trace(func() string {
 		return fmt.Sprintf("%d: removing listener", conn.connectionID)
 	})
-	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
+	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, nil, start)
 	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
 		return nil, err
 	}

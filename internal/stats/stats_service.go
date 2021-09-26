@@ -139,7 +139,7 @@ func (s *Service) sendStats(ctx context.Context) {
 		return fmt.Sprintf("sending stats: %s", statsStr)
 	})
 	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, statsStr, blob)
-	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil)
+	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil, time.Now())
 	if err := s.invocationService.SendRequest(ctx, inv); err != nil {
 		s.logger.Debug(func() string {
 			return fmt.Sprintf("sending stats: %s", err.Error())

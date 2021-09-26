@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -175,6 +176,7 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 	var excluded map[cluster.Address]struct{}
 	var lastAddr cluster.Address
 	var request *proto.ClientMessage
+	now := time.Now()
 	return pn.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt == 1 {
 			// this is the first failure, time to allocate the excluded set
@@ -190,7 +192,7 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 			return nil, cb.WrapNonRetryableError(err)
 		}
 		request = makeReq(mem.UUID, clocks)
-		inv := pn.invocationFactory.NewMemberBoundInvocation(request, mem)
+		inv := pn.invocationFactory.NewMemberBoundInvocation(request, mem, now)
 		if err := pn.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}
