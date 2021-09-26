@@ -634,7 +634,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 			maxAlloc = m.Alloc
 		}
 	}
-	const allocLimit = 4 * 1024 * 1024 // 4MB
+	const allocLimit = 6 * 1024 * 1024 // 4MB
 	if maxAlloc > allocLimit {
 		t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
 	}
