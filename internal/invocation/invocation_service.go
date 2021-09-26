@@ -17,10 +17,19 @@
 package invocation
 
 import (
+	"context"
 	"fmt"
+	"sync/atomic"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+)
+
+const (
+	ready   = 0
+	stopped = 1
 )
 
 type Handler interface {
@@ -28,57 +37,126 @@ type Handler interface {
 }
 
 type Service struct {
-	requestCh       <-chan Invocation
-	urgentRequestCh <-chan Invocation
-	responseCh      <-chan *proto.ClientMessage
+	requestCh       chan Invocation
+	urgentRequestCh chan Invocation
+	responseCh      chan *proto.ClientMessage
 	// removeCh carries correlationIDs to be removed
-	removeCh    <-chan int64
+	removeCh    chan int64
 	doneCh      chan struct{}
 	invocations map[int64]Invocation
 	handler     Handler
 	logger      ilogger.Logger
+	state       int32
 }
 
 func NewService(
-	requestCh <-chan Invocation,
-	urgentRequestCh <-chan Invocation,
-	responseCh <-chan *proto.ClientMessage,
-	removeCh <-chan int64,
 	handler Handler,
 	logger ilogger.Logger) *Service {
 	service := &Service{
-		requestCh:       requestCh,
-		urgentRequestCh: urgentRequestCh,
-		responseCh:      responseCh,
-		removeCh:        removeCh,
+		requestCh:       make(chan Invocation, 1024),
+		urgentRequestCh: make(chan Invocation, 1024),
+		responseCh:      make(chan *proto.ClientMessage, 1024),
+		removeCh:        make(chan int64, 1024),
 		doneCh:          make(chan struct{}),
 		invocations:     map[int64]Invocation{},
 		handler:         handler,
 		logger:          logger,
+		state:           ready,
 	}
 	go service.processIncoming()
 	return service
 }
 
 func (s *Service) Stop() {
+	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
+		return
+	}
 	close(s.doneCh)
+	close(s.requestCh)
+	close(s.urgentRequestCh)
+	close(s.responseCh)
+	close(s.removeCh)
 }
 
 func (s *Service) SetHandler(handler Handler) {
 	s.handler = handler
 }
 
+func (s *Service) SendRequest(ctx context.Context, inv Invocation) error {
+	if atomic.LoadInt32(&s.state) != ready {
+		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
+	}
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("sending invocation: %w", ctx.Err())
+	case <-s.doneCh:
+		return cb.WrapNonRetryableError(fmt.Errorf("sending urgent invocation: %w", hzerrors.ErrClientNotActive))
+	case s.requestCh <- inv:
+		return nil
+	}
+}
+
+func (s *Service) SendUrgentRequest(ctx context.Context, inv Invocation) error {
+	if atomic.LoadInt32(&s.state) != ready {
+		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
+	}
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("sending urgent invocation: %w", ctx.Err())
+	case <-s.doneCh:
+		return cb.WrapNonRetryableError(fmt.Errorf("sending urgent invocation: %w", hzerrors.ErrClientNotActive))
+	case s.urgentRequestCh <- inv:
+		return nil
+	}
+}
+
+func (s *Service) SendResponse(msg *proto.ClientMessage) error {
+	if atomic.LoadInt32(&s.state) != ready {
+		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
+	}
+	select {
+	case <-s.doneCh:
+		return cb.WrapNonRetryableError(fmt.Errorf("sending response: %w", hzerrors.ErrClientNotActive))
+	case s.responseCh <- msg:
+		return nil
+	}
+}
+
+func (s *Service) Remove(correlationID int64) error {
+	if atomic.LoadInt32(&s.state) != ready {
+		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
+	}
+	select {
+	case <-s.doneCh:
+		return cb.WrapNonRetryableError(fmt.Errorf("removing correlation: %w", hzerrors.ErrClientNotActive))
+	case s.removeCh <- correlationID:
+		return nil
+	}
+}
+
 func (s *Service) processIncoming() {
 loop:
 	for {
 		select {
-		case inv := <-s.requestCh:
+		case inv, ok := <-s.requestCh:
+			if !ok {
+				break loop
+			}
 			s.sendInvocation(inv)
-		case inv := <-s.urgentRequestCh:
+		case inv, ok := <-s.urgentRequestCh:
+			if !ok {
+				break loop
+			}
 			s.sendInvocation(inv)
-		case msg := <-s.responseCh:
+		case msg, ok := <-s.responseCh:
+			if !ok {
+				break loop
+			}
 			s.handleClientMessage(msg)
-		case id := <-s.removeCh:
+		case id, ok := <-s.removeCh:
+			if !ok {
+				break loop
+			}
 			s.removeCorrelationID(id)
 		case <-s.doneCh:
 			break loop

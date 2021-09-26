@@ -59,7 +59,7 @@ type Service struct {
 	mu                 *sync.RWMutex
 	invFactory         *cluster.ConnectionInvocationFactory
 	addrs              map[string]struct{}
-	requestCh          chan<- invocation.Invocation
+	invocationService  *invocation.Service
 	doneCh             chan struct{}
 	ed                 *event.DispatchService
 	btStats            binTextStats
@@ -69,23 +69,23 @@ type Service struct {
 }
 
 func NewService(
-	requestCh chan<- invocation.Invocation,
+	invService *invocation.Service,
 	invFactory *cluster.ConnectionInvocationFactory,
 	ed *event.DispatchService,
 	logger logger.Logger,
 	interval time.Duration,
 	clientName string) *Service {
 	s := &Service{
-		requestCh:  requestCh,
-		invFactory: invFactory,
-		doneCh:     make(chan struct{}),
-		interval:   interval,
-		logger:     logger,
-		addrs:      map[string]struct{}{},
-		mu:         &sync.RWMutex{},
-		clientName: clientName,
-		ed:         ed,
-		btStats:    binTextStats{mc: NewMetricCompressor()},
+		invocationService: invService,
+		invFactory:        invFactory,
+		doneCh:            make(chan struct{}),
+		interval:          interval,
+		logger:            logger,
+		addrs:             map[string]struct{}{},
+		mu:                &sync.RWMutex{},
+		clientName:        clientName,
+		ed:                ed,
+		btStats:           binTextStats{mc: NewMetricCompressor()},
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
@@ -140,15 +140,16 @@ func (s *Service) sendStats(ctx context.Context) {
 	})
 	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, statsStr, blob)
 	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil)
-	select {
-	case <-ctx.Done():
-		break
-	case s.requestCh <- inv:
-		if _, err := inv.GetWithContext(ctx); err == nil {
-			return
-		}
+	if err := s.invocationService.SendRequest(ctx, inv); err != nil {
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("sending stats: %s", err.Error())
+		})
 	}
-	s.logger.Debug(func() string { return fmt.Sprintf("error sending stats: %s", ctx.Err().Error()) })
+	if _, err := inv.GetWithContext(ctx); err != nil {
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("sending stats: %s", err.Error())
+		})
+	}
 }
 
 func (s *Service) addBasicStats(ts time.Time) {

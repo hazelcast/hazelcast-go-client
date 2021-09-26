@@ -37,14 +37,13 @@ type Service struct {
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
 	failoverService   *FailoverService
-	requestCh         chan<- invocation.Invocation
+	invocationService *invocation.Service
 	invocationFactory *ConnectionInvocationFactory
 	membersMap        membersMap
 }
 
 type CreationBundle struct {
 	Logger            ilogger.Logger
-	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
@@ -53,9 +52,6 @@ type CreationBundle struct {
 }
 
 func (b CreationBundle) Check() {
-	if b.RequestCh == nil {
-		panic("RequestCh is nil")
-	}
 	if b.InvocationFactory == nil {
 		panic("InvocationFactory is nil")
 	}
@@ -76,7 +72,6 @@ func (b CreationBundle) Check() {
 func NewService(bundle CreationBundle) *Service {
 	bundle.Check()
 	return &Service{
-		requestCh:         bundle.RequestCh,
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		partitionService:  bundle.PartitionService,
@@ -85,6 +80,11 @@ func NewService(bundle CreationBundle) *Service {
 		config:            bundle.Config,
 		membersMap:        newMembersMap(bundle.FailoverService, bundle.Logger),
 	}
+}
+
+// SetInvocationService sets the invocation service for the cluster service.
+func (s *Service) SetInvocationService(invService *invocation.Service) {
+	s.invocationService = invService
 }
 
 func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
@@ -147,7 +147,9 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 			s.partitionService.Update(conn.connectionID, partitions, version)
 		})
 	})
-	s.requestCh <- inv
+	if err := s.invocationService.SendUrgentRequest(ctx, inv); err != nil {
+		return err
+	}
 	_, err := inv.GetWithContext(ctx)
 	return err
 }

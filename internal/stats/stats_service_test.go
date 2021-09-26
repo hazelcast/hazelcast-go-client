@@ -30,23 +30,34 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 )
 
+type Handler struct {
+	okCh chan struct{}
+}
+
+func (h Handler) Invoke(invocation invocation.Invocation) (groupID int64, err error) {
+	h.okCh <- struct{}{}
+	return 1, nil
+}
+
 func TestNewService(t *testing.T) {
 	lg := logger.New()
 	ed := event.NewDispatchService(lg)
-	requestCh := make(chan invocation.Invocation, 1)
-	config := hazelcast.NewConfig()
+	okCh := make(chan struct{}, 1)
+	handler := Handler{okCh: okCh}
+	invService := invocation.NewService(handler, lg)
+	config := hazelcast.Config{}
 	invFac := cluster.NewConnectionInvocationFactory(&config.Cluster)
-	srv := stats.NewService(requestCh, invFac, ed, lg, 100*time.Millisecond, "hz1")
+	srv := stats.NewService(invService, invFac, ed, lg, 100*time.Millisecond, "hz1")
 	srv.Start()
 	ed.Publish(cluster.NewConnected(pubcluster.NewAddress("100.200.300.400", 12345)))
 	select {
-	case _, ok := <-requestCh:
+	case _, ok := <-okCh:
 		// TODO: decode the request and check whether it's correct.
 		srv.Stop()
 		if ok != true {
 			t.Fatalf("an invocation was expected")
 		}
-	case <-time.After(time.Minute):
+	case <-time.After(2 * time.Minute):
 		srv.Stop()
 		t.Fatalf("invocation not received in time")
 	}

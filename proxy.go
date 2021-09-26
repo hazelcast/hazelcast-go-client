@@ -55,8 +55,7 @@ const (
 )
 
 type creationBundle struct {
-	RequestCh            chan<- invocation.Invocation
-	RemoveCh             chan<- int64
+	InvocationService    *invocation.Service
 	SerializationService *iserialization.Service
 	PartitionService     *cluster.PartitionService
 	ClusterService       *cluster.Service
@@ -67,11 +66,8 @@ type creationBundle struct {
 }
 
 func (b creationBundle) Check() {
-	if b.RequestCh == nil {
-		panic("RequestCh is nil")
-	}
-	if b.RemoveCh == nil {
-		panic("RemoveCh is nil")
+	if b.InvocationService == nil {
+		panic("InvocationService is nil")
 	}
 	if b.SerializationService == nil {
 		panic("SerializationService is nil")
@@ -98,8 +94,7 @@ func (b creationBundle) Check() {
 
 type proxy struct {
 	logger               ilogger.Logger
-	requestCh            chan<- invocation.Invocation
-	removeCh             chan<- int64
+	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
 	listenerBinder       *cluster.ConnectionListenerBinder
@@ -134,8 +129,7 @@ func newProxy(
 	p := &proxy{
 		serviceName:          serviceName,
 		name:                 objectName,
-		requestCh:            bundle.RequestCh,
-		removeCh:             bundle.RemoveCh,
+		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
@@ -407,13 +401,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 }
 
 func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
-	select {
-	case p.requestCh <- inv:
-		return nil
-	case <-ctx.Done():
-		p.removeCh <- inv.Request().CorrelationID()
-		return ctx.Err()
-	}
+	return p.invocationService.SendRequest(ctx, inv)
 }
 
 type entryNotifiedHandler func(

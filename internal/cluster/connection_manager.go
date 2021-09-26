@@ -57,7 +57,8 @@ const (
 )
 
 const (
-	serializationVersion = 1
+	serializationVersion  = 1
+	initialMembersTimeout = 120 * time.Second
 )
 
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
@@ -111,8 +112,6 @@ func tryConnectAddress(
 
 type ConnectionManagerCreationBundle struct {
 	Logger               ilogger.Logger
-	RequestCh            chan<- invocation.Invocation
-	ResponseCh           chan<- *proto.ClientMessage
 	PartitionService     *PartitionService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
@@ -126,12 +125,6 @@ type ConnectionManagerCreationBundle struct {
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
-	if b.RequestCh == nil {
-		panic("RequestCh is nil")
-	}
-	if b.ResponseCh == nil {
-		panic("ResponseCh is nil")
-	}
 	if b.Logger == nil {
 		panic("Logger is nil")
 	}
@@ -172,14 +165,13 @@ type ConnectionManager struct {
 	eventDispatcher      *event.DispatchService
 	invocationFactory    *ConnectionInvocationFactory
 	clusterService       *Service
-	responseCh           chan<- *proto.ClientMessage
+	invocationService    *invocation.Service
 	startCh              chan struct{}
 	connMap              *connectionMap
 	doneCh               chan struct{}
 	clusterConfig        *pubcluster.Config
 	clusterIDMu          *sync.Mutex
 	clusterID            *types.UUID
-	requestCh            chan<- invocation.Invocation
 	prevClusterID        *types.UUID
 	failoverService      *FailoverService
 	randGen              *rand.Rand
@@ -194,8 +186,6 @@ type ConnectionManager struct {
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
 	bundle.Check()
 	manager := &ConnectionManager{
-		requestCh:            bundle.RequestCh,
-		responseCh:           bundle.ResponseCh,
 		clusterService:       bundle.ClusterService,
 		partitionService:     bundle.PartitionService,
 		serializationService: bundle.SerializationService,
@@ -221,6 +211,12 @@ func (m *ConnectionManager) Start(ctx context.Context) error {
 	return m.start(ctx)
 }
 
+// SetInvocationService sets the invocation service for the connection manager.
+// This method should be called before Start.
+func (m *ConnectionManager) SetInvocationService(s *invocation.Service) {
+	m.invocationService = s
+}
+
 func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleInitialMembersAdded)
@@ -232,7 +228,9 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: waiting for the initial member list" })
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("getting initial member list from cluster: %w", ctx.Err())
+	case <-time.After(initialMembersTimeout):
+		return fmt.Errorf("timed out getting initial member list from cluster: %w", hzerrors.ErrIllegalState)
 	case <-m.startCh:
 		break
 	}
@@ -482,14 +480,14 @@ func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubc
 
 func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Connection {
 	conn := &Connection{
-		responseCh:      m.responseCh,
-		pending:         make(chan *proto.ClientMessage, 1024),
-		doneCh:          make(chan struct{}),
-		connectionID:    m.NextConnectionID(),
-		eventDispatcher: m.eventDispatcher,
-		status:          0,
-		logger:          m.logger,
-		clusterConfig:   m.clusterConfig,
+		invocationService: m.invocationService,
+		pending:           make(chan *proto.ClientMessage, 1024),
+		doneCh:            make(chan struct{}),
+		connectionID:      m.NextConnectionID(),
+		eventDispatcher:   m.eventDispatcher,
+		status:            0,
+		logger:            m.logger,
+		clusterConfig:     m.clusterConfig,
 	}
 	conn.endpoint.Store(addr)
 	return conn
@@ -508,18 +506,14 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	m.logger.Debug(func() string {
 		return fmt.Sprintf("authentication correlation ID: %d", inv.Request().CorrelationID())
 	})
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case m.requestCh <- inv:
-		if result, err := inv.GetWithContext(ctx); err != nil {
-			return err
-		} else {
-			return m.processAuthenticationResult(conn, result)
-		}
-	case <-m.doneCh:
-		return errors.New("done")
+	if err := m.invocationService.SendRequest(ctx, inv); err != nil {
+		return fmt.Errorf("authenticating: %w", err)
 	}
+	result, err := inv.GetWithContext(ctx)
+	if err != nil {
+		return err
+	}
+	return m.processAuthenticationResult(conn, result)
 }
 
 func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
@@ -622,10 +616,12 @@ func (m *ConnectionManager) heartbeat() {
 func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
 	request := codec.EncodeClientPingRequest()
 	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
-	select {
-	case m.requestCh <- inv:
-	case <-time.After(time.Duration(m.clusterConfig.HeartbeatInterval)):
-		return
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(m.clusterConfig.HeartbeatInterval))
+	defer cancel()
+	if err := m.invocationService.SendRequest(ctx, inv); err != nil {
+		m.logger.Debug(func() string {
+			return fmt.Sprintf("sending heartbeat: %s", err.Error())
+		})
 	}
 }
 

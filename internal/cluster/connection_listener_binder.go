@@ -41,29 +41,26 @@ type ConnectionListenerBinder struct {
 	connectionManager *ConnectionManager
 	invocationFactory *ConnectionInvocationFactory
 	eventDispatcher   *event.DispatchService
-	removeCh          chan<- int64
+	invocationService *invocation.Service
 	regs              map[types.UUID]listenerRegistration
 	correlationIDs    map[types.UUID][]int64
 	regsMu            *sync.Mutex
-	requestCh         chan<- invocation.Invocation
 	connectionCount   int32
 	smart             bool
 }
 
 func NewConnectionListenerBinder(
 	connManager *ConnectionManager,
+	invocationService *invocation.Service,
 	invocationFactory *ConnectionInvocationFactory,
-	requestCh chan<- invocation.Invocation,
-	removeCh chan<- int64,
 	eventDispatcher *event.DispatchService,
 	logger logger.Logger,
 	smart bool) *ConnectionListenerBinder {
 	binder := &ConnectionListenerBinder{
 		connectionManager: connManager,
+		invocationService: invocationService,
 		invocationFactory: invocationFactory,
 		eventDispatcher:   eventDispatcher,
-		requestCh:         requestCh,
-		removeCh:          removeCh,
 		regs:              map[types.UUID]listenerRegistration{},
 		correlationIDs:    map[types.UUID][]int64{},
 		regsMu:            &sync.Mutex{},
@@ -123,7 +120,11 @@ func (b *ConnectionListenerBinder) removeCorrelationIDs(regId types.UUID) {
 	if ids, ok := b.correlationIDs[regId]; ok {
 		delete(b.correlationIDs, regId)
 		for _, id := range ids {
-			b.removeCh <- id
+			if err := b.invocationService.Remove(id); err != nil {
+				b.logger.Debug(func() string {
+					return fmt.Sprintf("removing listener: %s", err.Error())
+				})
+			}
 		}
 	}
 }
@@ -164,9 +165,11 @@ func (b *ConnectionListenerBinder) sendAddListenerRequest(
 	handler proto.ClientMessageHandler,
 	conn *Connection) (invocation.Invocation, int64, error) {
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, handler)
+	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
+		return nil, 0, err
+	}
 	correlationID := inv.Request().CorrelationID()
-	err := b.sendInvocation(ctx, inv, correlationID)
-	return inv, correlationID, err
+	return inv, correlationID, nil
 }
 
 func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Context, request *proto.ClientMessage, conns ...*Connection) error {
@@ -202,12 +205,10 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 		return fmt.Sprintf("%d: removing listener", conn.connectionID)
 	})
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, nil)
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case b.requestCh <- inv:
-		return inv, nil
+	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
+		return nil, err
 	}
+	return inv, nil
 }
 
 func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
@@ -235,15 +236,5 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(event event.Event) {
 func (b *ConnectionListenerBinder) handleConnectionClosed(event event.Event) {
 	if _, ok := event.(*ConnectionOpened); ok {
 		atomic.AddInt32(&b.connectionCount, -1)
-	}
-}
-
-func (b *ConnectionListenerBinder) sendInvocation(ctx context.Context, inv invocation.Invocation, corrID int64) error {
-	select {
-	case b.requestCh <- inv:
-		return nil
-	case <-ctx.Done():
-		b.removeCh <- corrID
-		return ctx.Err()
 	}
 }
