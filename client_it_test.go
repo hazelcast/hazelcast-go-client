@@ -699,7 +699,7 @@ func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 				}
 			}(i)
 		}
-		startWg.Wait()
+		it.WaitEventually(t, startWg)
 		it.Must(client.Shutdown(ctx))
 		wg.Wait()
 	})
