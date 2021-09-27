@@ -73,10 +73,6 @@ func (s *Service) Stop() {
 		return
 	}
 	close(s.doneCh)
-	close(s.requestCh)
-	close(s.urgentRequestCh)
-	close(s.responseCh)
-	close(s.removeCh)
 }
 
 func (s *Service) SetHandler(handler Handler) {
