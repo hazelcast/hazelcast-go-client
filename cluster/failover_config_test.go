@@ -18,7 +18,6 @@ package cluster_test
 
 import (
 	"errors"
-	"log"
 	"math"
 	"testing"
 	"time"
@@ -105,7 +104,7 @@ func TestFailoverConfig_Validate_DefaultClusterTimeout(t *testing.T) {
 	foConfig.Enabled = true
 	rootConfig := cluster.Config{}
 	if err := rootConfig.Validate(); err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	if err := foConfig.Validate(rootConfig); err != nil {
 		t.Fatal(err)

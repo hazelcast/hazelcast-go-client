@@ -95,12 +95,8 @@ func (s *Service) MemberAddrs() []pubcluster.Address {
 	return s.membersMap.MemberAddrs()
 }
 
-func (s *Service) RandomDataMember() *pubcluster.MemberInfo {
-	return s.membersMap.RandomDataMember()
-}
-
-func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
-	return s.membersMap.RandomDataMemberExcluding(excluded)
+func (s *Service) OrderedMembers() []pubcluster.MemberInfo {
+	return s.membersMap.OrderedMembers()
 }
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
@@ -179,11 +175,12 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
-	failoverService  *FailoverService
 	logger           ilogger.Logger
+	failoverService  *FailoverService
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
 	membersMu        *sync.RWMutex
+	orderedMembers   []pubcluster.MemberInfo
 	version          int32
 }
 
@@ -202,6 +199,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	defer m.membersMu.Unlock()
 	if version > m.version {
 		m.version = version
+		m.orderedMembers = members
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
@@ -246,33 +244,12 @@ func (m *membersMap) MemberAddrs() []pubcluster.Address {
 	return addrs
 }
 
-// RandomDataMember returns a data member.
-// Returns nil if no suitable data member is found.
-func (m *membersMap) RandomDataMember() *pubcluster.MemberInfo {
-	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
-	for _, mem := range m.members {
-		if !mem.LiteMember {
-			return mem
-		}
-	}
-	return nil
-}
-
-// RandomDataMemberExcluding returns a data member not excluded in the given map.
-// Returns nil if no suitable data member is found.
-// Panics if excluded map is nil.
-func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
-	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
-	for _, mem := range m.members {
-		if !mem.LiteMember {
-			if _, found := excluded[mem.Address]; !found {
-				return mem
-			}
-		}
-	}
-	return nil
+func (m *membersMap) OrderedMembers() []pubcluster.MemberInfo {
+	m.membersMu.Lock()
+	members := make([]pubcluster.MemberInfo, len(m.orderedMembers))
+	copy(members, m.orderedMembers)
+	m.membersMu.Unlock()
+	return members
 }
 
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.

@@ -18,12 +18,18 @@ package hazelcast_test
 
 import (
 	"context"
+	"errors"
+	"log"
+	"reflect"
 	"sync"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
@@ -84,16 +90,16 @@ func TestPNCounter_GetAndDecrement(t *testing.T) {
 
 func TestPNCounter_GetAndIncrement(t *testing.T) {
 	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
-		v, err := pn.GetAndDecrement(context.Background())
+		v, err := pn.GetAndIncrement(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, int64(0), v)
-		v, err = pn.GetAndDecrement(context.Background())
+		v, err = pn.GetAndIncrement(context.Background())
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.Equal(t, int64(-1), v)
+		assert.Equal(t, int64(1), v)
 	})
 }
 
@@ -157,6 +163,12 @@ func TestPNCounter_SubtractAndGet(t *testing.T) {
 	})
 }
 
+func TestPNCounter_Reset(t *testing.T) {
+	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
+		pn.Reset()
+	})
+}
+
 func TestPNCounter_Add1000Sub1000(t *testing.T) {
 	it.PNCounterTester(t, func(t *testing.T, pn *hz.PNCounter) {
 		const count = 1000
@@ -186,4 +198,51 @@ func TestPNCounter_Add1000Sub1000(t *testing.T) {
 		}
 		assert.Equal(t, int64(0), v)
 	})
+}
+
+func TestPNCounter_Reset_And_Continue(t *testing.T) {
+	const port = 30701
+	cls := it.StartNewClusterWithOptions("test-pncounter", port, 3)
+	defer cls.Shutdown()
+	config := cls.DefaultConfig()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	defer client.Shutdown(ctx)
+	pn := it.MustValue(client.GetPNCounter(ctx, "pn1")).(*hz.PNCounter)
+	_, err := pn.IncrementAndGet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	replica := locatePNCounterCRDTTarget(pn)
+	if replica == nil {
+		t.Fatal("could not locate PNCounter replica member")
+	}
+	it.MustBool(cls.RC.TerminateMember(ctx, cls.ClusterID, replica.UUID.String()))
+	_, err = pn.IncrementAndGet(ctx)
+	if !errors.Is(err, hzerrors.ErrConsistencyLostException) {
+		log.Fatalf("expected hzerrors.ErrConsistencyLostException, got: %v", err)
+	}
+	// continue the session by calling Reset
+	pn.Reset()
+	_, err = pn.IncrementAndGet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// locatePNCounterCRDTTarget tries to locate the CRDT target for the given PNCounter
+// by locating the first *cluster.MemberInfo field.
+// This can fail on future releases of Go.
+func locatePNCounterCRDTTarget(pn *hz.PNCounter) *cluster.MemberInfo {
+	pnr := reflect.ValueOf(pn).Elem()
+	tt := reflect.TypeOf(&cluster.MemberInfo{})
+	for i := 0; i < pnr.NumField(); i++ {
+		rf := pnr.Field(i)
+		if rf.Type() == tt {
+			// found the first *cluster.MemberInfo field
+			rf = reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
+			return rf.Interface().(*cluster.MemberInfo)
+		}
+	}
+	return nil
 }

@@ -210,58 +210,35 @@ func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithKey(t *testing.T) 
 	})
 }
 
-func TestReplicatedMap_AddEntryListener_EntryNotifiedEventWithPredicate(t *testing.T) {
-	// Skipping, since predicates are not supported with portable and JSON values
-	t.SkipNow()
-	configCallback := func(config *hz.Config) {
-		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
-	}
-	it.ReplicatedMapTesterWithConfig(t, configCallback, func(t *testing.T, m *hz.ReplicatedMap) {
-		handlerCalled := int32(0)
+func TestReplicatedMap_AddEntryListenerWithPredicate(t *testing.T) {
+	it.ReplicatedMapTester(t, func(t *testing.T, m *hz.ReplicatedMap) {
+		const targetCallCount = int32(1)
+		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.StoreInt32(&handlerCalled, 1)
+			atomic.AddInt32(&callCount, 1)
 		}
-		if _, err := m.AddEntryListenerWithPredicate(context.Background(), predicate.Equal("A", "foo"), handler); err != nil {
+		if _, err := m.AddEntryListenerWithPredicate(context.Background(), predicate.SQL("this == foo"), handler); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "foo", B: 10}))
-		if atomic.LoadInt32(&handlerCalled) != 1 {
-			t.Fatalf("handler was not called")
-		}
-		atomic.StoreInt32(&handlerCalled, 0)
-		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
-		}
+		it.MustValue(m.Put(context.Background(), "k1", "foo"))
+		it.MustValue(m.Put(context.Background(), "k1", "foo2"))
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 	})
 }
 
-func TestReplicatedMap_AddEntryListener_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
-	// Skipping, since predicates are not supported with portable and JSON values
-	t.SkipNow()
-	configCallback := func(config *hz.Config) {
-		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
-	}
-	it.ReplicatedMapTesterWithConfig(t, configCallback, func(t *testing.T, m *hz.ReplicatedMap) {
-		handlerCalled := int32(0)
+func TestReplicatedMap_AddEntryListenerToKeyWithPredicate(t *testing.T) {
+	it.ReplicatedMapTester(t, func(t *testing.T, m *hz.ReplicatedMap) {
+		const targetCallCount = int32(1)
+		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
-			atomic.StoreInt32(&handlerCalled, 1)
+			atomic.AddInt32(&callCount, 1)
 		}
-		if _, err := m.AddEntryListenerToKeyWithPredicate(context.Background(), "k1", predicate.Equal("A", "foo"), handler); err != nil {
+		if _, err := m.AddEntryListenerToKeyWithPredicate(context.Background(), "k1", predicate.SQL("this == foo"), handler); err != nil {
 			t.Fatal(err)
 		}
-		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "foo", B: 10}))
-		if atomic.LoadInt32(&handlerCalled) != 1 {
-			t.Fatalf("handler was not called")
-		}
-		atomic.StoreInt32(&handlerCalled, 0)
-		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
-		}
-		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
-		if atomic.LoadInt32(&handlerCalled) != 0 {
-			t.Fatalf("handler was called")
-		}
+		it.MustValue(m.Put(context.Background(), "k1", "foo"))
+		it.MustValue(m.Put(context.Background(), "k2", "foo"))
+		it.MustValue(m.Put(context.Background(), "k1", "foo2"))
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 	})
 }

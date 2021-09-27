@@ -18,6 +18,7 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -56,17 +57,22 @@ For details see https://docs.hazelcast.com/imdg/latest/data-structures/pn-counte
 */
 type PNCounter struct {
 	*proxy
-	clock  iproxy.VectorClock
-	target *cluster.MemberInfo
-	mu     *sync.Mutex
+	clock           iproxy.VectorClock
+	target          *cluster.MemberInfo
+	mu              *sync.Mutex
+	maxReplicaCount int32
 }
 
-func newPNCounter(p *proxy) *PNCounter {
-	return &PNCounter{
+func newPNCounter(ctx context.Context, p *proxy) (*PNCounter, error) {
+	pn := &PNCounter{
 		proxy: p,
 		clock: iproxy.NewVectorClock(),
 		mu:    &sync.Mutex{},
 	}
+	if err := pn.fetchMaxConfiguredReplicaCount(ctx); err != nil {
+		return nil, err
+	}
+	return pn, nil
 }
 
 // AddAndGet adds the given value to the current value and returns the updated value.
@@ -129,23 +135,23 @@ func (pn *PNCounter) SubtractAndGet(ctx context.Context, delta int64) (int64, er
 	return pn.add(ctx, -1*delta, false)
 }
 
-func (pn *PNCounter) crdtOperationTarget(excluded map[cluster.Address]struct{}) (*cluster.MemberInfo, []proto.Pair, error) {
+func (pn *PNCounter) crdtOperationTarget(excluded map[types.UUID]struct{}) (*cluster.MemberInfo, []proto.Pair) {
 	pn.mu.Lock()
 	defer pn.mu.Unlock()
-	target := pn.target
-	if target == nil || targetExcluded(pn.target, excluded) {
+	if pn.target == nil || targetExcluded(pn.target, excluded) {
+		var target cluster.MemberInfo
+		var ok bool
 		if excluded == nil {
-			target = pn.clusterService.RandomDataMember()
+			target, ok = pn.randomReplica(int(pn.maxReplicaCount))
 		} else {
-			target = pn.clusterService.RandomDataMemberExcluding(excluded)
+			target, ok = pn.randomReplicaExcluding(int(pn.maxReplicaCount), excluded)
 		}
-		if target == nil {
-			return nil, nil, ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
+		if !ok {
+			return nil, nil
 		}
-		pn.target = target
+		pn.target = &target
 	}
-	entries := pn.clock.EntrySet()
-	return target, entries, nil
+	return pn.target, pn.clock.EntrySet()
 }
 
 func (pn *PNCounter) updateClock(clock iproxy.VectorClock) {
@@ -170,25 +176,37 @@ func (pn *PNCounter) add(ctx context.Context, delta int64, getBeforeUpdate bool)
 	return value, nil
 }
 
+func (pn *PNCounter) fetchMaxConfiguredReplicaCount(ctx context.Context) error {
+	req := codec.EncodePNCounterGetConfiguredReplicaCountRequest(pn.name)
+	resp, err := pn.invokeOnRandomTarget(ctx, req, nil)
+	if err != nil {
+		return fmt.Errorf("getting configured replica count: %w", err)
+	}
+	pn.maxReplicaCount = codec.DecodePNCounterGetConfiguredReplicaCountResponse(resp)
+	return nil
+}
+
 func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target types.UUID, clocks []proto.Pair) *proto.ClientMessage) (*proto.ClientMessage, error) {
 	// in the best case scenario, no members will be excluded, so excluded set is nil
-	var excluded map[cluster.Address]struct{}
-	var lastAddr cluster.Address
+	var excluded map[types.UUID]struct{}
+	var lastUUID types.UUID
 	var request *proto.ClientMessage
 	return pn.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt == 1 {
 			// this is the first failure, time to allocate the excluded set
-			excluded = map[cluster.Address]struct{}{}
+			excluded = map[types.UUID]struct{}{}
 		}
 		if attempt > 0 {
 			request = request.Copy()
-			excluded[lastAddr] = struct{}{}
+			excluded[lastUUID] = struct{}{}
 		}
-		mem, clocks, err := pn.crdtOperationTarget(excluded)
-		if err != nil {
+		mem, clocks := pn.crdtOperationTarget(excluded)
+		if mem == nil {
 			// do not retry if no data members was found
+			err := ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
 			return nil, cb.WrapNonRetryableError(err)
 		}
+		lastUUID = mem.UUID
 		request = makeReq(mem.UUID, clocks)
 		inv := pn.invocationFactory.NewMemberBoundInvocation(request, mem)
 		if err := pn.sendInvocation(ctx, inv); err != nil {
@@ -198,10 +216,28 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 	})
 }
 
-func targetExcluded(target *cluster.MemberInfo, excludes map[cluster.Address]struct{}) bool {
+// randomReplica returns one of the replicas (first n data members).
+// Returns false if no suitable data member was found.
+func (pn *PNCounter) randomReplica(n int) (cluster.MemberInfo, bool) {
+	members := pn.clusterService.OrderedMembers()
+	return iproxy.RandomPNCounterReplica(members, n, nil)
+}
+
+// randomReplicaExcluding returns one of the replicas (first n data members).
+// Members with UUIDs in the excluded set are not considered in the result.
+// Returns false if no suitable data member was found.
+func (pn *PNCounter) randomReplicaExcluding(n int, excluded map[types.UUID]struct{}) (cluster.MemberInfo, bool) {
+	members := pn.clusterService.OrderedMembers()
+	return iproxy.RandomPNCounterReplica(members, n, func(mem *cluster.MemberInfo) bool {
+		_, found := excluded[mem.UUID]
+		return !found
+	})
+}
+
+func targetExcluded(target *cluster.MemberInfo, excludes map[types.UUID]struct{}) bool {
 	if excludes == nil {
 		return false
 	}
-	_, found := excludes[target.Address]
+	_, found := excludes[target.UUID]
 	return found
 }
