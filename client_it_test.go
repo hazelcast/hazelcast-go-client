@@ -639,3 +639,26 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
 	}
 }
+
+func TestClientInvocationAfterShutdown(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("invocation-after-shutdown", 43701, it.MemberCount())
+	defer tc.Shutdown()
+	config := tc.DefaultConfig()
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	if it.NonSmartEnabled() {
+		config.Cluster.Unisocket = true
+	}
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	m, err := client.GetMap(ctx, "my-map")
+	if err != nil {
+		t.Fatal(err)
+	}
+	it.Must(client.Shutdown(ctx))
+	_, err = m.Get(ctx, "foo")
+	if !errors.Is(err, hzerrors.ErrClientNotActive) {
+		t.Fatalf("expected hzerrors.ErrClientNotActive but received: %s", err.Error())
+	}
+}
