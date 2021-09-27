@@ -114,7 +114,7 @@ func (m *proxyManager) getSet(ctx context.Context, name string) (*Set, error) {
 
 func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounter, error) {
 	p, err := m.proxyFor(ctx, ServiceNamePNCounter, name, func(p *proxy) (interface{}, error) {
-		return newPNCounter(p), nil
+		return newPNCounter(ctx, p)
 	})
 	if err != nil {
 		return nil, err

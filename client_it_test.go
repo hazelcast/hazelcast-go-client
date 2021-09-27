@@ -546,7 +546,7 @@ func TestClientFixConnection(t *testing.T) {
 	}
 	client, err := hz.StartNewClientWithConfig(ctx, config)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	defer client.Shutdown(ctx)
 	// terminate the member that corresponds to the connection which receives cluster membership updates
@@ -554,14 +554,14 @@ func TestClientFixConnection(t *testing.T) {
 	highlight(t, "Terminated member: %s", mUUID)
 	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, mUUID)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	if !ok {
-		log.Fatalf("could not terminate member: %s", err.Error())
+		t.Fatalf("could not terminate member: %s", err.Error())
 	}
 	m, err := cls.RC.StartMember(ctx, cls.ClusterID)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	highlight(t, "Started member: %s", m.UUID)
 	it.Eventually(t, func() bool {
