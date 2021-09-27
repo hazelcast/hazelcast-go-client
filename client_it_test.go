@@ -576,138 +576,144 @@ func TestClientVersion(t *testing.T) {
 }
 
 func TestInvocationTimeout(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
-	defer tc.Shutdown()
-	config := tc.DefaultConfig()
-	if it.TraceLoggingEnabled() {
-		config.Logger.Level = logger.TraceLevel
-	}
-	if it.NonSmartEnabled() {
-		config.Cluster.Unisocket = true
-	}
-	const timeout = 3 * time.Second
-	config.Cluster.InvocationTimeout = types.Duration(timeout)
-	ctx := context.Background()
-	client, err := hz.StartNewClientWithConfig(ctx, config)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer client.Shutdown(ctx)
-	myMap, err := client.GetMap(ctx, "my-map")
-	if err != nil {
-		t.Fatal(err)
-	}
-	tc.Shutdown()
-	tic := time.Now()
-	_, err = myMap.Get(ctx, "k1")
-	took := time.Since(tic)
-	if took > timeout+1*time.Second {
-		t.Fatalf("map get took too long!: %d", took)
-	}
-	if !errors.Is(err, hzerrors.ErrIO) {
-		t.Fatalf("expected hzerrors.ErrIO, got: %v", err)
-	}
-}
-
-func TestClientStartShutdownMemoryLeak(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
-	defer tc.Shutdown()
-	config := tc.DefaultConfig()
-	if it.TraceLoggingEnabled() {
-		config.Logger.Level = logger.TraceLevel
-	}
-	if it.NonSmartEnabled() {
-		config.Cluster.Unisocket = true
-	}
-	ctx := context.Background()
-	var maxAlloc uint64
-	var m runtime.MemStats
-	for i := 0; i < 100; i++ {
+	clientTester(t, func(t *testing.T, smart bool) {
+		tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		config.Cluster.InvocationTimeout = types.Duration(5 * time.Second)
+		ctx := context.Background()
 		client, err := hz.StartNewClientWithConfig(ctx, config)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := client.Shutdown(ctx); err != nil {
+		defer client.Shutdown(ctx)
+		myMap, err := client.GetMap(ctx, "my-map")
+		if err != nil {
 			t.Fatal(err)
 		}
-		runtime.ReadMemStats(&m)
-		if m.Alloc > maxAlloc {
-			maxAlloc = m.Alloc
+		tc.Shutdown()
+		it.Eventually(t, func() bool {
+			_, err = myMap.Get(ctx, "k1")
+			return err != nil
+		})
+	})
+}
+
+func TestClientStartShutdownMemoryLeak(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
 		}
-	}
-	const allocLimit = 6 * 1024 * 1024 // 4MB
-	if maxAlloc > allocLimit {
-		t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
-	}
+		if it.NonSmartEnabled() {
+			config.Cluster.Unisocket = true
+		}
+		ctx := context.Background()
+		var maxAlloc uint64
+		var m runtime.MemStats
+		for i := 0; i < 100; i++ {
+			client, err := hz.StartNewClientWithConfig(ctx, config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := client.Shutdown(ctx); err != nil {
+				t.Fatal(err)
+			}
+			runtime.ReadMemStats(&m)
+			if m.Alloc > maxAlloc {
+				maxAlloc = m.Alloc
+			}
+		}
+		const allocLimit = 6 * 1024 * 1024 // 4MB
+		if maxAlloc > allocLimit {
+			t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
+		}
+	})
 }
 
 func TestClientInvocationAfterShutdown(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("invocation-after-shutdown", 43701, it.MemberCount())
-	defer tc.Shutdown()
-	config := tc.DefaultConfig()
-	if it.TraceLoggingEnabled() {
-		config.Logger.Level = logger.TraceLevel
-	}
-	if it.NonSmartEnabled() {
-		config.Cluster.Unisocket = true
-	}
-	ctx := context.Background()
-	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
-	m, err := client.GetMap(ctx, "my-map")
-	if err != nil {
-		t.Fatal(err)
-	}
-	it.Must(client.Shutdown(ctx))
-	_, err = m.Get(ctx, "foo")
-	if !errors.Is(err, hzerrors.ErrClientNotActive) {
-		t.Fatalf("expected hzerrors.ErrClientNotActive but received: %s", err.Error())
-	}
+	clientTester(t, func(t *testing.T, smart bool) {
+		tc := it.StartNewClusterWithOptions("invocation-after-shutdown", 43701, it.MemberCount())
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		ctx := context.Background()
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		m, err := client.GetMap(ctx, "my-map")
+		if err != nil {
+			t.Fatal(err)
+		}
+		it.Must(client.Shutdown(ctx))
+		_, err = m.Get(ctx, "foo")
+		if !errors.Is(err, hzerrors.ErrClientNotActive) {
+			t.Fatalf("expected hzerrors.ErrClientNotActive but received: %s", err.Error())
+		}
+	})
 }
 
 func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("invocation-after-shutdown-2", 44701, it.MemberCount())
-	defer tc.Shutdown()
-	config := tc.DefaultConfig()
-	cc := &config.Cluster
-	cc.InvocationTimeout = types.Duration(24 * time.Hour)
-	cc.RedoOperation = true
-	cc.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
-	if it.TraceLoggingEnabled() {
-		config.Logger.Level = logger.TraceLevel
+	clientTester(t, func(t *testing.T, smart bool) {
+		cn := fmt.Sprintf("invocation-after-shutdown-2-%t", smart)
+		tc := it.StartNewClusterWithOptions(cn, 44701, it.MemberCount())
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		cc := &config.Cluster
+		cc.InvocationTimeout = types.Duration(24 * time.Hour)
+		cc.RedoOperation = true
+		cc.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		config.Cluster.Unisocket = !smart
+		ctx := context.Background()
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		m, err := client.GetMap(ctx, it.NewUniqueObjectName("my-map"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		const mapSize = 1000
+		const gc = 100 // goroutine count
+		wg := &sync.WaitGroup{}
+		wg.Add(gc)
+		startWg := &sync.WaitGroup{}
+		startWg.Add(1)
+		o := &sync.Once{}
+		for i := 0; i < gc; i++ {
+			go func(i int) {
+				defer wg.Done()
+				for j := 0; j < mapSize; j++ {
+					if j == mapSize/4 {
+						o.Do(func() {
+							startWg.Done()
+						})
+					}
+					// ignoring the error below, it's not relevant
+					_, _ = m.Put(ctx, j, j)
+				}
+			}(i)
+		}
+		startWg.Wait()
+		it.Must(client.Shutdown(ctx))
+		wg.Wait()
+	})
+}
+
+func clientTester(t *testing.T, f func(*testing.T, bool)) {
+	if it.SmartEnabled() {
+		t.Run("Smart Client", func(t *testing.T) {
+			f(t, true)
+		})
 	}
 	if it.NonSmartEnabled() {
-		config.Cluster.Unisocket = true
+		t.Run("Non-Smart Client", func(t *testing.T) {
+			f(t, false)
+		})
 	}
-	ctx := context.Background()
-	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
-	m, err := client.GetMap(ctx, it.NewUniqueObjectName("my-map"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	const mapSize = 1000
-	const gc = 100
-	wg := &sync.WaitGroup{}
-	wg.Add(gc)
-	startWg := &sync.WaitGroup{}
-	startWg.Add(1)
-	o := &sync.Once{}
-	var cnt int32
-	for i := 0; i < gc; i++ {
-		go func(i int) {
-			defer wg.Done()
-			for j := 0; j < mapSize; j++ {
-				if j == mapSize/4 {
-					o.Do(func() {
-						startWg.Done()
-					})
-				}
-				// ignoring the error below, it's not relevant
-				_, _ = m.Put(ctx, j, j)
-				fmt.Println(atomic.AddInt32(&cnt, 1))
-			}
-		}(i)
-	}
-	startWg.Wait()
-	it.Must(client.Shutdown(ctx))
-	wg.Wait()
 }
