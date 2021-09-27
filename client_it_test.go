@@ -587,11 +587,12 @@ func TestInvocationTimeout(t *testing.T) {
 	}
 	const timeout = 3 * time.Second
 	config.Cluster.InvocationTimeout = types.Duration(timeout)
-	client, err := hz.StartNewClientWithConfig(context.Background(), config)
+	ctx := context.Background()
+	client, err := hz.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx := context.Background()
+	defer client.Shutdown(ctx)
 	myMap, err := client.GetMap(ctx, "my-map")
 	if err != nil {
 		t.Fatal(err)
@@ -661,4 +662,52 @@ func TestClientInvocationAfterShutdown(t *testing.T) {
 	if !errors.Is(err, hzerrors.ErrClientNotActive) {
 		t.Fatalf("expected hzerrors.ErrClientNotActive but received: %s", err.Error())
 	}
+}
+
+func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("invocation-after-shutdown-2", 44701, it.MemberCount())
+	defer tc.Shutdown()
+	config := tc.DefaultConfig()
+	cc := &config.Cluster
+	cc.InvocationTimeout = types.Duration(24 * time.Hour)
+	cc.RedoOperation = true
+	cc.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	if it.NonSmartEnabled() {
+		config.Cluster.Unisocket = true
+	}
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	m, err := client.GetMap(ctx, it.NewUniqueObjectName("my-map"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const mapSize = 1000
+	const gc = 100
+	wg := &sync.WaitGroup{}
+	wg.Add(gc)
+	startWg := &sync.WaitGroup{}
+	startWg.Add(1)
+	o := &sync.Once{}
+	var cnt int32
+	for i := 0; i < gc; i++ {
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < mapSize; j++ {
+				if j == mapSize/4 {
+					o.Do(func() {
+						startWg.Done()
+					})
+				}
+				// ignoring the error below, it's not relevant
+				_, _ = m.Put(ctx, j, j)
+				fmt.Println(atomic.AddInt32(&cnt, 1))
+			}
+		}(i)
+	}
+	startWg.Wait()
+	it.Must(client.Shutdown(ctx))
+	wg.Wait()
 }

@@ -54,10 +54,10 @@ func NewService(
 	handler Handler,
 	logger ilogger.Logger) *Service {
 	service := &Service{
-		requestCh:       make(chan Invocation, 1024),
-		urgentRequestCh: make(chan Invocation, 1024),
-		responseCh:      make(chan *proto.ClientMessage, 1024),
-		removeCh:        make(chan int64, 1024),
+		requestCh:       make(chan Invocation),
+		urgentRequestCh: make(chan Invocation),
+		responseCh:      make(chan *proto.ClientMessage),
+		removeCh:        make(chan int64),
 		doneCh:          make(chan struct{}),
 		invocations:     map[int64]Invocation{},
 		handler:         handler,
