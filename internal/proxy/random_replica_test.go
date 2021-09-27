@@ -1,4 +1,4 @@
-package cluster
+package proxy
 
 import (
 	"math/rand"
@@ -9,34 +9,34 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
-func TestRandomReplica_NoMembers(t *testing.T) {
-	_, ok := randomReplica(noMembers(), 10, nil)
+func TestRandomPNCounterReplica_NoMembers(t *testing.T) {
+	_, ok := RandomPNCounterReplica(noMembers(), 10, nil)
 	if ok {
 		t.Fatalf("expected false")
 	}
 }
 
-func TestRandomReplica_LiteMembers(t *testing.T) {
-	_, ok := randomReplica(threeLiteMembers(), 10, nil)
+func TestRandomPNCounterReplica_LiteMembers(t *testing.T) {
+	_, ok := RandomPNCounterReplica(threeLiteMembers(), 10, nil)
 	if ok {
 		t.Fatalf("expected false")
 	}
 }
 
-func TestRandomReplica_OneDataMember(t *testing.T) {
-	replica, ok := randomReplica(oneDataMember(), 10, nil)
+func TestRandomPNCounterReplica_OneDataMember(t *testing.T) {
+	replica, ok := RandomPNCounterReplica(oneDataMember(), 10, nil)
 	if !ok {
 		t.Fatalf("expected true")
 	}
 	assert.Equal(t, pubcluster.Address("100.100.100.100"), replica.Address)
 }
 
-func TestRandomReplica_FiveDataMembers(t *testing.T) {
+func TestRandomPNCounterReplica_FiveDataMembers(t *testing.T) {
 	resetCommonRand()
 	var replicas []string
 	target := []string{"200.200.200.200", "100.100.100.100", "100.100.100.100", "300.300.300.300", "100.100.100.100"}
 	for i := 0; i < 5; i++ {
-		mem, ok := randomReplica(fiveDataMembers(), 3, nil)
+		mem, ok := RandomPNCounterReplica(fiveDataMembers(), 3, nil)
 		if !ok {
 			t.Fatalf("expected true")
 		}
@@ -45,12 +45,12 @@ func TestRandomReplica_FiveDataMembers(t *testing.T) {
 	assert.Equal(t, target, replicas)
 }
 
-func TestRandomReplica_FiveDataFourLiteMembers(t *testing.T) {
+func TestRandomPNCounterReplica_FiveDataFourLiteMembers(t *testing.T) {
 	resetCommonRand()
 	var replicas []string
 	target := []string{"200.200.200.200", "100.100.100.100", "100.100.100.100", "200.200.200.200", "100.100.100.100"}
 	for i := 0; i < 5; i++ {
-		mem, ok := randomReplica(fiveDataFourLiteMembers(), 3, nil)
+		mem, ok := RandomPNCounterReplica(fiveDataFourLiteMembers(), 3, nil)
 		if !ok {
 			t.Fatalf("expected true")
 		}
@@ -59,13 +59,13 @@ func TestRandomReplica_FiveDataFourLiteMembers(t *testing.T) {
 	assert.Equal(t, target, replicas)
 }
 
-func TestRandomReplicaExcluding_FiveDataFourLiteMembers(t *testing.T) {
+func TestRandomPNCounterReplicaExcluding_FiveDataFourLiteMembers(t *testing.T) {
 	resetCommonRand()
 	var replicas []string
 	target := []string{"300.300.300.300", "100.100.100.100", "100.100.100.100", "300.300.300.300", "100.100.100.100"}
 	exclude := pubcluster.Address("200.200.200.200")
 	for i := 0; i < 5; i++ {
-		mem, ok := randomReplica(fiveDataFourLiteMembers(), 3, func(mem *pubcluster.MemberInfo) bool {
+		mem, ok := RandomPNCounterReplica(fiveDataFourLiteMembers(), 3, func(mem *pubcluster.MemberInfo) bool {
 			return mem.Address != exclude
 		})
 		if !ok {

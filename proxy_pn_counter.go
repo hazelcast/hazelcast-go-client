@@ -19,9 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"sync"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -32,8 +30,6 @@ import (
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
-
-var commonRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 /*
 PNCounter is a PN (Positive-Negative) CRDT counter.
@@ -224,7 +220,7 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 // Returns false if no suitable data member was found.
 func (pn *PNCounter) randomReplica(n int) (cluster.MemberInfo, bool) {
 	members := pn.clusterService.OrderedMembers()
-	return randomReplica(members, n, nil)
+	return iproxy.RandomPNCounterReplica(members, n, nil)
 }
 
 // randomReplicaExcluding returns one of the replicas (first n data members).
@@ -232,7 +228,7 @@ func (pn *PNCounter) randomReplica(n int) (cluster.MemberInfo, bool) {
 // Returns false if no suitable data member was found.
 func (pn *PNCounter) randomReplicaExcluding(n int, excluded map[types.UUID]struct{}) (cluster.MemberInfo, bool) {
 	members := pn.clusterService.OrderedMembers()
-	return randomReplica(members, n, func(mem *cluster.MemberInfo) bool {
+	return iproxy.RandomPNCounterReplica(members, n, func(mem *cluster.MemberInfo) bool {
 		_, found := excluded[mem.UUID]
 		return !found
 	})
@@ -244,27 +240,4 @@ func targetExcluded(target *cluster.MemberInfo, excludes map[types.UUID]struct{}
 	}
 	_, found := excludes[target.UUID]
 	return found
-}
-
-func randomReplica(members []cluster.MemberInfo, n int, filter func(mem *cluster.MemberInfo) bool) (cluster.MemberInfo, bool) {
-	if n > len(members) {
-		n = len(members)
-	}
-	if n == 0 {
-		return cluster.MemberInfo{}, false
-	}
-	// scans first n members, starting from idx, wrapping at n
-	idx := commonRand.Intn(n)
-	for i, mem := range members {
-		if mem.LiteMember {
-			continue
-		}
-		if i < idx {
-			continue
-		}
-		if filter == nil || filter(&mem) {
-			return mem, true
-		}
-	}
-	return cluster.MemberInfo{}, false
 }
