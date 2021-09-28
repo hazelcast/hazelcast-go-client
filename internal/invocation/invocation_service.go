@@ -87,7 +87,7 @@ func (s *Service) SendRequest(ctx context.Context, inv Invocation) error {
 	case <-ctx.Done():
 		return fmt.Errorf("sending invocation: %w", ctx.Err())
 	case <-s.doneCh:
-		return cb.WrapNonRetryableError(fmt.Errorf("sending urgent invocation: %w", hzerrors.ErrClientNotActive))
+		return cb.WrapNonRetryableError(fmt.Errorf("sending invocation: %w", hzerrors.ErrClientNotActive))
 	case s.requestCh <- inv:
 		return nil
 	}
