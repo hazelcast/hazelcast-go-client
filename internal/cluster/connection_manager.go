@@ -758,8 +758,8 @@ func (m *connectionMap) GetAddrForConnectionID(connID int64) (pubcluster.Address
 }
 
 func (m *connectionMap) RandomConn() *Connection {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if len(m.addrs) == 0 {
 		return nil
 	}
@@ -767,6 +767,8 @@ func (m *connectionMap) RandomConn() *Connection {
 	if len(m.addrs) == 1 {
 		addr = m.addrs[0]
 	} else {
+		// load balancer mutates its own state
+		// so OneOf should be called under write lock
 		addr = m.lb.OneOf(m.addrs)
 	}
 	conn := m.addrToConn[addr]
