@@ -107,13 +107,13 @@ func (s *Service) SendUrgentRequest(ctx context.Context, inv Invocation) error {
 	}
 }
 
-func (s *Service) SendResponse(msg *proto.ClientMessage) error {
+func (s *Service) WriteResponse(msg *proto.ClientMessage) error {
 	if atomic.LoadInt32(&s.state) != ready {
 		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
 	}
 	select {
 	case <-s.doneCh:
-		return cb.WrapNonRetryableError(fmt.Errorf("sending response: %w", hzerrors.ErrClientNotActive))
+		return cb.WrapNonRetryableError(fmt.Errorf("writing response: %w", hzerrors.ErrClientNotActive))
 	case s.responseCh <- msg:
 		return nil
 	}

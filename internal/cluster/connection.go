@@ -169,7 +169,7 @@ func (c *Connection) socketWriteLoop() {
 				c.logger.Errorf("write error: %w", err)
 				request = request.Copy()
 				request.Err = ihzerrors.NewIOError("writing message", err)
-				if respErr := c.invocationService.SendResponse(request); respErr != nil {
+				if respErr := c.invocationService.WriteResponse(request); respErr != nil {
 					c.logger.Debug(func() string {
 						return fmt.Sprintf("sending response: %s", err.Error())
 					})
@@ -226,7 +226,7 @@ func (c *Connection) socketReadLoop() {
 						clientMessage.Err = wrapError(err)
 					}
 				}
-				if err := c.invocationService.SendResponse(clientMessage); err != nil {
+				if err := c.invocationService.WriteResponse(clientMessage); err != nil {
 					c.logger.Debug(func() string {
 						return fmt.Sprintf("sending response: %s", err.Error())
 					})
