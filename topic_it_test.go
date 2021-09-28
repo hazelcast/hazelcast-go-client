@@ -64,7 +64,9 @@ func TestTopic_PublishAll(t *testing.T) {
 		if err = tp.PublishAll(context.Background(), "v1", "v2", "v3"); err != nil {
 			t.Fatal(err)
 		}
-		it.Eventually(t, func() bool { return assert.Equal(t, int32(3), atomic.LoadInt32(&handlerValue)) })
+		it.Eventually(t, func() bool {
+			return int32(3) == atomic.LoadInt32(&handlerValue)
+		})
 
 		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)

@@ -80,9 +80,6 @@ func (s *Service) SetHandler(handler Handler) {
 }
 
 func (s *Service) SendRequest(ctx context.Context, inv Invocation) error {
-	if atomic.LoadInt32(&s.state) != ready {
-		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
-	}
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("sending invocation: %w", ctx.Err())
@@ -94,9 +91,6 @@ func (s *Service) SendRequest(ctx context.Context, inv Invocation) error {
 }
 
 func (s *Service) SendUrgentRequest(ctx context.Context, inv Invocation) error {
-	if atomic.LoadInt32(&s.state) != ready {
-		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
-	}
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("sending urgent invocation: %w", ctx.Err())
@@ -108,9 +102,6 @@ func (s *Service) SendUrgentRequest(ctx context.Context, inv Invocation) error {
 }
 
 func (s *Service) WriteResponse(msg *proto.ClientMessage) error {
-	if atomic.LoadInt32(&s.state) != ready {
-		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
-	}
 	select {
 	case <-s.doneCh:
 		return cb.WrapNonRetryableError(fmt.Errorf("writing response: %w", hzerrors.ErrClientNotActive))
@@ -120,9 +111,6 @@ func (s *Service) WriteResponse(msg *proto.ClientMessage) error {
 }
 
 func (s *Service) Remove(correlationID int64) error {
-	if atomic.LoadInt32(&s.state) != ready {
-		return cb.WrapNonRetryableError(hzerrors.ErrClientNotActive)
-	}
 	select {
 	case <-s.doneCh:
 		return cb.WrapNonRetryableError(fmt.Errorf("removing correlation: %w", hzerrors.ErrClientNotActive))
