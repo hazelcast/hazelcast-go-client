@@ -152,11 +152,13 @@ func TestReplicatedMap_IsEmptySize(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.MustValue(m.Put(context.Background(), "k2", "v2"))
 		it.MustValue(m.Put(context.Background(), "k3", "v3"))
-		if value, err := m.IsEmpty(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if value {
-			t.Fatalf("target: false != true")
-		}
+		it.Eventually(t, func() bool {
+			value, err := m.IsEmpty(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return !value
+		})
 		targetSize = 3
 		it.Eventually(t, func() bool {
 			value, err := m.Size(context.Background())

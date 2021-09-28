@@ -135,25 +135,13 @@ func (s *Service) processIncoming() {
 loop:
 	for {
 		select {
-		case inv, ok := <-s.requestCh:
-			if !ok {
-				break loop
-			}
+		case inv := <-s.requestCh:
 			s.sendInvocation(inv)
-		case inv, ok := <-s.urgentRequestCh:
-			if !ok {
-				break loop
-			}
+		case inv := <-s.urgentRequestCh:
 			s.sendInvocation(inv)
-		case msg, ok := <-s.responseCh:
-			if !ok {
-				break loop
-			}
+		case msg := <-s.responseCh:
 			s.handleClientMessage(msg)
-		case id, ok := <-s.removeCh:
-			if !ok {
-				break loop
-			}
+		case id := <-s.removeCh:
 			s.removeCorrelationID(id)
 		case <-s.doneCh:
 			break loop

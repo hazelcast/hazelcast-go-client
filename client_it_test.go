@@ -701,7 +701,7 @@ func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 		}
 		it.WaitEventually(t, startWg)
 		it.Must(client.Shutdown(ctx))
-		wg.Wait()
+		it.WaitEventually(t, wg)
 	})
 }
 
