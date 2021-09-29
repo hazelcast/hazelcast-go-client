@@ -89,11 +89,13 @@ func TestReplicatedMap_GetEntrySet(t *testing.T) {
 		if err := m.PutAll(context.Background(), target...); err != nil {
 			t.Fatal(err)
 		}
-		if entries, err := m.GetEntrySet(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if !entriesEqualUnordered(target, entries) {
-			t.Fatalf("target: %#v != %#v", target, entries)
-		}
+		it.Eventually(t, func() bool {
+			entries, err := m.GetEntrySet(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return entriesEqualUnordered(target, entries)
+		})
 	})
 }
 
@@ -124,11 +126,13 @@ func TestReplicatedMap_GetValues(t *testing.T) {
 		it.AssertEquals(t, "v1", it.MustValue(m.Get(context.Background(), "k1")))
 		it.AssertEquals(t, "v2", it.MustValue(m.Get(context.Background(), "k2")))
 		it.AssertEquals(t, "v3", it.MustValue(m.Get(context.Background(), "k3")))
-		if values, err := m.GetValues(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if !reflect.DeepEqual(makeStringSet(targetValues), makeStringSet(values)) {
-			t.Fatalf("target: %#v != %#v", targetValues, values)
-		}
+		it.Eventually(t, func() bool {
+			values, err := m.GetValues(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return reflect.DeepEqual(makeStringSet(targetValues), makeStringSet(values))
+		})
 	})
 }
 
@@ -148,17 +152,21 @@ func TestReplicatedMap_IsEmptySize(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.MustValue(m.Put(context.Background(), "k2", "v2"))
 		it.MustValue(m.Put(context.Background(), "k3", "v3"))
-		if value, err := m.IsEmpty(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if value {
-			t.Fatalf("target: false != true")
-		}
+		it.Eventually(t, func() bool {
+			value, err := m.IsEmpty(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return !value
+		})
 		targetSize = 3
-		if value, err := m.Size(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if targetSize != value {
-			t.Fatalf("target: %d != %d", targetSize, value)
-		}
+		it.Eventually(t, func() bool {
+			value, err := m.Size(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return targetSize == value
+		})
 	})
 }
 

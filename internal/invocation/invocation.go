@@ -47,6 +47,7 @@ type Invocation interface {
 	Address() pubcluster.Address
 	Close()
 	CanRetry(err error) bool
+	Deadline() time.Time
 }
 
 type Impl struct {
@@ -120,6 +121,10 @@ func (i *Impl) Address() pubcluster.Address {
 	return i.address
 }
 
+func (i *Impl) Deadline() time.Time {
+	return i.deadline
+}
+
 /*
 func (i *Proxy) StoreSentConnection(conn interface{}) {
 	i.sentConnection.Store(conn)
@@ -161,6 +166,10 @@ func (i *Impl) MaybeCanRetry(err error) bool {
 func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {
 	if response.Err != nil {
 		if i.CanRetry(response.Err) {
+			return nil, response.Err
+		}
+		if _, ok := response.Err.(*cb.NonRetryableError); ok {
+			// the error was already wrapped as nonretryable
 			return nil, response.Err
 		}
 		return nil, cb.WrapNonRetryableError(response.Err)
