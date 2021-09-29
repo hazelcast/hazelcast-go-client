@@ -220,7 +220,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 				removed = append(removed, *member)
 			}
 		}
-		m.logMembers(version)
+		m.logMembers(version, members)
 	}
 	return
 }
@@ -296,12 +296,12 @@ func (m *membersMap) reset() {
 	m.membersMu.Unlock()
 }
 
-func (m *membersMap) logMembers(version int32) {
+func (m *membersMap) logMembers(version int32, members []pubcluster.MemberInfo) {
 	// synchronized in Update
 	sb := strings.Builder{}
 	sb.WriteString(fmt.Sprintf("\n\nMembers {size:%d, ver:%d} [\n", len(m.members), version))
-	for addr, uuid := range m.addrToMemberUUID {
-		sb.WriteString(fmt.Sprintf("\tMember %s - %s\n", addr, uuid))
+	for _, mem := range members {
+		sb.WriteString(fmt.Sprintf("\tMember %s - %s\n", mem.Address, mem.UUID))
 	}
 	sb.WriteString("]\n\n")
 	m.logger.Infof(sb.String())
