@@ -26,7 +26,15 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+const (
+	intSize = 32 << (^uint(0) >> 63) // 32 or 64
+	MaxInt  = 1<<(intSize-1) - 1
+)
+
 func ValidateAsNonNegativeInt32(n int) (int32, error) {
+	if MaxInt == math.MaxInt32 { // cannot decide
+		return 0, nil
+	}
 	if n < 0 {
 		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("non-negative integer number expected: %d", n), nil)
 	}

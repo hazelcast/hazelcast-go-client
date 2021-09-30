@@ -33,6 +33,7 @@ import (
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -120,7 +121,7 @@ func newProxy(
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
-		cb.MaxRetries(MaxInt),
+		cb.MaxRetries(validationutil.MaxInt),
 		cb.MaxFailureCount(10),
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration((attempt+1)*100) * time.Millisecond

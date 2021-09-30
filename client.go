@@ -35,6 +35,7 @@ import (
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
+	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -50,11 +51,6 @@ const (
 	ready
 	stopping
 	stopped
-)
-
-const (
-	intSize = 32 << (^uint(0) >> 63) // 32 or 64
-	MaxInt  = 1<<(intSize-1) - 1
 )
 
 // StartNewClient creates and starts a new client with the default configuration.
@@ -427,7 +423,7 @@ func (c *Client) createComponents(config *Config) {
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
 	var failoverConfigs []cluster.Config
-	maxTryCount := MaxInt
+	maxTryCount := validationutil.MaxInt
 	if config.Failover.Enabled {
 		maxTryCount = config.Failover.TryCount
 		failoverConfigs = config.Failover.Configs
