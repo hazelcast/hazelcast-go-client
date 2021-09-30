@@ -16,7 +16,12 @@ git remote add upstream ...
 
 ## Style Guideline
 
-The following summary is based on [Effective Go](https://golang.org/doc/effective_go) and [Go Wiki Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) documents.
+The following summary is based on [Effective Go](https://golang.org/doc/effective_go), [Go Wiki Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) and [Readability](https://talks.golang.org/2014/readability.slide).
+
+### General
+
+* There's no line length limit in Go. Do not break lines (especially function signatures) to fit them to an arbitrary line length.
+* If a line gets very long, you may try to reduce its width by renaming variables/parameters.
 
 ### Naming
 
