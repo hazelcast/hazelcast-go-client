@@ -134,5 +134,5 @@ func TestMakeDeadline(t *testing.T) {
 
 	now := time.Now()
 	deadline = cb.MakeDeadline(100 * time.Hour)
-	assert.InDelta(t, now.Add(100*time.Hour).UnixNano(), deadline.UnixNano(), 1000000)
+	assert.InDelta(t, now.Add(100*time.Hour).UnixNano(), deadline.UnixNano(), float64(time.Millisecond))
 }
