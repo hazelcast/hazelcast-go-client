@@ -19,7 +19,6 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
@@ -121,7 +120,7 @@ func newProxy(
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt64),
+		cb.MaxRetries(MaxInt),
 		cb.MaxFailureCount(10),
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration((attempt+1)*100) * time.Millisecond

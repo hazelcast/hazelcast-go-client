@@ -19,7 +19,6 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -51,6 +50,11 @@ const (
 	ready
 	stopping
 	stopped
+)
+
+const (
+	intSize = 32 << (^uint(0) >> 63) // 32 or 64
+	MaxInt  = 1<<(intSize-1) - 1
 )
 
 // StartNewClient creates and starts a new client with the default configuration.
@@ -423,7 +427,7 @@ func (c *Client) createComponents(config *Config) {
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
 	var failoverConfigs []cluster.Config
-	maxTryCount := math.MaxInt64
+	maxTryCount := MaxInt
 	if config.Failover.Enabled {
 		maxTryCount = config.Failover.TryCount
 		failoverConfigs = config.Failover.Configs
