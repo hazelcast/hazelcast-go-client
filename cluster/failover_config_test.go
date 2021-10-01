@@ -22,10 +22,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestFailoverConfigValidate_Empty(t *testing.T) {
