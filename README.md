@@ -18,9 +18,9 @@ import (
 )
 
 func main() {
-	ctx := context.TODO()
-	// create the client and connect to the cluster
-	client, err := hazelcast.StartNewClient(ctx) 
+    ctx := context.TODO()
+    // create the client and connect to the cluster
+    client, err := hazelcast.StartNewClient(ctx) 
     if err != nil {
     	log.Fatal(err)
     }

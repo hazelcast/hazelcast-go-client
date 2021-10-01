@@ -288,6 +288,11 @@ func StartNewClusterWithOptions(clusterName string, port, memberCount int) *Test
 	return startNewCluster(rc, memberCount, config, port)
 }
 
+func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
+	ensureRemoteController(false)
+	return startNewCluster(rc, memberCount, config, port)
+}
+
 func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
 	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
@@ -317,6 +322,9 @@ func (c TestCluster) DefaultConfig() hz.Config {
 		config.Cluster.Network.SSL.Enabled = true
 		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 	}
+	if TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
 	return config
 }
 
@@ -337,8 +345,8 @@ func xmlConfig(clusterName string, port int) string {
 			</map>
 			<serialization>
 				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
-					</data-serializable-factory>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
         </hazelcast>
@@ -373,8 +381,8 @@ func xmlSSLConfig(clusterName string, port int) string {
 			</map>
 			<serialization>
 				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
-					</data-serializable-factory>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
 		</hazelcast>

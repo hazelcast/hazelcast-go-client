@@ -55,8 +55,7 @@ const (
 )
 
 type creationBundle struct {
-	RequestCh            chan<- invocation.Invocation
-	RemoveCh             chan<- int64
+	InvocationService    *invocation.Service
 	SerializationService *iserialization.Service
 	PartitionService     *cluster.PartitionService
 	ClusterService       *cluster.Service
@@ -67,11 +66,8 @@ type creationBundle struct {
 }
 
 func (b creationBundle) Check() {
-	if b.RequestCh == nil {
-		panic("RequestCh is nil")
-	}
-	if b.RemoveCh == nil {
-		panic("RemoveCh is nil")
+	if b.InvocationService == nil {
+		panic("InvocationService is nil")
 	}
 	if b.SerializationService == nil {
 		panic("SerializationService is nil")
@@ -98,8 +94,7 @@ func (b creationBundle) Check() {
 
 type proxy struct {
 	logger               ilogger.Logger
-	requestCh            chan<- invocation.Invocation
-	removeCh             chan<- int64
+	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
 	listenerBinder       *cluster.ConnectionListenerBinder
@@ -134,8 +129,7 @@ func newProxy(
 	p := &proxy{
 		serviceName:          serviceName,
 		name:                 objectName,
-		requestCh:            bundle.RequestCh,
-		removeCh:             bundle.RemoveCh,
+		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
@@ -266,11 +260,12 @@ func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, k
 }
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	now := time.Now()
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
 		}
-		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
+		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler, now)
 		if err := p.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}
@@ -279,8 +274,9 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
+	now := time.Now()
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
 			return nil, err
 		} else {
 			return inv.GetWithContext(ctx)
@@ -288,8 +284,8 @@ func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMess
 	})
 }
 
-func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32) (invocation.Invocation, error) {
-	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
+func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32, now time.Time) (invocation.Invocation, error) {
+	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID, now)
 	err := p.sendInvocation(ctx, inv)
 	return inv, err
 }
@@ -407,13 +403,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 }
 
 func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
-	select {
-	case p.requestCh <- inv:
-		return nil
-	case <-ctx.Done():
-		p.removeCh <- inv.Request().CorrelationID()
-		return ctx.Err()
-	}
+	return p.invocationService.SendRequest(ctx, inv)
 }
 
 type entryNotifiedHandler func(

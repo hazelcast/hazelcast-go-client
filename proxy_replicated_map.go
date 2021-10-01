@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -210,11 +211,12 @@ func (m *ReplicatedMap) PutAll(ctx context.Context, keyValuePairs ...types.Entry
 	}
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		request := codec.EncodeReplicatedMapPutAllRequest(m.name, entries)
+		now := time.Now()
 		return m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 			if attempt > 0 {
 				request = request.Copy()
 			}
-			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
 				return nil, err
 			} else {
 				return inv.GetWithContext(ctx)

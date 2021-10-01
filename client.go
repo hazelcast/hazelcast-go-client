@@ -32,7 +32,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -418,10 +417,6 @@ func (c *Client) subscribeUserEvents() {
 }
 
 func (c *Client) createComponents(config *Config) {
-	requestCh := make(chan invocation.Invocation, 1024)
-	urgentRequestCh := make(chan invocation.Invocation, 1024)
-	responseCh := make(chan *proto.ClientMessage, 1024)
-	removeCh := make(chan int64, 1024)
 	partitionService := icluster.NewPartitionService(icluster.PartitionServiceCreationBundle{
 		EventDispatcher: c.eventDispatcher,
 		Logger:          c.logger,
@@ -436,7 +431,6 @@ func (c *Client) createComponents(config *Config) {
 	failoverService := icluster.NewFailoverService(c.logger,
 		maxTryCount, config.Cluster, failoverConfigs, addrProviderTranslator)
 	clusterService := icluster.NewService(icluster.CreationBundle{
-		RequestCh:         urgentRequestCh,
 		InvocationFactory: invocationFactory,
 		EventDispatcher:   c.eventDispatcher,
 		PartitionService:  partitionService,
@@ -445,8 +439,6 @@ func (c *Client) createComponents(config *Config) {
 		FailoverService:   failoverService,
 	})
 	connectionManager := icluster.NewConnectionManager(icluster.ConnectionManagerCreationBundle{
-		RequestCh:            urgentRequestCh,
-		ResponseCh:           responseCh,
 		Logger:               c.logger,
 		ClusterService:       clusterService,
 		PartitionService:     partitionService,
@@ -466,18 +458,16 @@ func (c *Client) createComponents(config *Config) {
 		Logger:            c.logger,
 		Config:            &config.Cluster,
 	})
-	invocationService := invocation.NewService(requestCh, urgentRequestCh, responseCh, removeCh, invocationHandler, c.logger)
+	invocationService := invocation.NewService(invocationHandler, c.logger)
 	listenerBinder := icluster.NewConnectionListenerBinder(
 		connectionManager,
+		invocationService,
 		invocationFactory,
-		requestCh,
-		removeCh,
 		c.eventDispatcher,
 		c.logger,
 		!config.Cluster.Unisocket)
 	proxyManagerServiceBundle := creationBundle{
-		RequestCh:            requestCh,
-		RemoveCh:             removeCh,
+		InvocationService:    invocationService,
 		SerializationService: c.serializationService,
 		PartitionService:     partitionService,
 		ClusterService:       clusterService,
@@ -488,7 +478,7 @@ func (c *Client) createComponents(config *Config) {
 	}
 	if config.Stats.Enabled {
 		c.statsService = stats.NewService(
-			requestCh,
+			invocationService,
 			invocationFactory,
 			c.eventDispatcher,
 			c.logger,
@@ -502,6 +492,8 @@ func (c *Client) createComponents(config *Config) {
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.invocationHandler = invocationHandler
 	c.viewListenerService = viewListener
+	c.connectionManager.SetInvocationService(invocationService)
+	c.clusterService.SetInvocationService(invocationService)
 }
 
 func (c *Client) clusterDisconnected(e event.Event) {
