@@ -19,6 +19,7 @@ package validationutil
 import (
 	"errors"
 	"math"
+	"runtime"
 	"testing"
 	"time"
 
@@ -48,6 +49,10 @@ func TestValidateAsNonNegativeInt32(t *testing.T) {
 }
 
 func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
+
 	testCases := []struct {
 		msg   string
 		value uint

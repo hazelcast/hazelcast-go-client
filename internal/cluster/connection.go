@@ -297,7 +297,7 @@ func positiveDurationOrMax(duration time.Duration) time.Duration {
 	if duration > 0 {
 		return duration
 	}
-	return time.Duration(math.MaxInt64)
+	return time.Duration(math.MaxInt)
 }
 
 func wrapError(err *ihzerrors.ServerError) error {
