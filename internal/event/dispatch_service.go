@@ -67,7 +67,7 @@ func NewDispatchService(logger logger.Logger) *DispatchService {
 		subscriptions:     map[string]map[int64]Handler{},
 		syncSubscriptions: map[string]map[int64]Handler{},
 		eventCh:           make(chan Event, 1024),
-		controlCh:         make(chan controlMessage, 1024),
+		controlCh:         make(chan controlMessage),
 		doneCh:            make(chan struct{}),
 		state:             created,
 		logger:            logger,
