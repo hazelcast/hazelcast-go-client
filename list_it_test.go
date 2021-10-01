@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"runtime"
 	"sync/atomic"
 	"testing"
 
@@ -114,7 +115,9 @@ func TestList_AddAt(t *testing.T) {
 func TestList_AddAt_Error(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		assert.Error(t, l.AddAt(context.Background(), -1, "test-negative"))
-		assert.Error(t, l.AddAt(context.Background(), math.MaxInt32+1, "test-overflow"))
+		if runtime.GOARCH == "386" {
+			assert.Error(t, l.AddAt(context.Background(), math.MaxInt32+1, "test-overflow"))
+		}
 	})
 }
 
@@ -164,8 +167,10 @@ func TestList_AddAllAt_Error(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.AddAllAt(context.Background(), -1, "negative")
 		assert.Error(t, err)
-		_, err = l.AddAllAt(context.Background(), math.MaxInt32+1, "overflow")
-		assert.Error(t, err)
+		if runtime.GOARCH == "386" {
+			_, err = l.AddAllAt(context.Background(), math.MaxInt32+1, "overflow")
+			assert.Error(t, err)
+		}
 	})
 }
 
@@ -313,8 +318,10 @@ func TestList_RemoveAt_Error(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.RemoveAt(context.Background(), -1)
 		assert.Error(t, err)
-		_, err = l.RemoveAt(context.Background(), math.MaxInt32+1)
-		assert.Error(t, err)
+		if runtime.GOARCH == "386" {
+			_, err = l.RemoveAt(context.Background(), math.MaxInt32+1)
+			assert.Error(t, err)
+		}
 	})
 }
 
@@ -382,8 +389,10 @@ func TestList_Get_Error(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.Get(context.Background(), -1)
 		assert.Error(t, err)
-		_, err = l.Get(context.Background(), math.MaxInt32+1)
-		assert.Error(t, err)
+		if runtime.GOARCH == "386" {
+			_, err = l.Get(context.Background(), math.MaxInt32+1)
+			assert.Error(t, err)
+		}
 	})
 }
 
@@ -403,8 +412,10 @@ func TestList_Set_Error(t *testing.T) {
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.Set(context.Background(), -1, "negative")
 		assert.Error(t, err)
-		_, err = l.Set(context.Background(), math.MaxInt32+1, "overflow")
-		assert.Error(t, err)
+		if runtime.GOARCH == "386" {
+			_, err = l.Set(context.Background(), math.MaxInt32+1, "overflow")
+			assert.Error(t, err)
+		}
 	})
 }
 
@@ -432,10 +443,12 @@ func TestList_SubList_Error(t *testing.T) {
 		assert.Error(t, err)
 		_, err = l.SubList(context.Background(), 1, -3)
 		assert.Error(t, err)
-		_, err = l.SubList(context.Background(), math.MaxInt32+1, 3)
-		assert.Error(t, err)
-		_, err = l.SubList(context.Background(), 1, math.MaxInt32+1)
-		assert.Error(t, err)
+		if runtime.GOARCH == "386" {
+			_, err = l.SubList(context.Background(), math.MaxInt32+1, 3)
+			assert.Error(t, err)
+			_, err = l.SubList(context.Background(), 1, math.MaxInt32+1)
+			assert.Error(t, err)
+		}
 	})
 }
 

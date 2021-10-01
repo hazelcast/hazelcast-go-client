@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"runtime"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -182,8 +183,10 @@ func TestQueue_DrainWithMaxSize_Error(t *testing.T) {
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
 		_, err := q.DrainWithMaxSize(context.Background(), -1)
 		assert.Error(t, err)
-		_, err = q.DrainWithMaxSize(context.Background(), math.MaxInt32+1)
-		assert.Error(t, err)
+		if runtime.GOARCH == "386" {
+			_, err = q.DrainWithMaxSize(context.Background(), math.MaxInt32+1)
+			assert.Error(t, err)
+		}
 	})
 }
 
