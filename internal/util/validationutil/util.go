@@ -32,9 +32,6 @@ const (
 )
 
 func ValidateAsNonNegativeInt32(n int) (int32, error) {
-	if MaxInt == math.MaxInt32 { // cannot decide
-		return 0, nil
-	}
 	if n < 0 {
 		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("non-negative integer number expected: %d", n), nil)
 	}

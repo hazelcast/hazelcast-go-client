@@ -180,13 +180,15 @@ func TestQueue_DrainWithMaxSize(t *testing.T) {
 }
 
 func TestQueue_DrainWithMaxSize_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
 		_, err := q.DrainWithMaxSize(context.Background(), -1)
 		assert.Error(t, err)
-		if runtime.GOARCH == "386" {
-			_, err = q.DrainWithMaxSize(context.Background(), math.MaxInt32+1)
-			assert.Error(t, err)
-		}
+		x := int64(math.MaxInt32 + 1)
+		_, err = q.DrainWithMaxSize(context.Background(), int(x))
+		assert.Error(t, err)
 	})
 }
 

@@ -113,11 +113,13 @@ func TestList_AddAt(t *testing.T) {
 }
 
 func TestList_AddAt_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		assert.Error(t, l.AddAt(context.Background(), -1, "test-negative"))
-		if runtime.GOARCH == "386" {
-			assert.Error(t, l.AddAt(context.Background(), math.MaxInt32+1, "test-overflow"))
-		}
+		x := int64(math.MaxInt32 + 1)
+		assert.Error(t, l.AddAt(context.Background(), int(x), "test-overflow"))
 	})
 }
 
@@ -164,13 +166,15 @@ func TestList_AddAllAt(t *testing.T) {
 }
 
 func TestList_AddAllAt_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.AddAllAt(context.Background(), -1, "negative")
 		assert.Error(t, err)
-		if runtime.GOARCH == "386" {
-			_, err = l.AddAllAt(context.Background(), math.MaxInt32+1, "overflow")
-			assert.Error(t, err)
-		}
+		x := int64(math.MaxInt32 + 1)
+		_, err = l.AddAllAt(context.Background(), int(x), "overflow")
+		assert.Error(t, err)
 	})
 }
 
@@ -315,13 +319,15 @@ func TestList_RemoveAt(t *testing.T) {
 }
 
 func TestList_RemoveAt_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.RemoveAt(context.Background(), -1)
 		assert.Error(t, err)
-		if runtime.GOARCH == "386" {
-			_, err = l.RemoveAt(context.Background(), math.MaxInt32+1)
-			assert.Error(t, err)
-		}
+		x := int64(math.MaxInt32 + 1)
+		_, err = l.RemoveAt(context.Background(), int(x))
+		assert.Error(t, err)
 	})
 }
 
@@ -386,13 +392,15 @@ func TestList_Get(t *testing.T) {
 }
 
 func TestList_Get_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.Get(context.Background(), -1)
 		assert.Error(t, err)
-		if runtime.GOARCH == "386" {
-			_, err = l.Get(context.Background(), math.MaxInt32+1)
-			assert.Error(t, err)
-		}
+		x := int64(math.MaxInt32 + 1)
+		_, err = l.Get(context.Background(), int(x))
+		assert.Error(t, err)
 	})
 }
 
@@ -409,13 +417,15 @@ func TestList_Set(t *testing.T) {
 }
 
 func TestList_Set_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.Set(context.Background(), -1, "negative")
 		assert.Error(t, err)
-		if runtime.GOARCH == "386" {
-			_, err = l.Set(context.Background(), math.MaxInt32+1, "overflow")
-			assert.Error(t, err)
-		}
+		x := int64(math.MaxInt32 + 1)
+		_, err = l.Set(context.Background(), int(x), "overflow")
+		assert.Error(t, err)
 	})
 }
 
@@ -438,17 +448,20 @@ func TestList_SubList(t *testing.T) {
 }
 
 func TestList_SubList_Error(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.SubList(context.Background(), -1, 3)
 		assert.Error(t, err)
 		_, err = l.SubList(context.Background(), 1, -3)
 		assert.Error(t, err)
-		if runtime.GOARCH == "386" {
-			_, err = l.SubList(context.Background(), math.MaxInt32+1, 3)
-			assert.Error(t, err)
-			_, err = l.SubList(context.Background(), 1, math.MaxInt32+1)
-			assert.Error(t, err)
-		}
+		x := int64(math.MaxInt32 + 1)
+		_, err = l.SubList(context.Background(), int(x), 3)
+		assert.Error(t, err)
+		_, err = l.SubList(context.Background(), 1, int(x))
+		assert.Error(t, err)
+
 	})
 }
 

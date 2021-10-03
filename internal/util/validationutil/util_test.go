@@ -30,6 +30,9 @@ import (
 )
 
 func TestValidateAsNonNegativeInt32(t *testing.T) {
+	if runtime.GOARCH == "386" {
+		t.Skipf("not necessary for 32bit")
+	}
 	testCases := []struct {
 		value         int
 		expectedValue int32
@@ -55,7 +58,7 @@ func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
 
 	testCases := []struct {
 		msg   string
-		value uint
+		value int64
 	}{
 		{"non-negative", -1},
 		{"32-bit", math.MaxInt32 + 1},
