@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"sync/atomic"
 	"time"
@@ -34,7 +35,6 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
 
@@ -297,7 +297,7 @@ func positiveDurationOrMax(duration time.Duration) time.Duration {
 	if duration > 0 {
 		return duration
 	}
-	return time.Duration(validationutil.MaxInt)
+	return time.Duration(math.MaxInt64)
 }
 
 func wrapError(err *ihzerrors.ServerError) error {

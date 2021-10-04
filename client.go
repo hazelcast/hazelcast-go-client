@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -35,7 +36,6 @@ import (
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -423,7 +423,7 @@ func (c *Client) createComponents(config *Config) {
 	})
 	invocationFactory := icluster.NewConnectionInvocationFactory(&config.Cluster)
 	var failoverConfigs []cluster.Config
-	maxTryCount := validationutil.MaxInt
+	maxTryCount := math.MaxInt32
 	if config.Failover.Enabled {
 		maxTryCount = config.Failover.TryCount
 		failoverConfigs = config.Failover.Configs
