@@ -10,11 +10,11 @@ import (
 )
 
 type ViewListenerService struct {
+	connID     int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	cs         *Service
 	cm         *ConnectionManager
 	dispatcher *event.DispatchService
 	logger     logger.Logger
-	connID     int64
 }
 
 func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *event.DispatchService, logger logger.Logger) *ViewListenerService {

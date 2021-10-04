@@ -158,6 +158,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 }
 
 type ConnectionManager struct {
+	nextConnID           int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	logger               ilogger.Logger
 	failoverConfig       *pubcluster.FailoverConfig
 	partitionService     *PartitionService
@@ -178,7 +179,6 @@ type ConnectionManager struct {
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
-	nextConnID           int64
 	state                int32
 	smartRouting         bool
 }

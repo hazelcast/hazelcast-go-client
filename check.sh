@@ -37,4 +37,9 @@ staticcheck ./...
 # Ensure fields are optimally aligned
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment
 # If missing install via: go get -u golang.org/x/tools/...
-fieldalignment ./...
+# Structs in following files should not be sorted due to: https://pkg.go.dev/sync/atomic#pkg-note-BUG
++fieldalignment ./... 2>&1 | \
++  grep -v "internal/cluster/connection_manager.go" | \
++  grep -v "internal/cluster/view_listener_service.go" | \
++  grep -v "flake_id_generator.go" \
++  || true
