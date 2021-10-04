@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"runtime"
 	"sync/atomic"
 	"testing"
 
@@ -28,6 +27,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 )
 
 func TestList_AddListener(t *testing.T) {
@@ -113,7 +113,7 @@ func TestList_AddAt(t *testing.T) {
 }
 
 func TestList_AddAt_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
@@ -166,7 +166,7 @@ func TestList_AddAllAt(t *testing.T) {
 }
 
 func TestList_AddAllAt_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
@@ -319,7 +319,7 @@ func TestList_RemoveAt(t *testing.T) {
 }
 
 func TestList_RemoveAt_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
@@ -392,7 +392,7 @@ func TestList_Get(t *testing.T) {
 }
 
 func TestList_Get_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
@@ -417,7 +417,7 @@ func TestList_Set(t *testing.T) {
 }
 
 func TestList_Set_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
@@ -448,7 +448,7 @@ func TestList_SubList(t *testing.T) {
 }
 
 func TestList_SubList_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	it.ListTester(t, func(t *testing.T, l *hz.List) {

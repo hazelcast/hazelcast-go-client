@@ -19,18 +19,18 @@ package validationutil
 import (
 	"errors"
 	"math"
-	"runtime"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestValidateAsNonNegativeInt32(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	testCases := []struct {
@@ -52,7 +52,7 @@ func TestValidateAsNonNegativeInt32(t *testing.T) {
 }
 
 func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 

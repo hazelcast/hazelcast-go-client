@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"runtime"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -29,6 +28,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 )
 
 func TestQueue_Add(t *testing.T) {
@@ -180,7 +180,7 @@ func TestQueue_DrainWithMaxSize(t *testing.T) {
 }
 
 func TestQueue_DrainWithMaxSize_Error(t *testing.T) {
-	if runtime.GOARCH == "386" {
+	if runtime.Is32BitArch() {
 		t.Skipf("not necessary for 32bit")
 	}
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
