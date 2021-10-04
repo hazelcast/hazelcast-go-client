@@ -957,11 +957,11 @@ func (m *Map) convertToDataList(keys []interface{}) ([]*serialization.Data, erro
 	keyDatas := make([]*serialization.Data, 0, len(keys))
 	for _, key := range keys {
 		// todo check if this null check done with validateAndSerialize cause problem for keys
-		if keyData, err := m.validateAndSerialize(key); err != nil {
+		keyData, err := m.validateAndSerialize(key)
+		if err != nil {
 			return nil, err
-		} else {
-			keyDatas = append(keyDatas, keyData)
 		}
+		keyDatas = append(keyDatas, keyData)
 	}
 	return keyDatas, nil
 }

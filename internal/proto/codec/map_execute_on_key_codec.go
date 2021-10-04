@@ -30,7 +30,7 @@ const (
 	MapExecuteOnKeyCodecRequestInitialFrameSize = MapExecuteOnKeyCodecRequestThreadIdOffset + proto.LongSizeInBytes
 )
 
-// Applies the user defined EntryProcessor to the entry mapped by the key. Returns the object which is result of
+// Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
 // the process() method of EntryProcessor.
 
 func EncodeMapExecuteOnKeyRequest(name string, entryProcessor *iserialization.Data, key *iserialization.Data, threadId int64) *proto.ClientMessage {
