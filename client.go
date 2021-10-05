@@ -110,11 +110,10 @@ func newClient(config Config) (*Client, error) {
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
 	}
-	logLevel, err := ilogger.GetLogLevel(config.Logger.Level)
+	clientLogger, err := loggerFromConf(config)
 	if err != nil {
 		return nil, err
 	}
-	clientLogger := ilogger.NewWithLevel(logLevel)
 	serializationService, err := serialization.NewService(&config.Serialization)
 	if err != nil {
 		return nil, err
@@ -135,6 +134,18 @@ func newClient(config Config) (*Client, error) {
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
 	return c, nil
+}
+
+func loggerFromConf(config Config) (logger.Logger, error) {
+	if config.Logger.Custom != nil {
+		return config.Logger.Custom, nil
+	}
+	logLevel, err := ilogger.GetLogLevel(config.Logger.Level)
+	if err != nil {
+		return nil, err
+	}
+	clientLogger := ilogger.NewWithLevel(logLevel)
+	return clientLogger, nil
 }
 
 // Name returns client's name

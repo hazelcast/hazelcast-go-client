@@ -44,11 +44,16 @@ func (l Level) String() string {
 }
 
 type Config struct {
-	Level Level `json:",omitempty"`
+	Level  Level  `json:",omitempty"`
+	Custom Logger `json:"-"`
+}
+
+func (c *Config) SetLogger(customLogger Logger) {
+	c.Custom = customLogger
 }
 
 func (c Config) Clone() Config {
-	return Config{Level: c.Level}
+	return Config{Level: c.Level, Custom: c.Custom}
 }
 
 func (c *Config) Validate() error {
