@@ -17,7 +17,6 @@
 package serialization
 
 import (
-	"log"
 	"reflect"
 	"testing"
 
@@ -491,7 +490,7 @@ func TestDefaultPortableReader_ReadString_NonASCIIFieldName(t *testing.T) {
 	// See: https://github.com/hazelcast/hazelcast/issues/17955#issuecomment-778152424
 	service, err := NewService(&serialization.Config{})
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	o := NewPositionalObjectDataOutput(0, service, false)
 	cd := serialization.NewClassDefinition(2, 1, 3)

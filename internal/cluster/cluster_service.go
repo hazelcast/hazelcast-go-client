@@ -19,7 +19,9 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -36,14 +38,13 @@ type Service struct {
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
 	failoverService   *FailoverService
-	requestCh         chan<- invocation.Invocation
+	invocationService *invocation.Service
 	invocationFactory *ConnectionInvocationFactory
 	membersMap        membersMap
 }
 
 type CreationBundle struct {
 	Logger            ilogger.Logger
-	RequestCh         chan<- invocation.Invocation
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
@@ -52,9 +53,6 @@ type CreationBundle struct {
 }
 
 func (b CreationBundle) Check() {
-	if b.RequestCh == nil {
-		panic("RequestCh is nil")
-	}
 	if b.InvocationFactory == nil {
 		panic("InvocationFactory is nil")
 	}
@@ -75,7 +73,6 @@ func (b CreationBundle) Check() {
 func NewService(bundle CreationBundle) *Service {
 	bundle.Check()
 	return &Service{
-		requestCh:         bundle.RequestCh,
 		invocationFactory: bundle.InvocationFactory,
 		eventDispatcher:   bundle.EventDispatcher,
 		partitionService:  bundle.PartitionService,
@@ -86,6 +83,11 @@ func NewService(bundle CreationBundle) *Service {
 	}
 }
 
+// SetInvocationService sets the invocation service for the cluster service.
+func (s *Service) SetInvocationService(invService *invocation.Service) {
+	s.invocationService = invService
+}
+
 func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 	return s.membersMap.Find(uuid)
 }
@@ -94,12 +96,8 @@ func (s *Service) MemberAddrs() []pubcluster.Address {
 	return s.membersMap.MemberAddrs()
 }
 
-func (s *Service) RandomDataMember() *pubcluster.MemberInfo {
-	return s.membersMap.RandomDataMember()
-}
-
-func (s *Service) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
-	return s.membersMap.RandomDataMemberExcluding(excluded)
+func (s *Service) OrderedMembers() []pubcluster.MemberInfo {
+	return s.membersMap.OrderedMembers()
 }
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
@@ -122,7 +120,9 @@ func (s *Service) Reset() {
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
-	s.logger.Debug(func() string { return fmt.Sprintf("%d: members updated", conn.connectionID) })
+	s.logger.Debug(func() string {
+		return fmt.Sprintf("%d: members updated: %v", conn.connectionID, memberInfos)
+	})
 	added, removed := s.membersMap.Update(memberInfos, version)
 	if len(added) > 0 {
 		s.eventDispatcher.Publish(NewMembersAdded(added))
@@ -133,16 +133,21 @@ func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberIn
 }
 
 func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {
-	s.logger.Trace(func() string { return "cluster.Service.sendMemberListViewRequest" })
+	s.logger.Trace(func() string {
+		return fmt.Sprintf("%d: cluster.Service.sendMemberListViewRequest", conn.connectionID)
+	})
 	request := codec.EncodeClientAddClusterViewListenerRequest()
+	now := time.Now()
 	inv := s.invocationFactory.NewConnectionBoundInvocation(request, conn, func(response *proto.ClientMessage) {
 		codec.HandleClientAddClusterViewListener(response, func(version int32, memberInfos []pubcluster.MemberInfo) {
 			s.handleMembersUpdated(conn, version, memberInfos)
 		}, func(version int32, partitions []proto.Pair) {
 			s.partitionService.Update(conn.connectionID, partitions, version)
 		})
-	})
-	s.requestCh <- inv
+	}, now)
+	if err := s.invocationService.SendUrgentRequest(ctx, inv); err != nil {
+		return err
+	}
 	_, err := inv.GetWithContext(ctx)
 	return err
 }
@@ -174,11 +179,12 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
-	failoverService  *FailoverService
 	logger           ilogger.Logger
+	failoverService  *FailoverService
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
 	membersMu        *sync.RWMutex
+	orderedMembers   []pubcluster.MemberInfo
 	version          int32
 }
 
@@ -196,13 +202,16 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	m.membersMu.Lock()
 	defer m.membersMu.Unlock()
 	if version > m.version {
+		m.version = version
+		m.orderedMembers = members
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
-			if m.addMember(&member) {
-				added = append(added, member)
+			mc := member
+			if m.addMember(&mc) {
+				added = append(added, mc)
 			}
-			newUUIDs[member.UUID] = struct{}{}
+			newUUIDs[mc.UUID] = struct{}{}
 		}
 		removed = []pubcluster.MemberInfo{}
 		for _, member := range m.members {
@@ -211,6 +220,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 				removed = append(removed, *member)
 			}
 		}
+		m.logMembers(version, members)
 	}
 	return
 }
@@ -220,14 +230,6 @@ func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 	member := m.members[uuid]
 	m.membersMu.RUnlock()
 	return member
-}
-
-func (m *membersMap) RemoveMembersWithAddr(addr pubcluster.Address) {
-	m.membersMu.Lock()
-	if uuid, ok := m.addrToMemberUUID[addr]; ok {
-		m.removeMember(m.members[uuid])
-	}
-	m.membersMu.Unlock()
 }
 
 func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.MemberInfo)) {
@@ -246,33 +248,12 @@ func (m *membersMap) MemberAddrs() []pubcluster.Address {
 	return addrs
 }
 
-// RandomDataMember returns a data member.
-// Returns nil if no suitable data member is found.
-func (m *membersMap) RandomDataMember() *pubcluster.MemberInfo {
-	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
-	for _, mem := range m.members {
-		if !mem.LiteMember {
-			return mem
-		}
-	}
-	return nil
-}
-
-// RandomDataMemberExcluding returns a data member not excluded in the given map.
-// Returns nil if no suitable data member is found.
-// Panics if excluded map is nil.
-func (m *membersMap) RandomDataMemberExcluding(excluded map[pubcluster.Address]struct{}) *pubcluster.MemberInfo {
-	m.membersMu.RLock()
-	defer m.membersMu.RUnlock()
-	for _, mem := range m.members {
-		if !mem.LiteMember {
-			if _, found := excluded[mem.Address]; !found {
-				return mem
-			}
-		}
-	}
-	return nil
+func (m *membersMap) OrderedMembers() []pubcluster.MemberInfo {
+	m.membersMu.Lock()
+	members := make([]pubcluster.MemberInfo, len(m.orderedMembers))
+	copy(members, m.orderedMembers)
+	m.membersMu.Unlock()
+	return members
 }
 
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.
@@ -313,4 +294,15 @@ func (m *membersMap) reset() {
 	m.addrToMemberUUID = map[pubcluster.Address]types.UUID{}
 	m.version = -1
 	m.membersMu.Unlock()
+}
+
+func (m *membersMap) logMembers(version int32, members []pubcluster.MemberInfo) {
+	// synchronized in Update
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("\n\nMembers {size:%d, ver:%d} [\n", len(m.members), version))
+	for _, mem := range members {
+		sb.WriteString(fmt.Sprintf("\tMember %s - %s\n", mem.Address, mem.UUID))
+	}
+	sb.WriteString("]\n\n")
+	m.logger.Infof(sb.String())
 }

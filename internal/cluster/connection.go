@@ -63,7 +63,7 @@ type Connection struct {
 	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService
 	pending                   chan *proto.ClientMessage
-	responseCh                chan<- *proto.ClientMessage
+	invocationService         *invocation.Service
 	doneCh                    chan struct{}
 	connectedServerVersionStr string
 	connectionID              int64
@@ -169,7 +169,13 @@ func (c *Connection) socketWriteLoop() {
 				c.logger.Errorf("write error: %w", err)
 				request = request.Copy()
 				request.Err = ihzerrors.NewIOError("writing message", err)
-				c.responseCh <- request
+				if respErr := c.invocationService.WriteResponse(request); respErr != nil {
+					c.logger.Debug(func() string {
+						return fmt.Sprintf("sending response: %s", err.Error())
+					})
+					// prevent respawning the connection
+					err = nil
+				}
 				c.close(err)
 			} else {
 				c.lastWrite.Store(time.Now())
@@ -219,9 +225,14 @@ func (c *Connection) socketReadLoop() {
 					if err := codec.DecodeError(clientMessage); err != nil {
 						clientMessage.Err = wrapError(err)
 					}
-
 				}
-				c.responseCh <- clientMessage
+				if err := c.invocationService.WriteResponse(clientMessage); err != nil {
+					c.logger.Debug(func() string {
+						return fmt.Sprintf("sending response: %s", err.Error())
+					})
+					c.close(nil)
+					return
+				}
 				clientMessageReader.ResetMessage()
 			}
 		}

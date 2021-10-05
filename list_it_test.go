@@ -22,7 +22,6 @@ import (
 	"math"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -46,19 +45,13 @@ func TestList_AddListener(t *testing.T) {
 			item := fmt.Sprintf("item-%d", i)
 			it.MustValue(l.Add(context.Background(), item))
 		}
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 		atomic.StoreInt32(&callCount, 0)
 		if err = l.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(l.Add(context.Background(), "item-42"))
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Never(t, func() bool { return atomic.LoadInt32(&callCount) != 0 })
 	})
 }
 
@@ -79,20 +72,14 @@ func TestList_AddListener_IncludeValue(t *testing.T) {
 			it.MustValue(l.Add(context.Background(), item))
 			it.MustBool(l.Remove(context.Background(), item))
 		}
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 		atomic.StoreInt32(&callCount, 0)
 		if err = l.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(l.Add(context.Background(), "item-42"))
 		it.MustValue(l.Remove(context.Background(), "item-42"))
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Never(t, func() bool { return atomic.LoadInt32(&callCount) != 0 })
 	})
 }
 

@@ -19,10 +19,8 @@ package hazelcast_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -69,18 +67,13 @@ func TestSet_AddListener(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(s.Add(context.Background(), value))
 		}
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 		atomic.StoreInt32(&callCount, 0)
 		if err = s.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(s.Add(context.Background(), "value2"))
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Never(t, func() bool { return atomic.LoadInt32(&callCount) != 0 })
 	})
 }
 
@@ -100,18 +93,13 @@ func TestSet_AddListener_IncludeValue(t *testing.T) {
 			it.MustValue(s.Add(context.Background(), value))
 		}
 
-		time.Sleep(1 * time.Second)
-		if !assert.Equal(t, targetCallCount, atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
 		atomic.StoreInt32(&callCount, 0)
 		if err = s.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(s.Add(context.Background(), "value2"))
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Never(t, func() bool { return atomic.LoadInt32(&callCount) != 0 })
 	})
 }
 
@@ -134,7 +122,7 @@ func TestSet_GetAll(t *testing.T) {
 		it.MustValue(s.AddAll(context.Background(), "v1", "v2", "v3"))
 		values, err := s.GetAll(context.Background())
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		assert.ElementsMatch(t, []interface{}{"v1", "v2", "v3"}, values)
 	})
