@@ -85,13 +85,12 @@ func ExampleConfig_SetPortableFactories() {
 	config := hazelcast.NewConfig()
 	config.Serialization.PortableVersion = 1
 	config.Serialization.SetPortableFactories(&MyPortableFactory{})
-	employeeClassDefinition := serialization.NewClassDefinition(factoryID, employeeClassID, 1)
-	employeeClassDefinition.AddStringField("name")
-	employeeClassDefinition.AddInt32Field("age")
-	config.Serialization.SetClassDefinitions(employeeClassDefinition)
-	baseObjectClassDefinition := serialization.NewClassDefinition(factoryID, baseObjectClassID, 1)
-	baseObjectClassDefinition.AddPortableField("employee", employeeClassDefinition)
-	config.Serialization.SetClassDefinitions(baseObjectClassDefinition)
+	employeeCD := serialization.NewClassDefinition(factoryID, employeeClassID, 1)
+	employeeCD.AddStringField("name")
+	employeeCD.AddInt32Field("age")
+	baseObjectCD := serialization.NewClassDefinition(factoryID, baseObjectClassID, 1)
+	baseObjectCD.AddPortableField("employee", employeeCD)
+	config.Serialization.SetClassDefinitions(employeeCD, baseObjectCD)
 
 	// start the client with the given configuration
 	ctx := context.TODO()
