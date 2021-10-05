@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 type ViewListenerService struct {

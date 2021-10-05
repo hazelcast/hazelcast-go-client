@@ -24,8 +24,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	ilogger "github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (

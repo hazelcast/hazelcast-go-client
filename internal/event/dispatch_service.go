@@ -22,7 +22,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 var globalSubscriptionID = int64(0)
