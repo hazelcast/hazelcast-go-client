@@ -42,7 +42,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Populate the map
+	// Populate the map, error handling is omitted for brevity
 	m.Put(ctx, "key-1", serialization.JSON(`{"property: 5}`))
 	m.Put(ctx, "key-2", serialization.JSON(`{"property": 10}`))
 	m.Put(ctx, "key-3", serialization.JSON(`{"property": 15}`))

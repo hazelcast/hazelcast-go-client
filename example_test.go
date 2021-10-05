@@ -59,6 +59,9 @@ func Example() {
 func ExampleSet() {
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Retrieve the set named my-set.
 	set, err := client.GetSet(ctx, "my-set")
 	if err != nil {
@@ -81,6 +84,9 @@ func ExampleSet() {
 func ExamplePNCounter() {
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Retrieve the PN counter named my-pn.
 	pn, err := client.GetPNCounter(ctx, "my-pn")
 	if err != nil {
@@ -122,6 +128,9 @@ func ExampleMap() {
 func ExampleMap_Aggregate() {
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	myMap, err := client.GetMap(ctx, "my-map")
 	if err != nil {
 		log.Fatal(err)
@@ -143,10 +152,16 @@ func ExampleMap_AddEntryListener() {
 	// error handling was omitted for brevity
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	entryListenerConfig := hazelcast.MapEntryListenerConfig{
 		IncludeValue: true,
 	}
-	m, _ := client.GetMap(ctx, "somemap")
+	m, err := client.GetMap(ctx, "somemap")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// enable receiving entry added events
 	entryListenerConfig.NotifyEntryAdded(true)
 	// enable receiving entry removed events
@@ -177,22 +192,22 @@ func ExampleMap_AddEntryListener() {
 		}
 	})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	// performing modifications on the map entries
 	key := strconv.Itoa(int(time.Now().Unix()))
 	if err := m.Set(ctx, key, "1"); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if err := m.Set(ctx, key, "2"); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if err := m.Delete(ctx, key); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	// you can use the subscriptionID later to remove the event listener.
 	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -235,6 +250,9 @@ func ExampleMap_NewLockContext() {
 
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Get a random map.
 	myMap, err := client.GetMap(ctx, "map")
 	if err != nil {
@@ -261,6 +279,9 @@ func ExampleMap_NewLockContext() {
 func ExampleQueue() {
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Get a random queue
 	q, err := client.GetQueue(ctx, "queue-1")
 	if err != nil {
@@ -306,6 +327,9 @@ func ExampleQueue() {
 func ExampleReplicatedMap() {
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Get a random replicated map
 	replicatedMap, err := client.GetReplicatedMap(ctx, "replicated-map-1")
 	if err != nil {
@@ -368,7 +392,7 @@ func ExampleMap_GetEntrySetWithPredicate() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Populate the map
+	// Populate the map, error handling is omitted here for brevity
 	m.Put(ctx, "key-1", serialization.JSON(`{"property: 5}`))
 	m.Put(ctx, "key-2", serialization.JSON(`{"property": 10}`))
 	m.Put(ctx, "key-3", serialization.JSON(`{"property": 15}`))
@@ -386,6 +410,9 @@ func ExampleMap_GetEntrySetWithPredicate() {
 func ExampleList() {
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Get a random list
 	list, err := client.GetList(ctx, "list-1")
 	if err != nil {
@@ -397,7 +424,7 @@ func ExampleList() {
 		log.Fatal(err)
 	}
 	fmt.Println(size)
-	// Add data
+	// Add data, error handling is omitted here for brevity
 	list.Add(ctx, "Item 1")
 	list.Add(ctx, "Item 2")
 	// Get and print list size

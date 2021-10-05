@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"reflect"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 )
 
 func main() {
@@ -58,7 +58,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if nilutil.IsNil(val) {
+	if isNil(val) {
 		fmt.Println("Inserted value")
 	}
 	// Atomic replace if same method
@@ -71,4 +71,12 @@ func main() {
 	}
 	// Shutdown client
 	client.Shutdown(ctx)
+}
+
+func isNil(arg interface{}) bool {
+	if arg == nil {
+		return true
+	}
+	value := reflect.ValueOf(arg)
+	return value.Kind() == reflect.Ptr && value.IsNil()
 }

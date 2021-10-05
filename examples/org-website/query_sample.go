@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Populate the map
+	// Populate the map, error handling is omitted here for brevity
 	m.Put(ctx, "key-1", serialization.JSON(`{"property: 5}`))
 	m.Put(ctx, "key-2", serialization.JSON(`{"property": 10}`))
 	m.Put(ctx, "key-3", serialization.JSON(`{"property": 15}`))
@@ -37,7 +37,7 @@ func main() {
 	}
 	fmt.Println(entries)
 	// Filter the entries in the map based on a predicate and print those
-	pred := predicate.And(predicate.Less("property", 12), predicate.Greater("property", 8))
+	pred := predicate.And(predicate.Greater("property", 8), predicate.Less("property", 12))
 	entries, err = m.GetEntrySetWithPredicate(ctx, pred)
 	if err != nil {
 		log.Fatal(err)

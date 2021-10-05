@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(size)
-	// Add data
+	// Add data, error handling is omitted here for brevity
 	list.Add(ctx, "Item 1")
 	list.Add(ctx, "Item 2")
 	// Get and print list size

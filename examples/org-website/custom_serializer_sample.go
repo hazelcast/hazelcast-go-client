@@ -37,7 +37,7 @@ func (e EmployeeCustomSerializer) Write(output serialization.DataOutput, object 
 
 func main() {
 	// Configure serializer
-	config := hazelcast.NewConfig()
+	config := hazelcast.Config{}
 	config.Serialization.SetCustomSerializer(reflect.TypeOf(&Employee{}), &EmployeeCustomSerializer{})
 	// Start the client with custom serializer
 	ctx := context.TODO()
@@ -52,9 +52,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Store an object in the map
-	emp := Employee{"Doe"}
-	m.Put(ctx, "employee-1", emp)
+	// Store an object in the map, error handling is ommitted here for brevity
+	m.Put(ctx, "employee-1", Employee{"Doe"})
 	// Retrieve the object and print
 	value, err := m.Get(ctx, "employee-1")
 	if err != nil {

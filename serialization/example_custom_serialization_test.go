@@ -16,7 +16,7 @@ type Employee struct {
 
 type EmployeeCustomSerializer struct{}
 
-func (e EmployeeCustomSerializer) ID() (id int32) {
+func (e EmployeeCustomSerializer) ID() int32 {
 	return 45392
 }
 
@@ -49,8 +49,10 @@ func ExampleConfig_SetCustomSerializer() {
 		log.Fatal(err)
 	}
 	// Store an object in the map
-	emp := Employee{"Doe"}
-	m.Put(ctx, "employee-1", emp)
+	_, err = m.Put(ctx, "employee-1", Employee{"Doe"})
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Retrieve the object and print
 	value, err := m.Get(ctx, "employee-1")
 	if err != nil {

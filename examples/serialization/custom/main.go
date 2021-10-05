@@ -34,7 +34,7 @@ type Employee struct {
 
 type EmployeeCustomSerializer struct{}
 
-func (e EmployeeCustomSerializer) ID() (id int32) {
+func (e EmployeeCustomSerializer) ID() int32 {
 	return 45392
 }
 

@@ -43,7 +43,10 @@ func main() {
 	}
 	// Add items to set
 	for i := 0; i < setItems; i++ {
-		set.Add(ctx, fmt.Sprintf("Item %d", i))
+		_, err = set.Add(ctx, fmt.Sprintf("Item %d", i))
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	// Print contents of the set
 	items, err := set.GetAll(ctx)

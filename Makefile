@@ -5,18 +5,18 @@ TEST_FLAGS ?=
 MEMBER_COUNT ?= 3
 COVERAGE_OUT ?= coverage.out
 TEST_FLAGS ?= "-count 1 -timeout 20m"
-GO_FILES = $(go list ./... | grep -v org-website)
+PACKAGES = $(go list ./... | grep -v org-website)
 
 build:
-	go build $(GO_FILES)
+	go build $(PACKAGES)
 
 test: test-all
 
 test-all:
-	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) $(GO_FILES)
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) $(PACKAGES)
 
 test-all-race:
-	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -race $(GO_FILES)
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -race $(PACKAGES)
 
 test-cover:
 	bash ./coverage.sh

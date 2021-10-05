@@ -47,10 +47,16 @@ func main() {
 		log.Fatal(err)
 	}
 	// Add a message listener to the topic
-	topic.AddMessageListener(ctx, messageListener)
+	_, err = topic.AddMessageListener(ctx, messageListener)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Publish messages to topic
 	for i := 0; i < messageCount; i++ {
-		topic.Publish(ctx, fmt.Sprintf("Message %d", i))
+		err := topic.Publish(ctx, fmt.Sprintf("Message %d", i))
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	// Shutdown client
 	client.Shutdown(ctx)

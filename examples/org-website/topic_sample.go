@@ -16,7 +16,6 @@ func messageListener(event *hazelcast.MessagePublished) {
 }
 
 func main() {
-	messageCount := 10
 	// Start the client with defaults
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
@@ -31,10 +30,16 @@ func main() {
 		log.Fatal(err)
 	}
 	// Add a message listener to the topic
-	topic.AddMessageListener(ctx, messageListener)
+	_, err = topic.AddMessageListener(ctx, messageListener)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Publish messages to topic
-	for i := 0; i < messageCount; i++ {
-		topic.Publish(ctx, fmt.Sprintf("Message %d", i))
+	for i := 0; i < 10; i++ {
+		err = topic.Publish(ctx, fmt.Sprintf("Message %d", i))
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	// Shutdown client
 	client.Shutdown(ctx)
