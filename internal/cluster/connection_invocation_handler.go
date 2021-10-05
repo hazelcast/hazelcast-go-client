@@ -23,7 +23,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	ilogger "github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 var errPartitionOwnerNotAssigned = errors.New("partition owner not assigned")

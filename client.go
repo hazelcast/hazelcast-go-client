@@ -36,6 +36,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -74,7 +75,7 @@ func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, erro
 // It connects to one or more of the cluster members and delegates all cluster wide operations to them.
 type Client struct {
 	invocationHandler       invocation.Handler
-	logger                  ilogger.Logger
+	logger                  logger.Logger
 	membershipListenerMapMu *sync.Mutex
 	connectionManager       *icluster.ConnectionManager
 	clusterService          *icluster.Service
@@ -524,7 +525,7 @@ func (c *Client) handleClusterEvent(e event.Event) {
 	}
 }
 
-func addrProviderTranslator(config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator) {
+func addrProviderTranslator(config *cluster.Config, logger logger.Logger) (icluster.AddressProvider, icluster.AddressTranslator) {
 	if config.Cloud.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)

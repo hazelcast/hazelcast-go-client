@@ -26,6 +26,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -33,12 +35,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	ilogger "github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
