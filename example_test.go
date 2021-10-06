@@ -1,5 +1,3 @@
-// +build noos
-
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
@@ -29,11 +27,9 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
-
-var client = getClient()
 
 func Example() {
 	// Create the configuration
@@ -62,7 +58,11 @@ func Example() {
 
 func ExampleSet() {
 	ctx := context.TODO()
-	// Retrieve the set named my-set
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Retrieve the set named my-set.
 	set, err := client.GetSet(ctx, "my-set")
 	if err != nil {
 		log.Fatal(err)
@@ -82,9 +82,12 @@ func ExampleSet() {
 }
 
 func ExamplePNCounter() {
-	// Create the Hazelcast client.
 	ctx := context.TODO()
-	// Retrieve the PN counter named my-pn
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Retrieve the PN counter named my-pn.
 	pn, err := client.GetPNCounter(ctx, "my-pn")
 	if err != nil {
 		log.Fatal(err)
@@ -100,12 +103,34 @@ func ExamplePNCounter() {
 		log.Fatal(err)
 	}
 	fmt.Println(value)
-	// Output: 42
+}
+
+func ExampleMap() {
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Retrieve a map.
+	peopleMap, err := client.GetMap(ctx, "people")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Call map functions.
+	err = peopleMap.Set(ctx, "jane", "doe")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Stop the client once you are done with it.
+	client.Shutdown(ctx)
 }
 
 func ExampleMap_Aggregate() {
-	// Create the Hazelcast client.
-	ctx := context.Background()
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	myMap, err := client.GetMap(ctx, "my-map")
 	if err != nil {
 		log.Fatal(err)
@@ -121,16 +146,22 @@ func ExampleMap_Aggregate() {
 		log.Fatal(err)
 	}
 	fmt.Println(result)
-	// Output: 40
 }
 
 func ExampleMap_AddEntryListener() {
 	// error handling was omitted for brevity
 	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	entryListenerConfig := hazelcast.MapEntryListenerConfig{
 		IncludeValue: true,
 	}
-	m, _ := client.GetMap(ctx, "somemap")
+	m, err := client.GetMap(ctx, "somemap")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// enable receiving entry added events
 	entryListenerConfig.NotifyEntryAdded(true)
 	// enable receiving entry removed events
@@ -161,22 +192,22 @@ func ExampleMap_AddEntryListener() {
 		}
 	})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	// performing modifications on the map entries
 	key := strconv.Itoa(int(time.Now().Unix()))
 	if err := m.Set(ctx, key, "1"); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if err := m.Set(ctx, key, "2"); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	if err := m.Delete(ctx, key); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	// you can use the subscriptionID later to remove the event listener.
 	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -218,10 +249,12 @@ func ExampleMap_NewLockContext() {
 	const key = "counter"
 
 	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Get a random map.
-	rand.Seed(time.Now().Unix())
-	mapName := fmt.Sprintf("sample-%d", rand.Int())
-	myMap, err := client.GetMap(ctx, mapName)
+	myMap, err := client.GetMap(ctx, "map")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -243,11 +276,163 @@ func ExampleMap_NewLockContext() {
 	client.Shutdown(ctx)
 }
 
-func getClient() *hazelcast.Client {
-	var tc = it.StartNewCluster(1)
-	client, err := hazelcast.StartNewClientWithConfig(context.Background(), tc.DefaultConfig())
+func ExampleQueue() {
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	return client
+	// Get a random queue
+	q, err := client.GetQueue(ctx, "queue-1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Add an item to the queue if space is available (non-blocking)
+	added, err := q.Add(ctx, "item 1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if added {
+		fmt.Println("Added item 1")
+	}
+	// Get the head of the queue if available and print item
+	item, err := q.Poll(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(item)
+	// Add an item waiting for capacity until timeout
+	added, err = q.AddWithTimeout(ctx, "item 2", 2*time.Second)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if added {
+		fmt.Println("Added item 2")
+	}
+	// Wait indefinetely to add an item
+	err = q.Put(ctx, "item 3")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Wait indefintely to take the head and print item
+	item, err = q.Take(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(item)
+	// Shutdown client
+	client.Shutdown(ctx)
+}
+
+func ExampleReplicatedMap() {
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Get a random replicated map
+	replicatedMap, err := client.GetReplicatedMap(ctx, "replicated-map-1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Populate map
+	replacedValue, err := replicatedMap.Put(ctx, "key", "value")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(replacedValue)
+	// Get value and print
+	value, err := replicatedMap.Get(ctx, "key")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(value)
+	// Shutdown client
+	client.Shutdown(ctx)
+}
+
+func ExampleTopic() {
+	// messageListener handles incoming messages to the topic
+	messageListener := func(event *hazelcast.MessagePublished) {
+		fmt.Println("Received message: ", event.Value)
+	}
+	messageCount := 10
+	// Start the client with defaults
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Get a random topic
+	rand.Seed(time.Now().Unix())
+	topicName := fmt.Sprintf("sample-%d", rand.Int())
+	topic, err := client.GetTopic(ctx, topicName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Add a message listener to the topic
+	topic.AddMessageListener(ctx, messageListener)
+	// Publish messages to topic
+	for i := 0; i < messageCount; i++ {
+		topic.Publish(ctx, fmt.Sprintf("Message %d", i))
+	}
+	// Shutdown client
+	client.Shutdown(ctx)
+}
+
+func ExampleMap_GetEntrySetWithPredicate() {
+	// Start the client with defaults
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Get a random map
+	m, err := client.GetMap(ctx, "map-1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Populate the map, error handling is omitted here for brevity
+	m.Put(ctx, "key-1", serialization.JSON(`{"property: 5}`))
+	m.Put(ctx, "key-2", serialization.JSON(`{"property": 10}`))
+	m.Put(ctx, "key-3", serialization.JSON(`{"property": 15}`))
+	// Filter the entries in the map based on a predicate and print those
+	pred := predicate.And(predicate.Less("property", 12), predicate.Greater("property", 8))
+	entries, err := m.GetEntrySetWithPredicate(ctx, pred)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(entries)
+	// Shutdown client
+	client.Shutdown(ctx)
+}
+
+func ExampleList() {
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Get a random list
+	list, err := client.GetList(ctx, "list-1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Get and print list size
+	size, err := list.Size(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(size)
+	// Add data, error handling is omitted here for brevity
+	list.Add(ctx, "Item 1")
+	list.Add(ctx, "Item 2")
+	// Get and print list size
+	size, err = list.Size(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(size)
+	// Shutdown client
+	client.Shutdown(ctx)
 }
