@@ -19,8 +19,6 @@ package logger
 import (
 	"testing"
 
-	publogger "github.com/hazelcast/hazelcast-go-client/logger"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +31,7 @@ func TestIsValidLogLevel(t *testing.T) {
 		"warn",
 	}
 	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(publogger.Level(logLevel))
+		isValid := isValidLogLevel(Level(logLevel))
 		assert.True(t, isValid)
 	}
 }
@@ -47,14 +45,14 @@ func TestIsValidLogLevelCaseInsensitive(t *testing.T) {
 		"WARN",
 	}
 	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(publogger.Level(logLevel))
+		isValid := isValidLogLevel(Level(logLevel))
 		assert.True(t, isValid)
 	}
 }
 
 func TestIsValidLogLevelInvalidLevel(t *testing.T) {
 	logLevel := "deb"
-	isValid := isValidLogLevel(publogger.Level(logLevel))
+	isValid := isValidLogLevel(Level(logLevel))
 	assert.False(t, isValid)
 }
 
@@ -70,7 +68,7 @@ func TestGetLogLevel(t *testing.T) {
 		{"info", infoLevel},
 	}
 	for _, logLevel := range logLevels {
-		level, err := GetLogLevel(publogger.Level(logLevel.level))
+		level, err := GetLogLevel(Level(logLevel.level))
 		assert.NoError(t, err)
 		assert.Equal(t, level, logLevel.levelInt)
 	}
@@ -78,6 +76,6 @@ func TestGetLogLevel(t *testing.T) {
 
 func TestGetLogLevelError(t *testing.T) {
 	logLevel := "p"
-	_, err := GetLogLevel(publogger.Level(logLevel))
+	_, err := GetLogLevel(Level(logLevel))
 	assert.Error(t, err)
 }

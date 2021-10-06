@@ -21,11 +21,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const logMessage = "dummy"
 
-func createWithLevelAndLog(level int) string {
+func createWithLevelAndLog(level logger.Level) string {
 	l := New()
 	l.Level = level
 	buf := new(bytes.Buffer)
@@ -39,7 +41,7 @@ func createWithLevelAndLog(level int) string {
 }
 
 func TestDefaultLogger_TraceLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(traceLevel)
+	loggedMessages := createWithLevelAndLog(logger.TraceLevel)
 	assert.Contains(t, loggedMessages, tracePrefix)
 	assert.Contains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, warnPrefix)
@@ -48,7 +50,7 @@ func TestDefaultLogger_TraceLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_DebugLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(debugLevel)
+	loggedMessages := createWithLevelAndLog(logger.DebugLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.Contains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, warnPrefix)
@@ -57,7 +59,7 @@ func TestDefaultLogger_DebugLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_WarnLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(warnLevel)
+	loggedMessages := createWithLevelAndLog(logger.WarnLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.NotContains(t, loggedMessages, infoPrefix)
@@ -66,7 +68,7 @@ func TestDefaultLogger_WarnLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_InfoLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(infoLevel)
+	loggedMessages := createWithLevelAndLog(logger.InfoLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, infoPrefix)
@@ -75,7 +77,7 @@ func TestDefaultLogger_InfoLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_ErrorLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(errorLevel)
+	loggedMessages := createWithLevelAndLog(logger.ErrorLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.NotContains(t, loggedMessages, warnPrefix)

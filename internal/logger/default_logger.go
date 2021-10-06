@@ -21,12 +21,14 @@ import (
 	"log"
 	"os"
 	"runtime"
+
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (
 	// logCallDepth is used for removing the last two method names from call trace when logging file names.
 	logCallDepth    = 3
-	defaultLogLevel = infoLevel
+	defaultLogLevel = logger.InfoLevel
 	tracePrefix     = "TRACE"
 	warnPrefix      = "WARN"
 	debugPrefix     = "DEBUG"
@@ -41,7 +43,7 @@ const (
 // If loggerConfig.SetLogger() method is called, the LoggingLevel property will not be used.
 type DefaultLogger struct {
 	*log.Logger
-	Level int
+	Level logger.Level
 }
 
 // New returns a Default Logger with defaultLogLevel.
@@ -52,23 +54,36 @@ func New() *DefaultLogger {
 	}
 }
 
-func NewWithLevel(loggingLevel int) *DefaultLogger {
+func NewWithLevel(loggingLevel logger.Level) *DefaultLogger {
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),
 		Level:  loggingLevel,
 	}
 }
 
+func (l *DefaultLogger) CanLog(level logger.Level) bool {
+	numericLevel, err := logger.GetLogLevel(level)
+	if err != nil {
+		return false
+	}
+	loggerLevel, err := logger.GetLogLevel(l.Level)
+	if err != nil {
+		fmt.Println("logger has invalid log level, will not log something useful")
+		return false
+	}
+	return loggerLevel >= numericLevel
+}
+
 // Debug logs the given arguments at debug level if the level is greater than or equal to debug level.
 func (l *DefaultLogger) Debug(f func() string) {
-	if l.CanLogDebug() && f != nil {
+	if l.CanLog(logger.DebugLevel) && f != nil {
 		s := fmt.Sprintf("DEBUG: %s", f())
 		l.Output(logCallDepth, s)
 	}
 }
 
 func (l *DefaultLogger) Trace(f func() string) {
-	if l.canLogTrace() && f != nil {
+	if l.CanLog(logger.TraceLevel) && f != nil {
 		s := fmt.Sprintf("TRACE: %s", f())
 		l.Output(logCallDepth, s)
 	}
@@ -76,7 +91,7 @@ func (l *DefaultLogger) Trace(f func() string) {
 
 // Info logs the given arguments at info level if the level is greater than or equal to info level.
 func (l *DefaultLogger) Info(args ...interface{}) {
-	if l.canLogInfo() {
+	if l.CanLog(logger.InfoLevel) {
 		callerName := l.findCallerFuncName()
 		s := callerName + "\n" + infoPrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
@@ -84,7 +99,7 @@ func (l *DefaultLogger) Info(args ...interface{}) {
 }
 
 func (l *DefaultLogger) Infof(format string, values ...interface{}) {
-	if l.canLogInfo() {
+	if l.CanLog(logger.InfoLevel) {
 		s := fmt.Sprintf("INFO : %s", fmt.Sprintf(format, values...))
 		l.Output(logCallDepth, s)
 	}
@@ -92,7 +107,7 @@ func (l *DefaultLogger) Infof(format string, values ...interface{}) {
 
 // Warn logs the given arguments at warn level if the level is greater than or equal to warn level.
 func (l *DefaultLogger) Warn(args ...interface{}) {
-	if l.canLogWarn() {
+	if l.CanLog(logger.WarnLevel) {
 		callerName := l.findCallerFuncName()
 		s := callerName + "\n" + warnPrefix + ": " + fmt.Sprint(args...)
 		l.Output(logCallDepth, s)
@@ -100,7 +115,7 @@ func (l *DefaultLogger) Warn(args ...interface{}) {
 }
 
 func (l *DefaultLogger) Warnf(format string, values ...interface{}) {
-	if l.canLogWarn() {
+	if l.CanLog(logger.WarnLevel) {
 		s := fmt.Sprintf("WARN : %s", fmt.Sprintf(format, values...))
 		l.Output(logCallDepth, s)
 	}
@@ -112,7 +127,7 @@ func (l *DefaultLogger) Error(err error) {
 }
 
 func (l *DefaultLogger) Errorf(format string, values ...interface{}) {
-	if l.canLogError() {
+	if l.CanLog(logger.ErrorLevel) {
 		s := fmt.Sprintf("ERROR: %s", fmt.Errorf(format, values...).Error())
 		l.Output(logCallDepth, s)
 	}
@@ -121,24 +136,4 @@ func (l *DefaultLogger) Errorf(format string, values ...interface{}) {
 func (l *DefaultLogger) findCallerFuncName() string {
 	pc, _, _, _ := runtime.Caller(logCallDepth)
 	return runtime.FuncForPC(pc).Name()
-}
-
-func (l *DefaultLogger) canLogTrace() bool {
-	return l.Level >= traceLevel
-}
-
-func (l *DefaultLogger) canLogInfo() bool {
-	return l.Level >= infoLevel
-}
-
-func (l *DefaultLogger) canLogWarn() bool {
-	return l.Level >= warnLevel
-}
-
-func (l *DefaultLogger) canLogError() bool {
-	return l.Level >= errorLevel
-}
-
-func (l *DefaultLogger) CanLogDebug() bool {
-	return l.Level >= debugLevel
 }
