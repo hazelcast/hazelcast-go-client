@@ -1,0 +1,45 @@
+
+name: "Test Go Client - 32bit"
+on: ["push", "pull_request"]
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    env:
+      GOPATH: "${{ github.workspace }}"
+    defaults:
+      run:
+        shell: "bash"
+        working-directory: "$HOME/hazelcast-go-client"
+    steps:
+      - name: "Checkout Code"
+        uses: "actions/checkout@v2"
+        with:
+          path: "$HOME/hazelcast-go-client"
+
+      - name: "Install Dependencies"
+        run: |
+          sudo apt-get update &&\
+          sudo apt-get install -y openjdk-8-jdk-headless maven
+
+      - name: "Start Hazelcast Remote Controller"
+        run: |
+          bash ./rc.sh start
+          sleep 2
+
+      - name: "Setup Go"
+        uses: "actions/setup-go@v2"
+        with:
+          go-version: "1.15"
+
+      - name: "Install Go tools"
+        run: |
+          go get -u golang.org/x/tools/...
+          go get honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: "Run Checkers"
+        run: |
+          make check
+
+      - name: "Run All Tests"
+        run: |
+          GOARCH=386 make test-all TEST_FLAGS='-timeout 20m'

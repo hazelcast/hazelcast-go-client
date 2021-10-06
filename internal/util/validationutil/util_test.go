@@ -25,10 +25,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestValidateAsNonNegativeInt32(t *testing.T) {
+	if runtime.Is32BitArch() {
+		t.Skipf("not necessary for 32bit")
+	}
 	testCases := []struct {
 		value         int
 		expectedValue int32
@@ -48,9 +52,13 @@ func TestValidateAsNonNegativeInt32(t *testing.T) {
 }
 
 func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
+	if runtime.Is32BitArch() {
+		t.Skipf("not necessary for 32bit")
+	}
+
 	testCases := []struct {
 		msg   string
-		value int
+		value int64
 	}{
 		{"non-negative", -1},
 		{"32-bit", math.MaxInt32 + 1},
@@ -58,7 +66,7 @@ func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			_, err := ValidateAsNonNegativeInt32(tc.value)
+			_, err := ValidateAsNonNegativeInt32(int(tc.value))
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), tc.msg)
 		})
