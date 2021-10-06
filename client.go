@@ -140,11 +140,7 @@ func loggerFromConf(config Config) (logger.Logger, error) {
 	if config.Logger.Custom != nil {
 		return config.Logger.Custom, nil
 	}
-	logLevel, err := ilogger.GetLogLevel(config.Logger.Level)
-	if err != nil {
-		return nil, err
-	}
-	clientLogger := ilogger.NewWithLevel(logLevel)
+	clientLogger := ilogger.NewWithLevel(config.Logger.Level)
 	return clientLogger, nil
 }
 
