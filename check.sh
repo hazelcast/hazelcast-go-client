@@ -23,18 +23,19 @@
 # And the following packages which contain the functions above:
 # - github.com/hazelcast/hazelcast-go-client/serialization
 # - github.com/hazelcast/hazelcast-go-client/internal/serialization
+# And exclude any files with "org-website" in the path because these
+# are examples
 
 go vet ./... 2>&1 | \
   grep -v "should have signature WriteByte(byte) error" | \
   grep -v "should have signature ReadByte() (byte, error)" | \
   grep -v "# github.com/hazelcast/hazelcast-go-client/serialization" | \
-  grep -v "# github.com/hazelcast/hazelcast-go-client/internal/serialization" \
+  grep -v "# github.com/hazelcast/hazelcast-go-client/internal/serialization" | \
+  grep -v "org-website" \
   || true
 
-# If missing install via: go get honnef.co/go/tools/cmd/staticcheck@latest
-staticcheck ./...
+staticcheck $(go list ./... | grep -v org-website)
 
 # Ensure fields are optimally aligned
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment
-# If missing install via: go get -u golang.org/x/tools/...
-fieldalignment ./...
+fieldalignment  $(go list ./... | grep -v org-website)
