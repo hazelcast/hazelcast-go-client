@@ -29,6 +29,7 @@ type DefaultPortableWriter struct {
 	classDefinition *serialization.ClassDefinition
 	begin           int32
 	offset          int32
+	raw             bool
 }
 
 func NewDefaultPortableWriter(serializer *PortableSerializer, output *PositionalObjectDataOutput,
@@ -39,7 +40,7 @@ func NewDefaultPortableWriter(serializer *PortableSerializer, output *Positional
 	offset := output.Position()
 	fieldIndexesLength := (len(classDefinition.Fields) + 1) * Int32SizeInBytes
 	output.WriteZeroBytes(fieldIndexesLength)
-	return &DefaultPortableWriter{serializer, output, classDefinition, begin, offset}
+	return &DefaultPortableWriter{serializer, output, classDefinition, begin, offset, false}
 }
 
 func (pw *DefaultPortableWriter) WriteByte(fieldName string, value byte) {
@@ -182,6 +183,9 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 }
 
 func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) {
+	if pw.raw {
+		panic(ihzerrors.NewSerializationError("cannot write Portable fields after getRawDataOutput() is called", nil))
+	}
 	field, ok := pw.classDefinition.Fields[fieldName]
 	if !ok {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
@@ -192,6 +196,16 @@ func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) 
 	pw.output.WriteInt16(int16(len(runes)))
 	pw.output.writeStringBytes(runes)
 	pw.output.WriteByte(byte(fieldType))
+}
+
+func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
+	if !pw.raw {
+		pw.raw = true
+		pos := pw.output.Position()
+		index := pw.classDefinition.FieldCount()
+		pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
+	}
+	return pw.output.ObjectDataOutput
 }
 
 func (pw *DefaultPortableWriter) End() {

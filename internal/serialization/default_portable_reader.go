@@ -29,6 +29,7 @@ type DefaultPortableReader struct {
 	classDefinition *serialization.ClassDefinition
 	offset          int32
 	finalPos        int32
+	raw             bool
 }
 
 func NewDefaultPortableReader(serializer *PortableSerializer, input serialization.DataInput,
@@ -92,6 +93,9 @@ func TypeByID(fieldType serialization.FieldDefinitionType) string {
 }
 
 func (pr *DefaultPortableReader) positionByField(fieldName string, fieldType serialization.FieldDefinitionType) int32 {
+	if pr.raw {
+		panic(ihzerrors.NewSerializationError("cannot read Portable fields after getRawDataInput() is called", nil))
+	}
 	field, ok := pr.classDefinition.Fields[fieldName]
 	if !ok {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("unknown field: %s", fieldName), nil))
@@ -307,6 +311,17 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) []serializa
 	}
 	pr.input.SetPosition(backupPos)
 	return portables
+}
+
+func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
+	if !pr.raw {
+		pr.raw = true
+		off := pr.offset + pr.classDefinition.FieldCount()*Int32SizeInBytes
+		pr.input.SetPosition(off)
+		pos := pr.input.ReadInt32()
+		pr.input.SetPosition(pos) // todo: check buffer size
+	}
+	return pr.input
 }
 
 func (pr *DefaultPortableReader) End() {
