@@ -436,10 +436,12 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 		defer close(c)
 		wg.Wait()
 	}()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
 	select {
 	case <-c:
 		//done successfully
-	case <-time.After(timeout):
+	case <-timer.C:
 		t.FailNow()
 	}
 }
