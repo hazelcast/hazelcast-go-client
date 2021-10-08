@@ -86,6 +86,7 @@ type Client struct {
 	userEventDispatcher     *event.DispatchService
 	proxyManager            *proxyManager
 	statsService            *stats.Service
+	heartbeatService        *icluster.HeartbeatService
 	clusterConfig           *cluster.Config
 	membershipListenerMap   map[types.UUID]int64
 	refIDGen                *iproxy.ReferenceIDGenerator
@@ -225,13 +226,13 @@ func (c *Client) start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
 		return nil
 	}
-	// TODO: Recover from panics and return as error
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateStarting))
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
 		return err
 	}
+	c.heartbeatService.Start()
 	if c.statsService != nil {
 		c.statsService.Start()
 	}
@@ -250,6 +251,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	}
 	c.eventDispatcher.Publish(newLifecycleStateChanged(LifecycleStateShuttingDown))
 	c.invocationService.Stop()
+	c.heartbeatService.Stop()
 	c.connectionManager.Stop()
 	if c.statsService != nil {
 		c.statsService.Stop()
@@ -476,6 +478,7 @@ func (c *Client) createComponents(config *Config) {
 		ListenerBinder:       listenerBinder,
 		Logger:               c.logger,
 	}
+	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, invocationFactory, invocationService, c.logger)
 	if config.Stats.Enabled {
 		c.statsService = stats.NewService(
 			invocationService,

@@ -244,7 +244,6 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 		m.eventDispatcher.Publish(NewChangedCluster())
 	}
 	m.eventDispatcher.Publish(NewConnected(addr))
-	go m.heartbeat()
 	if m.smartRouting {
 		// fix broken connections only in the smart mode
 		go m.detectFixBrokenConnections()
@@ -596,33 +595,6 @@ func (m *ConnectionManager) createAuthenticationRequest(clusterName string, cred
 		m.clientName,
 		m.labels,
 	)
-}
-
-func (m *ConnectionManager) heartbeat() {
-	ticker := time.NewTicker(time.Duration(m.clusterConfig.HeartbeatInterval))
-	for {
-		select {
-		case <-m.doneCh:
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			for _, conn := range m.ActiveConnections() {
-				m.sendHeartbeat(conn)
-			}
-		}
-	}
-}
-
-func (m *ConnectionManager) sendHeartbeat(conn *Connection) {
-	request := codec.EncodeClientPingRequest()
-	inv := m.invocationFactory.NewConnectionBoundInvocation(request, conn, nil, time.Now())
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(m.clusterConfig.HeartbeatInterval))
-	defer cancel()
-	if err := m.invocationService.SendRequest(ctx, inv); err != nil {
-		m.logger.Debug(func() string {
-			return fmt.Sprintf("sending heartbeat: %s", err.Error())
-		})
-	}
 }
 
 func (m *ConnectionManager) logStatus() {
