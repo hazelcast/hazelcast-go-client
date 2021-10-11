@@ -158,6 +158,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 }
 
 type ConnectionManager struct {
+	nextConnID           int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	logger               ilogger.Logger
 	failoverConfig       *pubcluster.FailoverConfig
 	partitionService     *PartitionService
@@ -178,7 +179,6 @@ type ConnectionManager struct {
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
-	nextConnID           int64
 	state                int32
 	smartRouting         bool
 }
@@ -226,10 +226,12 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	}
 	// wait for initial member list
 	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: waiting for the initial member list" })
+	timer := time.NewTimer(initialMembersTimeout)
+	defer timer.Stop()
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("getting initial member list from cluster: %w", ctx.Err())
-	case <-time.After(initialMembersTimeout):
+	case <-timer.C:
 		return fmt.Errorf("timed out getting initial member list from cluster: %w", hzerrors.ErrIllegalState)
 	case <-m.startCh:
 		break
