@@ -173,11 +173,13 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	ch := make(chan struct{})
 	once := &sync.Once{}
-	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, func(e event.Event) {
+	m.eventDispatcher.Subscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded), func(e event.Event) {
+		m.handleMembersAdded(e)
 		once.Do(func() {
-			m.handleInitialMembersAdded(e, ch)
+			close(ch)
 		})
 	})
+	m.eventDispatcher.Subscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved), m.handleMembersRemoved)
 	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
 		return err
@@ -267,35 +269,24 @@ func (m *ConnectionManager) reset() {
 	m.connMap.Reset()
 }
 
-func (m *ConnectionManager) handleInitialMembersAdded(e event.Event, ch chan struct{}) {
-	m.logger.Trace(func() string { return "cluster.ConnectionManager.handleInitialMembersAdded" })
-	m.eventDispatcher.Subscribe(EventMembersAdded, event.DefaultSubscriptionID, m.handleMembersAdded)
-	m.eventDispatcher.Subscribe(EventMembersRemoved, event.DefaultSubscriptionID, m.handleMembersRemoved)
-	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleInitialMembersAdded))
-	m.handleMembersAdded(e)
-	close(ch)
-}
-
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	// do not add new members in non-smart mode
 	if !m.smartRouting && m.connMap.Len() > 0 {
 		return
 	}
-	if e, ok := event.(*MembersAdded); ok {
-		m.logger.Trace(func() string {
-			return fmt.Sprintf("connectionManager.handleMembersAdded: %v", e.Members)
-		})
-		missingAddrs := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
-		for _, addr := range missingAddrs {
-			if _, err := connectMember(context.TODO(), m, addr); err != nil {
-				m.logger.Errorf("connecting address: %w", err)
-			} else {
-				m.logger.Infof("connectionManager member added: %s", addr.String())
-			}
+	e := event.(*MembersAdded)
+	m.logger.Trace(func() string {
+		return fmt.Sprintf("connectionManager.handleMembersAdded: %v", e.Members)
+	})
+	missing := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
+	for _, addr := range missing {
+		if _, err := connectMember(context.TODO(), m, addr); err != nil {
+			m.logger.Errorf("connecting address: %w", err)
+		} else {
+			m.logger.Infof("cluster.ConnectionManager member added: %s", addr.String())
 		}
-		return
 	}
-	m.logger.Warnf("connectionManager.handleMembersAdded: expected *MembersAdded event")
+	return
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
