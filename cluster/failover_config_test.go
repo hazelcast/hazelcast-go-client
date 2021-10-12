@@ -18,15 +18,15 @@ package cluster_test
 
 import (
 	"errors"
-	"log"
 	"math"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestFailoverConfigValidate_Empty(t *testing.T) {
@@ -105,7 +105,7 @@ func TestFailoverConfig_Validate_DefaultClusterTimeout(t *testing.T) {
 	foConfig.Enabled = true
 	rootConfig := cluster.Config{}
 	if err := rootConfig.Validate(); err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	if err := foConfig.Validate(rootConfig); err != nil {
 		t.Fatal(err)

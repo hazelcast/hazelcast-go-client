@@ -108,8 +108,8 @@ func flakeIDBatchFromMemberFn(ctx context.Context, f *FlakeIDGenerator) (flakeID
 }
 
 type flakeIDBatch struct {
+	index     int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	expiresAt time.Time
-	index     int64
 	base      int64
 	increment int64
 	size      int64

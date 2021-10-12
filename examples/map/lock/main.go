@@ -92,5 +92,6 @@ func main() {
 	} else {
 		fmt.Println("lastValue", lastValue)
 	}
+	// Shutdown client
 	client.Shutdown(ctx)
 }
