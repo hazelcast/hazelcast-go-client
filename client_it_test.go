@@ -352,7 +352,7 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.Eventually(t, func() bool {
-			return containsDistributedObject(objects, mapInfo) && containsDistributedObject(objects, mapInfo)
+			return containsDistributedObject(objects, mapInfo) && containsDistributedObject(objects, setInfo)
 		})
 		if err = testMap.Destroy(ctx); err != nil {
 			t.Fatal(err)
