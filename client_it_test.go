@@ -346,11 +346,11 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		objects, err := client.GetDistributedObjectsInfo(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 		it.Eventually(t, func() bool {
+			objects, err := client.GetDistributedObjectsInfo(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
 			return containsDistributedObject(objects, mapInfo) && containsDistributedObject(objects, setInfo)
 		})
 		if err = testMap.Destroy(ctx); err != nil {
@@ -359,11 +359,11 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 		if err = testSet.Destroy(ctx); err != nil {
 			t.Fatal(err)
 		}
-		objects, err = client.GetDistributedObjectsInfo(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 		it.Eventually(t, func() bool {
+			objects, err := client.GetDistributedObjectsInfo(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
 			return !containsDistributedObject(objects, mapInfo) && !containsDistributedObject(objects, setInfo)
 		})
 	})
