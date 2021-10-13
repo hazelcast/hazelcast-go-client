@@ -338,10 +338,7 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 			mapInfo     = types.DistributedObjectInfo{Name: testMapName, ServiceName: hz.ServiceNameMap}
 			setInfo     = types.DistributedObjectInfo{Name: testSetName, ServiceName: hz.ServiceNameSet}
 		)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
-		defer cancel()
-
+		ctx := context.Background()
 		testMap, err := client.GetMap(ctx, testMapName)
 		if err != nil {
 			t.Fatal(err)
@@ -354,23 +351,22 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		assert.Contains(t, objects, mapInfo)
-		assert.Contains(t, objects, setInfo)
-
+		it.Eventually(t, func() bool {
+			return containsDistributedObject(objects, mapInfo) && containsDistributedObject(objects, setInfo)
+		})
 		if err = testMap.Destroy(ctx); err != nil {
 			t.Fatal(err)
 		}
 		if err = testSet.Destroy(ctx); err != nil {
 			t.Fatal(err)
 		}
-
 		objects, err = client.GetDistributedObjectsInfo(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.NotContains(t, objects, mapInfo)
-		assert.NotContains(t, objects, setInfo)
+		it.Eventually(t, func() bool {
+			return !containsDistributedObject(objects, mapInfo) && !containsDistributedObject(objects, setInfo)
+		})
 	})
 }
 
@@ -667,7 +663,7 @@ func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 		cc := &config.Cluster
 		cc.InvocationTimeout = types.Duration(24 * time.Hour)
 		cc.RedoOperation = true
-		cc.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+		cc.ConnectionStrategy.Timeout = types.Duration(20 * time.Second)
 		if it.TraceLoggingEnabled() {
 			config.Logger.Level = logger.TraceLevel
 		}
@@ -716,4 +712,13 @@ func clientTester(t *testing.T, f func(*testing.T, bool)) {
 			f(t, false)
 		})
 	}
+}
+
+func containsDistributedObject(where []types.DistributedObjectInfo, what types.DistributedObjectInfo) bool {
+	for _, o := range where {
+		if o == what {
+			return true
+		}
+	}
+	return false
 }
