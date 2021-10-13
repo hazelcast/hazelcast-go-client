@@ -211,6 +211,7 @@ func (c *Connection) socketReadLoop() {
 		if n == 0 {
 			continue
 		}
+		c.lastRead.Store(time.Now())
 		clientMessageReader.Append(buf[:n])
 		for {
 			clientMessage := clientMessageReader.Read()

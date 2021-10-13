@@ -84,12 +84,11 @@ func TestClientLifecycleEvents(t *testing.T) {
 			hz.LifecycleStateShuttingDown,
 			hz.LifecycleStateShutDown,
 		}
-
 		it.Eventually(t, func() bool {
 			receivedStatesMu.RLock()
 			defer receivedStatesMu.RUnlock()
 			return reflect.DeepEqual(targetStates, receivedStates)
-		}, "target %v != %v", targetStates, receivedStates)
+		})
 	})
 }
 
@@ -612,7 +611,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		ctx := context.Background()
 		var maxAlloc uint64
 		var m runtime.MemStats
-		for i := 0; i < 10_000; i++ {
+		for i := 0; i < 100; i++ {
 			client, err := hz.StartNewClientWithConfig(ctx, config)
 			if err != nil {
 				t.Fatal(err)
