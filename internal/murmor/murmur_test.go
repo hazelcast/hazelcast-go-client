@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package murmur
+package murmor
 
 import (
 	"testing"

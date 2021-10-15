@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -173,7 +173,7 @@ func (c StatsConfig) clone() StatsConfig {
 
 // Validate validates the stats configuration and replaces missing configuration with defaults.
 func (c *StatsConfig) Validate() error {
-	if err := validate.NonNegativeDuration(&c.Period, 5*time.Second, "invalid period"); err != nil {
+	if err := check.NonNegativeDuration(&c.Period, 5*time.Second, "invalid period"); err != nil {
 		return err
 	}
 	return nil
@@ -197,10 +197,10 @@ type FlakeIDGeneratorConfig struct {
 func (f *FlakeIDGeneratorConfig) Validate() error {
 	if f.PrefetchCount == 0 {
 		f.PrefetchCount = defaultFlakeIDPrefetchCount
-	} else if err := validate.WithinRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
+	} else if err := check.WithinRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
 		return err
 	}
-	if err := validate.NonNegativeDuration(&f.PrefetchExpiry, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
+	if err := check.NonNegativeDuration(&f.PrefetchExpiry, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
 		return err
 	}
 	return nil

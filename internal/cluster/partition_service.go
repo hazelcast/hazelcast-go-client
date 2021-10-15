@@ -25,9 +25,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/murmor"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/murmur"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -77,7 +77,7 @@ func (s *PartitionService) GetPartitionID(keyData *iserialization.Data) (int32, 
 		// This exception is used only for async mode client.
 		return 0, hzerrors.ErrClientOffline
 	} else {
-		return murmur.HashToIndex(keyData.PartitionHash(), count), nil
+		return murmor.HashToIndex(keyData.PartitionHash(), count), nil
 	}
 }
 

@@ -18,11 +18,11 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -93,7 +93,7 @@ func (c *NetworkConfig) Validate() error {
 			}
 		}
 	}
-	if err := validate.NonNegativeDuration(&c.ConnectionTimeout, 5*time.Second, "invalid connection timeout"); err != nil {
+	if err := check.NonNegativeDuration(&c.ConnectionTimeout, 5*time.Second, "invalid connection timeout"); err != nil {
 		return err
 	}
 	return nil

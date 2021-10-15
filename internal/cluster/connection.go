@@ -24,6 +24,8 @@ import (
 	"io"
 	"math"
 	"net"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -35,7 +37,6 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
 
 const (
@@ -269,7 +270,7 @@ func (c *Connection) isTimeoutError(err error) bool {
 
 func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {
 	c.connectedServerVersionStr = connectedServerVersion
-	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)
+	c.connectedServerVersion = calculateVersion(connectedServerVersion)
 }
 
 func (c *Connection) close(closeErr error) {
@@ -510,4 +511,39 @@ func convertErrorCodeToError(code errorCode) error {
 		return hzerrors.ErrNoClassDefFound
 	}
 	return nil
+}
+
+const (
+	unknownVersion         int32 = -1
+	majorVersionMultiplier int32 = 10000
+	minorVersionMultiplier int32 = 100
+)
+
+func calculateVersion(version string) int32 {
+	if version == "" {
+		return unknownVersion
+	}
+	mainParts := strings.Split(version, "-")
+	tokens := strings.Split(mainParts[0], ".")
+	if len(tokens) < 2 {
+		return unknownVersion
+	}
+	majorCoeff, err := strconv.Atoi(tokens[0])
+	if err != nil {
+		return unknownVersion
+	}
+	minorCoeff, err := strconv.Atoi(tokens[1])
+	if err != nil {
+		return unknownVersion
+	}
+	calculatedVersion := int32(majorCoeff) * majorVersionMultiplier
+	calculatedVersion += int32(minorCoeff) * minorVersionMultiplier
+	if len(tokens) > 2 {
+		lastCoeff, err := strconv.Atoi(tokens[2])
+		if err != nil {
+			return unknownVersion
+		}
+		calculatedVersion += int32(lastCoeff)
+	}
+	return calculatedVersion
 }
