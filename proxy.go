@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"reflect"
 	"strings"
 	"time"
 
@@ -33,7 +34,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -176,7 +176,7 @@ func (p *proxy) Destroy(ctx context.Context) error {
 }
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
-	if nilutil.IsNil(arg1) {
+	if isNil(arg1) {
 		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	return p.serializationService.ToData(arg1)
@@ -184,7 +184,7 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, er
 
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, err error) {
-	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
+	if isNil(arg1) || isNil(arg2) {
 		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
@@ -197,7 +197,7 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, arg3Data *iserialization.Data, err error) {
-	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
+	if isNil(arg1) || isNil(arg2) || isNil(arg3) {
 		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
@@ -213,7 +213,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 }
 
 func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data *iserialization.Data, err error) {
-	if nilutil.IsNil(agg) {
+	if isNil(agg) {
 		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(agg)
@@ -221,7 +221,7 @@ func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Dat
 }
 
 func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data *iserialization.Data, err error) {
-	if nilutil.IsNil(pred) {
+	if isNil(pred) {
 		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(pred)
@@ -411,3 +411,20 @@ type entryNotifiedHandler func(
 	binEventType int32,
 	binUUID types.UUID,
 	affectedEntries int32)
+
+//isNil does proper nil check for interface{} values taken from users
+// "== nil" check for interfaces are not enough
+//when an nil pointer is assigned to interface, it returns false from "== nil" check
+// Example:
+//var pnt *int
+//var inf interface{}
+//inf = pnt
+//fmt.Println(inf == nil) // false
+//fmt.Println(isNil(inf)) // true
+func isNil(arg interface{}) bool {
+	if arg == nil {
+		return true
+	}
+	value := reflect.ValueOf(arg)
+	return value.Kind() == reflect.Ptr && value.IsNil()
+}
