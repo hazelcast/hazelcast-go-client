@@ -25,6 +25,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -33,7 +34,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -176,7 +176,7 @@ func (p *proxy) Destroy(ctx context.Context) error {
 }
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
-	if nilutil.IsNil(arg1) {
+	if check.Nil(arg1) {
 		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	return p.serializationService.ToData(arg1)
@@ -184,7 +184,7 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, er
 
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, err error) {
-	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
+	if check.Nil(arg1) || check.Nil(arg2) {
 		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
@@ -197,7 +197,7 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, arg3Data *iserialization.Data, err error) {
-	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
+	if check.Nil(arg1) || check.Nil(arg2) || check.Nil(arg3) {
 		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
@@ -213,7 +213,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 }
 
 func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data *iserialization.Data, err error) {
-	if nilutil.IsNil(agg) {
+	if check.Nil(agg) {
 		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(agg)
@@ -221,7 +221,7 @@ func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Dat
 }
 
 func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data *iserialization.Data, err error) {
-	if nilutil.IsNil(pred) {
+	if check.Nil(pred) {
 		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(pred)

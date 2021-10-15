@@ -24,6 +24,8 @@ import (
 	"io"
 	"math"
 	"net"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -35,7 +37,6 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
 )
 
 const (
@@ -62,7 +63,7 @@ type Connection struct {
 	lastRead                  atomic.Value
 	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService
-	pending                   chan *proto.ClientMessage
+	pending                   chan invocation.Invocation
 	invocationService         *invocation.Service
 	doneCh                    chan struct{}
 	connectedServerVersionStr string
@@ -153,11 +154,12 @@ func (c *Connection) isAlive() bool {
 func (c *Connection) socketWriteLoop() {
 	for {
 		select {
-		case request, ok := <-c.pending:
+		case inv, ok := <-c.pending:
 			if !ok {
 				return
 			}
-			err := c.write(request)
+			req := inv.Request()
+			err := c.write(req)
 			// Note: Go lang spec guarantees that it's safe to call len()
 			// on any number of goroutines without further synchronization.
 			// See: https://golang.org/ref/spec#Channel_types
@@ -166,10 +168,10 @@ func (c *Connection) socketWriteLoop() {
 				err = c.bWriter.Flush()
 			}
 			if err != nil {
-				c.logger.Errorf("write error: %w", err)
-				request = request.Copy()
-				request.Err = ihzerrors.NewIOError("writing message", err)
-				if respErr := c.invocationService.WriteResponse(request); respErr != nil {
+				c.logger.Errorf("cluster.Connection write error: %w", err)
+				req = req.Copy()
+				req.Err = ihzerrors.NewIOError("writing message", err)
+				if respErr := c.invocationService.WriteResponse(req); respErr != nil {
 					c.logger.Debug(func() string {
 						return fmt.Sprintf("sending response: %s", err.Error())
 					})
@@ -246,8 +248,7 @@ func (c *Connection) send(inv invocation.Invocation) bool {
 	select {
 	case <-c.doneCh:
 		return false
-	case c.pending <- inv.Request():
-		//inv.StoreSentConnection(c)
+	case c.pending <- inv:
 		return true
 	}
 }
@@ -269,7 +270,7 @@ func (c *Connection) isTimeoutError(err error) bool {
 
 func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {
 	c.connectedServerVersionStr = connectedServerVersion
-	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)
+	c.connectedServerVersion = calculateVersion(connectedServerVersion)
 }
 
 func (c *Connection) close(closeErr error) {
@@ -510,4 +511,39 @@ func convertErrorCodeToError(code errorCode) error {
 		return hzerrors.ErrNoClassDefFound
 	}
 	return nil
+}
+
+const (
+	unknownVersion         int32 = -1
+	majorVersionMultiplier int32 = 10000
+	minorVersionMultiplier int32 = 100
+)
+
+func calculateVersion(version string) int32 {
+	if version == "" {
+		return unknownVersion
+	}
+	mainParts := strings.Split(version, "-")
+	tokens := strings.Split(mainParts[0], ".")
+	if len(tokens) < 2 {
+		return unknownVersion
+	}
+	majorCoeff, err := strconv.Atoi(tokens[0])
+	if err != nil {
+		return unknownVersion
+	}
+	minorCoeff, err := strconv.Atoi(tokens[1])
+	if err != nil {
+		return unknownVersion
+	}
+	calculatedVersion := int32(majorCoeff) * majorVersionMultiplier
+	calculatedVersion += int32(minorCoeff) * minorVersionMultiplier
+	if len(tokens) > 2 {
+		lastCoeff, err := strconv.Atoi(tokens[2])
+		if err != nil {
+			return unknownVersion
+		}
+		calculatedVersion += int32(lastCoeff)
+	}
+	return calculatedVersion
 }

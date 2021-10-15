@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	validate "github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -74,15 +74,15 @@ func (c *Config) Validate() error {
 	if c.Name == "" {
 		c.Name = defaultName
 	}
-	err := validate.NonNegativeDuration(&c.HeartbeatInterval, 5*time.Second, "invalid heartbeat interval")
+	err := check.NonNegativeDuration(&c.HeartbeatInterval, 5*time.Second, "invalid heartbeat interval")
 	if err != nil {
 		return err
 	}
-	err = validate.NonNegativeDuration(&c.HeartbeatTimeout, 60*time.Second, "invalid heartbeat timeout")
+	err = check.NonNegativeDuration(&c.HeartbeatTimeout, 60*time.Second, "invalid heartbeat timeout")
 	if err != nil {
 		return err
 	}
-	err = validate.NonNegativeDuration(&c.InvocationTimeout, 120*time.Second, "invalid heartbeat timeout")
+	err = check.NonNegativeDuration(&c.InvocationTimeout, 120*time.Second, "invalid heartbeat timeout")
 	if err != nil {
 		return err
 	}

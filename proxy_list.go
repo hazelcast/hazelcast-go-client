@@ -19,10 +19,10 @@ package hazelcast
 import (
 	"context"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -68,7 +68,7 @@ func (l *List) Add(ctx context.Context, element interface{}) (bool, error) {
 // AddAt inserts the specified element at the specified index.
 // Shifts the subsequent elements to the right.
 func (l *List) AddAt(ctx context.Context, index int, element interface{}) error {
-	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	indexAsInt32, err := check.NonNegativeInt32(index)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (l *List) AddAllAt(ctx context.Context, index int, elements ...interface{})
 	if len(elements) == 0 {
 		return false, nil
 	}
-	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	indexAsInt32, err := check.NonNegativeInt32(index)
 	if err != nil {
 		return false, err
 	}
@@ -172,7 +172,7 @@ func (l *List) ContainsAll(ctx context.Context, elements ...interface{}) (bool, 
 
 // Get retrieves the element at given index.
 func (l *List) Get(ctx context.Context, index int) (interface{}, error) {
-	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	indexAsInt32, err := check.NonNegativeInt32(index)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (l *List) Remove(ctx context.Context, element interface{}) (bool, error) {
 // RemoveAt removes the element at the given index.
 // Returns the removed element.
 func (l *List) RemoveAt(ctx context.Context, index int) (interface{}, error) {
-	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	indexAsInt32, err := check.NonNegativeInt32(index)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func (l *List) RetainAll(ctx context.Context, elements ...interface{}) (bool, er
 // Set replaces the element at the specified index in this list with the specified element.
 // Returns the previous element from the list.
 func (l *List) Set(ctx context.Context, index int, element interface{}) (interface{}, error) {
-	indexAsInt32, err := validationutil.ValidateAsNonNegativeInt32(index)
+	indexAsInt32, err := check.NonNegativeInt32(index)
 	if err != nil {
 		return nil, err
 	}
@@ -325,11 +325,11 @@ func (l *List) Size(ctx context.Context) (int, error) {
 // SubList returns a view of this list that contains elements between index numbers
 // from start (inclusive) to end (exclusive).
 func (l *List) SubList(ctx context.Context, start int, end int) ([]interface{}, error) {
-	startAsInt32, err := validationutil.ValidateAsNonNegativeInt32(start)
+	startAsInt32, err := check.NonNegativeInt32(start)
 	if err != nil {
 		return nil, err
 	}
-	endAsInt32, err := validationutil.ValidateAsNonNegativeInt32(end)
+	endAsInt32, err := check.NonNegativeInt32(end)
 	if err != nil {
 		return nil, err
 	}
