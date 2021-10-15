@@ -38,8 +38,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -243,7 +241,7 @@ func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connec
 	}
 	if ownerUUID, ok := m.partitionService.GetPartitionOwner(partitionID); !ok {
 		return nil
-	} else if member := m.clusterService.GetMemberByUUID(ownerUUID); nilutil.IsNil(member) {
+	} else if member := m.clusterService.GetMemberByUUID(ownerUUID); member == nil {
 		return nil
 	} else {
 		return m.GetConnectionForAddress(member.Address)
@@ -393,7 +391,7 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 	}
 	var initialAddr pubcluster.Address
 	for _, addr := range seedAddrs {
-		initialAddr, err = tryConnectAddress(ctx, m, m.clusterConfig.Network.PortRange, addr, connectMember)
+		initialAddr, err = m.tryConnectAddress(ctx, addr, connectMember)
 		if err != nil {
 			return "", err
 		}
@@ -602,6 +600,32 @@ func (m *ConnectionManager) checkFixConnection(addr pubcluster.Address) {
 	}
 }
 
+func (m *ConnectionManager) tryConnectAddress(ctx context.Context, addr pubcluster.Address, mf connectMemberFunc) (pubcluster.Address, error) {
+	host, port, err := internal.ParseAddr(addr.String())
+	if err != nil {
+		return "", fmt.Errorf("parsing address: %w", err)
+	}
+	var finalAddr pubcluster.Address
+	var finalErr error
+	if port == 0 {
+		// try all addresses in port range
+		for _, c := range EnumerateAddresses(host, m.clusterConfig.Network.PortRange) {
+			if a, err := mf(ctx, m, c); err != nil {
+				finalErr = err
+			} else {
+				finalAddr = a
+				break
+			}
+		}
+	} else {
+		finalAddr, finalErr = mf(ctx, m, addr)
+	}
+	if finalAddr == "" {
+		return finalAddr, fmt.Errorf("cannot connect to any address in the cluster: %w", finalErr)
+	}
+	return finalAddr, nil
+}
+
 type connectionMap struct {
 	lb pubcluster.LoadBalancer
 	mu *sync.RWMutex
@@ -795,29 +819,10 @@ func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Ad
 	return initialAddr, nil
 }
 
-func tryConnectAddress(ctx context.Context, m *ConnectionManager, pr pubcluster.PortRange, addr pubcluster.Address, mf connectMemberFunc) (pubcluster.Address, error) {
-	host, port, err := internal.ParseAddr(addr.String())
-	if err != nil {
-		return "", err
+func EnumerateAddresses(host string, portRange pubcluster.PortRange) []pubcluster.Address {
+	var addrs []pubcluster.Address
+	for i := portRange.Min; i <= portRange.Max; i++ {
+		addrs = append(addrs, pubcluster.NewAddress(host, int32(i)))
 	}
-	var initialAddr pubcluster.Address
-	if port == 0 { // we need to try all addresses in port range
-		for _, currAddr := range util.GetAddresses(host, pr) {
-			currentAddrRet, connErr := mf(ctx, m, currAddr)
-			if connErr == nil {
-				initialAddr = currentAddrRet
-				break
-			} else {
-				err = connErr
-			}
-		}
-	} else {
-		initialAddr, err = mf(ctx, m, addr)
-	}
-
-	if initialAddr == "" {
-		return initialAddr, fmt.Errorf("cannot connect to any address in the cluster: %w", err)
-	}
-
-	return initialAddr, nil
+	return addrs
 }

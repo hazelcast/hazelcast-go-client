@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/stretchr/testify/assert"
 )
 
 type CheckedAddressHelper struct {
@@ -92,7 +93,10 @@ func tryConnectAddressTest(checkedAddresses []CheckedAddressHelper, inputAddress
 	if err != nil {
 		return connMemberCounter, "", err
 	}
-	resultAddr, err := tryConnectAddress(context.TODO(), nil, portRange, pubcluster.NewAddress(host, int32(port)),
+	m := &ConnectionManager{}
+	m.clusterConfig = &pubcluster.Config{}
+	m.clusterConfig.Network.PortRange = portRange
+	resultAddr, err := m.tryConnectAddress(context.TODO(), pubcluster.NewAddress(host, int32(port)),
 		func(ctx context.Context, m *ConnectionManager, currAddr pubcluster.Address) (pubcluster.Address, error) {
 			connMemberCounter++
 			for _, checkedAddr := range checkedAddresses {
@@ -103,4 +107,19 @@ func tryConnectAddressTest(checkedAddresses []CheckedAddressHelper, inputAddress
 			return currAddr, nil
 		})
 	return connMemberCounter, resultAddr, err
+}
+
+func TestEnumerateAddresses(t *testing.T) {
+	host := "127.0.0.1"
+	portRange := pubcluster.PortRange{
+		Min: 5701,
+		Max: 5703,
+	}
+	expectedAddrs := []pubcluster.Address{
+		pubcluster.NewAddress(host, 5701),
+		pubcluster.NewAddress(host, 5702),
+		pubcluster.NewAddress(host, 5703),
+	}
+	addrs := EnumerateAddresses(host, portRange)
+	assert.Equal(t, addrs, expectedAddrs)
 }
