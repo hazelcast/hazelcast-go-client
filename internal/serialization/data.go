@@ -20,7 +20,7 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/murmor"
+	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 )
 
 const (
@@ -64,5 +64,5 @@ func (d *Data) DataSize() int {
 }
 
 func (d *Data) PartitionHash() int32 {
-	return murmor.Default3A(d.Payload, DataOffset, d.DataSize())
+	return murmur.Default3A(d.Payload, DataOffset, d.DataSize())
 }

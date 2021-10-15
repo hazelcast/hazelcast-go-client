@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package murmor
+package murmur
 
 import (
 	"encoding/binary"
