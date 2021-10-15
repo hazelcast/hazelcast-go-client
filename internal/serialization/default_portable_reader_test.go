@@ -504,3 +504,82 @@ func TestDefaultPortableReader_ReadString_NonASCIIFieldName(t *testing.T) {
 	ret := pr.ReadString("şerıalızatıon")
 	assert.Equal(t, "foo", ret)
 }
+
+func TestDefaultPortableReader_PortableFieldsAfterRawData(t *testing.T) {
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, "foo", serialization.TypeInt64,
+		classDef.FactoryID, classDef.ClassID, 0))
+	o := NewPositionalObjectDataOutput(0, nil, false)
+
+	pw := NewDefaultPortableWriter(nil, o, classDef)
+	pw.WriteInt64("foo", 42)
+	pw.GetRawDataOutput()
+	// todo: match panic value and test other Write* fields.
+	assert.Panics(t, func() {
+		pw.WriteInt64("bar", 42)
+	})
+
+	in := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
+	pr := NewDefaultPortableReader(nil, in, pw.classDefinition)
+	pr.GetRawDataInput()
+	// todo: match panic value and test other Read* fields.
+	assert.Panics(t, func() {
+		pr.ReadInt64("foo")
+	})
+}
+
+type rawPortable struct {
+	id int32
+}
+
+func (*rawPortable) FactoryID() int32 {
+	return 1
+}
+
+func (*rawPortable) ClassID() int32 {
+	return 1
+}
+
+func (r *rawPortable) WritePortable(writer serialization.PortableWriter) {
+	if raw, ok := writer.(serialization.PortableRawDataWriter); ok {
+		// todo: eliminate explicit check for class def writer
+		raw.GetRawDataOutput().WriteInt32(r.id)
+	}
+}
+
+func (r *rawPortable) ReadPortable(reader serialization.PortableReader) {
+	r.id = reader.(serialization.PortableRawDataReader).GetRawDataInput().ReadInt32()
+}
+
+type rawPortableFactory struct {
+}
+
+func (*rawPortableFactory) Create(classID int32) serialization.Portable {
+	if classID == 1 {
+		return &rawPortable{}
+	}
+	return nil
+}
+
+func (*rawPortableFactory) FactoryID() int32 {
+	return 1
+}
+
+func TestNewPortableSerializer_RawData(t *testing.T) {
+	config := &serialization.Config{}
+	config.SetPortableFactories(&rawPortableFactory{})
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := &rawPortable{id: 42}
+	data, err := service.ToData(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, expected, ret)
+}

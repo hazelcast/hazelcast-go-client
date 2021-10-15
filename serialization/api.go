@@ -318,7 +318,9 @@ type PortableWriter interface {
 
 	// WritePortableArray writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable)
+}
 
+type PortableRawDataWriter interface {
 	GetRawDataOutput() DataOutput
 }
 
@@ -408,6 +410,8 @@ type PortableReader interface {
 	// ReadPortableArray takes fieldName Name of the field and returns the []Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
+}
 
+type PortableRawDataReader interface {
 	GetRawDataInput() DataInput
 }
