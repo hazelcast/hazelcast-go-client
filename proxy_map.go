@@ -256,21 +256,44 @@ func (m *Map) EvictAll(ctx context.Context) error {
 
 // ExecuteOnEntries applies the user defined EntryProcessor to all the entries in the map.
 func (m *Map) ExecuteOnEntries(ctx context.Context, entryProcessor interface{}) ([]types.Entry, error) {
-	if processorData, err := m.validateAndSerialize(entryProcessor); err != nil {
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
 		return nil, err
-	} else {
-		request := codec.EncodeMapExecuteOnAllKeysRequest(m.name, processorData)
-		if resp, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
-			return nil, err
-		} else {
-			pairs := codec.DecodeMapExecuteOnAllKeysResponse(resp)
-			if kvPairs, err := m.convertPairsToEntries(pairs); err != nil {
-				return nil, err
-			} else {
-				return kvPairs, nil
-			}
-		}
 	}
+	request := codec.EncodeMapExecuteOnAllKeysRequest(m.name, processorData)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	pairs := codec.DecodeMapExecuteOnAllKeysResponse(resp)
+	kvPairs, err := m.convertPairsToEntries(pairs)
+	if err != nil {
+		return nil, err
+	}
+	return kvPairs, nil
+}
+
+// ExecuteOnEntriesWithPredicate applies the user defined EntryProcessor to all the entries in the map which satisfies the predicate
+func (m *Map) ExecuteOnEntriesWithPredicate(ctx context.Context, entryProcessor interface{}, pred predicate.Predicate) ([]types.Entry, error) {
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	predData, err := m.validateAndSerializePredicate(pred)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapExecuteWithPredicateRequest(m.name, processorData, predData)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	pairs := codec.DecodeMapExecuteWithPredicateResponse(resp)
+	kvPairs, err := m.convertPairsToEntries(pairs)
+	if err != nil {
+		return nil, err
+	}
+	return kvPairs, nil
 }
 
 // Flush flushes all the local dirty entries.

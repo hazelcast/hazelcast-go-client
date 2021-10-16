@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -1065,6 +1066,28 @@ func TestMap_ExecuteOnEntries(t *testing.T) {
 		}
 		target := []types.Entry{{Key: "my-key", Value: "test"}}
 		assert.Equal(t, target, vs)
+	})
+}
+
+func TestMap_ExecuteOnEntriesWithPredicate(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
+	}
+	it.MapTesterWithConfig(t, cb, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.Must(m.Set(ctx, "k1", serialization.JSON(`{"A": 10, "B": 200}`)))
+		it.Must(m.Set(ctx, "k2", serialization.JSON(`{"A": 10, "B": 30}`)))
+		it.Must(m.Set(ctx, "k3", serialization.JSON(`{"A": 5, "B": 200}`)))
+		vs, err := m.ExecuteOnEntriesWithPredicate(ctx, &SimpleEntryProcessor{value: "test"}, predicate.Equal("A", 10))
+		if err != nil {
+			t.Fatal(err)
+		}
+		updatedTo := []types.Entry{{Key: "k1", Value: "test"}, {Key: "k2", Value: "test"}}
+		sort.Slice(vs, func(i, j int) bool {
+			return vs[i].Key.(string) < vs[j].Key.(string)
+		})
+		assert.Equal(t, updatedTo, vs)
+		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get(context.Background(), "k3"))) //ensure this should not change
 	})
 }
 
