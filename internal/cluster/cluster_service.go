@@ -92,12 +92,12 @@ func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 	return s.membersMap.Find(uuid)
 }
 
-func (s *Service) MemberAddrs() []pubcluster.Address {
-	return s.membersMap.MemberAddrs()
-}
-
 func (s *Service) OrderedMembers() []pubcluster.MemberInfo {
 	return s.membersMap.OrderedMembers()
+}
+
+func (s *Service) MemberUUIDAddrs() map[types.UUID]pubcluster.Address {
+	return s.membersMap.MemberUUIDAddrs()
 }
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
@@ -111,8 +111,12 @@ func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster
 	return addrSet.Addrs(), nil
 }
 
-func (s *Service) MemberAddr(m *pubcluster.MemberInfo) (pubcluster.Address, error) {
-	return s.failoverService.Current().AddressTranslator.TranslateMember(context.TODO(), m)
+func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo) (pubcluster.Address, error) {
+	return s.failoverService.Current().AddressTranslator.TranslateMember(ctx, m)
+}
+
+func (s *Service) TranslateAddr(ctx context.Context, addr pubcluster.Address) (pubcluster.Address, error) {
+	return s.failoverService.Current().AddressTranslator.Translate(ctx, addr)
 }
 
 func (s *Service) Reset() {
@@ -220,6 +224,12 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 				removed = append(removed, *member)
 			}
 		}
+		m.logger.Trace(func() string {
+			return fmt.Sprintf("cluster.Service.Update added: %v", added)
+		})
+		m.logger.Trace(func() string {
+			return fmt.Sprintf("cluster.Service.Update removed: %v", removed)
+		})
 		m.logMembers(version, members)
 	}
 	return
@@ -238,14 +248,24 @@ func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.Member
 	m.membersMu.RUnlock()
 }
 
-func (m *membersMap) MemberAddrs() []pubcluster.Address {
+func (m *membersMap) MemberUUIDs() []types.UUID {
 	m.membersMu.RLock()
-	addrs := make([]pubcluster.Address, 0, len(m.addrToMemberUUID))
-	for addr := range m.addrToMemberUUID {
-		addrs = append(addrs, addr)
+	uuids := make([]types.UUID, 0, len(m.members))
+	for uuid := range m.members {
+		uuids = append(uuids, uuid)
 	}
 	m.membersMu.RUnlock()
-	return addrs
+	return uuids
+}
+
+func (m *membersMap) MemberUUIDAddrs() map[types.UUID]pubcluster.Address {
+	m.membersMu.RLock()
+	addrUUIDs := make(map[types.UUID]pubcluster.Address, len(m.addrToMemberUUID))
+	for addr, uuid := range m.addrToMemberUUID {
+		addrUUIDs[uuid] = addr
+	}
+	m.membersMu.RUnlock()
+	return addrUUIDs
 }
 
 func (m *membersMap) OrderedMembers() []pubcluster.MemberInfo {
@@ -272,7 +292,7 @@ func (m *membersMap) addMember(member *pubcluster.MemberInfo) bool {
 		delete(m.members, existingUUID)
 	}
 	m.logger.Trace(func() string {
-		return fmt.Sprintf("membersMap.addMember: %s, %s", member.UUID.String(), addr)
+		return fmt.Sprintf("cluster.membersMap.addMember: %s, %s", member.UUID.String(), addr)
 	})
 	m.members[uuid] = member
 	m.addrToMemberUUID[addr] = uuid
@@ -282,7 +302,7 @@ func (m *membersMap) addMember(member *pubcluster.MemberInfo) bool {
 func (m *membersMap) removeMember(member *pubcluster.MemberInfo) {
 	// synchronized in Update
 	m.logger.Trace(func() string {
-		return fmt.Sprintf("membersMap.removeMember: %s, %s", member.UUID.String(), member.Address.String())
+		return fmt.Sprintf("cluster.membersMap.removeMember: %s, %s", member.UUID.String(), member.Address.String())
 	})
 	delete(m.members, member.UUID)
 	delete(m.addrToMemberUUID, member.Address)

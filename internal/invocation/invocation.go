@@ -22,11 +22,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 var ErrResponseChannelClosed = errors.New("response channel closed")
@@ -44,7 +44,7 @@ type Invocation interface {
 	GetWithContext(ctx context.Context) (*proto.ClientMessage, error)
 	PartitionID() int32
 	Request() *proto.ClientMessage
-	Address() pubcluster.Address
+	MemberUUID() types.UUID
 	Close()
 	CanRetry(err error) bool
 	Deadline() time.Time
@@ -55,16 +55,26 @@ type Impl struct {
 	response      chan *proto.ClientMessage
 	eventHandler  func(clientMessage *proto.ClientMessage)
 	request       *proto.ClientMessage
-	address       pubcluster.Address
+	memberUUID    types.UUID
 	completed     int32
 	partitionID   int32
 	RedoOperation bool
 }
 
-func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address, deadline time.Time, redoOperation bool) *Impl {
+func NewImpl(clientMessage *proto.ClientMessage, partitionID int32, deadline time.Time, redoOperation bool) *Impl {
 	return &Impl{
 		partitionID:   partitionID,
-		address:       address,
+		request:       clientMessage,
+		response:      make(chan *proto.ClientMessage, 1),
+		deadline:      deadline,
+		RedoOperation: redoOperation,
+	}
+}
+
+func NewImplWithMemberUUID(clientMessage *proto.ClientMessage, memberUUID types.UUID, deadline time.Time, redoOperation bool) *Impl {
+	return &Impl{
+		memberUUID:    memberUUID,
+		partitionID:   -1,
 		request:       clientMessage,
 		response:      make(chan *proto.ClientMessage, 1),
 		deadline:      deadline,
@@ -117,8 +127,8 @@ func (i *Impl) Request() *proto.ClientMessage {
 	return i.request
 }
 
-func (i *Impl) Address() pubcluster.Address {
-	return i.address
+func (i *Impl) MemberUUID() types.UUID {
+	return i.memberUUID
 }
 
 func (i *Impl) Deadline() time.Time {

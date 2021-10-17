@@ -40,26 +40,20 @@ func NewConnectionInvocationFactory(config *pubcluster.Config) *ConnectionInvoca
 
 func (f *ConnectionInvocationFactory) NewInvocationOnPartitionOwner(message *proto.ClientMessage, partitionID int32, start time.Time) *invocation.Impl {
 	message.SetCorrelationID(f.makeCorrelationID())
-	return invocation.NewImpl(message, partitionID, "", start.Add(f.invocationTimeout), f.redoOperation)
+	return invocation.NewImpl(message, partitionID, start.Add(f.invocationTimeout), f.redoOperation)
 }
 
 func (f *ConnectionInvocationFactory) NewInvocationOnRandomTarget(message *proto.ClientMessage, handler proto.ClientMessageHandler, start time.Time) *invocation.Impl {
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := invocation.NewImpl(message, -1, "", start.Add(f.invocationTimeout), f.redoOperation)
+	inv := invocation.NewImpl(message, -1, start.Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
-	return inv
-}
-
-func (f *ConnectionInvocationFactory) NewInvocationOnTarget(message *proto.ClientMessage, addr pubcluster.Address, start time.Time) *invocation.Impl {
-	message.SetCorrelationID(f.makeCorrelationID())
-	inv := invocation.NewImpl(message, -1, addr, start.Add(f.invocationTimeout), f.redoOperation)
 	return inv
 }
 
 func (f *ConnectionInvocationFactory) NewConnectionBoundInvocation(message *proto.ClientMessage, conn *Connection, handler proto.ClientMessageHandler, start time.Time) *ConnectionBoundInvocation {
 	message = message.Copy()
 	message.SetCorrelationID(f.makeCorrelationID())
-	inv := newConnectionBoundInvocation(message, -1, "", conn, start.Add(f.invocationTimeout), f.redoOperation)
+	inv := newConnectionBoundInvocation(message, -1, conn, start.Add(f.invocationTimeout), f.redoOperation)
 	inv.SetEventHandler(handler)
 	return inv
 }

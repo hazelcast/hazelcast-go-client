@@ -769,7 +769,7 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount))
+			return totalCallCount == atomic.LoadInt32(&callCount)
 		})
 		atomic.StoreInt32(&callCount, 0)
 		if err := m.RemoveEntryListener(context.Background(), subscriptionID); err != nil {
@@ -780,9 +780,9 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
-		}
+		it.Eventually(t, func() bool {
+			return atomic.LoadInt32(&callCount) == 0
+		})
 	})
 }
 

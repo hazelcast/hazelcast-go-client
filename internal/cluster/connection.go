@@ -37,6 +37,7 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -70,6 +71,7 @@ type Connection struct {
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
+	memberUUID                types.UUID
 }
 
 func (c *Connection) ConnectionID() int64 {
@@ -94,8 +96,9 @@ func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Addres
 		c.lastWrite.Store(time.Time{})
 		c.closedTime.Store(time.Time{})
 		c.lastRead.Store(time.Now())
-		if err := c.sendProtocolStarter(); err != nil {
-			c.socket.Close()
+		if err = c.sendProtocolStarter(); err != nil {
+			// ignoring the socket close error
+			_ = c.socket.Close()
 			c.socket = nil
 			return err
 		}

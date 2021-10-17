@@ -27,6 +27,7 @@ import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 var errPartitionOwnerNotAssigned = errors.New("partition owner not assigned")
@@ -107,8 +108,8 @@ func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) (in
 			return h.sendToConnection(inv, conn)
 		}
 	}
-	if inv.Address() != "" {
-		return h.sendToAddress(inv, inv.Address())
+	if !inv.MemberUUID().Default() {
+		return h.sendToMember(inv, inv.MemberUUID())
 	}
 	return h.sendToRandomAddress(inv)
 }
@@ -127,19 +128,13 @@ func (h *ConnectionInvocationHandler) sendToConnection(inv invocation.Invocation
 	return conn.connectionID, nil
 }
 
-func (h *ConnectionInvocationHandler) sendToAddress(inv invocation.Invocation, addr pubcluster.Address) (int64, error) {
-	conn := h.connectionManager.GetConnectionForAddress(addr)
+func (h *ConnectionInvocationHandler) sendToMember(inv invocation.Invocation, uuid types.UUID) (int64, error) {
+	conn := h.connectionManager.GetConnectionForUUID(uuid)
 	if conn == nil {
-		if conn = h.connectionManager.RandomConnection(); conn != nil {
-			h.logger.Trace(func() string {
-				return fmt.Sprintf("address %s not found for invocation, sending to random connection", addr)
-			})
-		} else {
-			h.logger.Trace(func() string {
-				return fmt.Sprintf("sending invocation to %s failed, address not found", addr.String())
-			})
-			return 0, fmt.Errorf("address not found: %s", addr.String())
-		}
+		conn = h.connectionManager.RandomConnection()
+	}
+	if conn == nil {
+		return 0, fmt.Errorf("member not found: %s", uuid)
 	}
 	return h.sendToConnection(inv, conn)
 }

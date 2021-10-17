@@ -35,7 +35,7 @@ type MemberBoundInvocation struct {
 }
 
 func NewMemberBoundInvocation(msg *proto.ClientMessage, member *pubcluster.MemberInfo, deadline time.Time, redoOperation bool) *MemberBoundInvocation {
-	inv := invocation.NewImpl(msg, -1, member.Address, deadline, redoOperation)
+	inv := invocation.NewImplWithMemberUUID(msg, member.UUID, deadline, redoOperation)
 	return &MemberBoundInvocation{Impl: inv, memberUUID: member.UUID}
 }
 

@@ -181,7 +181,6 @@ func TestClientShutdownRace(t *testing.T) {
 }
 
 func TestClient_AddDistributedObjectListener(t *testing.T) {
-	t.Skipf("skipping this test until finding out why it fails at coverage")
 	type objInfo struct {
 		service string
 		object  string
@@ -562,7 +561,6 @@ func TestClientFixConnection(t *testing.T) {
 	it.Eventually(t, func() bool {
 		return int64(memberCount+1) == atomic.LoadInt64(&addedCount)
 	})
-
 }
 
 func TestClientVersion(t *testing.T) {
@@ -609,9 +607,10 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 			config.Cluster.Unisocket = true
 		}
 		ctx := context.Background()
-		var maxAlloc uint64
 		var m runtime.MemStats
-		for i := 0; i < 100; i++ {
+		const allocLimit = 6 * 1024 * 1024 // 6 MB
+		firstAlloc := uint64(0)
+		for i := 0; i < 10_000; i++ {
 			client, err := hz.StartNewClientWithConfig(ctx, config)
 			if err != nil {
 				t.Fatal(err)
@@ -620,13 +619,13 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 				t.Fatal(err)
 			}
 			runtime.ReadMemStats(&m)
-			if m.Alloc > maxAlloc {
-				maxAlloc = m.Alloc
+			if i == 0 {
+				firstAlloc = m.Alloc
 			}
-		}
-		const allocLimit = 6 * 1024 * 1024 // 4MB
-		if maxAlloc > allocLimit {
-			t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
+			if m.Alloc > firstAlloc && m.Alloc-firstAlloc > allocLimit {
+				t.Fatalf("memory allocation: %d > %d (iteration: %d)", m.Alloc-firstAlloc, allocLimit, i)
+			}
+			fmt.Println("Alloc:", m.Alloc)
 		}
 	})
 }

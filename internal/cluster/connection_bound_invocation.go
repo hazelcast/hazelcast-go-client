@@ -20,7 +20,6 @@ import (
 	"errors"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -33,10 +32,10 @@ type ConnectionBoundInvocation struct {
 	boundConnection *Connection
 }
 
-func newConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32, address pubcluster.Address,
+func newConnectionBoundInvocation(clientMessage *proto.ClientMessage, partitionID int32,
 	connection *Connection, deadline time.Time, redoOperation bool) *ConnectionBoundInvocation {
 	return &ConnectionBoundInvocation{
-		Impl:            invocation.NewImpl(clientMessage, partitionID, address, deadline, redoOperation),
+		Impl:            invocation.NewImpl(clientMessage, partitionID, deadline, redoOperation),
 		boundConnection: connection,
 	}
 }
