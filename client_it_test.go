@@ -609,7 +609,9 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 			}
 			ctx := context.Background()
 			var m runtime.MemStats
-			const allocLimit = 12 * 1024 * 1024 // 12 MB
+			const limit = 6 * 1024 * 1024 // 6 MB
+			runtime.ReadMemStats(&m)
+			base := m.Alloc
 			for i := 0; i < 10_000; i++ {
 				client, err := hz.StartNewClientWithConfig(ctx, config)
 				if err != nil {
@@ -619,8 +621,9 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 					t.Fatal(err)
 				}
 				runtime.ReadMemStats(&m)
-				if m.Alloc > allocLimit {
-					t.Fatalf("memory allocation: %d > %d (iteration: %d)", m.Alloc, allocLimit, i)
+				t.Logf("base: %d, current: %d", base, m.Alloc)
+				if m.Alloc > base && m.Alloc-base > limit {
+					t.Fatalf("memory allocation: %d > %d (iteration: %d)", m.Alloc-base, limit, i)
 				}
 			}
 		})
