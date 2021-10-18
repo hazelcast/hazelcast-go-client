@@ -180,8 +180,8 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	}
 	m.checkClusterIDChanged()
 	m.eventDispatcher.Publish(NewConnected(addr))
-	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
 	atomic.StoreInt32(&m.state, ready)
+	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
 	return nil
 }
 
