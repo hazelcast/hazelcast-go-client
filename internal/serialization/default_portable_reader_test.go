@@ -554,14 +554,11 @@ func (*rawPortable) ClassID() int32 {
 }
 
 func (r *rawPortable) WritePortable(writer serialization.PortableWriter) {
-	if raw, ok := writer.(serialization.PortableRawDataWriter); ok {
-		// todo: eliminate explicit check for class def writer
-		raw.GetRawDataOutput().WriteInt32(r.id)
-	}
+	writer.GetRawDataOutput().WriteInt32(r.id)
 }
 
 func (r *rawPortable) ReadPortable(reader serialization.PortableReader) {
-	r.id = reader.(serialization.PortableRawDataReader).GetRawDataInput().ReadInt32()
+	r.id = reader.GetRawDataInput().ReadInt32()
 }
 
 type rawPortableFactory struct {

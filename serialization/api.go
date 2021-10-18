@@ -318,9 +318,11 @@ type PortableWriter interface {
 
 	// WritePortableArray writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable)
-}
 
-type PortableRawDataWriter interface {
+	// GetRawDataOutput returns raw DataOutput to write unnamed fields like
+	// IdentifiedDataSerializable does. All unnamed fields must be written after
+	// portable fields. Attempts to write named fields after GetRawDataOutput is
+	// called will panic.
 	GetRawDataOutput() DataOutput
 }
 
@@ -410,8 +412,10 @@ type PortableReader interface {
 	// ReadPortableArray takes fieldName Name of the field and returns the []Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
-}
 
-type PortableRawDataReader interface {
+	// GetRawDataInput returns raw DataInput to read unnamed fields like
+	// IdentifiedDataSerializable does. All unnamed fields must be read after
+	// portable fields. Attempts to read named fields after GetRawDataInput is
+	// called will panic.
 	GetRawDataInput() DataInput
 }

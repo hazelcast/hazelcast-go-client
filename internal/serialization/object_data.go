@@ -681,3 +681,54 @@ func (p *PositionalObjectDataOutput) PWriteFloat64(pos int32, v float64) {
 func byteSliceToString(buf []byte) string {
 	return *(*string)(unsafe.Pointer(&buf))
 }
+
+type EmptyObjectDataOutput struct {
+}
+
+func (e *EmptyObjectDataOutput) Position() int32 {
+	return -1 // todo: validate this
+}
+
+func (e *EmptyObjectDataOutput) SetPosition(int32) {}
+
+func (e *EmptyObjectDataOutput) WriteByte(byte) {}
+
+func (e *EmptyObjectDataOutput) WriteBool(bool) {}
+
+func (e *EmptyObjectDataOutput) WriteUInt16(uint16) {}
+
+func (e *EmptyObjectDataOutput) WriteInt16(int16) {}
+
+func (e *EmptyObjectDataOutput) WriteInt32(int32) {}
+
+func (e *EmptyObjectDataOutput) WriteInt64(int64) {}
+
+func (e *EmptyObjectDataOutput) WriteFloat32(float32) {}
+
+func (e *EmptyObjectDataOutput) WriteFloat64(float64) {}
+
+func (e *EmptyObjectDataOutput) WriteString(string) {}
+
+func (e *EmptyObjectDataOutput) WriteObject(interface{}) {}
+
+func (e *EmptyObjectDataOutput) WriteByteArray([]byte) {}
+
+func (e *EmptyObjectDataOutput) WriteBoolArray([]bool) {}
+
+func (e *EmptyObjectDataOutput) WriteUInt16Array([]uint16) {}
+
+func (e *EmptyObjectDataOutput) WriteInt16Array([]int16) {}
+
+func (e *EmptyObjectDataOutput) WriteInt32Array([]int32) {}
+
+func (e *EmptyObjectDataOutput) WriteInt64Array([]int64) {}
+
+func (e *EmptyObjectDataOutput) WriteFloat32Array([]float32) {}
+
+func (e *EmptyObjectDataOutput) WriteFloat64Array([]float64) {}
+
+func (e *EmptyObjectDataOutput) WriteStringArray([]string) {}
+
+func (e *EmptyObjectDataOutput) WriteStringBytes(string) {}
+
+func (e *EmptyObjectDataOutput) WriteZeroBytes(int) {}
