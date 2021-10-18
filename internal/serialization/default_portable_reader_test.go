@@ -18,6 +18,7 @@ package serialization
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -514,18 +515,30 @@ func TestDefaultPortableReader_PortableFieldsAfterRawData(t *testing.T) {
 	pw := NewDefaultPortableWriter(nil, o, classDef)
 	pw.WriteInt64("foo", 42)
 	pw.GetRawDataOutput()
-	// todo: match panic value and test other Write* fields.
-	assert.Panics(t, func() {
-		pw.WriteInt64("bar", 42)
-	})
+	writerType := reflect.TypeOf(pw)
+	for i := 0; i < writerType.NumMethod(); i++ {
+		if method := writerType.Method(i); strings.HasPrefix(method.Name, "Write") {
+			inputType := method.Type.In(2)
+			param := reflect.Zero(inputType)
+			// todo: assert panic value
+			assert.Panics(t, func() {
+				method.Func.Call([]reflect.Value{reflect.ValueOf(pw), reflect.ValueOf("foo"), param})
+			})
+		}
+	}
 
 	in := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
 	pr := NewDefaultPortableReader(nil, in, pw.classDefinition)
 	pr.GetRawDataInput()
-	// todo: match panic value and test other Read* fields.
-	assert.Panics(t, func() {
-		pr.ReadInt64("foo")
-	})
+	readerType := reflect.TypeOf(pr)
+	for i := 0; i < readerType.NumMethod(); i++ {
+		if method := readerType.Method(i); strings.HasPrefix(method.Name, "Read") {
+			// todo: assert panic value
+			assert.Panics(t, func() {
+				method.Func.Call([]reflect.Value{reflect.ValueOf(pr), reflect.ValueOf("foo")})
+			})
+		}
+	}
 }
 
 type rawPortable struct {
