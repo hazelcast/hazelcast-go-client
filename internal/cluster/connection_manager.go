@@ -210,6 +210,7 @@ func (m *ConnectionManager) startSmart(ctx context.Context) (pubcluster.Address,
 	if err = m.waitInitialMemberList(ctx, ch); err != nil {
 		return "", err
 	}
+	m.syncMemberConnections(ctx)
 	go m.periodicallySyncMemberConnections()
 	return addr, nil
 }
@@ -294,14 +295,14 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("cluster.ConnectionManager.handleMembersAdded: %v", e.Members)
 	})
-	m.withDone(func(ctx context.Context) {
+	m.withDone(context.Background(), func(ctx context.Context) {
 		ms := m.clusterService.MemberUUIDAddrs()
 		m.connectMissingMembers(ctx, ms)
 	})
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
-	m.withDone(func(ctx context.Context) {
+	m.withDone(context.Background(), func(ctx context.Context) {
 		ms := m.clusterService.MemberUUIDAddrs()
 		m.removeNonexistentMembers(ctx, ms)
 	})
@@ -523,13 +524,13 @@ func (m *ConnectionManager) periodicallySyncMemberConnections() {
 		case <-m.doneCh:
 			return
 		case <-ticker.C:
-			m.syncMemberConnections()
+			m.syncMemberConnections(context.Background())
 		}
 	}
 }
 
-func (m *ConnectionManager) syncMemberConnections() {
-	m.withDone(func(ctx context.Context) {
+func (m *ConnectionManager) syncMemberConnections(ctx context.Context) {
+	m.withDone(ctx, func(ctx context.Context) {
 		ms := m.clusterService.MemberUUIDAddrs()
 		m.connectMissingMembers(ctx, ms)
 		m.removeNonexistentMembers(ctx, ms)
@@ -598,13 +599,13 @@ func (m *ConnectionManager) tryConnectAddress(ctx context.Context, addr pubclust
 	return finalAddr, nil
 }
 
-func (m *ConnectionManager) withDone(f func(ctx context.Context)) {
-	ctx, cancel := context.WithCancel(context.Background())
+func (m *ConnectionManager) withDone(ctx context.Context, f func(ctx context.Context)) {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go func() {
 		select {
 		case <-ctx.Done():
-			m.logger.Trace(func() string {
+			m.logger.Debug(func() string {
 				return fmt.Sprintf("cluster.ConnectionManager.withDone: %s", ctx.Err().Error())
 			})
 		case <-m.doneCh:
