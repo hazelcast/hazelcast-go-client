@@ -329,6 +329,12 @@ func (i *ObjectDataInput) Position() int32 {
 }
 
 func (i *ObjectDataInput) SetPosition(pos int32) {
+	if pos < 0 {
+		panic(ihzerrors.NewIllegalArgumentError(fmt.Sprintf("negative pos: %v", i.position), nil))
+	}
+	if len(i.buffer) < int(pos) {
+		panic(ihzerrors.NewEOFError(fmt.Sprintf("pos %v is out of range", pos)))
+	}
 	i.position = pos
 }
 
@@ -686,7 +692,7 @@ type EmptyObjectDataOutput struct {
 }
 
 func (e *EmptyObjectDataOutput) Position() int32 {
-	return -1 // todo: validate this
+	return 0
 }
 
 func (e *EmptyObjectDataOutput) SetPosition(int32) {}

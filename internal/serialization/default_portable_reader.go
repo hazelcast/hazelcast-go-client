@@ -315,11 +315,11 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) []serializa
 
 func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
 	if !pr.raw {
-		pr.raw = true
 		off := pr.offset + pr.classDefinition.FieldCount()*Int32SizeInBytes
 		pr.input.SetPosition(off)
 		pos := pr.input.ReadInt32()
-		pr.input.SetPosition(pos) // todo: check buffer size
+		pr.input.SetPosition(pos)
+		pr.raw = true
 	}
 	return pr.input
 }
