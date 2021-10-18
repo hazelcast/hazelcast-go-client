@@ -22,13 +22,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestRemoveAddr(t *testing.T) {
 	cm := newConnectionMap(pubcluster.NewRoundRobinLoadBalancer())
-	conn1 := &Connection{connectionID: 1}
-	conn2 := &Connection{connectionID: 2}
-	conn3 := &Connection{connectionID: 3}
+	conn1 := &Connection{memberUUID: types.NewUUID()}
+	conn2 := &Connection{memberUUID: types.NewUUID()}
+	conn3 := &Connection{memberUUID: types.NewUUID()}
 	cm.removeAddr("1.2.3.4:5600")
 	assert.Equal(t, 0, len(cm.addrs))
 	cm.AddConnection(conn1, "100.200.300.400:5678")
