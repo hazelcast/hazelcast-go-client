@@ -597,36 +597,34 @@ func TestInvocationTimeout(t *testing.T) {
 
 func TestClientStartShutdownMemoryLeak(t *testing.T) {
 	clientTester(t, func(t *testing.T, smart bool) {
-		clientTester(t, func(t *testing.T, smart bool) {
-			tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
-			defer tc.Shutdown()
-			config := tc.DefaultConfig()
-			if it.TraceLoggingEnabled() {
-				config.Logger.Level = logger.TraceLevel
+		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		if !smart {
+			config.Cluster.Unisocket = true
+		}
+		ctx := context.Background()
+		var m runtime.MemStats
+		const limit = 6 * 1024 * 1024 // 6 MB
+		runtime.ReadMemStats(&m)
+		base := m.Alloc
+		for i := 0; i < 10_000; i++ {
+			client, err := hz.StartNewClientWithConfig(ctx, config)
+			if err != nil {
+				t.Fatal(err)
 			}
-			if it.NonSmartEnabled() {
-				config.Cluster.Unisocket = true
+			if err := client.Shutdown(ctx); err != nil {
+				t.Fatal(err)
 			}
-			ctx := context.Background()
-			var m runtime.MemStats
-			const limit = 6 * 1024 * 1024 // 6 MB
 			runtime.ReadMemStats(&m)
-			base := m.Alloc
-			for i := 0; i < 10_000; i++ {
-				client, err := hz.StartNewClientWithConfig(ctx, config)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if err := client.Shutdown(ctx); err != nil {
-					t.Fatal(err)
-				}
-				runtime.ReadMemStats(&m)
-				t.Logf("base: %d, current: %d", base, m.Alloc)
-				if m.Alloc > base && m.Alloc-base > limit {
-					t.Fatalf("memory allocation: %d > %d (iteration: %d)", m.Alloc-base, limit, i)
-				}
+			t.Logf("base: %d, current: %d", base, m.Alloc)
+			if m.Alloc > base && m.Alloc-base > limit {
+				t.Fatalf("memory allocation: %d > %d (iteration: %d)", m.Alloc-base, limit, i)
 			}
-		})
+		}
 	})
 }
 
