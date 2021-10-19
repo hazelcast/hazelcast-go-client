@@ -510,21 +510,24 @@ func TestDefaultPortableReader_PortableFieldsAfterRawData(t *testing.T) {
 	const (
 		writeErr = "cannot write Portable fields after getRawDataOutput() is called: hazelcast serialization error"
 		readErr  = "cannot read Portable fields after getRawDataInput() is called: hazelcast serialization error"
+
+		portableFieldName        = "foo"
+		portableFieldValue int64 = 42
 	)
 	classDef := serialization.NewClassDefinition(1, 2, 3)
-	classDef.AddField(NewFieldDefinition(0, "foo", serialization.TypeInt64,
+	classDef.AddField(NewFieldDefinition(0, portableFieldName, serialization.TypeInt64,
 		classDef.FactoryID, classDef.ClassID, 0))
 	out := NewPositionalObjectDataOutput(0, nil, false)
 
 	writer := NewDefaultPortableWriter(nil, out, classDef)
-	writer.WriteInt64("foo", 42)
+	writer.WriteInt64(portableFieldName, portableFieldValue)
 	writer.GetRawDataOutput()
 	t.Run("WritePortableField_AfterGetRawDataOutput", func(t *testing.T) {
 		writerType := reflect.TypeOf(writer)
 		for i := 0; i < writerType.NumMethod(); i++ {
 			if method := writerType.Method(i); strings.HasPrefix(method.Name, "Write") {
-				arg1 := reflect.ValueOf(writer) // receiver type
-				arg2 := reflect.ValueOf("foo")  // non-empty fieldName string
+				arg1 := reflect.ValueOf(writer)            // receiver type
+				arg2 := reflect.ValueOf(portableFieldName) // non-empty fieldName string
 				args := []reflect.Value{arg1, arg2}
 				for argIdx := 2; argIdx < method.Type.NumIn(); argIdx++ {
 					args = append(args, reflect.Zero(method.Type.In(argIdx)))
@@ -538,14 +541,15 @@ func TestDefaultPortableReader_PortableFieldsAfterRawData(t *testing.T) {
 
 	in := NewObjectDataInput(out.ToBuffer(), 0, nil, false)
 	reader := NewDefaultPortableReader(nil, in, writer.classDefinition)
+	assert.Equal(t, portableFieldValue, reader.readInt64(portableFieldName))
 	reader.GetRawDataInput()
 	t.Run("ReadPortableField_AfterGetRawDataInput", func(t *testing.T) {
 		readerType := reflect.TypeOf(reader)
 		for i := 0; i < readerType.NumMethod(); i++ {
 			if method := readerType.Method(i); strings.HasPrefix(method.Name, "Read") {
 				assert.PanicsWithError(t, readErr, func() {
-					arg1 := reflect.ValueOf(reader) // receiver type
-					arg2 := reflect.ValueOf("foo")  // non-empty fieldName string
+					arg1 := reflect.ValueOf(reader)            // receiver type
+					arg2 := reflect.ValueOf(portableFieldName) // non-empty fieldName string
 					method.Func.Call([]reflect.Value{arg1, arg2})
 				})
 			}
@@ -599,9 +603,9 @@ func TestNewPortableSerializer_RawData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ret, err := service.ToObject(data)
+	actual, err := service.ToObject(data)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, expected, ret)
+	assert.Equal(t, expected, actual)
 }

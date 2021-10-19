@@ -688,6 +688,7 @@ func byteSliceToString(buf []byte) string {
 	return *(*string)(unsafe.Pointer(&buf))
 }
 
+// EmptyObjectDataOutput implements no-op serialization.DataOutput.
 type EmptyObjectDataOutput struct {
 }
 

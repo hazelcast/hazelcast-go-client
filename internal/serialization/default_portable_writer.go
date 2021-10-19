@@ -200,10 +200,10 @@ func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) 
 
 func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
 	if !pw.raw {
-		pw.raw = true
 		pos := pw.output.Position()
 		index := pw.classDefinition.FieldCount()
 		pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
+		pw.raw = true
 	}
 	return pw.output.ObjectDataOutput
 }
