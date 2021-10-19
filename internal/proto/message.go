@@ -116,6 +116,13 @@ func (m *ClientMessage) Copy() *ClientMessage {
 	}
 }
 
+// Merge Should be called after calling ClientMessage.DropFragmentationFrame on argument
+func (m *ClientMessage) Merge(fragment *ClientMessage) {
+	for _, frame := range fragment.Frames {
+		m.Frames = append(m.Frames, frame)
+	}
+}
+
 func (m *ClientMessage) SetRetryable(retryable bool) {
 	m.Retryable = retryable
 }

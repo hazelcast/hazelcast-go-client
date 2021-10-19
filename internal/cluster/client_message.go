@@ -28,6 +28,7 @@ const messageBufferSize = 128 * 1024
 type clientMessageReader struct {
 	src                *bytes.Buffer
 	clientMessage      *proto.ClientMessage
+	FragmentedMessages map[int64]*proto.ClientMessage
 	currentFrameLength uint32
 	currentFlags       uint16
 	readHeader         bool
@@ -35,7 +36,8 @@ type clientMessageReader struct {
 
 func newClientMessageReader() *clientMessageReader {
 	return &clientMessageReader{
-		src: bytes.NewBuffer(make([]byte, 0, messageBufferSize)),
+		src:                bytes.NewBuffer(make([]byte, 0, messageBufferSize)),
+		FragmentedMessages: make(map[int64]*proto.ClientMessage),
 	}
 }
 
@@ -43,16 +45,46 @@ func (c *clientMessageReader) Append(buf []byte) {
 	c.src.Write(buf)
 }
 
-func (c *clientMessageReader) Read() *proto.ClientMessage {
+func (c *clientMessageReader) Read() (clientMessage *proto.ClientMessage, noPreviousFragment bool) {
 	for {
-		if c.readFrame() {
-			if c.clientMessage.HasFinalFrame() {
-				return c.clientMessage
-			}
-		} else {
-			return nil
+		if !c.readFrame() {
+			return
+		}
+		if c.clientMessage.HasFinalFrame() {
+			break
 		}
 	}
+	clientMessage = c.clientMessage
+	if clientMessage.HasUnFragmentedMessageFlags() {
+		c.ResetMessage()
+		return
+	}
+	// part of a fragmented message
+	fragmentationFrame := clientMessage.Frames[0]
+	fID := clientMessage.FragmentationID()
+	clientMessage.DropFragmentationFrame()
+	if fragmentationFrame.HasBeginFragmentFlag() {
+		c.FragmentedMessages[fID] = clientMessage
+		c.ResetMessage()
+		clientMessage = nil
+		return
+	} else if beginning, ok := c.FragmentedMessages[fID]; !ok {
+		// todo return?
+		c.ResetMessage()
+		noPreviousFragment = true
+		return
+	} else {
+		beginning.Merge(clientMessage)
+		clientMessage = beginning
+		c.FragmentedMessages[fID] = clientMessage
+	}
+	c.ResetMessage()
+	if !fragmentationFrame.HasEndFragmentFlag() {
+		clientMessage = nil
+		return
+	}
+	delete(c.FragmentedMessages, fID)
+	return
 }
 
 func (c *clientMessageReader) readFrame() bool {

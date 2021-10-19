@@ -216,27 +216,28 @@ func (c *Connection) socketReadLoop() {
 		c.lastRead.Store(time.Now())
 		clientMessageReader.Append(buf[:n])
 		for {
-			clientMessage := clientMessageReader.Read()
+			clientMessage, noPreviousFragment := clientMessageReader.Read()
 			if clientMessage == nil {
 				break
 			}
-			if clientMessage.HasUnFragmentedMessageFlags() {
-				c.logger.Trace(func() string {
-					return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
+			c.logger.Trace(func() string {
+				return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
+			})
+			if noPreviousFragment {
+				c.logger.Errorf("no previous fragment found for messsage with fragID: %d", clientMessage.FragmentationID())
+				continue
+			}
+			if clientMessage.Type() == messageTypeException {
+				if err := codec.DecodeError(clientMessage); err != nil {
+					clientMessage.Err = wrapError(err)
+				}
+			}
+			if err := c.invocationService.WriteResponse(clientMessage); err != nil {
+				c.logger.Debug(func() string {
+					return fmt.Sprintf("sending response: %s", err.Error())
 				})
-				if clientMessage.Type() == messageTypeException {
-					if err := codec.DecodeError(clientMessage); err != nil {
-						clientMessage.Err = wrapError(err)
-					}
-				}
-				if err := c.invocationService.WriteResponse(clientMessage); err != nil {
-					c.logger.Debug(func() string {
-						return fmt.Sprintf("sending response: %s", err.Error())
-					})
-					c.close(nil)
-					return
-				}
-				clientMessageReader.ResetMessage()
+				c.close(nil)
+				return
 			}
 		}
 		clientMessageReader.ResetBuffer()
