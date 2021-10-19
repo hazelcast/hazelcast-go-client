@@ -169,6 +169,31 @@ func (m *ConnectionManager) SetInvocationService(s *invocation.Service) {
 
 func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
+	var addr pubcluster.Address
+	var err error
+	if m.smartRouting {
+		if addr, err = m.startSmart(ctx); err != nil {
+			return err
+		}
+	} else if addr, err = m.startUnisocket(ctx); err != nil {
+		return err
+	}
+	m.checkClusterIDChanged()
+	m.eventDispatcher.Publish(NewConnected(addr))
+	atomic.StoreInt32(&m.state, ready)
+	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
+	return nil
+}
+
+func (m *ConnectionManager) startUnisocket(ctx context.Context) (pubcluster.Address, error) {
+	addr, err := m.tryConnectCluster(ctx)
+	if err != nil {
+		return "", err
+	}
+	return addr, err
+}
+
+func (m *ConnectionManager) startSmart(ctx context.Context) (pubcluster.Address, error) {
 	ch := make(chan struct{})
 	once := &sync.Once{}
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded), func(e event.Event) {
@@ -180,9 +205,19 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	m.eventDispatcher.Subscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved), m.handleMembersRemoved)
 	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
-	// wait for initial member list
+	if err = m.waitInitialMemberList(ctx, ch); err != nil {
+		return "", err
+	}
+	if m.smartRouting {
+		// fix broken connections only in the smart mode
+		go m.detectFixBrokenConnections()
+	}
+	return addr, nil
+}
+
+func (m *ConnectionManager) waitInitialMemberList(ctx context.Context, ch chan struct{}) error {
 	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: waiting for the initial member list" })
 	timer := time.NewTimer(initialMembersTimeout)
 	defer timer.Stop()
@@ -195,25 +230,17 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 		break
 	}
 	m.logger.Debug(func() string { return "cluster.ConnectionManager.start: received the initial member list" })
+	return nil
+}
+
+func (m *ConnectionManager) checkClusterIDChanged() {
 	// check if cluster ID has changed after reconnection
-	var clusterIDChanged bool
 	m.clusterIDMu.Lock()
-	clusterIDChanged = m.prevClusterID != nil && m.prevClusterID != m.clusterID
+	clusterIDChanged := m.prevClusterID != nil && m.prevClusterID != m.clusterID
 	m.clusterIDMu.Unlock()
 	if clusterIDChanged {
 		m.eventDispatcher.Publish(NewChangedCluster())
 	}
-	m.eventDispatcher.Publish(NewConnected(addr))
-	if m.smartRouting {
-		// fix broken connections only in the smart mode
-		go m.detectFixBrokenConnections()
-	}
-	if m.logger.CanLogDebug() {
-		go m.logStatus()
-	}
-	atomic.StoreInt32(&m.state, ready)
-	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
-	return nil
 }
 
 func (m *ConnectionManager) Stop() {
