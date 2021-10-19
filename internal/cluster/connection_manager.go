@@ -258,6 +258,10 @@ func (m *ConnectionManager) NextConnectionID() int64 {
 	return atomic.AddInt64(&m.nextConnID, 1)
 }
 
+func (m *ConnectionManager) GetConnectionForUUID(uuid types.UUID) *Connection {
+	return m.connMap.GetConnectionForUUID(uuid)
+}
+
 func (m *ConnectionManager) GetConnectionForAddress(addr pubcluster.Address) *Connection {
 	return m.connMap.GetConnectionForAddr(addr)
 }
@@ -301,7 +305,7 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	}
 	e := event.(*MembersAdded)
 	m.logger.Trace(func() string {
-		return fmt.Sprintf("connectionManager.handleMembersAdded: %v", e.Members)
+		return fmt.Sprintf("cluster.ConnectionManager.handleMembersAdded: %v", e.Members)
 	})
 	missing := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
 	for _, addr := range missing {
@@ -311,7 +315,6 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 			m.logger.Infof("cluster.ConnectionManager member added: %s", addr.String())
 		}
 	}
-	return
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
@@ -571,30 +574,6 @@ func (m *ConnectionManager) createAuthenticationRequest(clusterName string, cred
 	)
 }
 
-func (m *ConnectionManager) logStatus() {
-	ticker := time.NewTicker(10 * time.Second)
-	for {
-		select {
-		case <-m.doneCh:
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			m.connMap.Info(func(connections map[pubcluster.Address]*Connection, connToAddr map[int64]pubcluster.Address) {
-				m.logger.Debug(func() string {
-					conns := map[pubcluster.Address]int{}
-					for addr, conn := range connections {
-						conns[addr] = int(conn.connectionID)
-					}
-					return fmt.Sprintf("address to connection: %+v", conns)
-				})
-				m.logger.Debug(func() string {
-					return fmt.Sprintf("connection to address: %+v", connToAddr)
-				})
-			})
-		}
-	}
-}
-
 func (m *ConnectionManager) detectFixBrokenConnections() {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -660,6 +639,8 @@ type connectionMap struct {
 	// connToAddr maps connection ID to address
 	connToAddr map[int64]pubcluster.Address
 	addrs      []pubcluster.Address
+	uuidToConn map[types.UUID]*Connection
+	candidates map[types.UUID]struct{}
 }
 
 func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
@@ -668,6 +649,8 @@ func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
 		mu:         &sync.RWMutex{},
 		addrToConn: map[pubcluster.Address]*Connection{},
 		connToAddr: map[int64]pubcluster.Address{},
+		uuidToConn: map[types.UUID]*Connection{},
+		candidates: map[types.UUID]struct{}{},
 	}
 }
 
@@ -675,18 +658,22 @@ func (m *connectionMap) Reset() {
 	m.mu.Lock()
 	m.addrToConn = map[pubcluster.Address]*Connection{}
 	m.connToAddr = map[int64]pubcluster.Address{}
+	m.uuidToConn = map[types.UUID]*Connection{}
+	m.candidates = map[types.UUID]struct{}{}
 	m.mu.Unlock()
 }
 
 func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	delete(m.candidates, conn.memberUUID)
 	// if the connection was already added, skip it
 	if _, ok := m.connToAddr[conn.connectionID]; ok {
 		return
 	}
 	m.addrToConn[addr] = conn
 	m.connToAddr[conn.connectionID] = addr
+	m.uuidToConn[conn.memberUUID] = conn
 	m.addrs = append(m.addrs, addr)
 }
 
@@ -698,6 +685,7 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.addrToConn, addr)
 			delete(m.connToAddr, conn.connectionID)
+			delete(m.uuidToConn, conn.memberUUID)
 			m.removeAddr(addr)
 			break
 		}
@@ -713,6 +701,13 @@ func (m *connectionMap) CloseAll(err error) {
 		conn.close(err)
 	}
 	m.mu.RUnlock()
+}
+
+func (m *connectionMap) GetConnectionForUUID(uuid types.UUID) *Connection {
+	m.mu.RLock()
+	conn := m.uuidToConn[uuid]
+	m.mu.RUnlock()
+	return conn
 }
 
 func (m *connectionMap) GetConnectionForAddr(addr pubcluster.Address) *Connection {
@@ -802,10 +797,33 @@ func (m *connectionMap) FindRemovedConns(members []pubcluster.MemberInfo) []*Con
 	return removedConns
 }
 
-func (m *connectionMap) Info(infoFun func(connections map[pubcluster.Address]*Connection, connToAddr map[int64]pubcluster.Address)) {
+// CheckAddCandidate checks whether there is a connection attempt to given member with UUID in progress.
+// If there is, returns false.
+// Otherwise, returns true.
+func (m *connectionMap) CheckAddCandidate(uuid types.UUID) bool {
+	// do not allow connection for member with UUID if there is one in in progress
 	m.mu.RLock()
-	infoFun(m.addrToConn, m.connToAddr)
+	_, ok := m.candidates[uuid]
 	m.mu.RUnlock()
+	if ok {
+		// the connection attempt is in progress
+		return false
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	_, ok = m.candidates[uuid]
+	if ok {
+		// the connection attempt is in progress
+		return false
+	}
+	m.candidates[uuid] = struct{}{}
+	return true
+}
+
+func (m *connectionMap) RemoveCandidate(uuid types.UUID) {
+	m.mu.Lock()
+	delete(m.candidates, uuid)
+	m.mu.Unlock()
 }
 
 func (m *connectionMap) Len() int {
