@@ -459,7 +459,7 @@ func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Co
 		doneCh:            make(chan struct{}),
 		connectionID:      m.NextConnectionID(),
 		eventDispatcher:   m.eventDispatcher,
-		status:            0,
+		status:            created,
 		logger:            m.logger,
 		clusterConfig:     m.clusterConfig,
 	}
@@ -487,12 +487,11 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	if err != nil {
 		return err
 	}
-	return m.processAuthenticationResult(conn, result)
+	return m.processAuthenticationResult(ctx, conn, result)
 }
 
-func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
-	// TODO: use memberUUID v
-	status, address, _, _, serverHazelcastVersion, partitionCount, newClusterID, failoverSupported := codec.DecodeClientAuthenticationResponse(result)
+func (m *ConnectionManager) processAuthenticationResult(ctx context.Context, conn *Connection, result *proto.ClientMessage) error {
+	status, address, uuid, _, serverHazelcastVersion, partitionCount, newClusterID, failoverSupported := codec.DecodeClientAuthenticationResponse(result)
 	if m.failoverConfig.Enabled && !failoverSupported {
 		m.logger.Warnf("cluster does not support failover: this feature is available in Hazelcast Enterprise")
 		status = notAllowedInCluster
@@ -500,16 +499,16 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
-		connAddr, err := m.failoverService.Current().AddressTranslator.Translate(context.TODO(), *address)
+		conn.memberUUID = uuid
+		connAddr, err := m.clusterService.TranslateAddr(ctx, *address)
 		if err != nil {
 			return err
 		}
-		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
+		if err = m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return err
 		}
-
-		m.logger.Trace(func() string {
-			return fmt.Sprintf("connectionManager: checking the cluster: %v, current cluster: %v", newClusterID, m.clusterID)
+		m.logger.Debug(func() string {
+			return fmt.Sprintf("cluster.ConnectionManager: checking the cluster: %v, current cluster: %v", newClusterID, m.clusterID)
 		})
 		m.clusterIDMu.Lock()
 		// clusterID is nil only at the start of the client,
@@ -778,7 +777,7 @@ func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Serv
 	m.mu.RLock()
 	addedAddrs := make([]pubcluster.Address, 0, len(members))
 	for _, member := range members {
-		addr, err := cs.MemberAddr(&member)
+		addr, err := cs.TranslateMember(context.TODO(), &member)
 		if err != nil {
 			continue
 		}
