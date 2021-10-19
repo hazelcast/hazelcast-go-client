@@ -507,38 +507,50 @@ func TestDefaultPortableReader_ReadString_NonASCIIFieldName(t *testing.T) {
 }
 
 func TestDefaultPortableReader_PortableFieldsAfterRawData(t *testing.T) {
+	const (
+		writeErr = "cannot write Portable fields after getRawDataOutput() is called: hazelcast serialization error"
+		readErr  = "cannot read Portable fields after getRawDataInput() is called: hazelcast serialization error"
+	)
 	classDef := serialization.NewClassDefinition(1, 2, 3)
 	classDef.AddField(NewFieldDefinition(0, "foo", serialization.TypeInt64,
 		classDef.FactoryID, classDef.ClassID, 0))
-	o := NewPositionalObjectDataOutput(0, nil, false)
+	out := NewPositionalObjectDataOutput(0, nil, false)
 
-	pw := NewDefaultPortableWriter(nil, o, classDef)
-	pw.WriteInt64("foo", 42)
-	pw.GetRawDataOutput()
-	writerType := reflect.TypeOf(pw)
-	for i := 0; i < writerType.NumMethod(); i++ {
-		if method := writerType.Method(i); strings.HasPrefix(method.Name, "Write") {
-			inputType := method.Type.In(2)
-			param := reflect.Zero(inputType)
-			// todo: assert panic value
-			assert.Panics(t, func() {
-				method.Func.Call([]reflect.Value{reflect.ValueOf(pw), reflect.ValueOf("foo"), param})
-			})
+	writer := NewDefaultPortableWriter(nil, out, classDef)
+	writer.WriteInt64("foo", 42)
+	writer.GetRawDataOutput()
+	t.Run("WritePortableField_AfterGetRawDataOutput", func(t *testing.T) {
+		writerType := reflect.TypeOf(writer)
+		for i := 0; i < writerType.NumMethod(); i++ {
+			if method := writerType.Method(i); strings.HasPrefix(method.Name, "Write") {
+				arg1 := reflect.ValueOf(writer) // receiver type
+				arg2 := reflect.ValueOf("foo")  // non-empty fieldName string
+				args := []reflect.Value{arg1, arg2}
+				for argIdx := 2; argIdx < method.Type.NumIn(); argIdx++ {
+					args = append(args, reflect.Zero(method.Type.In(argIdx)))
+				}
+				assert.PanicsWithError(t, writeErr, func() {
+					method.Func.Call(args)
+				})
+			}
 		}
-	}
+	})
 
-	in := NewObjectDataInput(o.ToBuffer(), 0, nil, false)
-	pr := NewDefaultPortableReader(nil, in, pw.classDefinition)
-	pr.GetRawDataInput()
-	readerType := reflect.TypeOf(pr)
-	for i := 0; i < readerType.NumMethod(); i++ {
-		if method := readerType.Method(i); strings.HasPrefix(method.Name, "Read") {
-			// todo: assert panic value
-			assert.Panics(t, func() {
-				method.Func.Call([]reflect.Value{reflect.ValueOf(pr), reflect.ValueOf("foo")})
-			})
+	in := NewObjectDataInput(out.ToBuffer(), 0, nil, false)
+	reader := NewDefaultPortableReader(nil, in, writer.classDefinition)
+	reader.GetRawDataInput()
+	t.Run("ReadPortableField_AfterGetRawDataInput", func(t *testing.T) {
+		readerType := reflect.TypeOf(reader)
+		for i := 0; i < readerType.NumMethod(); i++ {
+			if method := readerType.Method(i); strings.HasPrefix(method.Name, "Read") {
+				assert.PanicsWithError(t, readErr, func() {
+					arg1 := reflect.ValueOf(reader) // receiver type
+					arg2 := reflect.ValueOf("foo")  // non-empty fieldName string
+					method.Func.Call([]reflect.Value{arg1, arg2})
+				})
+			}
 		}
-	}
+	})
 }
 
 type rawPortable struct {

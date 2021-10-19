@@ -168,7 +168,6 @@ type DataOutput interface {
 // Example usage:
 //  field1 = input.ReadString()
 //  field2 = input.ReadString()
-//  return input.Error()
 type DataInput interface {
 	// Position returns the head position in the byte array.
 	Position() int32
