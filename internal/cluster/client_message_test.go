@@ -26,7 +26,6 @@ func TestUnFragmentedMessage(t *testing.T) {
 		"go",
 		nil,
 	)
-	//request := codec.EncodeClientAuthenticationRequest("dev", "user", "pass", uuid, "GO", byte(1), "5.0.0", "go",nil)
 	reader := newClientMessageReader()
 	err := request.Write(reader.src)
 	assert.Nil(t, err)

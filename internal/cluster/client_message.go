@@ -69,7 +69,6 @@ func (c *clientMessageReader) Read() (clientMessage *proto.ClientMessage, noPrev
 		clientMessage = nil
 		return
 	} else if beginning, ok := c.FragmentedMessages[fID]; !ok {
-		// todo return?
 		c.ResetMessage()
 		noPreviousFragment = true
 		return
