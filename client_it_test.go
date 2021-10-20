@@ -609,7 +609,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		ctx := context.Background()
 		var max uint64
 		var m runtime.MemStats
-		const limit = 6 * 1024 * 1024 // 6 MB
+		const limit = 8 * 1024 * 1024 // 8 MB
 		for i := 0; i < 10_000; i++ {
 			client, err := hz.StartNewClientWithConfig(ctx, config)
 			if err != nil {
