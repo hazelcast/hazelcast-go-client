@@ -312,13 +312,23 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("cluster.ConnectionManager.handleMembersAdded: %v", e.Members)
 	})
-	missing := m.connMap.FindAddedAddrs(e.Members, m.clusterService)
-	for _, addr := range missing {
-		if _, err := connectMember(context.TODO(), m, addr); err != nil {
-			m.logger.Errorf("connecting address: %w", err)
-		} else {
-			m.logger.Infof("cluster.ConnectionManager member added: %s", addr.String())
+	ctx := context.Background()
+	missing := m.connMap.FindAddedMembers(e.Members, m.clusterService)
+	for _, mem := range missing {
+		if !m.connMap.CheckAddCandidate(mem.UUID) {
+			continue
 		}
+		addr, err := m.clusterService.TranslateMember(ctx, &mem)
+		if err == nil {
+			if _, err = connectMember(context.TODO(), m, addr); err != nil {
+				m.logger.Errorf("connecting address: %w", err)
+			} else {
+				m.logger.Infof("cluster.ConnectionManager member added: %s", addr.String())
+			}
+		} else {
+			m.logger.Errorf("translating member: %w", err)
+		}
+		m.connMap.RemoveCandidate(mem.UUID)
 	}
 }
 
@@ -591,12 +601,12 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 func (m *ConnectionManager) checkFixConnection(uuid types.UUID, addr pubcluster.Address) {
 	if conn := m.connMap.GetConnectionForUUID(uuid); conn == nil {
 		if !m.connMap.CheckAddCandidate(uuid) {
-			defer m.connMap.RemoveCandidate(uuid)
 			m.logger.Debug(func() string {
 				return fmt.Sprintf("skipping connect, there is a connection candidate for member UUID: %s, addr: %s", uuid, addr)
 			})
 			return
 		}
+		defer m.connMap.RemoveCandidate(uuid)
 		m.logger.Debug(func() string {
 			return fmt.Sprintf("found a broken connection to: %s, trying to fix it.", addr)
 		})
@@ -772,20 +782,17 @@ func (m *connectionMap) IsEmpty() bool {
 	return len(m.connToAddr) == 0
 }
 
-func (m *connectionMap) FindAddedAddrs(members []pubcluster.MemberInfo, cs *Service) []pubcluster.Address {
+func (m *connectionMap) FindAddedMembers(members []pubcluster.MemberInfo, cs *Service) []pubcluster.MemberInfo {
 	m.mu.RLock()
-	addedAddrs := make([]pubcluster.Address, 0, len(members))
+	addedMembers := make([]pubcluster.MemberInfo, 0, len(members))
 	for _, member := range members {
-		addr, err := cs.TranslateMember(context.TODO(), &member)
-		if err != nil {
+		if _, exists := m.uuidToConn[member.UUID]; exists {
 			continue
 		}
-		if _, exists := m.addrToConn[addr]; !exists {
-			addedAddrs = append(addedAddrs, addr)
-		}
+		addedMembers = append(addedMembers, member)
 	}
 	m.mu.RUnlock()
-	return addedAddrs
+	return addedMembers
 }
 
 func (m *connectionMap) FindRemovedConns(members []pubcluster.MemberInfo) []*Connection {
