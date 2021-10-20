@@ -607,9 +607,9 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		}
 		config.Cluster.Unisocket = !smart
 		ctx := context.Background()
-		var maxAlloc uint64
+		var max uint64
 		var m runtime.MemStats
-		const allocLimit = 6 * 1024 * 1024 // 6 MB
+		const limit = 6 * 1024 * 1024 // 6 MB
 		for i := 0; i < 10_000; i++ {
 			client, err := hz.StartNewClientWithConfig(ctx, config)
 			if err != nil {
@@ -619,12 +619,12 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 				t.Fatal(err)
 			}
 			runtime.ReadMemStats(&m)
-			if m.Alloc > maxAlloc {
-				maxAlloc = m.Alloc
+			if m.Alloc > max {
+				max = m.Alloc
 			}
-			fmt.Println(i, maxAlloc)
-			if maxAlloc > allocLimit {
-				t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
+			t.Logf("iteration: %d, max: %d", i, max)
+			if max > limit {
+				t.Fatalf("memory allocation: %d > %d", max, limit)
 			}
 		}
 	})
