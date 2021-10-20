@@ -315,20 +315,9 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 	ctx := context.Background()
 	missing := m.connMap.FindAddedMembers(e.Members, m.clusterService)
 	for _, mem := range missing {
-		if !m.connMap.CheckAddCandidate(mem.UUID) {
-			continue
+		if _, err := m.tryConnectMember(ctx, &mem); err != nil {
+			m.logger.Errorf("connecting added member %s: %w", mem, err)
 		}
-		addr, err := m.clusterService.TranslateMember(ctx, &mem)
-		if err == nil {
-			if _, err = connectMember(context.TODO(), m, addr); err != nil {
-				m.logger.Errorf("connecting address: %w", err)
-			} else {
-				m.logger.Infof("cluster.ConnectionManager member added: %s", addr.String())
-			}
-		} else {
-			m.logger.Errorf("translating member: %w", err)
-		}
-		m.connMap.RemoveCandidate(mem.UUID)
 	}
 }
 
@@ -352,23 +341,20 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	conn := e.Conn
 	m.removeConnection(conn)
 	if m.connMap.Len() == 0 {
-		m.logger.Debug(func() string { return "ConnectionManager.handleConnectionClosed: no connections left" })
+		m.logger.Debug(func() string { return "cluster.ConnectionManager.handleConnectionClosed: no connections left" })
 		return
 	}
-	var respawnConnection bool
-	if err := e.Err; err != nil {
-		m.logger.Debug(func() string { return fmt.Sprintf("respawning connection, since: %s", err.Error()) })
-		respawnConnection = true
-	} else {
+	if err := e.Err; err == nil {
 		m.logger.Debug(func() string { return "not respawning connection, no errors" })
+		return
 	}
-	if respawnConnection {
-		if addr, ok := m.connMap.GetAddrForConnectionID(conn.connectionID); ok {
-			if _, err := m.ensureConnection(context.TODO(), addr); err != nil {
-				m.logger.Errorf("error connecting address: %w", err)
-				// TODO: add failing addrs to a channel
-			}
-		}
+	m.logger.Debug(func() string { return fmt.Sprintf("respawning connection, since: %s", e.Err.Error()) })
+	mem := m.clusterService.GetMemberByUUID(conn.memberUUID)
+	if mem == nil {
+		return
+	}
+	if _, err := m.tryConnectMember(context.TODO(), mem); err != nil {
+		m.logger.Errorf("error connecting to closed connection %s: %w", conn, err)
 	}
 }
 
@@ -591,30 +577,11 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 		case <-m.doneCh:
 			return
 		case <-ticker.C:
-			for uuid, addr := range m.clusterService.MemberUUIDAddrs() {
-				m.checkFixConnection(uuid, addr)
+			for _, mem := range m.clusterService.OrderedMembers() {
+				if _, err := m.tryConnectMember(context.Background(), &mem); err != nil {
+					m.logger.Errorf("connecting member %s: %w", mem, err)
+				}
 			}
-		}
-	}
-}
-
-func (m *ConnectionManager) checkFixConnection(uuid types.UUID, addr pubcluster.Address) {
-	if conn := m.connMap.GetConnectionForUUID(uuid); conn == nil {
-		if !m.connMap.CheckAddCandidate(uuid) {
-			m.logger.Debug(func() string {
-				return fmt.Sprintf("skipping connect, there is a connection candidate for member UUID: %s, addr: %s", uuid, addr)
-			})
-			return
-		}
-		defer m.connMap.RemoveCandidate(uuid)
-		m.logger.Debug(func() string {
-			return fmt.Sprintf("found a broken connection to: %s, trying to fix it.", addr)
-		})
-		ctx := context.Background()
-		if _, err := connectMember(ctx, m, addr); err != nil {
-			m.logger.Debug(func() string {
-				return fmt.Sprintf("cannot fix connection to %s: %s", addr, err.Error())
-			})
 		}
 	}
 }
@@ -643,6 +610,25 @@ func (m *ConnectionManager) tryConnectAddress(ctx context.Context, addr pubclust
 		return finalAddr, fmt.Errorf("cannot connect to any address in the cluster: %w", finalErr)
 	}
 	return finalAddr, nil
+}
+
+func (m *ConnectionManager) tryConnectMember(ctx context.Context, member *pubcluster.MemberInfo) (bool, error) {
+	uuid := member.UUID
+	if conn := m.connMap.GetConnectionForUUID(uuid); conn != nil {
+		return false, nil
+	}
+	if !m.connMap.CheckAddCandidate(uuid) {
+		return false, nil
+	}
+	defer m.connMap.RemoveCandidate(uuid)
+	addr, err := m.clusterService.TranslateMember(ctx, member)
+	if err != nil {
+		return false, err
+	}
+	if _, err := connectMember(ctx, m, addr); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 type connectionMap struct {
