@@ -581,17 +581,22 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 		case <-m.doneCh:
 			return
 		case <-ticker.C:
-			// TODO: very inefficent, fix this
-			// find connections which exist in the cluster but not in the connection manager
-			for _, addr := range m.clusterService.MemberAddrs() {
-				m.checkFixConnection(addr)
+			for uuid, addr := range m.clusterService.MemberUUIDAddrs() {
+				m.checkFixConnection(uuid, addr)
 			}
 		}
 	}
 }
 
-func (m *ConnectionManager) checkFixConnection(addr pubcluster.Address) {
-	if conn := m.connMap.GetConnectionForAddr(addr); conn == nil {
+func (m *ConnectionManager) checkFixConnection(uuid types.UUID, addr pubcluster.Address) {
+	if conn := m.connMap.GetConnectionForUUID(uuid); conn == nil {
+		if !m.connMap.CheckAddCandidate(uuid) {
+			defer m.connMap.RemoveCandidate(uuid)
+			m.logger.Debug(func() string {
+				return fmt.Sprintf("skipping connect, there is a connection candidate for member UUID: %s, addr: %s", uuid, addr)
+			})
+			return
+		}
 		m.logger.Debug(func() string {
 			return fmt.Sprintf("found a broken connection to: %s, trying to fix it.", addr)
 		})
