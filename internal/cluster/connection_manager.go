@@ -326,8 +326,7 @@ func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("cluster.ConnectionManager.handleMembersRemoved: %v", e.Members)
 	})
-	removedConns := m.connMap.FindRemovedConns(e.Members)
-	for _, conn := range removedConns {
+	for _, conn := range m.connMap.FindRemovedConns(e.Members) {
 		m.removeConnection(conn)
 	}
 	return
@@ -339,29 +338,34 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	}
 	e := event.(*ConnectionClosed)
 	conn := e.Conn
-	m.removeConnection(conn)
-	if m.connMap.Len() == 0 {
+	if rem := m.removeConnection(conn); rem == 0 {
 		m.logger.Debug(func() string { return "cluster.ConnectionManager.handleConnectionClosed: no connections left" })
 		return
 	}
-	if err := e.Err; err == nil {
-		m.logger.Debug(func() string { return "not respawning connection, no errors" })
+	if e.Err == nil {
+		m.logger.Debug(func() string {
+			return "cluster.ConnectionManager.handleConnectionClosed: not respawning connection, no errors"
+		})
 		return
 	}
-	m.logger.Debug(func() string { return fmt.Sprintf("respawning connection, since: %s", e.Err.Error()) })
+	m.logger.Debug(func() string {
+		return fmt.Sprintf("cluster.ConnectionManager.handleConnectionClosed: respawning connection, since: %s", e.Err.Error())
+	})
 	mem := m.clusterService.GetMemberByUUID(conn.memberUUID)
 	if mem == nil {
 		return
 	}
 	if _, err := m.tryConnectMember(context.TODO(), mem); err != nil {
-		m.logger.Errorf("error connecting to closed connection %s: %w", conn, err)
+		m.logger.Errorf("cluster.ConnectionManager.handleConnectionClosed: error reconnecting to closed connection %s: %w", conn, err)
 	}
 }
 
-func (m *ConnectionManager) removeConnection(conn *Connection) {
-	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
+func (m *ConnectionManager) removeConnection(conn *Connection) int {
+	remaining := m.connMap.RemoveConnection(conn)
+	if remaining == 0 {
 		m.eventDispatcher.Publish(NewDisconnected())
 	}
+	return remaining
 }
 
 func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.Address, error) {
