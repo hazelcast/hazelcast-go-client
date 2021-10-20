@@ -92,16 +92,8 @@ func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 	return s.membersMap.Find(uuid)
 }
 
-func (s *Service) MemberAddrs() []pubcluster.Address {
-	return s.membersMap.MemberAddrs()
-}
-
 func (s *Service) OrderedMembers() []pubcluster.MemberInfo {
 	return s.membersMap.OrderedMembers()
-}
-
-func (s *Service) MemberUUIDAddrs() map[types.UUID]pubcluster.Address {
-	return s.membersMap.MemberUUIDAddrs()
 }
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
@@ -250,36 +242,6 @@ func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.Member
 	m.membersMu.RLock()
 	infoFun(m.members)
 	m.membersMu.RUnlock()
-}
-
-func (m *membersMap) MemberUUIDs() []types.UUID {
-	m.membersMu.RLock()
-	uuids := make([]types.UUID, 0, len(m.members))
-	for uuid := range m.members {
-		uuids = append(uuids, uuid)
-	}
-	m.membersMu.RUnlock()
-	return uuids
-}
-
-func (m *membersMap) MemberUUIDAddrs() map[types.UUID]pubcluster.Address {
-	m.membersMu.RLock()
-	addrUUIDs := make(map[types.UUID]pubcluster.Address, len(m.addrToMemberUUID))
-	for addr, uuid := range m.addrToMemberUUID {
-		addrUUIDs[uuid] = addr
-	}
-	m.membersMu.RUnlock()
-	return addrUUIDs
-}
-
-func (m *membersMap) MemberAddrs() []pubcluster.Address {
-	m.membersMu.RLock()
-	addrs := make([]pubcluster.Address, 0, len(m.addrToMemberUUID))
-	for addr := range m.addrToMemberUUID {
-		addrs = append(addrs, addr)
-	}
-	m.membersMu.RUnlock()
-	return addrs
 }
 
 func (m *membersMap) OrderedMembers() []pubcluster.MemberInfo {
