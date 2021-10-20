@@ -186,6 +186,8 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 }
 
 func (m *ConnectionManager) startUnisocket(ctx context.Context) (pubcluster.Address, error) {
+	// need to wait for the initial member list even for the unisocket client
+	// to prevent errors with stuff that requires the cluster service to have members, such as PNCounter
 	ch := make(chan struct{})
 	once := &sync.Once{}
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded), func(e event.Event) {
