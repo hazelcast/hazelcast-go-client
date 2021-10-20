@@ -45,19 +45,19 @@ func (c *clientMessageReader) Append(buf []byte) {
 	c.src.Write(buf)
 }
 
-func (c *clientMessageReader) Read() (clientMessage *proto.ClientMessage, noPreviousFragment bool) {
+func (c *clientMessageReader) Read() *proto.ClientMessage {
 	for {
 		if !c.readFrame() {
-			return
+			return nil
 		}
 		if c.clientMessage.HasFinalFrame() {
 			break
 		}
 	}
-	clientMessage = c.clientMessage
+	clientMessage := c.clientMessage
 	if clientMessage.HasUnFragmentedMessageFlags() {
 		c.ResetMessage()
-		return
+		return clientMessage
 	}
 	// part of a fragmented message
 	fragmentationFrame := clientMessage.Frames[0]
@@ -66,24 +66,18 @@ func (c *clientMessageReader) Read() (clientMessage *proto.ClientMessage, noPrev
 	if fragmentationFrame.HasBeginFragmentFlag() {
 		c.FragmentedMessages[fID] = clientMessage
 		c.ResetMessage()
-		clientMessage = nil
-		return
-	} else if beginning, ok := c.FragmentedMessages[fID]; !ok {
-		c.ResetMessage()
-		noPreviousFragment = true
-		return
-	} else {
-		beginning.Merge(clientMessage)
-		clientMessage = beginning
-		c.FragmentedMessages[fID] = clientMessage
+		return nil
 	}
+	beginning := c.FragmentedMessages[fID]
+	beginning.Merge(clientMessage)
+	clientMessage = beginning
+	c.FragmentedMessages[fID] = clientMessage
 	c.ResetMessage()
 	if !fragmentationFrame.HasEndFragmentFlag() {
-		clientMessage = nil
-		return
+		return nil
 	}
 	delete(c.FragmentedMessages, fID)
-	return
+	return clientMessage
 }
 
 func (c *clientMessageReader) readFrame() bool {

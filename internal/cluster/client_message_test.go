@@ -27,10 +27,8 @@ func TestUnFragmentedMessage(t *testing.T) {
 		nil,
 	)
 	reader := newClientMessageReader()
-	err := request.Write(reader.src)
-	assert.Nil(t, err)
-	msg, noPreviousFragment := reader.Read()
-	assert.False(t, noPreviousFragment)
+	_ = request.Write(reader.src)
+	msg := reader.Read()
 	assert.NotNil(t, msg)
 	assert.Equal(t, msg.Type(), codec.ClientAuthenticationCodecRequestMessageType)
 	assert.True(t, len(msg.Frames) == len(request.Frames))
@@ -73,18 +71,15 @@ func TestFragmentedMessage(t *testing.T) {
 
 	reader := newClientMessageReader()
 	reader.Append(beginBuf)
-	msg, noPreviousFragment := reader.Read()
-	assert.False(t, noPreviousFragment)
+	msg := reader.Read()
 	assert.Nil(t, msg)
 
 	reader.Append(middleBuf)
-	msg, noPreviousFragment = reader.Read()
-	assert.False(t, noPreviousFragment)
+	msg = reader.Read()
 	assert.Nil(t, msg)
 
 	reader.Append(endBuf)
-	msg, noPreviousFragment = reader.Read()
-	assert.False(t, noPreviousFragment)
+	msg = reader.Read()
 	assert.NotNil(t, msg)
 	var accumulate []byte
 	for _, frame := range msg.Frames {

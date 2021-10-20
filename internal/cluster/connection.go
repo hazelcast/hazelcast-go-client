@@ -216,17 +216,13 @@ func (c *Connection) socketReadLoop() {
 		c.lastRead.Store(time.Now())
 		clientMessageReader.Append(buf[:n])
 		for {
-			clientMessage, noPreviousFragment := clientMessageReader.Read()
+			clientMessage := clientMessageReader.Read()
 			if clientMessage == nil {
 				break
 			}
 			c.logger.Trace(func() string {
 				return fmt.Sprintf("%d: read invocation with correlation ID: %d", c.connectionID, clientMessage.CorrelationID())
 			})
-			if noPreviousFragment {
-				c.logger.Errorf("no previous fragment found for messsage with fragID: %d", clientMessage.FragmentationID())
-				continue
-			}
 			if clientMessage.Type() == messageTypeException {
 				if err := codec.DecodeError(clientMessage); err != nil {
 					clientMessage.Err = wrapError(err)
