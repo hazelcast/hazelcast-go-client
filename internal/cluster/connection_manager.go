@@ -186,8 +186,19 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 }
 
 func (m *ConnectionManager) startUnisocket(ctx context.Context) (pubcluster.Address, error) {
+	ch := make(chan struct{})
+	once := &sync.Once{}
+	m.eventDispatcher.Subscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded), func(e event.Event) {
+		once.Do(func() {
+			m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
+			close(ch)
+		})
+	})
 	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
+		return "", err
+	}
+	if err = m.waitInitialMemberList(ctx, ch); err != nil {
 		return "", err
 	}
 	return addr, err
@@ -210,10 +221,8 @@ func (m *ConnectionManager) startSmart(ctx context.Context) (pubcluster.Address,
 	if err = m.waitInitialMemberList(ctx, ch); err != nil {
 		return "", err
 	}
-	if m.smartRouting {
-		// fix broken connections only in the smart mode
-		go m.detectFixBrokenConnections()
-	}
+	// fix broken connections only in the smart mode
+	go m.detectFixBrokenConnections()
 	return addr, nil
 }
 
@@ -270,13 +279,11 @@ func (m *ConnectionManager) GetConnectionForPartition(partitionID int32) *Connec
 	if partitionID < 0 {
 		panic("partition ID is negative")
 	}
-	if ownerUUID, ok := m.partitionService.GetPartitionOwner(partitionID); !ok {
+	uuid, ok := m.partitionService.GetPartitionOwner(partitionID)
+	if !ok {
 		return nil
-	} else if member := m.clusterService.GetMemberByUUID(ownerUUID); member == nil {
-		return nil
-	} else {
-		return m.GetConnectionForAddress(member.Address)
 	}
+	return m.connMap.GetConnectionForUUID(uuid)
 }
 
 func (m *ConnectionManager) ActiveConnections() []*Connection {
@@ -299,10 +306,6 @@ func (m *ConnectionManager) reset() {
 }
 
 func (m *ConnectionManager) handleMembersAdded(event event.Event) {
-	// do not add new members in non-smart mode
-	if !m.smartRouting && m.connMap.Len() > 0 {
-		return
-	}
 	e := event.(*MembersAdded)
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("cluster.ConnectionManager.handleMembersAdded: %v", e.Members)
@@ -318,27 +321,22 @@ func (m *ConnectionManager) handleMembersAdded(event event.Event) {
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
-	if e, ok := event.(*MembersRemoved); ok {
-		m.logger.Trace(func() string {
-			return fmt.Sprintf("connectionManager.handleMembersRemoved: %v", e.Members)
-		})
-		removedConns := m.connMap.FindRemovedConns(e.Members)
-		for _, conn := range removedConns {
-			m.removeConnection(conn)
-		}
-		return
+	e := event.(*MembersRemoved)
+	m.logger.Trace(func() string {
+		return fmt.Sprintf("cluster.ConnectionManager.handleMembersRemoved: %v", e.Members)
+	})
+	removedConns := m.connMap.FindRemovedConns(e.Members)
+	for _, conn := range removedConns {
+		m.removeConnection(conn)
 	}
-	m.logger.Warnf("connectionManager.handleMembersRemoved: expected *MembersRemoved event")
+	return
 }
 
 func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 	if atomic.LoadInt32(&m.state) != ready {
 		return
 	}
-	e, ok := event.(*ConnectionClosed)
-	if !ok {
-		return
-	}
+	e := event.(*ConnectionClosed)
 	conn := e.Conn
 	m.removeConnection(conn)
 	if m.connMap.Len() == 0 {
@@ -444,7 +442,6 @@ func (m *ConnectionManager) getConnection(addr pubcluster.Address) *Connection {
 }
 
 func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
-	// TODO: check whether we can create a connection
 	conn := m.createDefaultConnection(addr)
 	if err := conn.start(m.clusterConfig, addr); err != nil {
 		return nil, ihzerrors.NewTargetDisconnectedError(err.Error(), err)

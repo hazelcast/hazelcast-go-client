@@ -204,6 +204,9 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 		}
 		mem, clocks := pn.crdtOperationTarget(excluded)
 		if mem == nil {
+			pn.logger.Debug(func() string {
+				return fmt.Sprintf("attempt: %d, excluded members: %v", attempt, excluded)
+			})
 			// do not retry if no data members was found
 			err := ihzerrors.NewClientError("no data members in cluster", nil, hzerrors.ErrNoDataMember)
 			return nil, cb.WrapNonRetryableError(err)
