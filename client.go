@@ -230,6 +230,7 @@ func (c *Client) start(ctx context.Context) error {
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.eventDispatcher.Stop()
 		c.userEventDispatcher.Stop()
+		c.invocationService.Stop()
 		return err
 	}
 	c.heartbeatService.Start()
