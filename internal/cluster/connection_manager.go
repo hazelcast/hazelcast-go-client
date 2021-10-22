@@ -210,8 +210,8 @@ func (m *ConnectionManager) startSmart(ctx context.Context) (pubcluster.Address,
 	ch := make(chan struct{})
 	once := &sync.Once{}
 	m.eventDispatcher.Subscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded), func(e event.Event) {
-		m.handleMembersAdded(e)
 		once.Do(func() {
+			m.connectAllMembers(ctx)
 			close(ch)
 		})
 	})
@@ -337,27 +337,7 @@ func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
 		return
 	}
 	e := event.(*ConnectionClosed)
-	conn := e.Conn
-	if rem := m.removeConnection(conn); rem == 0 {
-		m.logger.Debug(func() string { return "cluster.ConnectionManager.handleConnectionClosed: no connections left" })
-		return
-	}
-	if e.Err == nil {
-		m.logger.Debug(func() string {
-			return "cluster.ConnectionManager.handleConnectionClosed: not respawning connection, no errors"
-		})
-		return
-	}
-	m.logger.Debug(func() string {
-		return fmt.Sprintf("cluster.ConnectionManager.handleConnectionClosed: respawning connection, since: %s", e.Err.Error())
-	})
-	mem := m.clusterService.GetMemberByUUID(conn.memberUUID)
-	if mem == nil {
-		return
-	}
-	if _, err := m.tryConnectMember(context.TODO(), mem); err != nil {
-		m.logger.Errorf("cluster.ConnectionManager.handleConnectionClosed: error reconnecting to closed connection %s: %w", conn, err)
-	}
+	m.removeConnection(e.Conn)
 }
 
 func (m *ConnectionManager) removeConnection(conn *Connection) int {
@@ -574,18 +554,22 @@ func (m *ConnectionManager) createAuthenticationRequest(clusterName string, cred
 }
 
 func (m *ConnectionManager) detectFixBrokenConnections() {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-m.doneCh:
 			return
 		case <-ticker.C:
-			for _, mem := range m.clusterService.OrderedMembers() {
-				if _, err := m.tryConnectMember(context.Background(), &mem); err != nil {
-					m.logger.Errorf("connecting member %s: %w", mem, err)
-				}
-			}
+			m.connectAllMembers(context.Background())
+		}
+	}
+}
+
+func (m *ConnectionManager) connectAllMembers(ctx context.Context) {
+	for _, mem := range m.clusterService.OrderedMembers() {
+		if _, err := m.tryConnectMember(ctx, &mem); err != nil {
+			m.logger.Errorf("connecting member %s: %w", mem, err)
 		}
 	}
 }
