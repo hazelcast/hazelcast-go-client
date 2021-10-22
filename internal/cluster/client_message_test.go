@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	clientMsg1 = internal.RandomClientAuthenticationRequestMessage(1000)
-	clientMsg2 = internal.RandomClientAuthenticationRequestMessage(1000)
+	clientMsg1 = codec.RandomClientAuthenticationRequestMessage(1000)
+	clientMsg2 = codec.RandomClientAuthenticationRequestMessage(1000)
 )
 
 func TestSplitAndBuildClientMessage(t *testing.T) {

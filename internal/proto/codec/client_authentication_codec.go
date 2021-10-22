@@ -16,6 +16,9 @@
 package codec
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -77,4 +80,40 @@ func DecodeClientAuthenticationResponse(clientMessage *proto.ClientMessage) (sta
 	serverHazelcastVersion = DecodeString(frameIterator)
 
 	return status, address, memberUuid, serializationVersion, serverHazelcastVersion, partitionCount, clusterId, failoverSupported
+}
+
+func RandomClientAuthenticationRequestMessage(stringLen int) *proto.ClientMessage {
+	var labels []string
+	for i := 0; i < 10; i++ {
+		labels = append(labels, randomString(stringLen))
+	}
+	request := EncodeClientAuthenticationRequest(
+		randomString(stringLen),
+		randomString(stringLen),
+		randomString(stringLen),
+		types.NewUUID(),
+		randomString(stringLen),
+		byte(1),
+		randomString(stringLen),
+		randomString(stringLen),
+		labels,
+	)
+	return request
+}
+
+var seededRand *rand.Rand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
+
+const charset = "abcdefghijklmnopqrstuvwxyz" +
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func stringWithCharset(length int, charset string) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+func randomString(length int) string {
+	return stringWithCharset(length, charset)
 }

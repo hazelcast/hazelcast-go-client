@@ -5,12 +5,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
 func TestGetSubFramesWithFragmentation(t *testing.T) {
-	msg := internal.RandomClientAuthenticationRequestMessage(1000)
+	msg := codec.RandomClientAuthenticationRequestMessage(1000)
 	iterator := msg.FrameIterator()
 	fragments := GetFragments(128, msg)
 	assert.Equal(t, 19, len(fragments))
@@ -18,7 +18,7 @@ func TestGetSubFramesWithFragmentation(t *testing.T) {
 }
 
 func TestGetSubFramesWithNoFragmentation(t *testing.T) {
-	msg := internal.RandomClientAuthenticationRequestMessage(1000)
+	msg := codec.RandomClientAuthenticationRequestMessage(1000)
 	iterator := msg.FrameIterator()
 	fragments := GetFragments(4000, msg)
 	assertFragments(t, fragments, iterator)
