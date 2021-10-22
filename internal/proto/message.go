@@ -180,7 +180,7 @@ func (m *ClientMessage) Write(w io.Writer) error {
 	header := make([]byte, SizeOfFrameLengthAndFlags)
 	for i, frame := range m.Frames {
 		binary.LittleEndian.PutUint32(header, uint32(len(frame.Content)+SizeOfFrameLengthAndFlags))
-		flags := frame.flags
+		flags := frame.Flags
 		if i == lastIndex {
 			flags |= IsFinalFlag
 		}
@@ -244,17 +244,17 @@ func (it *ForwardFrameIterator) PeekNext() *Frame {
 
 type Frame struct {
 	Content []byte
-	flags   uint16
+	Flags   uint16
 }
 
 // NewFrame creates a Frame with content
 func NewFrame(content []byte) *Frame {
-	return &Frame{Content: content, flags: DefaultFlags}
+	return &Frame{Content: content, Flags: DefaultFlags}
 }
 
-// NewFrameWith creates a Frame with content and flags
+// NewFrameWith creates a Frame with content and Flags
 func NewFrameWith(content []byte, flags uint16) *Frame {
-	return &Frame{Content: content, flags: flags}
+	return &Frame{Content: content, Flags: flags}
 }
 
 // Copy frame
@@ -268,7 +268,7 @@ func (frame *Frame) Copy() *Frame {
 func (frame *Frame) DeepCopy() *Frame {
 	newContent := make([]byte, len(frame.Content))
 	copy(newContent, frame.Content)
-	return NewFrameWith(newContent, frame.flags)
+	return NewFrameWith(newContent, frame.Flags)
 }
 
 // IsEndFrame returns true if this is the last frame
@@ -309,7 +309,7 @@ func (frame Frame) IsFinalFrame() bool {
 }
 
 func (frame Frame) IsFlagSet(flagMask uint16) bool {
-	return frame.flags&flagMask == flagMask
+	return frame.Flags&flagMask == flagMask
 }
 
 func (frame Frame) GetLength() int {
