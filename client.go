@@ -349,24 +349,27 @@ func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleSta
 		// This is because internal/cluster can not use hazelcast package.
 		// We map internal ones to external ones on the handler before giving them to the user here.
 		e := event.(*lifecycle.InternalLifecycleStateChanged)
+		var mapped LifecycleState
 		switch e.State {
 		case lifecycle.InternalLifecycleStateStarting:
-			handler(*newLifecycleStateChanged(LifecycleStateStarting))
+			mapped = LifecycleStateStarting
 		case lifecycle.InternalLifecycleStateStarted:
-			handler(*newLifecycleStateChanged(LifecycleStateStarted))
+			mapped = LifecycleStateStarted
 		case lifecycle.InternalLifecycleStateShuttingDown:
-			handler(*newLifecycleStateChanged(LifecycleStateShuttingDown))
+			mapped = LifecycleStateShuttingDown
 		case lifecycle.InternalLifecycleStateShutDown:
-			handler(*newLifecycleStateChanged(LifecycleStateShutDown))
+			mapped = LifecycleStateShutDown
 		case lifecycle.InternalLifecycleStateConnected:
-			handler(*newLifecycleStateChanged(LifecycleStateConnected))
+			mapped = LifecycleStateConnected
 		case lifecycle.InternalLifecycleStateDisconnected:
-			handler(*newLifecycleStateChanged(LifecycleStateDisconnected))
+			mapped = LifecycleStateDisconnected
 		case lifecycle.InternalLifecycleStateChangedCluster:
-			handler(*newLifecycleStateChanged(LifecycleStateChangedCluster))
+			mapped = LifecycleStateChangedCluster
 		default:
 			c.logger.Warnf("no corresponding hazelcast.LifecycleStateChanged event found : %v", e.State)
+			return
 		}
+		handler(*newLifecycleStateChanged(mapped))
 	})
 }
 
