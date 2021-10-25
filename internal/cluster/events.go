@@ -33,61 +33,82 @@ const (
 	EventCluster = "internal.cluster.cluster"
 )
 
-type ConnectionEventHandler func(event *ConnectionEvent)
-type ConnectedHandler func(event *ClusterEvent)
+type ConnectionEventHandler func(event *ConnectionStateChangedEvent)
+type ConnectedHandler func(event *ClusterStateChangedEvent)
 
-type ConnectionEvent struct {
-	Conn   *Connection
-	Err    error
-	Opened bool
+type ConnectionState int
+
+const (
+	ConnectionStateOpened ConnectionState = iota
+	ConnectionStateClosed
+)
+
+type ConnectionStateChangedEvent struct {
+	Conn  *Connection
+	Err   error
+	state ConnectionState
 }
 
-func NewConnectionOpened(conn *Connection) *ConnectionEvent {
-	return &ConnectionEvent{Conn: conn, Err: nil, Opened: true}
+func NewConnectionOpened(conn *Connection) *ConnectionStateChangedEvent {
+	return &ConnectionStateChangedEvent{Conn: conn, Err: nil, state: ConnectionStateOpened}
 }
 
-func NewConnectionClosed(conn *Connection, err error) *ConnectionEvent {
-	return &ConnectionEvent{
-		Conn:   conn,
-		Err:    err,
-		Opened: false,
+func NewConnectionClosed(conn *Connection, err error) *ConnectionStateChangedEvent {
+	return &ConnectionStateChangedEvent{
+		Conn:  conn,
+		Err:   err,
+		state: ConnectionStateClosed,
 	}
 }
 
-func (c ConnectionEvent) EventName() string {
+func (c ConnectionStateChangedEvent) EventName() string {
 	return EventConnection
 }
 
-type MembersEvent struct {
+type MembersState int
+
+const (
+	MembersStateAdded MembersState = iota
+	MembersStateRemoved
+)
+
+type MembersStateChangedEvent struct {
 	Members []pubcluster.MemberInfo
-	Added   bool
+	State   MembersState
 }
 
-func NewMembersAdded(members []pubcluster.MemberInfo) *MembersEvent {
-	return &MembersEvent{Members: members, Added: true}
+func NewMembersAdded(members []pubcluster.MemberInfo) *MembersStateChangedEvent {
+	return &MembersStateChangedEvent{Members: members, State: MembersStateAdded}
 }
 
-func (m MembersEvent) EventName() string {
+func (m MembersStateChangedEvent) EventName() string {
 	return EventMembers
 }
 
-func NewMemberRemoved(members []pubcluster.MemberInfo) *MembersEvent {
-	return &MembersEvent{Members: members, Added: false}
+func NewMemberRemoved(members []pubcluster.MemberInfo) *MembersStateChangedEvent {
+	return &MembersStateChangedEvent{Members: members, State: MembersStateRemoved}
 }
 
-type ClusterEvent struct {
-	Addr* pubcluster.Address
-	Connected bool
+type ClusterState int
+
+const (
+	ClusterStateConnected ClusterState = iota
+	ClusterStateDisconnected
+)
+
+type ClusterStateChangedEvent struct {
+	Addr  *pubcluster.Address
+	State ClusterState
 }
 
-func NewConnected(addr* pubcluster.Address) *ClusterEvent {
-	return &ClusterEvent{Addr: addr, Connected: true}
+func NewConnected(addr *pubcluster.Address) *ClusterStateChangedEvent {
+	return &ClusterStateChangedEvent{Addr: addr, State: ClusterStateConnected}
 }
 
-func (e *ClusterEvent) EventName() string {
+func (e *ClusterStateChangedEvent) EventName() string {
 	return EventCluster
 }
 
-func NewDisconnected() *ClusterEvent {
-	return &ClusterEvent{Addr: nil, Connected: false}
+func NewDisconnected() *ClusterStateChangedEvent {
+	return &ClusterStateChangedEvent{Addr: nil, State: ClusterStateDisconnected}
 }

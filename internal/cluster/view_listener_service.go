@@ -30,8 +30,8 @@ func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *even
 
 func (vs *ViewListenerService) handleConnectionEvent(event event.Event) {
 	vs.logger.Trace(func() string { return fmt.Sprintf("cluster.ViewListenerService.handleConnectionEvent %v", event) })
-	e := event.(*ConnectionEvent)
-	if e.Opened {
+	e := event.(*ConnectionStateChangedEvent)
+	if e.state == ConnectionStateOpened {
 		vs.tryRegister(e.Conn)
 	} else {
 		vs.tryReregisterToRandomConnection(e.Conn)

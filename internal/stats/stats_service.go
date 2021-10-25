@@ -121,8 +121,8 @@ func (s *Service) loop() {
 }
 
 func (s *Service) handleClusterEvent(event event.Event) {
-	e := event.(*cluster.ClusterEvent)
-	if !e.Connected {
+	e := event.(*cluster.ClusterStateChangedEvent)
+	if e.State == cluster.ClusterStateDisconnected {
 		return
 	}
 	s.clusterConnectTime.Store(time.Now())

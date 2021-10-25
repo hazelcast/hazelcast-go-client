@@ -279,13 +279,13 @@ func (m *ConnectionManager) reset() {
 }
 
 func (m *ConnectionManager) handleMembersEvent(event event.Event) {
-	e := event.(*MembersEvent)
-	if !e.Added {
+	e := event.(*MembersStateChangedEvent)
+	if e.State == MembersStateRemoved {
 		m.handleMembersRemoved(e)
 	}
 }
 
-func (m *ConnectionManager) handleMembersRemoved(e *MembersEvent) {
+func (m *ConnectionManager) handleMembersRemoved(e *MembersStateChangedEvent) {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("connectionManager.handleMembersRemoved: %v", e.Members)
 	})
@@ -299,8 +299,8 @@ func (m *ConnectionManager) handleConnectionEvent(event event.Event) {
 	if atomic.LoadInt32(&m.state) != ready {
 		return
 	}
-	e := event.(*ConnectionEvent)
-	if e.Opened {
+	e := event.(*ConnectionStateChangedEvent)
+	if e.state == ConnectionStateOpened {
 		return
 	}
 	conn := e.Conn

@@ -374,8 +374,8 @@ func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleSta
 
 func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.MembershipStateChangeHandler) {
 	c.eventDispatcher.Subscribe(icluster.EventMembers, subscriptionID, func(event event.Event) {
-		e := event.(*icluster.MembersEvent)
-		if e.Added {
+		e := event.(*icluster.MembersStateChangedEvent)
+		if e.State == icluster.MembersStateAdded {
 			for _, member := range e.Members {
 				handler(cluster.MembershipStateChanged{
 					State:  cluster.MembershipStateAdded,
@@ -492,8 +492,8 @@ func (c *Client) createComponents(config *Config) {
 }
 
 func (c *Client) handleClusterEvent(e event.Event) {
-	event := e.(*icluster.ClusterEvent)
-	if event.Connected {
+	event := e.(*icluster.ClusterStateChangedEvent)
+	if event.State == icluster.ClusterStateConnected {
 		return
 	}
 	if atomic.LoadInt32(&c.state) != ready {
