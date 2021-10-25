@@ -50,7 +50,7 @@ func TestNewService(t *testing.T) {
 	srv := stats.NewService(invService, invFac, ed, lg, 100*time.Millisecond, "hz1")
 	srv.Start()
 	address := pubcluster.NewAddress("100.200.300.400", 12345)
-	ed.Publish(cluster.NewConnected(&address))
+	ed.Publish(cluster.NewConnected(address))
 	select {
 	case _, ok := <-okCh:
 		// TODO: decode the request and check whether it's correct.

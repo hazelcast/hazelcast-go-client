@@ -39,10 +39,10 @@ const (
 type Handler func(event Event)
 
 type DispatchService struct {
-	logger             logger.Logger
-	subscriptions      map[string]map[int64]*subscription
-	subscriptionsMutex *sync.RWMutex
-	state              int32
+	logger          logger.Logger
+	subscriptions   map[string]map[int64]*subscription
+	subscriptionsMu *sync.RWMutex
+	state           int32
 }
 
 // NewDispatchService creates a dispatch service with the following properties.
@@ -54,10 +54,10 @@ type DispatchService struct {
 //4 - A close after publish in the same thread waits for published item to be handled(finished) .
 func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
-		subscriptions:      map[string]map[int64]*subscription{},
-		subscriptionsMutex: &sync.RWMutex{},
-		logger:             logger,
-		state:              ready,
+		subscriptions:   map[string]map[int64]*subscription{},
+		subscriptionsMu: &sync.RWMutex{},
+		logger:          logger,
+		state:           ready,
 	}
 	return service
 }
@@ -68,19 +68,19 @@ func (s *DispatchService) Stop(ctx context.Context) error {
 		return nil
 	}
 
-	done := make(chan struct{})
+	doneCh := make(chan struct{})
 	go func() {
-		s.subscriptionsMutex.RLock()
-		defer s.subscriptionsMutex.RUnlock()
+		s.subscriptionsMu.RLock()
+		defer s.subscriptionsMu.RUnlock()
 		for _, eventSubscriptions := range s.subscriptions {
 			for _, sbs := range eventSubscriptions {
 				sbs.Stop()
 			}
 		}
-		done <- struct{}{}
+		close(doneCh)
 	}()
 	select {
-	case <-done:
+	case <-doneCh:
 		return nil
 	case <-ctx.Done():
 		return fmt.Errorf("shutting down dispatch service: %w", ctx.Err())
@@ -93,12 +93,13 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 	if subscriptionID == DefaultSubscriptionID {
 		subscriptionID = MakeSubscriptionID(handler)
 	}
-	s.subscriptionsMutex.Lock()
-	defer s.subscriptionsMutex.Unlock()
 	// subscribing to a not-running service is no-op
 	if atomic.LoadInt32(&s.state) == stopped {
 		return
 	}
+
+	s.subscriptionsMu.Lock()
+	defer s.subscriptionsMu.Unlock()
 
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Subscribe: %s, %d, %v", eventName, subscriptionID, handler)
@@ -106,52 +107,49 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 
 	sbs := NewSubscription(handler)
 
-	subscriptionHandlers, ok := s.subscriptions[eventName]
+	handlers, ok := s.subscriptions[eventName]
 	if !ok {
-		subscriptionHandlers = map[int64]*subscription{}
-		s.subscriptions[eventName] = subscriptionHandlers
+		handlers = map[int64]*subscription{}
+		s.subscriptions[eventName] = handlers
 	}
-	_, subExists := subscriptionHandlers[subscriptionID]
-	if subExists {
+	if _, exists := handlers[subscriptionID]; exists {
 		//TODO we need to make sure that this can never happen
 		panic("subscriptionID already exists ")
 	}
-	subscriptionHandlers[subscriptionID] = sbs
+	handlers[subscriptionID] = sbs
 }
 
 func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
-	s.subscriptionsMutex.RLock()
 	// unsubscribing from a not-running service is no-op
 	if atomic.LoadInt32(&s.state) == stopped {
-		s.subscriptionsMutex.RUnlock()
 		return
 	}
+	s.subscriptionsMu.RLock()
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Unsubscribe: %s, %d", eventName, subscriptionID)
 	})
-	if eventSubscriptions, ok := s.subscriptions[eventName]; ok {
-		sbs, exists := eventSubscriptions[subscriptionID]
-		if exists {
-			sbs.Stop()
+	if subs, ok := s.subscriptions[eventName]; ok {
+		if sub, exists := subs[subscriptionID]; exists {
+			sub.Stop()
 		}
 	}
-	s.subscriptionsMutex.RUnlock()
+	s.subscriptionsMu.RUnlock()
 
-	s.subscriptionsMutex.Lock()
-	defer s.subscriptionsMutex.Unlock()
+	s.subscriptionsMu.Lock()
 	delete(s.subscriptions[eventName], subscriptionID)
+	s.subscriptionsMu.Unlock()
 }
 
 // Publish an event. Events with the subscription are guaranteed to be run on the same order.
 // If this method returns true, it is guaranteed that the dispatch service close wait for all events to be handled.
 // Returns false if Dispatch Service is already closed.
 func (s *DispatchService) Publish(event Event) bool {
-	s.subscriptionsMutex.RLock()
-	defer s.subscriptionsMutex.RUnlock()
-
 	if atomic.LoadInt32(&s.state) == stopped {
 		return false
 	}
+
+	s.subscriptionsMu.RLock()
+	defer s.subscriptionsMu.RUnlock()
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
@@ -164,20 +162,25 @@ func (s *DispatchService) Publish(event Event) bool {
 }
 
 type subscription struct {
-	handler   Handler
-	orderChan chan Event
-	mutex     *sync.RWMutex
-	closedWg  *sync.WaitGroup
-	isClosed  bool
+	handler  Handler
+	orderCh  chan Event
+	mu       *sync.RWMutex
+	closedWg *sync.WaitGroup
+	closed   bool
 }
 
 func NewSubscription(handler Handler) *subscription {
-	sbs := subscription{handler: handler, orderChan: make(chan Event, 1024),
-		closedWg: &sync.WaitGroup{}, mutex: &sync.RWMutex{}, isClosed: false}
+	sbs := subscription{
+		handler:  handler,
+		orderCh:  make(chan Event, 1024),
+		closedWg: &sync.WaitGroup{},
+		mu:       &sync.RWMutex{},
+		closed:   false,
+	}
 	sbs.closedWg.Add(1)
 
 	go func() {
-		for event := range sbs.orderChan {
+		for event := range sbs.orderCh {
 			sbs.handler(event)
 		}
 		sbs.closedWg.Done()
@@ -185,34 +188,32 @@ func NewSubscription(handler Handler) *subscription {
 	return &sbs
 }
 
-// Stop the subscription
-// - makes sure that Publishes will return false after this point.
-// - makes sure that all successful Publishes will end before returning
-// It is illegal to Stop a subscription inside its own handler( DEADLOCK )
+//Stop ends the subscription.
+//It makes sure that any Publish will return false and all successful publishes will end before returning.
+//Stop must not be called inside its own handler, which can cause a deadlock.
 func (s *subscription) Stop() {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if s.isClosed {
+	if s.closed {
 		return
 	}
-	s.isClosed = true
+	s.closed = true
 
-	close(s.orderChan)
+	close(s.orderCh)
 	s.closedWg.Wait()
 }
 
-// Publish an event to the subscription.
-//If it returns true,
-//it is guaranteed that event will run before the subscription is stopped
+// Publish publishes an event to the subscription.
+// It is guaranteed that event will run before the subscription is stopped if it returns true.
 func (s *subscription) Publish(event Event) bool {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
-	if s.isClosed {
+	if s.closed {
 		return false
 	}
 
-	s.orderChan <- event
+	s.orderCh <- event
 	return true
 }
