@@ -344,13 +344,12 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.eventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
-		// A better solution would have been separating lifecycle events to its own package where
-		// both internal/cluster and hazelcast packages can access(but this is an API breaking change)
-		// The workaround is that we have two lifecycle events one is internal(inside internal/cluster) other is
-		// public. This is because internal/cluster can not use hazelcast package.
+		// A better solution would have been separating lifecycle events to its own package where both internal/cluster and hazelcast packages can access(but this is an API breaking change).
+		// The workaround is that we have two lifecycle events one is internal(inside internal/cluster) other is public.
+		// This is because internal/cluster can not use hazelcast package.
 		// We map internal ones to external ones on the handler before giving them to the user here.
-		stateChangeEvent := event.(*lifecycle.InternalLifecycleStateChanged)
-		switch stateChangeEvent.State {
+		e := event.(*lifecycle.InternalLifecycleStateChanged)
+		switch e.State {
 		case lifecycle.InternalLifecycleStateStarting:
 			handler(*newLifecycleStateChanged(LifecycleStateStarting))
 		case lifecycle.InternalLifecycleStateStarted:
@@ -366,9 +365,8 @@ func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleSta
 		case lifecycle.InternalLifecycleStateChangedCluster:
 			handler(*newLifecycleStateChanged(LifecycleStateChangedCluster))
 		default:
-			c.logger.Warnf("no corresponding hazelcast.LifecycleStateChanged event found")
+			c.logger.Warnf("no corresponding hazelcast.LifecycleStateChanged event found : %v", e.State)
 		}
-
 	})
 }
 
@@ -502,8 +500,8 @@ func (c *Client) handleClusterEvent(e event.Event) {
 	ctx := context.Background()
 	if c.clusterConfig.ConnectionStrategy.ReconnectMode == cluster.ReconnectModeOff {
 		c.logger.Debug(func() string { return "reconnect mode is off, shutting down" })
-		//Shutdown is blocking operation which will make sure all the event goroutines are closed.
-		//If we wait here blocking, it will be a deadlock
+		// Shutdown is blocking operation which will make sure all the event goroutines are closed.
+		// If we wait here blocking, it will be a deadlock
 		go c.Shutdown(ctx)
 		return
 	}
@@ -514,8 +512,8 @@ func (c *Client) handleClusterEvent(e event.Event) {
 	c.partitionService.Reset()
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.logger.Errorf("cannot reconnect to cluster, shutting down: %w", err)
-		//Shutdown is blocking operation which will make sure all the event goroutines are closed.
-		//If we wait here blocking, it will be a deadlock
+		// Shutdown is blocking operation which will make sure all the event goroutines are closed.
+		// If we wait here blocking, it will be a deadlock
 		go c.Shutdown(ctx)
 	}
 }
