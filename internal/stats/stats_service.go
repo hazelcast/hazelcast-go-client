@@ -126,7 +126,7 @@ func (s *Service) handleClusterEvent(event event.Event) {
 		return
 	}
 	s.clusterConnectTime.Store(time.Now())
-	s.connAddr.Store(*e.Addr)
+	s.connAddr.Store(e.Addr)
 }
 
 func (s *Service) sendStats(ctx context.Context) {

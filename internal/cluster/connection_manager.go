@@ -210,7 +210,7 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	if clusterIDChanged {
 		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateChangedCluster))
 	}
-	m.eventDispatcher.Publish(NewConnected(&addr))
+	m.eventDispatcher.Publish(NewConnected(addr))
 	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateConnected))
 	if m.smartRouting {
 		//connect to all addresses eagerly at the start

@@ -97,11 +97,11 @@ const (
 )
 
 type ClusterStateChangedEvent struct {
-	Addr  *pubcluster.Address
+	Addr  pubcluster.Address
 	State ClusterState
 }
 
-func NewConnected(addr *pubcluster.Address) *ClusterStateChangedEvent {
+func NewConnected(addr pubcluster.Address) *ClusterStateChangedEvent {
 	return &ClusterStateChangedEvent{Addr: addr, State: ClusterStateConnected}
 }
 
@@ -110,5 +110,5 @@ func (e *ClusterStateChangedEvent) EventName() string {
 }
 
 func NewDisconnected() *ClusterStateChangedEvent {
-	return &ClusterStateChangedEvent{Addr: nil, State: ClusterStateDisconnected}
+	return &ClusterStateChangedEvent{Addr: "", State: ClusterStateDisconnected}
 }
