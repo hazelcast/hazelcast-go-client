@@ -292,7 +292,7 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 		mu.Lock()
 		defer mu.Unlock()
 		return reflect.DeepEqual(target, events)
-	}, "target : %v, events %v ", target, events)
+	})
 }
 
 func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
@@ -599,7 +599,6 @@ func TestInvocationTimeout(t *testing.T) {
 }
 
 func TestClientStartShutdownMemoryLeak(t *testing.T) {
-	t.SkipNow()
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
 		defer tc.Shutdown()

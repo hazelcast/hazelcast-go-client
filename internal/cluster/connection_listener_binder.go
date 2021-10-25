@@ -209,23 +209,23 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 	return inv, nil
 }
 
-func (b *ConnectionListenerBinder) handleConnectionEvent(e event.Event) {
-	cEvent := e.(*ConnectionEvent)
-	if cEvent.Opened {
-		b.handleConnectionOpened(cEvent)
+func (b *ConnectionListenerBinder) handleConnectionEvent(event event.Event) {
+	e := event.(*ConnectionEvent)
+	if e.Opened {
+		b.handleConnectionOpened(e)
 	} else {
-		b.handleConnectionClosed(cEvent)
+		b.handleConnectionClosed(e)
 	}
-
 }
+
 func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionEvent) {
-	connectionCount := atomic.AddInt32(&b.connectionCount, 1)
-	b.regsMu.Lock()
-	defer b.regsMu.Unlock()
-	if !b.smart && connectionCount > 0 {
+	connCount := atomic.AddInt32(&b.connectionCount, 1)
+	if !b.smart && connCount > 0 {
 		// do not register new connections in non-smart mode
 		return
 	}
+	b.regsMu.Lock()
+	defer b.regsMu.Unlock()
 	for regID, reg := range b.regs {
 		b.logger.Debug(func() string {
 			return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
@@ -238,6 +238,6 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionEvent) {
 	}
 }
 
-func (b *ConnectionListenerBinder) handleConnectionClosed(e *ConnectionEvent) {
+func (b *ConnectionListenerBinder) handleConnectionClosed(_ *ConnectionEvent) {
 	atomic.AddInt32(&b.connectionCount, -1)
 }

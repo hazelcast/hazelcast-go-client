@@ -16,12 +16,12 @@
 
 package lifecycle
 
-// InternalLifecycleState indicates the state of the lifecycle event.
-type InternalLifecycleState int
+// State indicates the state of the lifecycle event.
+type State int
 
 const (
 	// InternalLifecycleStateStarting signals that the client is starting.
-	InternalLifecycleStateStarting InternalLifecycleState = iota
+	InternalLifecycleStateStarting State = iota
 	// InternalLifecycleStateStarted signals that the client started.
 	InternalLifecycleStateStarted
 	// InternalLifecycleStateShuttingDown signals that the client is shutting down.
@@ -36,19 +36,19 @@ const (
 	InternalLifecycleStateChangedCluster
 )
 const (
-	// EventLifecycleEventStateChanged is dispatched for client lifecycle change events
-	EventLifecycleEventStateChanged = "lifecyclestatechanged"
+	// EventLifecycleStateChanged is dispatched for client lifecycle change events
+	EventLifecycleStateChanged = "lifecyclestatechanged"
 )
 
 // InternalLifecycleStateChanged contains information about a lifecycle event.
 type InternalLifecycleStateChanged struct {
-	State InternalLifecycleState
+	State State
 }
 
 func (e *InternalLifecycleStateChanged) EventName() string {
-	return EventLifecycleEventStateChanged
+	return EventLifecycleStateChanged
 }
 
-func NewLifecycleStateChanged(state InternalLifecycleState) *InternalLifecycleStateChanged {
+func NewLifecycleStateChanged(state State) *InternalLifecycleStateChanged {
 	return &InternalLifecycleStateChanged{State: state}
 }

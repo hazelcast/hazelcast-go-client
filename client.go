@@ -254,8 +254,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	}
 	atomic.StoreInt32(&c.state, stopped)
 	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShutDown))
-	err := c.eventDispatcher.Stop(ctx)
-	if err != nil {
+	if err := c.eventDispatcher.Stop(ctx); err != nil {
 		return err
 	}
 	return nil
@@ -383,13 +382,13 @@ func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.Mem
 					Member: member,
 				})
 			}
-		} else {
-			for _, member := range e.Members {
-				handler(cluster.MembershipStateChanged{
-					State:  cluster.MembershipStateRemoved,
-					Member: member,
-				})
-			}
+			return
+		}
+		for _, member := range e.Members {
+			handler(cluster.MembershipStateChanged{
+				State:  cluster.MembershipStateRemoved,
+				Member: member,
+			})
 		}
 
 	})
