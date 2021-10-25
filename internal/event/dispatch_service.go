@@ -23,6 +23,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
+var SubIDGenerator = NewRefIDGenerator(0)
+
 const DefaultSubscriptionID = -1
 
 type Event interface {

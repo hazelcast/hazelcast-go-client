@@ -59,6 +59,8 @@ const (
 	initialMembersTimeout = 120 * time.Second
 )
 
+var connectionManagerSubID = event.SubIDGenerator.NextID()
+
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
 type ConnectionManagerCreationBundle struct {
@@ -181,7 +183,7 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	m.checkClusterIDChanged()
 	m.eventDispatcher.Publish(NewConnected(addr))
 	atomic.StoreInt32(&m.state, ready)
-	m.eventDispatcher.Subscribe(EventConnectionClosed, event.DefaultSubscriptionID, m.handleConnectionClosed)
+	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionManagerSubID, m.handleConnectionClosed)
 	return nil
 }
 
@@ -190,9 +192,9 @@ func (m *ConnectionManager) startUnisocket(ctx context.Context) (pubcluster.Addr
 	// to prevent errors with stuff that requires the cluster service to have members, such as PNCounter
 	ch := make(chan struct{})
 	once := &sync.Once{}
-	m.eventDispatcher.Subscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded), func(e event.Event) {
+	m.eventDispatcher.Subscribe(EventMembersAdded, connectionManagerSubID, func(e event.Event) {
 		once.Do(func() {
-			m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
+			m.eventDispatcher.Unsubscribe(EventMembersAdded, connectionManagerSubID)
 			close(ch)
 		})
 	})
@@ -209,13 +211,13 @@ func (m *ConnectionManager) startUnisocket(ctx context.Context) (pubcluster.Addr
 func (m *ConnectionManager) startSmart(ctx context.Context) (pubcluster.Address, error) {
 	ch := make(chan struct{})
 	once := &sync.Once{}
-	m.eventDispatcher.Subscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded), func(e event.Event) {
+	m.eventDispatcher.Subscribe(EventMembersAdded, connectionManagerSubID, func(e event.Event) {
 		once.Do(func() {
 			m.connectAllMembers(ctx)
 			close(ch)
 		})
 	})
-	m.eventDispatcher.Subscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved), m.handleMembersRemoved)
+	m.eventDispatcher.Subscribe(EventMembersRemoved, connectionManagerSubID, m.handleMembersRemoved)
 	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
 		return "", err
@@ -255,9 +257,8 @@ func (m *ConnectionManager) checkClusterIDChanged() {
 }
 
 func (m *ConnectionManager) Stop() {
-	m.eventDispatcher.Unsubscribe(EventConnectionClosed, event.MakeSubscriptionID(m.handleConnectionClosed))
-	m.eventDispatcher.Unsubscribe(EventMembersAdded, event.MakeSubscriptionID(m.handleMembersAdded))
-	m.eventDispatcher.Unsubscribe(EventMembersRemoved, event.MakeSubscriptionID(m.handleMembersRemoved))
+	m.eventDispatcher.Unsubscribe(EventMembersRemoved, connectionManagerSubID)
+	m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionManagerSubID)
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
 		return
 	}
@@ -305,20 +306,6 @@ func (m *ConnectionManager) reset() {
 	m.clusterID = nil
 	m.clusterIDMu.Unlock()
 	m.connMap.Reset()
-}
-
-func (m *ConnectionManager) handleMembersAdded(event event.Event) {
-	e := event.(*MembersAdded)
-	m.logger.Trace(func() string {
-		return fmt.Sprintf("cluster.ConnectionManager.handleMembersAdded: %v", e.Members)
-	})
-	ctx := context.Background()
-	missing := m.connMap.FindAddedMembers(e.Members, m.clusterService)
-	for _, mem := range missing {
-		if _, err := m.tryConnectMember(ctx, &mem); err != nil {
-			m.logger.Errorf("connecting added member %s: %w", mem, err)
-		}
-	}
 }
 
 func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
@@ -568,7 +555,7 @@ func (m *ConnectionManager) detectFixBrokenConnections() {
 
 func (m *ConnectionManager) connectAllMembers(ctx context.Context) {
 	for _, mem := range m.clusterService.OrderedMembers() {
-		if _, err := m.tryConnectMember(ctx, &mem); err != nil {
+		if err := m.tryConnectMember(ctx, &mem); err != nil {
 			m.logger.Errorf("connecting member %s: %w", mem, err)
 		}
 	}
@@ -600,23 +587,23 @@ func (m *ConnectionManager) tryConnectAddress(ctx context.Context, addr pubclust
 	return finalAddr, nil
 }
 
-func (m *ConnectionManager) tryConnectMember(ctx context.Context, member *pubcluster.MemberInfo) (bool, error) {
+func (m *ConnectionManager) tryConnectMember(ctx context.Context, member *pubcluster.MemberInfo) error {
 	uuid := member.UUID
 	if conn := m.connMap.GetConnectionForUUID(uuid); conn != nil {
-		return false, nil
+		return nil
 	}
 	if !m.connMap.CheckAddCandidate(uuid) {
-		return false, nil
+		return nil
 	}
 	defer m.connMap.RemoveCandidate(uuid)
 	addr, err := m.clusterService.TranslateMember(ctx, member)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if _, err := connectMember(ctx, m, addr); err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
 type connectionMap struct {
@@ -624,8 +611,6 @@ type connectionMap struct {
 	mu *sync.RWMutex
 	// addrToConn maps connection address to connection
 	addrToConn map[pubcluster.Address]*Connection
-	// connToAddr maps connection ID to address
-	connToAddr map[int64]pubcluster.Address
 	addrs      []pubcluster.Address
 	uuidToConn map[types.UUID]*Connection
 	candidates map[types.UUID]struct{}
@@ -636,7 +621,6 @@ func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
 		lb:         lb,
 		mu:         &sync.RWMutex{},
 		addrToConn: map[pubcluster.Address]*Connection{},
-		connToAddr: map[int64]pubcluster.Address{},
 		uuidToConn: map[types.UUID]*Connection{},
 		candidates: map[types.UUID]struct{}{},
 	}
@@ -645,7 +629,6 @@ func newConnectionMap(lb pubcluster.LoadBalancer) *connectionMap {
 func (m *connectionMap) Reset() {
 	m.mu.Lock()
 	m.addrToConn = map[pubcluster.Address]*Connection{}
-	m.connToAddr = map[int64]pubcluster.Address{}
 	m.uuidToConn = map[types.UUID]*Connection{}
 	m.candidates = map[types.UUID]struct{}{}
 	m.mu.Unlock()
@@ -656,11 +639,10 @@ func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address)
 	defer m.mu.Unlock()
 	delete(m.candidates, conn.memberUUID)
 	// if the connection was already added, skip it
-	if _, ok := m.connToAddr[conn.connectionID]; ok {
+	if _, ok := m.uuidToConn[conn.memberUUID]; ok {
 		return
 	}
 	m.addrToConn[addr] = conn
-	m.connToAddr[conn.connectionID] = addr
 	m.uuidToConn[conn.memberUUID] = conn
 	m.addrs = append(m.addrs, addr)
 }
@@ -672,7 +654,6 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	for addr, conn := range m.addrToConn {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.addrToConn, addr)
-			delete(m.connToAddr, conn.connectionID)
 			delete(m.uuidToConn, conn.memberUUID)
 			m.removeAddr(addr)
 			break
@@ -703,13 +684,6 @@ func (m *connectionMap) GetConnectionForAddr(addr pubcluster.Address) *Connectio
 	conn := m.addrToConn[addr]
 	m.mu.RUnlock()
 	return conn
-}
-
-func (m *connectionMap) GetAddrForConnectionID(connID int64) (pubcluster.Address, bool) {
-	m.mu.RLock()
-	addr, ok := m.connToAddr[connID]
-	m.mu.RUnlock()
-	return addr, ok
 }
 
 func (m *connectionMap) RandomConn() *Connection {
@@ -753,7 +727,7 @@ func (m *connectionMap) Connections() []*Connection {
 func (m *connectionMap) IsEmpty() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return len(m.connToAddr) == 0
+	return len(m.uuidToConn) == 0
 }
 
 func (m *connectionMap) FindAddedMembers(members []pubcluster.MemberInfo, cs *Service) []pubcluster.MemberInfo {
@@ -813,7 +787,7 @@ func (m *connectionMap) RemoveCandidate(uuid types.UUID) {
 
 func (m *connectionMap) Len() int {
 	m.mu.RLock()
-	l := len(m.connToAddr)
+	l := len(m.uuidToConn)
 	m.mu.RUnlock()
 	return l
 }
