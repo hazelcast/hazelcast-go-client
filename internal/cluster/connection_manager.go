@@ -59,7 +59,7 @@ const (
 	initialMembersTimeout = 120 * time.Second
 )
 
-var connectionManagerSubID = event.SubIDGenerator.NextID()
+var connectionManagerSubID = event.NextSubscriptionID()
 
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
