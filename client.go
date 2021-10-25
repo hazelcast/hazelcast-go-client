@@ -224,7 +224,7 @@ func (c *Client) start(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, created, starting) {
 		return nil
 	}
-	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateStarting))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateStarting))
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.eventDispatcher.Stop(ctx)
 		c.invocationService.Stop()
@@ -236,7 +236,7 @@ func (c *Client) start(ctx context.Context) error {
 	}
 	c.eventDispatcher.Subscribe(icluster.EventCluster, event.MakeSubscriptionID(c.handleClusterEvent), c.handleClusterEvent)
 	atomic.StoreInt32(&c.state, ready)
-	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateStarted))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateStarted))
 	return nil
 }
 
@@ -245,7 +245,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
 		return nil
 	}
-	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShuttingDown))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
 	c.invocationService.Stop()
 	c.heartbeatService.Stop()
 	c.connectionManager.Stop()
@@ -253,7 +253,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		c.statsService.Stop()
 	}
 	atomic.StoreInt32(&c.state, stopped)
-	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateShutDown))
+	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShutDown))
 	if err := c.eventDispatcher.Stop(ctx); err != nil {
 		return err
 	}
@@ -348,22 +348,22 @@ func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleSta
 		// The workaround is that we have two lifecycle events one is internal(inside internal/cluster) other is public.
 		// This is because internal/cluster can not use hazelcast package.
 		// We map internal ones to external ones on the handler before giving them to the user here.
-		e := event.(*lifecycle.InternalLifecycleStateChanged)
+		e := event.(*lifecycle.StateChangedEvent)
 		var mapped LifecycleState
 		switch e.State {
-		case lifecycle.InternalLifecycleStateStarting:
+		case lifecycle.StateStarting:
 			mapped = LifecycleStateStarting
-		case lifecycle.InternalLifecycleStateStarted:
+		case lifecycle.StateStarted:
 			mapped = LifecycleStateStarted
-		case lifecycle.InternalLifecycleStateShuttingDown:
+		case lifecycle.StateShuttingDown:
 			mapped = LifecycleStateShuttingDown
-		case lifecycle.InternalLifecycleStateShutDown:
+		case lifecycle.StateShutDown:
 			mapped = LifecycleStateShutDown
-		case lifecycle.InternalLifecycleStateConnected:
+		case lifecycle.StateConnected:
 			mapped = LifecycleStateConnected
-		case lifecycle.InternalLifecycleStateDisconnected:
+		case lifecycle.StateDisconnected:
 			mapped = LifecycleStateDisconnected
-		case lifecycle.InternalLifecycleStateChangedCluster:
+		case lifecycle.StateChangedCluster:
 			mapped = LifecycleStateChangedCluster
 		default:
 			c.logger.Warnf("no corresponding hazelcast.LifecycleStateChanged event found : %v", e.State)

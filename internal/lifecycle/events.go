@@ -20,35 +20,35 @@ package lifecycle
 type State int
 
 const (
-	// InternalLifecycleStateStarting signals that the client is starting.
-	InternalLifecycleStateStarting State = iota
-	// InternalLifecycleStateStarted signals that the client started.
-	InternalLifecycleStateStarted
-	// InternalLifecycleStateShuttingDown signals that the client is shutting down.
-	InternalLifecycleStateShuttingDown
-	// InternalLifecycleStateShutDown signals that the client shut down.
-	InternalLifecycleStateShutDown
-	// InternalLifecycleStateConnected signals that the client connected to the cluster.
-	InternalLifecycleStateConnected
-	// InternalLifecycleStateDisconnected signals that the client disconnected from the cluster.
-	InternalLifecycleStateDisconnected
-	// InternalLifecycleStateChangedCluster signals that the client is connected to a new cluster.
-	InternalLifecycleStateChangedCluster
+	// StateStarting signals that the client is starting.
+	StateStarting State = iota
+	// StateStarted signals that the client started.
+	StateStarted
+	// StateShuttingDown signals that the client is shutting down.
+	StateShuttingDown
+	// StateShutDown signals that the client shut down.
+	StateShutDown
+	// StateConnected signals that the client connected to the cluster.
+	StateConnected
+	// StateDisconnected signals that the client disconnected from the cluster.
+	StateDisconnected
+	// StateChangedCluster signals that the client is connected to a new cluster.
+	StateChangedCluster
 )
 const (
 	// EventLifecycleStateChanged is dispatched for client lifecycle change events
 	EventLifecycleStateChanged = "lifecyclestatechanged"
 )
 
-// InternalLifecycleStateChanged contains information about a lifecycle event.
-type InternalLifecycleStateChanged struct {
+// StateChangedEvent contains information about a lifecycle event.
+type StateChangedEvent struct {
 	State State
 }
 
-func (e *InternalLifecycleStateChanged) EventName() string {
+func (e *StateChangedEvent) EventName() string {
 	return EventLifecycleStateChanged
 }
 
-func NewLifecycleStateChanged(state State) *InternalLifecycleStateChanged {
-	return &InternalLifecycleStateChanged{State: state}
+func NewLifecycleStateChanged(state State) *StateChangedEvent {
+	return &StateChangedEvent{State: state}
 }

@@ -208,10 +208,10 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	clusterIDChanged = m.prevClusterID != nil && m.prevClusterID != m.clusterID
 	m.clusterIDMu.Unlock()
 	if clusterIDChanged {
-		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateChangedCluster))
+		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateChangedCluster))
 	}
 	m.eventDispatcher.Publish(NewConnected(addr))
-	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateConnected))
+	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateConnected))
 	if m.smartRouting {
 		//connect to all addresses eagerly at the start
 		for _, memberAddress := range m.clusterService.MemberAddrs() {
@@ -314,7 +314,7 @@ func (m *ConnectionManager) handleConnectionEvent(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) {
 	if remaining := m.connMap.RemoveConnection(conn); remaining == 0 {
 		m.eventDispatcher.Publish(NewDisconnected())
-		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.InternalLifecycleStateDisconnected))
+		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateDisconnected))
 	}
 }
 
