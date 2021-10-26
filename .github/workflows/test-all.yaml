@@ -42,4 +42,4 @@ jobs:
 
       - name: "Run All Tests"
         run: |
-          make test-all TEST_FLAGS='-timeout 20m'
+          make test-all
