@@ -102,14 +102,20 @@ func flakeIDBatchFromMemberFn(ctx context.Context, f *FlakeIDGenerator) (flakeID
 		base:      base,
 		increment: inc,
 		size:      int64(size),
-		index:     -1, // to serve index 0 during atomic increment.
+		atomics:   atomics{-1}, // to serve index 0 during atomic increment.
 		expiresAt: time.Now().Add(time.Duration(f.config.PrefetchExpiry)),
 	}, nil
 }
 
+// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+// And we don't want to suppress files on fieldAlignment check.
+type atomics struct {
+	index int64
+}
+
 type flakeIDBatch struct {
-	index     int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	expiresAt time.Time
+	atomics   atomics
 	base      int64
 	increment int64
 	size      int64
@@ -119,7 +125,7 @@ func (f *flakeIDBatch) nextID() int64 {
 	if time.Now().After(f.expiresAt) {
 		return invalidFlakeID
 	}
-	idx := atomic.AddInt64(&f.index, 1)
+	idx := atomic.AddInt64(&f.atomics.index, 1)
 	if idx >= f.size {
 		return invalidFlakeID
 	}

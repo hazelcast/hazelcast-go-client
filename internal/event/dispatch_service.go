@@ -25,8 +25,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
-const DefaultSubscriptionID = -1
-
 type Event interface {
 	EventName() string
 }
@@ -38,10 +36,17 @@ const (
 
 type Handler func(event Event)
 
+// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+// And we don't want to suppress files on fieldAlignment check.
+type atomics struct {
+	nextSubscriptionID int64
+}
+
 type DispatchService struct {
 	logger          logger.Logger
 	subscriptions   map[string]map[int64]*subscription
 	subscriptionsMu *sync.RWMutex
+	atomics         atomics
 	state           int32
 }
 
@@ -54,6 +59,7 @@ type DispatchService struct {
 //4 - A close after publish in the same thread waits for published item to be handled(finished) .
 func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
+		atomics:         atomics{},
 		subscriptions:   map[string]map[int64]*subscription{},
 		subscriptionsMu: &sync.RWMutex{},
 		logger:          logger,
@@ -89,15 +95,15 @@ func (s *DispatchService) Stop(ctx context.Context) error {
 
 // Subscribe attaches handler to listen for events with eventName.
 // Do not rely on the order of handlers, they may be shuffled.
-func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, handler Handler) {
-	if subscriptionID == DefaultSubscriptionID {
-		subscriptionID = MakeSubscriptionID(handler)
-	}
+// Returns a subscription id and nil if successful.
+//Returns -1 and error if the service is stopped.
+func (s *DispatchService) Subscribe(eventName string, handler Handler) (int64, error) {
 	// subscribing to a not-running service is no-op
 	if atomic.LoadInt32(&s.state) == stopped {
-		return
+		return -1, fmt.Errorf("dispatch service is shut down")
 	}
 
+	subscriptionID := atomic.AddInt64(&s.atomics.nextSubscriptionID, 1)
 	s.subscriptionsMu.Lock()
 	defer s.subscriptionsMu.Unlock()
 
@@ -112,11 +118,8 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 		handlers = map[int64]*subscription{}
 		s.subscriptions[eventName] = handlers
 	}
-	if _, exists := handlers[subscriptionID]; exists {
-		//TODO we need to make sure that this can never happen
-		panic("subscriptionID already exists ")
-	}
 	handlers[subscriptionID] = sbs
+	return subscriptionID, nil
 }
 
 func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {

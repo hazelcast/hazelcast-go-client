@@ -34,7 +34,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -89,7 +88,6 @@ type Client struct {
 	heartbeatService        *icluster.HeartbeatService
 	clusterConfig           *cluster.Config
 	membershipListenerMap   map[types.UUID]int64
-	refIDGen                *iproxy.ReferenceIDGenerator
 	lifecyleListenerMap     map[types.UUID]int64
 	lifecyleListenerMapMu   *sync.Mutex
 	name                    string
@@ -125,7 +123,6 @@ func newClient(config Config) (*Client, error) {
 		serializationService:    serializationService,
 		eventDispatcher:         event.NewDispatchService(clientLogger),
 		logger:                  clientLogger,
-		refIDGen:                iproxy.NewReferenceIDGenerator(1),
 		lifecyleListenerMap:     map[types.UUID]int64{},
 		lifecyleListenerMapMu:   &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
@@ -234,7 +231,7 @@ func (c *Client) start(ctx context.Context) error {
 	if c.statsService != nil {
 		c.statsService.Start()
 	}
-	c.eventDispatcher.Subscribe(icluster.EventCluster, event.MakeSubscriptionID(c.handleClusterEvent), c.handleClusterEvent)
+	c.eventDispatcher.Subscribe(icluster.EventCluster, c.handleClusterEvent)
 	atomic.StoreInt32(&c.state, ready)
 	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateStarted))
 	return nil
@@ -273,8 +270,10 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (type
 		return types.UUID{}, hzerrors.ErrClientNotActive
 	}
 	uuid := types.NewUUID()
-	subscriptionID := c.refIDGen.NextID()
-	c.addLifecycleListener(subscriptionID, handler)
+	subscriptionID, err := c.addLifecycleListener(handler)
+	if err != nil {
+		return uuid, err
+	}
 	c.lifecyleListenerMapMu.Lock()
 	c.lifecyleListenerMap[uuid] = subscriptionID
 	c.lifecyleListenerMapMu.Unlock()
@@ -302,8 +301,10 @@ func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHand
 		return types.UUID{}, hzerrors.ErrClientNotActive
 	}
 	uuid := types.NewUUID()
-	subscriptionID := c.refIDGen.NextID()
-	c.addMembershipListener(subscriptionID, handler)
+	subscriptionID, err := c.addMembershipListener(handler)
+	if err != nil {
+		return uuid, err
+	}
 	c.membershipListenerMapMu.Lock()
 	c.membershipListenerMap[uuid] = subscriptionID
 	c.membershipListenerMapMu.Unlock()
@@ -341,8 +342,8 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
 }
 
-func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
-	c.eventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
+func (c *Client) addLifecycleListener(handler LifecycleStateChangeHandler) (int64, error) {
+	return c.eventDispatcher.Subscribe(eventLifecycleEventStateChanged, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
 		// A better solution would have been separating lifecycle events to its own package where both internal/cluster and hazelcast packages can access(but this is an API breaking change).
 		// The workaround is that we have two lifecycle events one is internal(inside internal/cluster) other is public.
@@ -373,8 +374,8 @@ func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleSta
 	})
 }
 
-func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.MembershipStateChangeHandler) {
-	c.eventDispatcher.Subscribe(icluster.EventMembers, subscriptionID, func(event event.Event) {
+func (c *Client) addMembershipListener(handler cluster.MembershipStateChangeHandler) (int64, error) {
+	return c.eventDispatcher.Subscribe(icluster.EventMembers, func(event event.Event) {
 		e := event.(*icluster.MembersStateChangedEvent)
 		if e.State == icluster.MembersStateAdded {
 			for _, member := range e.Members {
@@ -391,19 +392,16 @@ func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.Mem
 				Member: member,
 			})
 		}
-
 	})
 }
 
 func (c *Client) addConfigEvents(config *Config) {
 	for uuid, handler := range config.lifecycleListeners {
-		subscriptionID := c.refIDGen.NextID()
-		c.addLifecycleListener(subscriptionID, handler)
+		subscriptionID, _ := c.addLifecycleListener(handler)
 		c.lifecyleListenerMap[uuid] = subscriptionID
 	}
 	for uuid, handler := range config.membershipListeners {
-		subscriptionID := c.refIDGen.NextID()
-		c.addMembershipListener(subscriptionID, handler)
+		subscriptionID, _ := c.addMembershipListener(handler)
 		c.membershipListenerMap[uuid] = subscriptionID
 	}
 }

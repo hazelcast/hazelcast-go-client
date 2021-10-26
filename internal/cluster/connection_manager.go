@@ -112,9 +112,15 @@ func (b ConnectionManagerCreationBundle) Check() {
 		panic("isClientShutDown is nil")
 	}
 }
+// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+// And we don't want to suppress files on fieldAlignment check.
+type atomics struct {
+	nextConnID            int64
+	connectionEventSubsID int64
+	membersEventSubsID    int64
+}
 
 type ConnectionManager struct {
-	nextConnID           int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	logger               ilogger.Logger
 	isClientShutDown     func() bool
 	failoverConfig       *pubcluster.FailoverConfig
@@ -135,6 +141,7 @@ type ConnectionManager struct {
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
+	atomics              atomics
 	state                int32
 	smartRouting         bool
 }
@@ -179,12 +186,16 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	ch := make(chan struct{})
 	once := &sync.Once{}
-	m.eventDispatcher.Subscribe(EventMembers, event.MakeSubscriptionID(m.handleMembersEvent), func(e event.Event) {
+	membersEventSubsID, err := m.eventDispatcher.Subscribe(EventMembers, func(e event.Event) {
 		m.handleMembersEvent(e)
 		once.Do(func() {
 			close(ch)
 		})
 	})
+	if err != nil {
+		return err
+	}
+	atomic.StoreInt64(&m.atomics.membersEventSubsID, membersEventSubsID)
 	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
 		return err
@@ -224,13 +235,14 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 		go m.logStatus()
 	}
 	atomic.StoreInt32(&m.state, ready)
-	m.eventDispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, m.handleConnectionEvent)
+	connectionEventSubsID, _ := m.eventDispatcher.Subscribe(EventConnection, m.handleConnectionEvent)
+	atomic.StoreInt64(&m.atomics.connectionEventSubsID, connectionEventSubsID)
 	return nil
 }
 
 func (m *ConnectionManager) Stop() {
-	m.eventDispatcher.Unsubscribe(EventConnection, event.MakeSubscriptionID(m.handleConnectionEvent))
-	m.eventDispatcher.Unsubscribe(EventMembers, event.MakeSubscriptionID(m.handleMembersEvent))
+	m.eventDispatcher.Unsubscribe(EventConnection, atomic.LoadInt64(&m.atomics.connectionEventSubsID))
+	m.eventDispatcher.Unsubscribe(EventMembers, atomic.LoadInt64(&m.atomics.membersEventSubsID))
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
 		return
 	}
@@ -239,7 +251,7 @@ func (m *ConnectionManager) Stop() {
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {
-	return atomic.AddInt64(&m.nextConnID, 1)
+	return atomic.AddInt64(&m.atomics.nextConnID, 1)
 }
 
 func (m *ConnectionManager) GetConnectionForAddress(addr pubcluster.Address) *Connection {

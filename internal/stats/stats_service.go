@@ -52,26 +52,33 @@ type binTextStats struct {
 	stats []stat
 }
 
+// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+// And we don't want to suppress files on fieldAlignment check.
+type atomics struct {
+	subscriptionID int64
+}
+
 type Service struct {
-	clusterConnectTime atomic.Value
 	connAddr           atomic.Value
 	logger             logger.Logger
+	clusterConnectTime atomic.Value
+	dispatchService    *event.DispatchService
 	mu                 *sync.RWMutex
 	invFactory         *cluster.ConnectionInvocationFactory
 	addrs              map[string]struct{}
 	invocationService  *invocation.Service
 	doneCh             chan struct{}
-	ed                 *event.DispatchService
-	btStats            binTextStats
 	clientName         string
+	btStats            binTextStats
 	gauges             []gauge
+	atomics            atomics
 	interval           time.Duration
 }
 
 func NewService(
 	invService *invocation.Service,
 	invFactory *cluster.ConnectionInvocationFactory,
-	ed *event.DispatchService,
+	dispatchService *event.DispatchService,
 	logger logger.Logger,
 	interval time.Duration,
 	clientName string) *Service {
@@ -84,12 +91,13 @@ func NewService(
 		addrs:             map[string]struct{}{},
 		mu:                &sync.RWMutex{},
 		clientName:        clientName,
-		ed:                ed,
+		dispatchService:   dispatchService,
 		btStats:           binTextStats{mc: NewMetricCompressor()},
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
-	ed.Subscribe(cluster.EventCluster, event.DefaultSubscriptionID, s.handleClusterEvent)
+	subscriptionID, _ := dispatchService.Subscribe(cluster.EventCluster, s.handleClusterEvent)
+	atomic.StoreInt64(&s.atomics.subscriptionID, subscriptionID)
 	s.addGauges()
 	return s
 }
@@ -100,8 +108,7 @@ func (s *Service) Start() {
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	subID := event.MakeSubscriptionID(s.handleClusterEvent)
-	s.ed.Unsubscribe(cluster.EventCluster, subID)
+	s.dispatchService.Unsubscribe(cluster.EventCluster, atomic.LoadInt64(&s.atomics.subscriptionID))
 }
 
 func (s *Service) loop() {

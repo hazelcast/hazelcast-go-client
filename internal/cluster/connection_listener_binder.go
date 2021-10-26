@@ -68,7 +68,7 @@ func NewConnectionListenerBinder(
 		logger:            logger,
 		smart:             smart,
 	}
-	eventDispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, binder.handleConnectionEvent)
+	eventDispatcher.Subscribe(EventConnection, binder.handleConnectionEvent)
 	return binder
 }
 

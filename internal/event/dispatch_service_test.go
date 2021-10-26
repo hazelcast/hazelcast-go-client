@@ -55,7 +55,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		wg.Done()
 	}
 	service := event.NewDispatchService(logger.New())
-	service.Subscribe("sample.event", 100, handler)
+	service.Subscribe("sample.event", handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
 	}
@@ -73,8 +73,8 @@ func TestDispatchServiceUnsubscribe(t *testing.T) {
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
 	}
-	service.Subscribe("sample.event", 100, handler)
-	service.Unsubscribe("sample.event", 100)
+	id, _ := service.Subscribe("sample.event", handler)
+	service.Unsubscribe("sample.event", id)
 	service.Publish(sampleEvent{})
 	it.Never(t, func() bool {
 		return atomic.LoadInt32(&dispatchCount) != 0
@@ -87,7 +87,7 @@ func TestDispatchServiceStop(t *testing.T) {
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
 	}
-	service.Subscribe("sample.event", 100, handler)
+	service.Subscribe("sample.event", handler)
 	service.Stop(context.Background())
 	assert.False(t, service.Publish(sampleEvent{}))
 	it.Never(t, func() bool {
@@ -111,7 +111,7 @@ func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 		valuesMu.Unlock()
 		wg.Done()
 	}
-	service.Subscribe("sample.event", 100, handler)
+	service.Subscribe("sample.event", handler)
 	for i := 0; i < targetCount; i++ {
 		service.Publish(sampleEvent{value: i})
 	}
@@ -130,7 +130,7 @@ func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 	}
 	service := event.NewDispatchService(logger.New())
-	service.Subscribe("sample.event", 100, handler)
+	service.Subscribe("sample.event", handler)
 	go service.Stop(context.Background())
 	successfulPubCnt := int32(0)
 	for i := 0; i < goroutineCount; i++ {
@@ -151,7 +151,7 @@ func TestDispatchService_BlockingCallWillNotBlockUnrelatedSubscriptions(t *testi
 	wg.Add(1)
 	defer wg.Done()
 	service := event.NewDispatchService(logger.New())
-	service.Subscribe("sample.event", 1, func(event event.Event) {
+	service.Subscribe("sample.event", func(event event.Event) {
 		//Wait blocking until test finishes.
 		wg.Wait()
 	})
@@ -159,10 +159,10 @@ func TestDispatchService_BlockingCallWillNotBlockUnrelatedSubscriptions(t *testi
 	sameNameWg.Add(1)
 	diffNameWg := &sync.WaitGroup{}
 	diffNameWg.Add(1)
-	service.Subscribe("sample.event", 2, func(event event.Event) {
+	service.Subscribe("sample.event", func(event event.Event) {
 		sameNameWg.Done()
 	})
-	service.Subscribe("different.event", 3, func(event event.Event) {
+	service.Subscribe("different.event", func(event event.Event) {
 		diffNameWg.Done()
 	})
 	service.Publish(sampleEvent{1})
@@ -179,7 +179,7 @@ func TestDispatchServiceCloseRespectsContext(t *testing.T) {
 	handler := func(event event.Event) {
 		wg.Wait()
 	}
-	service.Subscribe("sample.event", 100, handler)
+	service.Subscribe("sample.event", handler)
 	service.Publish(sampleEvent{})
 	cancel()
 	err := service.Stop(ctx)

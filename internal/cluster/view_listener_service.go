@@ -9,12 +9,18 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
+// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+// And we don't want to suppress files on fieldAlignment check.
+type listenerAtomics struct {
+	connID int64
+}
+
 type ViewListenerService struct {
-	connID     int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	cs         *Service
 	cm         *ConnectionManager
 	dispatcher *event.DispatchService
 	logger     logger.Logger
+	atomics    listenerAtomics
 }
 
 func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *event.DispatchService, logger logger.Logger) *ViewListenerService {
@@ -24,7 +30,7 @@ func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *even
 		dispatcher: dispatcher,
 		logger:     logger,
 	}
-	dispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, vs.handleConnectionEvent)
+	dispatcher.Subscribe(EventConnection, vs.handleConnectionEvent)
 	return vs
 }
 
@@ -42,7 +48,7 @@ func (vs *ViewListenerService) tryRegister(conn *Connection) {
 	vs.logger.Trace(func() string {
 		return fmt.Sprintf("cluster.ViewListenerService.tryRegister (status: %d): %d", atomic.LoadInt32(&conn.status), conn.connectionID)
 	})
-	if !atomic.CompareAndSwapInt64(&vs.connID, 0, conn.connectionID) {
+	if !atomic.CompareAndSwapInt64(&vs.atomics.connID, 0, conn.connectionID) {
 		return
 	}
 	if err := vs.cs.sendMemberListViewRequest(context.Background(), conn); err != nil {
@@ -54,7 +60,7 @@ func (vs *ViewListenerService) tryReregisterToRandomConnection(oldConn *Connecti
 	vs.logger.Trace(func() string {
 		return fmt.Sprintf("cluster.ViewListenerService.tryReRegister: %d", oldConn.connectionID)
 	})
-	if !atomic.CompareAndSwapInt64(&vs.connID, oldConn.connectionID, 0) {
+	if !atomic.CompareAndSwapInt64(&vs.atomics.connID, oldConn.connectionID, 0) {
 		return
 	}
 	if conn := vs.cm.RandomConnection(); conn != nil {
