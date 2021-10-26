@@ -469,11 +469,7 @@ func (m *ConnectionManager) processAuthenticationResult(ctx context.Context, con
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
 		conn.memberUUID = uuid
-		connAddr, err := m.clusterService.TranslateAddr(ctx, *address)
-		if err != nil {
-			return err
-		}
-		if err = m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
+		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return err
 		}
 		m.logger.Debug(func() string {
@@ -500,10 +496,15 @@ func (m *ConnectionManager) processAuthenticationResult(ctx context.Context, con
 			// the first connection that opens a connection to the new cluster should set clusterID
 			m.clusterID = &newClusterID
 		}
-		m.connMap.AddConnection(conn, connAddr)
 		m.clusterIDMu.Unlock()
+		if !m.connMap.AddConnection(conn, *address) {
+			// there is already a connection to this member
+			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.memberUUID)
+			conn.close(nil)
+			return nil
+		}
 		m.logger.Debug(func() string {
-			return fmt.Sprintf("opened connection to: %s", connAddr)
+			return fmt.Sprintf("opened connection to: %s", *address)
 		})
 		m.eventDispatcher.Publish(NewConnectionOpened(conn))
 		return nil
@@ -635,17 +636,18 @@ func (m *connectionMap) Reset() {
 	m.mu.Unlock()
 }
 
-func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) {
+func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.candidates, conn.memberUUID)
 	// if the connection was already added, skip it
 	if _, ok := m.uuidToConn[conn.memberUUID]; ok {
-		return
+		return false
 	}
 	m.addrToConn[addr] = conn
 	m.uuidToConn[conn.memberUUID] = conn
 	m.addrs = append(m.addrs, addr)
+	return true
 }
 
 // RemoveConnection removes a connection and returns the number of remaining connections.
