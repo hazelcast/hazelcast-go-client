@@ -247,6 +247,6 @@ func TestReplicatedMap_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "foo"))
 		it.MustValue(m.Put(context.Background(), "k2", "foo"))
 		it.MustValue(m.Put(context.Background(), "k1", "foo2"))
-		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
+		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount }, "Call count ", callCount)
 	})
 }

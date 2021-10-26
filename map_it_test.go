@@ -770,7 +770,7 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount))
+			return atomic.LoadInt32(&callCount) == totalCallCount
 		})
 		atomic.StoreInt32(&callCount, 0)
 		if err := m.RemoveEntryListener(context.Background(), subscriptionID); err != nil {
@@ -803,7 +803,7 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 		}
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, int32(1), atomic.LoadInt32(&callCount))
+			return atomic.LoadInt32(&callCount) == int32(1)
 		})
 	})
 }
@@ -832,7 +832,7 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount))
+			return atomic.LoadInt32(&callCount) == totalCallCount
 		})
 	})
 }
@@ -859,7 +859,7 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
 		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, int32(1), atomic.LoadInt32(&callCount))
+			return atomic.LoadInt32(&callCount) == 1
 		})
 	})
 }
