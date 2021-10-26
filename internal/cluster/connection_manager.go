@@ -631,6 +631,7 @@ func (m *connectionMap) Reset() {
 	m.addrToConn = map[pubcluster.Address]*Connection{}
 	m.uuidToConn = map[types.UUID]*Connection{}
 	m.candidates = map[types.UUID]struct{}{}
+	m.addrs = nil
 	m.mu.Unlock()
 }
 
