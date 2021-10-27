@@ -113,38 +113,32 @@ func (b ConnectionManagerCreationBundle) Check() {
 	}
 }
 
-// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
-// And we don't want to suppress files on fieldAlignment check.
-type atomics struct {
-	nextConnID            int64
+type ConnectionManager struct {
+	nextConnID            int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	connectionEventSubsID int64
 	membersEventSubsID    int64
-}
-
-type ConnectionManager struct {
-	logger               ilogger.Logger
-	atomics              *atomics
-	failoverConfig       *pubcluster.FailoverConfig
-	partitionService     *PartitionService
-	serializationService *iserialization.Service
-	eventDispatcher      *event.DispatchService
-	invocationFactory    *ConnectionInvocationFactory
-	clusterService       *Service
-	invocationService    *invocation.Service
-	connMap              *connectionMap
-	doneCh               chan struct{}
-	isClientShutDown     func() bool
-	clusterIDMu          *sync.Mutex
-	clusterID            *types.UUID
-	prevClusterID        *types.UUID
-	failoverService      *FailoverService
-	randGen              *rand.Rand
-	clusterConfig        *pubcluster.Config
-	clientName           string
-	labels               []string
-	clientUUID           types.UUID
-	state                int32
-	smartRouting         bool
+	logger                ilogger.Logger
+	isClientShutDown      func() bool
+	failoverConfig        *pubcluster.FailoverConfig
+	partitionService      *PartitionService
+	serializationService  *iserialization.Service
+	eventDispatcher       *event.DispatchService
+	invocationFactory     *ConnectionInvocationFactory
+	clusterService        *Service
+	invocationService     *invocation.Service
+	connMap               *connectionMap
+	doneCh                chan struct{}
+	clusterConfig         *pubcluster.Config
+	clusterIDMu           *sync.Mutex
+	clusterID             *types.UUID
+	prevClusterID         *types.UUID
+	failoverService       *FailoverService
+	randGen               *rand.Rand
+	clientName            string
+	labels                []string
+	clientUUID            types.UUID
+	state                 int32
+	smartRouting          bool
 }
 
 func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionManager {
@@ -167,7 +161,6 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		failoverConfig:       bundle.FailoverConfig,
 		clusterIDMu:          &sync.Mutex{},
 		randGen:              rand.New(rand.NewSource(time.Now().Unix())),
-		atomics:              &atomics{},
 	}
 	return manager
 }
@@ -197,7 +190,7 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt64(&m.atomics.membersEventSubsID, membersEventSubsID)
+	atomic.StoreInt64(&m.membersEventSubsID, membersEventSubsID)
 	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
 		return err
@@ -238,13 +231,13 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	}
 	atomic.StoreInt32(&m.state, ready)
 	connectionEventSubsID, _ := m.eventDispatcher.Subscribe(EventConnection, m.handleConnectionEvent)
-	atomic.StoreInt64(&m.atomics.connectionEventSubsID, connectionEventSubsID)
+	atomic.StoreInt64(&m.connectionEventSubsID, connectionEventSubsID)
 	return nil
 }
 
 func (m *ConnectionManager) Stop() {
-	m.eventDispatcher.Unsubscribe(EventConnection, atomic.LoadInt64(&m.atomics.connectionEventSubsID))
-	m.eventDispatcher.Unsubscribe(EventMembers, atomic.LoadInt64(&m.atomics.membersEventSubsID))
+	m.eventDispatcher.Unsubscribe(EventConnection, atomic.LoadInt64(&m.connectionEventSubsID))
+	m.eventDispatcher.Unsubscribe(EventMembers, atomic.LoadInt64(&m.membersEventSubsID))
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
 		return
 	}
@@ -253,7 +246,7 @@ func (m *ConnectionManager) Stop() {
 }
 
 func (m *ConnectionManager) NextConnectionID() int64 {
-	return atomic.AddInt64(&m.atomics.nextConnID, 1)
+	return atomic.AddInt64(&m.nextConnID, 1)
 }
 
 func (m *ConnectionManager) GetConnectionForAddress(addr pubcluster.Address) *Connection {

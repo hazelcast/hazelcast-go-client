@@ -52,23 +52,17 @@ type binTextStats struct {
 	stats []stat
 }
 
-// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
-// And we don't want to suppress files on fieldAlignment check.
-type atomics struct {
-	subscriptionID int64
-}
-
 type Service struct {
+	subscriptionID     int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+	clusterConnectTime atomic.Value
 	connAddr           atomic.Value
 	logger             logger.Logger
-	clusterConnectTime atomic.Value
-	invocationService  *invocation.Service
+	ed                 *event.DispatchService
 	mu                 *sync.RWMutex
 	invFactory         *cluster.ConnectionInvocationFactory
 	addrs              map[string]struct{}
-	dispatchService    *event.DispatchService
+	invocationService  *invocation.Service
 	doneCh             chan struct{}
-	atomics            *atomics
 	clientName         string
 	btStats            binTextStats
 	gauges             []gauge
@@ -91,14 +85,13 @@ func NewService(
 		addrs:             map[string]struct{}{},
 		mu:                &sync.RWMutex{},
 		clientName:        clientName,
-		dispatchService:   dispatchService,
-		atomics:           &atomics{},
+		ed:                dispatchService,
 		btStats:           binTextStats{mc: NewMetricCompressor()},
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
 	subscriptionID, _ := dispatchService.Subscribe(cluster.EventCluster, s.handleClusterEvent)
-	atomic.StoreInt64(&s.atomics.subscriptionID, subscriptionID)
+	atomic.StoreInt64(&s.subscriptionID, subscriptionID)
 	s.addGauges()
 	return s
 }
@@ -109,7 +102,7 @@ func (s *Service) Start() {
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	s.dispatchService.Unsubscribe(cluster.EventCluster, atomic.LoadInt64(&s.atomics.subscriptionID))
+	s.ed.Unsubscribe(cluster.EventCluster, atomic.LoadInt64(&s.subscriptionID))
 }
 
 func (s *Service) loop() {

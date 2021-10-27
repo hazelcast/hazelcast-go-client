@@ -39,6 +39,11 @@ staticcheck $(go list ./... | grep -v org-website)
 # Ensure fields are optimally aligned
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment
 # If missing install via: go get -u golang.org/x/tools/...
-# uncomment following  to fix the alignment problems automatically
-#fieldalignment -fix $(go list ./... | grep -v org-website)
-fieldalignment $(go list ./... | grep -v org-website)
+# Structs in following files should not be sorted due to: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+fieldalignment $(go list ./... | grep -v org-website) 2>&1 | \
+  grep -v "internal/cluster/connection_manager.go" | \
+  grep -v "internal/event/dispatch_service.go" | \
+  grep -v "internal/cluster/view_listener_service.go" | \
+  grep -v "internal/stats/stats_service.go" | \
+  grep -v "flake_id_generator.go" \
+  || true

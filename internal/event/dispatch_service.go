@@ -36,18 +36,12 @@ const (
 
 type Handler func(event Event)
 
-// This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
-// And we don't want to suppress files on fieldAlignment check.
-type atomics struct {
-	nextSubscriptionID int64
-}
-
 type DispatchService struct {
-	logger          logger.Logger
-	subscriptions   map[string]map[int64]*subscription
-	subscriptionsMu *sync.RWMutex
-	atomics         *atomics
-	state           int32
+	nextSubscriptionID int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+	logger             logger.Logger
+	subscriptions      map[string]map[int64]*subscription
+	subscriptionsMu    *sync.RWMutex
+	state              int32
 }
 
 // NewDispatchService creates a dispatch service with the following properties.
@@ -59,7 +53,6 @@ type DispatchService struct {
 //4 - A close after publish in the same thread waits for published item to be handled(finished) .
 func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
-		atomics:         &atomics{},
 		subscriptions:   map[string]map[int64]*subscription{},
 		subscriptionsMu: &sync.RWMutex{},
 		logger:          logger,
@@ -103,7 +96,7 @@ func (s *DispatchService) Subscribe(eventName string, handler Handler) (int64, e
 		return -1, fmt.Errorf("dispatch service is shut down")
 	}
 
-	subscriptionID := atomic.AddInt64(&s.atomics.nextSubscriptionID, 1)
+	subscriptionID := atomic.AddInt64(&s.nextSubscriptionID, 1)
 	s.subscriptionsMu.Lock()
 	defer s.subscriptionsMu.Unlock()
 
