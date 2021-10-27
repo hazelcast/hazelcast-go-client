@@ -477,10 +477,10 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	if err != nil {
 		return err
 	}
-	return m.processAuthenticationResult(ctx, conn, result)
+	return m.processAuthenticationResult(conn, result)
 }
 
-func (m *ConnectionManager) processAuthenticationResult(ctx context.Context, conn *Connection, result *proto.ClientMessage) error {
+func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
 	status, address, uuid, _, serverHazelcastVersion, partitionCount, newClusterID, failoverSupported := codec.DecodeClientAuthenticationResponse(result)
 	if m.failoverConfig.Enabled && !failoverSupported {
 		m.logger.Warnf("cluster does not support failover: this feature is available in Hazelcast Enterprise")
