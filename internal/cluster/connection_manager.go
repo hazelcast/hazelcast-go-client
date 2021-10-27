@@ -112,6 +112,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 		panic("isClientShutDown is nil")
 	}
 }
+
 // This is a separate struct because the field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 // And we don't want to suppress files on fieldAlignment check.
 type atomics struct {
@@ -122,7 +123,7 @@ type atomics struct {
 
 type ConnectionManager struct {
 	logger               ilogger.Logger
-	isClientShutDown     func() bool
+	atomics              *atomics
 	failoverConfig       *pubcluster.FailoverConfig
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
@@ -132,16 +133,16 @@ type ConnectionManager struct {
 	invocationService    *invocation.Service
 	connMap              *connectionMap
 	doneCh               chan struct{}
-	clusterConfig        *pubcluster.Config
+	isClientShutDown     func() bool
 	clusterIDMu          *sync.Mutex
 	clusterID            *types.UUID
 	prevClusterID        *types.UUID
 	failoverService      *FailoverService
 	randGen              *rand.Rand
+	clusterConfig        *pubcluster.Config
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
-	atomics              atomics
 	state                int32
 	smartRouting         bool
 }
@@ -166,6 +167,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		failoverConfig:       bundle.FailoverConfig,
 		clusterIDMu:          &sync.Mutex{},
 		randGen:              rand.New(rand.NewSource(time.Now().Unix())),
+		atomics:              &atomics{},
 	}
 	return manager
 }

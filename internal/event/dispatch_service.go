@@ -46,7 +46,7 @@ type DispatchService struct {
 	logger          logger.Logger
 	subscriptions   map[string]map[int64]*subscription
 	subscriptionsMu *sync.RWMutex
-	atomics         atomics
+	atomics         *atomics
 	state           int32
 }
 
@@ -59,7 +59,7 @@ type DispatchService struct {
 //4 - A close after publish in the same thread waits for published item to be handled(finished) .
 func NewDispatchService(logger logger.Logger) *DispatchService {
 	service := &DispatchService{
-		atomics:         atomics{},
+		atomics:         &atomics{},
 		subscriptions:   map[string]map[int64]*subscription{},
 		subscriptionsMu: &sync.RWMutex{},
 		logger:          logger,

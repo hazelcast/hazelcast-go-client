@@ -102,7 +102,7 @@ func flakeIDBatchFromMemberFn(ctx context.Context, f *FlakeIDGenerator) (flakeID
 		base:      base,
 		increment: inc,
 		size:      int64(size),
-		atomics:   atomics{-1}, // to serve index 0 during atomic increment.
+		atomics:   &atomics{-1}, // to serve index 0 during atomic increment.
 		expiresAt: time.Now().Add(time.Duration(f.config.PrefetchExpiry)),
 	}, nil
 }
@@ -115,7 +115,7 @@ type atomics struct {
 
 type flakeIDBatch struct {
 	expiresAt time.Time
-	atomics   atomics
+	atomics   *atomics
 	base      int64
 	increment int64
 	size      int64

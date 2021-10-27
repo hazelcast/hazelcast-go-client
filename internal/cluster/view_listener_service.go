@@ -20,7 +20,7 @@ type ViewListenerService struct {
 	cm         *ConnectionManager
 	dispatcher *event.DispatchService
 	logger     logger.Logger
-	atomics    listenerAtomics
+	atomics    *listenerAtomics
 }
 
 func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *event.DispatchService, logger logger.Logger) *ViewListenerService {
@@ -29,6 +29,7 @@ func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *even
 		cm:         cm,
 		dispatcher: dispatcher,
 		logger:     logger,
+		atomics:    &listenerAtomics{},
 	}
 	dispatcher.Subscribe(EventConnection, vs.handleConnectionEvent)
 	return vs
