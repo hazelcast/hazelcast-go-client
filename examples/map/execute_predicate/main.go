@@ -14,7 +14,6 @@ import (
 func main() {
 	defaultConf := hazelcast.NewConfig()
 	defaultConf.Serialization.SetIdentifiedDataSerializableFactories(&IdentifiedFactory{})
-	// Start the client with defaults
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClientWithConfig(ctx, defaultConf)
 	if err != nil {
