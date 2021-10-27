@@ -13,7 +13,7 @@ const identifiedEntryProcessorClassID = 1
 // You need to add hazelcast test jar to access this class.
 // This corresponds to https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/test/java/com/hazelcast/client/test/IdentifiedEntryProcessor.java
 /*
-	You need to enable serialization of this via:
+	You need to enable serialization on serverside configuration(hazelcast.xml) via:
 	<serialization>
         <data-serializable-factories>
             <data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory

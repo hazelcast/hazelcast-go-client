@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
@@ -19,48 +17,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Get a random map
-	rand.Seed(time.Now().Unix())
-	mapName := fmt.Sprintf("sample-%d", rand.Int())
-	m, err := client.GetMap(ctx, mapName)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//error handling is omitted for brevity
+	m, _ := client.GetMap(ctx, "myMap")
 	// Populate map
-	_, err = m.Put(ctx, "key1", 3)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = m.Put(ctx, "key2", 8)
-	if err != nil {
-		log.Fatal(err)
-	}
-	value, err := m.Get(ctx, "key1")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("key1:", value)
-	value, err = m.Get(ctx, "key2")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("key2:", value)
+	m.Put(ctx, "key1", 3)
+	m.Put(ctx, "key2", 8)
 
 	if _, err = m.ExecuteOnEntriesWithPredicate(ctx, &IdentifiedEntryProcessor{value: "test"},
 		predicate.Between("this", 0, 5)); err != nil {
 		log.Fatal(err)
 	}
 
-	value, err = m.Get(ctx, "key1")
-	if err != nil {
-		fmt.Println("key1:", value)
-	}
-	fmt.Println(value)
-	value, err = m.Get(ctx, "key2")
-	if err != nil {
-		fmt.Println("key2:", value)
-	}
-	fmt.Println(value)
+	value, _ := m.Get(ctx, "key1")
+	fmt.Println("key1:", value)
+	value, _ = m.Get(ctx, "key2")
+	fmt.Println("key2:", value)
 	// Shutdown client
 	client.Shutdown(ctx)
 }
