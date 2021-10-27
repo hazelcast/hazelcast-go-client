@@ -28,13 +28,12 @@ func NewHeartbeatService(cm *ConnectionManager, f *ConnectionInvocationFactory, 
 		invService: invService,
 		logger:     logger,
 		doneCh:     make(chan struct{}),
+		state:      ready,
 	}
 }
 
 func (hs *HeartbeatService) Start() {
-	if atomic.CompareAndSwapInt32(&hs.state, created, ready) {
-		go hs.checkConnections()
-	}
+	go hs.checkConnections()
 }
 
 func (hs *HeartbeatService) Stop() {

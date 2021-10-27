@@ -86,12 +86,12 @@ func TestFlakeIDGenerator_UsedBatch(t *testing.T) {
 
 func TestFlakeIDBatch_NextID(t *testing.T) {
 	testCases := []struct {
+		name             string
 		expectedSequence []int64
 		base             int64
 		increment        int64
 		expiry           time.Duration
 		size             int32
-		name             string
 	}{
 		{
 			base:             10,

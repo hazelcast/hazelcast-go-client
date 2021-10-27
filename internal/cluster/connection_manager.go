@@ -33,6 +33,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -49,7 +50,7 @@ const (
 )
 
 const (
-	created int32 = iota
+	starting int32 = iota
 	ready
 	stopped
 )
@@ -73,6 +74,7 @@ type ConnectionManagerCreationBundle struct {
 	EventDispatcher      *event.DispatchService
 	FailoverService      *FailoverService
 	FailoverConfig       *pubcluster.FailoverConfig
+	IsClientShutdown     func() bool
 	ClientName           string
 	Labels               []string
 }
@@ -108,11 +110,15 @@ func (b ConnectionManagerCreationBundle) Check() {
 	if b.FailoverConfig == nil {
 		panic("FailoverConfig is nil")
 	}
+	if b.IsClientShutdown == nil {
+		panic("isClientShutDown is nil")
+	}
 }
 
 type ConnectionManager struct {
 	nextConnID           int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
 	logger               ilogger.Logger
+	isClientShutDown     func() bool
 	failoverConfig       *pubcluster.FailoverConfig
 	partitionService     *PartitionService
 	serializationService *iserialization.Service
@@ -144,6 +150,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		eventDispatcher:      bundle.EventDispatcher,
 		invocationFactory:    bundle.InvocationFactory,
 		clusterConfig:        bundle.ClusterConfig,
+		isClientShutDown:     bundle.IsClientShutdown,
 		clientName:           bundle.ClientName,
 		labels:               bundle.Labels,
 		clientUUID:           types.NewUUID(),
@@ -170,6 +177,7 @@ func (m *ConnectionManager) SetInvocationService(s *invocation.Service) {
 }
 
 func (m *ConnectionManager) start(ctx context.Context) error {
+	atomic.StoreInt32(&m.state, starting)
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
 	var addr pubcluster.Address
 	var err error
@@ -182,8 +190,9 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	}
 	m.checkClusterIDChanged()
 	m.eventDispatcher.Publish(NewConnected(addr))
+	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateConnected))
 	atomic.StoreInt32(&m.state, ready)
-	m.eventDispatcher.Subscribe(EventConnectionClosed, connectionManagerSubID, m.handleConnectionClosed)
+	m.eventDispatcher.Subscribe(EventConnection, connectionManagerSubID, m.handleConnectionEvent)
 	return nil
 }
 
@@ -192,9 +201,9 @@ func (m *ConnectionManager) startUnisocket(ctx context.Context) (pubcluster.Addr
 	// to prevent errors with stuff that requires the cluster service to have members, such as PNCounter
 	ch := make(chan struct{})
 	once := &sync.Once{}
-	m.eventDispatcher.Subscribe(EventMembersAdded, connectionManagerSubID, func(e event.Event) {
+	m.eventDispatcher.Subscribe(EventMembers, connectionManagerSubID, func(e event.Event) {
+		m.handleMembersEvent(e)
 		once.Do(func() {
-			m.eventDispatcher.Unsubscribe(EventMembersAdded, connectionManagerSubID)
 			close(ch)
 		})
 	})
@@ -205,19 +214,19 @@ func (m *ConnectionManager) startUnisocket(ctx context.Context) (pubcluster.Addr
 	if err = m.waitInitialMemberList(ctx, ch); err != nil {
 		return "", err
 	}
+	m.eventDispatcher.Unsubscribe(EventMembers, connectionManagerSubID)
 	return addr, err
 }
 
 func (m *ConnectionManager) startSmart(ctx context.Context) (pubcluster.Address, error) {
 	ch := make(chan struct{})
 	once := &sync.Once{}
-	m.eventDispatcher.Subscribe(EventMembersAdded, connectionManagerSubID, func(e event.Event) {
+	m.eventDispatcher.Subscribe(EventMembers, connectionManagerSubID, func(e event.Event) {
 		once.Do(func() {
 			m.connectAllMembers(ctx)
 			close(ch)
 		})
 	})
-	m.eventDispatcher.Subscribe(EventMembersRemoved, connectionManagerSubID, m.handleMembersRemoved)
 	addr, err := m.tryConnectCluster(ctx)
 	if err != nil {
 		return "", err
@@ -252,13 +261,13 @@ func (m *ConnectionManager) checkClusterIDChanged() {
 	clusterIDChanged := m.prevClusterID != nil && m.prevClusterID != m.clusterID
 	m.clusterIDMu.Unlock()
 	if clusterIDChanged {
-		m.eventDispatcher.Publish(NewChangedCluster())
+		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateChangedCluster))
 	}
 }
 
 func (m *ConnectionManager) Stop() {
-	m.eventDispatcher.Unsubscribe(EventMembersRemoved, connectionManagerSubID)
-	m.eventDispatcher.Unsubscribe(EventConnectionClosed, connectionManagerSubID)
+	m.eventDispatcher.Unsubscribe(EventConnection, connectionManagerSubID)
+	m.eventDispatcher.Unsubscribe(EventMembers, connectionManagerSubID)
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
 		return
 	}
@@ -308,22 +317,30 @@ func (m *ConnectionManager) reset() {
 	m.connMap.Reset()
 }
 
-func (m *ConnectionManager) handleMembersRemoved(event event.Event) {
-	e := event.(*MembersRemoved)
+func (m *ConnectionManager) handleMembersEvent(event event.Event) {
+	e := event.(*MembersStateChangedEvent)
+	if e.State == MembersStateRemoved {
+		m.handleMembersRemoved(e)
+	}
+}
+
+func (m *ConnectionManager) handleMembersRemoved(e *MembersStateChangedEvent) {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("cluster.ConnectionManager.handleMembersRemoved: %v", e.Members)
 	})
 	for _, conn := range m.connMap.FindRemovedConns(e.Members) {
 		m.removeConnection(conn)
 	}
-	return
 }
 
-func (m *ConnectionManager) handleConnectionClosed(event event.Event) {
+func (m *ConnectionManager) handleConnectionEvent(event event.Event) {
 	if atomic.LoadInt32(&m.state) != ready {
 		return
 	}
-	e := event.(*ConnectionClosed)
+	e := event.(*ConnectionStateChangedEvent)
+	if e.state == ConnectionStateOpened {
+		return
+	}
 	m.removeConnection(e.Conn)
 }
 
@@ -331,6 +348,7 @@ func (m *ConnectionManager) removeConnection(conn *Connection) int {
 	remaining := m.connMap.RemoveConnection(conn)
 	if remaining == 0 {
 		m.eventDispatcher.Publish(NewDisconnected())
+		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateDisconnected))
 	}
 	return remaining
 }
@@ -364,6 +382,9 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 		cb.RetryPolicy(makeRetryPolicy(m.randGen, &cs.Retry)),
 	)
 	addr, err := cbr.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if m.isClientShutDown() {
+			return nil, cb.WrapNonRetryableError(fmt.Errorf("client is shut down"))
+		}
 		addr, err := m.connectCluster(ctx, cluster)
 		if err != nil {
 			m.logger.Debug(func() string {
@@ -428,7 +449,7 @@ func (m *ConnectionManager) createDefaultConnection(addr pubcluster.Address) *Co
 		doneCh:            make(chan struct{}),
 		connectionID:      m.NextConnectionID(),
 		eventDispatcher:   m.eventDispatcher,
-		status:            created,
+		status:            starting,
 		logger:            m.logger,
 		clusterConfig:     m.clusterConfig,
 	}

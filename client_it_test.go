@@ -276,8 +276,7 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	it.WaitEventually(t, &reconnectedWg)
 	cls.Shutdown()
 	c.Shutdown(ctx)
-	mu.Lock()
-	defer mu.Unlock()
+
 	target := []hz.LifecycleState{
 		hz.LifecycleStateStarting,
 		hz.LifecycleStateConnected,
@@ -290,8 +289,10 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 		hz.LifecycleStateShutDown,
 	}
 	it.Eventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
 		return reflect.DeepEqual(target, events)
-	}, "target : %v, events %v ", target, events)
+	})
 }
 
 func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
@@ -483,14 +484,16 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	defer cls2.Shutdown()
 	var wg sync.WaitGroup
 	wg.Add(1)
-	config := cls1.DefaultConfig()
-	config.Logger.Level = logger.DebugLevel
+	config1 := cls1.DefaultConfig()
+	config1.Cluster.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+	config2 := cls2.DefaultConfig()
+	config := hz.Config{}
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
 	config.Failover.Enabled = true
-	config.Failover.TryCount = 1
-	failoverConfig := config.Cluster
-	failoverConfig.Name = "failover-test-cluster2"
-	failoverConfig.Network.SetAddresses(fmt.Sprintf("localhost:%d", 15702))
-	config.Failover.SetConfigs(failoverConfig)
+	config.Failover.TryCount = 10
+	config.Failover.SetConfigs(config1.Cluster, config2.Cluster)
 	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 		if event.State == hz.LifecycleStateChangedCluster {
 			wg.Done()

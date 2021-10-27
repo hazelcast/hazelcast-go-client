@@ -17,9 +17,12 @@
 package event_test
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -27,10 +30,19 @@ import (
 )
 
 type sampleEvent struct {
+	value int
 }
 
 func (e sampleEvent) EventName() string {
 	return "sample.event"
+}
+
+type differentEvent struct {
+	value int
+}
+
+func (e differentEvent) EventName() string {
+	return "different.event"
 }
 
 func TestDispatchServiceSubscribePublish(t *testing.T) {
@@ -42,37 +54,135 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 		wg.Done()
 	}
-	lg := logger.New()
-	service := event.NewDispatchService(lg)
+	service := event.NewDispatchService(logger.New())
 	service.Subscribe("sample.event", 100, handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
 	}
-	wg.Wait()
-	service.Stop()
+	it.WaitEventually(t, wg)
+	service.Stop(context.Background())
 	if int32(goroutineCount) != dispatchCount {
 		t.Fatalf("target %d != %d", goroutineCount, dispatchCount)
 	}
 }
 
 func TestDispatchServiceUnsubscribe(t *testing.T) {
-	lg := logger.New()
-	service := event.NewDispatchService(lg)
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	service := event.NewDispatchService(logger.New())
+	defer service.Stop(context.Background())
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
+	}
+	service.Subscribe("sample.event", 100, handler)
+	service.Unsubscribe("sample.event", 100)
+	service.Publish(sampleEvent{})
+	it.Never(t, func() bool {
+		return atomic.LoadInt32(&dispatchCount) != 0
+	})
+}
+
+func TestDispatchServiceStop(t *testing.T) {
+	service := event.NewDispatchService(logger.New())
+	dispatchCount := int32(0)
+	handler := func(event event.Event) {
+		atomic.AddInt32(&dispatchCount, 1)
+	}
+	service.Subscribe("sample.event", 100, handler)
+	service.Stop(context.Background())
+	assert.False(t, service.Publish(sampleEvent{}))
+	it.Never(t, func() bool {
+		return atomic.LoadInt32(&dispatchCount) != 0
+	})
+	service.Stop(context.Background())
+}
+
+func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
+	// the order of events should be guaranteed when using subscribe sync
+	lg := logger.New()
+	service := event.NewDispatchService(lg)
+	wg := &sync.WaitGroup{}
+	const targetCount = 1000
+	wg.Add(targetCount)
+	var values []int
+	valuesMu := &sync.Mutex{}
+	handler := func(event event.Event) {
+		valuesMu.Lock()
+		values = append(values, event.(sampleEvent).value)
+		valuesMu.Unlock()
 		wg.Done()
 	}
 	service.Subscribe("sample.event", 100, handler)
-	service.Publish(sampleEvent{})
-	it.WaitEventually(t, wg)
-	service.Unsubscribe("sample.event", 100)
-	service.Publish(sampleEvent{})
-	it.WaitEventually(t, wg)
-	service.Stop()
-	if int32(1) != dispatchCount {
-		t.Fatalf("target 1 != %d", dispatchCount)
+	for i := 0; i < targetCount; i++ {
+		service.Publish(sampleEvent{value: i})
 	}
+	it.WaitEventually(t, wg)
+	target := make([]int, targetCount)
+	for i := 0; i < targetCount; i++ {
+		target[i] = i
+	}
+	assert.Equal(t, target, values)
+}
+
+func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
+	goroutineCount := 10000
+	dispatchCount := int32(0)
+	handler := func(event event.Event) {
+		atomic.AddInt32(&dispatchCount, 1)
+	}
+	service := event.NewDispatchService(logger.New())
+	service.Subscribe("sample.event", 100, handler)
+	go service.Stop(context.Background())
+	successfulPubCnt := int32(0)
+	for i := 0; i < goroutineCount; i++ {
+		if service.Publish(sampleEvent{}) {
+			successfulPubCnt++
+		}
+	}
+	it.Eventually(t, func() bool {
+		return successfulPubCnt == atomic.LoadInt32(&dispatchCount)
+	})
+	it.Never(t, func() bool {
+		return successfulPubCnt != atomic.LoadInt32(&dispatchCount)
+	})
+}
+
+func TestDispatchService_BlockingCallWillNotBlockUnrelatedSubscriptions(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	defer wg.Done()
+	service := event.NewDispatchService(logger.New())
+	service.Subscribe("sample.event", 1, func(event event.Event) {
+		//Wait blocking until test finishes.
+		wg.Wait()
+	})
+	sameNameWg := &sync.WaitGroup{}
+	sameNameWg.Add(1)
+	diffNameWg := &sync.WaitGroup{}
+	diffNameWg.Add(1)
+	service.Subscribe("sample.event", 2, func(event event.Event) {
+		sameNameWg.Done()
+	})
+	service.Subscribe("different.event", 3, func(event event.Event) {
+		diffNameWg.Done()
+	})
+	service.Publish(sampleEvent{1})
+	service.Publish(differentEvent{1})
+	it.WaitEventually(t, sameNameWg)
+	it.WaitEventually(t, diffNameWg)
+}
+
+func TestDispatchServiceCloseRespectsContext(t *testing.T) {
+	service := event.NewDispatchService(logger.New())
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	handler := func(event event.Event) {
+		wg.Wait()
+	}
+	service.Subscribe("sample.event", 100, handler)
+	service.Publish(sampleEvent{})
+	cancel()
+	err := service.Stop(ctx)
+	assert.NotNil(t, err)
+	wg.Done()
 }
