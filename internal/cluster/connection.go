@@ -68,10 +68,10 @@ type Connection struct {
 	invocationService         *invocation.Service
 	doneCh                    chan struct{}
 	connectedServerVersionStr string
+	memberUUID                types.UUID
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
-	memberUUID                types.UUID
 }
 
 func (c *Connection) ConnectionID() int64 {
