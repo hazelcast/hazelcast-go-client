@@ -37,6 +37,7 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -67,6 +68,7 @@ type Connection struct {
 	invocationService         *invocation.Service
 	doneCh                    chan struct{}
 	connectedServerVersionStr string
+	memberUUID                types.UUID
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
@@ -84,18 +86,23 @@ func (c *Connection) Endpoint() pubcluster.Address {
 	return c.endpoint.Load().(pubcluster.Address)
 }
 
+func (c *Connection) SetEndpoint(addr pubcluster.Address) {
+	c.endpoint.Store(addr)
+}
+
 func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
 	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
 		return err
 	} else {
-		c.endpoint.Store(pubcluster.Address(socket.RemoteAddr().String()))
+		c.SetEndpoint(addr)
 		c.socket = socket
 		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
 		c.lastWrite.Store(time.Time{})
 		c.closedTime.Store(time.Time{})
 		c.lastRead.Store(time.Now())
-		if err := c.sendProtocolStarter(); err != nil {
-			c.socket.Close()
+		if err = c.sendProtocolStarter(); err != nil {
+			// ignoring the socket close error
+			_ = c.socket.Close()
 			c.socket = nil
 			return err
 		}
@@ -292,7 +299,7 @@ func (c *Connection) close(closeErr error) {
 
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{isAlive=%t, connectionID=%d, endpoint=%s, lastReadTime=%s, lastWriteTime=%s, closedTime=%s, connected server version=%s",
-		c.isAlive(), c.connectionID, c.endpoint.Load(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
+		c.isAlive(), c.connectionID, c.Endpoint(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
 }
 
 func positiveDurationOrMax(duration time.Duration) time.Duration {

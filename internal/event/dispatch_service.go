@@ -25,6 +25,12 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
+var globalSubscriptionID = int64(0)
+
+func NextSubscriptionID() int64 {
+	return atomic.AddInt64(&globalSubscriptionID, 1)
+}
+
 const DefaultSubscriptionID = -1
 
 type Event interface {

@@ -608,13 +608,15 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		if it.TraceLoggingEnabled() {
 			config.Logger.Level = logger.TraceLevel
 		}
-		if it.NonSmartEnabled() {
-			config.Cluster.Unisocket = true
-		}
+		config.Cluster.Unisocket = !smart
 		ctx := context.Background()
-		var maxAlloc uint64
+		var max uint64
 		var m runtime.MemStats
-		for i := 0; i < 100; i++ {
+		const limit = 8 * 1024 * 1024 // 8 MB
+		runtime.GC()
+		runtime.ReadMemStats(&m)
+		base := m.Alloc
+		for i := 0; i < 1000; i++ {
 			client, err := hz.StartNewClientWithConfig(ctx, config)
 			if err != nil {
 				t.Fatal(err)
@@ -623,13 +625,13 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 				t.Fatal(err)
 			}
 			runtime.ReadMemStats(&m)
-			if m.Alloc > maxAlloc {
-				maxAlloc = m.Alloc
+			t.Logf("memory allocation: %d at iteration: %d", m.Alloc, i)
+			if m.Alloc > base && m.Alloc-base > limit {
+				max = m.Alloc - base
 			}
-		}
-		const allocLimit = 8 * 1024 * 1024 // 8MB
-		if maxAlloc > allocLimit {
-			t.Fatalf("memory allocation: %d > %d", maxAlloc, allocLimit)
+			if max > limit {
+				t.Fatalf("memory allocation: %d > %d (base: %d) at iteration: %d", max, limit, base, i)
+			}
 		}
 	})
 }
@@ -723,4 +725,22 @@ func containsDistributedObject(where []types.DistributedObjectInfo, what types.D
 		}
 	}
 	return false
+}
+
+func listenersAfterClientDisconnectedXMLConfig(clusterName, publicAddr string, port, heartBeatSec int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+				<public-address>%s</public-address>
+				<port>%d</port>
+            </network>
+			<properties>
+				<property name="hazelcast.heartbeat.interval.seconds">%d</property>
+			</properties>
+        </hazelcast>
+	`, clusterName, publicAddr, port, heartBeatSec)
 }
