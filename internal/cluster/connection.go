@@ -86,11 +86,15 @@ func (c *Connection) Endpoint() pubcluster.Address {
 	return c.endpoint.Load().(pubcluster.Address)
 }
 
+func (c *Connection) SetEndpoint(addr pubcluster.Address) {
+	c.endpoint.Store(addr)
+}
+
 func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
 	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
 		return err
 	} else {
-		c.endpoint.Store(pubcluster.Address(socket.RemoteAddr().String()))
+		c.SetEndpoint(addr)
 		c.socket = socket
 		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
 		c.lastWrite.Store(time.Time{})
@@ -295,7 +299,7 @@ func (c *Connection) close(closeErr error) {
 
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{isAlive=%t, connectionID=%d, endpoint=%s, lastReadTime=%s, lastWriteTime=%s, closedTime=%s, connected server version=%s",
-		c.isAlive(), c.connectionID, c.endpoint.Load(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
+		c.isAlive(), c.connectionID, c.Endpoint(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
 }
 
 func positiveDurationOrMax(duration time.Duration) time.Duration {

@@ -71,7 +71,9 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 	ci := hz.NewClientInternals(client)
 	// make sure the client connected to the member
 	it.Eventually(t, func() bool {
-		return len(ci.ConnectionManager().ActiveConnections()) == 1
+		ac := len(ci.ConnectionManager().ActiveConnections())
+		t.Logf("active connections: %d", ac)
+		return ac == 1
 	})
 	// shutdown the member
 	tc.Shutdown()

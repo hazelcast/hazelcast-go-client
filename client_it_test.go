@@ -625,6 +625,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 				t.Fatal(err)
 			}
 			runtime.ReadMemStats(&m)
+			t.Logf("memory allocation: %d at iteration: %d", m.Alloc, i)
 			if m.Alloc > base && m.Alloc-base > limit {
 				max = m.Alloc - base
 			}
