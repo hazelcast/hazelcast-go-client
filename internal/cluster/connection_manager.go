@@ -475,10 +475,15 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	if err != nil {
 		return err
 	}
-	return m.processAuthenticationResult(conn, result)
+	conn, err = m.processAuthenticationResult(conn, result)
+	if err != nil {
+		return err
+	}
+	m.eventDispatcher.Publish(NewConnectionOpened(conn))
+	return nil
 }
 
-func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) error {
+func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result *proto.ClientMessage) (*Connection, error) {
 	status, address, uuid, _, serverHazelcastVersion, partitionCount, newClusterID, failoverSupported := codec.DecodeClientAuthenticationResponse(result)
 	if m.failoverConfig.Enabled && !failoverSupported {
 		m.logger.Warnf("cluster does not support failover: this feature is available in Hazelcast Enterprise")
@@ -489,7 +494,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		conn.setConnectedServerVersion(serverHazelcastVersion)
 		conn.memberUUID = uuid
 		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
-			return err
+			return nil, err
 		}
 		m.logger.Debug(func() string {
 			return fmt.Sprintf("cluster.ConnectionManager: checking the cluster: %v, current cluster: %v", newClusterID, m.clusterID)
@@ -509,32 +514,31 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 			// In the restart scenario, we just force the disconnect event handler to trigger a reconnection.
 			conn.close(nil)
 			m.clusterIDMu.Unlock()
-			return fmt.Errorf("connection does not belong to this cluster: %w", hzerrors.ErrIllegalState)
+			return nil, fmt.Errorf("connection does not belong to this cluster: %w", hzerrors.ErrIllegalState)
 		}
 		if m.connMap.IsEmpty() {
 			// the first connection that opens a connection to the new cluster should set clusterID
 			m.clusterID = &newClusterID
 		}
 		m.clusterIDMu.Unlock()
-		if !m.connMap.AddConnection(conn, *address) {
+		if oldConn, ok := m.connMap.AddOrGetConnection(conn, *address); !ok {
 			// there is already a connection to this member
 			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.memberUUID)
 			conn.close(nil)
-			return nil
+			return oldConn, nil
 		}
 		m.logger.Debug(func() string {
 			return fmt.Sprintf("opened connection to: %s", *address)
 		})
-		m.eventDispatcher.Publish(NewConnectionOpened(conn))
-		return nil
+		return conn, nil
 	case credentialsFailed:
-		return cb.WrapNonRetryableError(fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication))
+		return nil, cb.WrapNonRetryableError(fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication))
 	case serializationVersionMismatch:
-		return cb.WrapNonRetryableError(fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication))
+		return nil, cb.WrapNonRetryableError(fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication))
 	case notAllowedInCluster:
-		return cb.WrapNonRetryableError(hzerrors.ErrClientNotAllowedInCluster)
+		return nil, cb.WrapNonRetryableError(hzerrors.ErrClientNotAllowedInCluster)
 	}
-	return hzerrors.ErrAuthentication
+	return nil, hzerrors.ErrAuthentication
 }
 
 func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {
@@ -655,13 +659,15 @@ func (m *connectionMap) Reset() {
 	m.mu.Unlock()
 }
 
-func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address) bool {
+// AddOrGetConnection adds the connection if it doesn't already exist or returns the existent connection.
+// ok is true if the connection was added.
+func (m *connectionMap) AddOrGetConnection(conn *Connection, addr pubcluster.Address) (retConn *Connection, ok bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.candidates, conn.memberUUID)
 	// if the connection was already added, skip it
-	if _, ok := m.uuidToConn[conn.memberUUID]; ok {
-		return false
+	if old, ok := m.uuidToConn[conn.memberUUID]; ok {
+		return old, false
 	}
 	m.uuidToConn[conn.memberUUID] = conn
 	m.addrToConn[addr] = conn
@@ -670,7 +676,7 @@ func (m *connectionMap) AddConnection(conn *Connection, addr pubcluster.Address)
 		// e contains the address the client uses to connect to the member.
 		m.addrToConn[e] = conn
 	}
-	return true
+	return conn, true
 }
 
 // RemoveConnection removes a connection and returns the number of remaining connections.
