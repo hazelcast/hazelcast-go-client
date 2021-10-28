@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,9 +28,9 @@ import (
 
 func TestRemoveAddr(t *testing.T) {
 	cm := newConnectionMap(pubcluster.NewRoundRobinLoadBalancer())
-	conn1 := &Connection{memberUUID: types.NewUUID()}
-	conn2 := &Connection{memberUUID: types.NewUUID()}
-	conn3 := &Connection{memberUUID: types.NewUUID()}
+	conn1 := &Connection{memberUUID: types.NewUUID(), endpoint: valueOf(pubcluster.Address("1.2.3.4:5678"))}
+	conn2 := &Connection{memberUUID: types.NewUUID(), endpoint: valueOf(pubcluster.Address("1.2.3.5:5678"))}
+	conn3 := &Connection{memberUUID: types.NewUUID(), endpoint: valueOf(pubcluster.Address("1.2.3.6:5678"))}
 	cm.removeAddr("1.2.3.4:5600")
 	assert.Equal(t, 0, len(cm.addrs))
 	cm.AddConnection(conn1, "100.200.300.400:5678")
@@ -50,4 +51,10 @@ func TestRemoveAddr(t *testing.T) {
 	if !assert.Equal(t, []pubcluster.Address{}, cm.addrs) {
 		t.FailNow()
 	}
+}
+
+func valueOf(value interface{}) atomic.Value {
+	v := atomic.Value{}
+	v.Store(value)
+	return v
 }
