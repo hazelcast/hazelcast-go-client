@@ -111,10 +111,6 @@ func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo)
 	return s.failoverService.Current().AddressTranslator.TranslateMember(ctx, m)
 }
 
-func (s *Service) TranslateAddr(ctx context.Context, addr pubcluster.Address) (pubcluster.Address, error) {
-	return s.failoverService.Current().AddressTranslator.Translate(ctx, addr)
-}
-
 func (s *Service) Reset() {
 	s.membersMap.reset()
 }
