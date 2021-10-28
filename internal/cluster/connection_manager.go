@@ -521,7 +521,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 			m.clusterID = &newClusterID
 		}
 		m.clusterIDMu.Unlock()
-		if oldConn, ok := m.connMap.AddOrGetConnection(conn, *address); !ok {
+		if oldConn, ok := m.connMap.GetOrAddConnection(conn, *address); !ok {
 			// there is already a connection to this member
 			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.memberUUID)
 			conn.close(nil)
@@ -659,9 +659,9 @@ func (m *connectionMap) Reset() {
 	m.mu.Unlock()
 }
 
-// AddOrGetConnection adds the connection if it doesn't already exist or returns the existent connection.
+// GetOrAddConnection adds the connection if it doesn't already exist or returns the existent connection.
 // ok is true if the connection was added.
-func (m *connectionMap) AddOrGetConnection(conn *Connection, addr pubcluster.Address) (retConn *Connection, ok bool) {
+func (m *connectionMap) GetOrAddConnection(conn *Connection, addr pubcluster.Address) (retConn *Connection, ok bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	delete(m.candidates, conn.memberUUID)

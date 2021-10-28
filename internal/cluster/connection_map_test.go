@@ -33,9 +33,9 @@ func TestRemoveAddr(t *testing.T) {
 	conn3 := &Connection{memberUUID: types.NewUUID(), endpoint: valueOf(pubcluster.Address("1.2.3.6:5678"))}
 	cm.removeAddr("1.2.3.4:5600")
 	assert.Equal(t, 0, len(cm.addrs))
-	cm.AddOrGetConnection(conn1, "100.200.300.400:5678")
-	cm.AddOrGetConnection(conn2, "100.200.300.401:5678")
-	cm.AddOrGetConnection(conn3, "100.200.300.402:5678")
+	cm.GetOrAddConnection(conn1, "100.200.300.400:5678")
+	cm.GetOrAddConnection(conn2, "100.200.300.401:5678")
+	cm.GetOrAddConnection(conn3, "100.200.300.402:5678")
 	if !assert.Equal(t, []pubcluster.Address{"100.200.300.400:5678", "100.200.300.401:5678", "100.200.300.402:5678"}, cm.addrs) {
 		t.FailNow()
 	}
