@@ -653,7 +653,6 @@ func (m *connectionMap) Reset() {
 func (m *connectionMap) GetOrAddConnection(conn *Connection, addr pubcluster.Address) (retConn *Connection, ok bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	delete(m.candidates, conn.memberUUID)
 	// if the connection was already added, skip it
 	if old, ok := m.uuidToConn[conn.memberUUID]; ok {
 		return old, false
