@@ -421,17 +421,6 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 }
 
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
-	if conn := m.getConnection(addr); conn != nil {
-		return conn, nil
-	}
-	return m.maybeCreateConnection(ctx, addr)
-}
-
-func (m *ConnectionManager) getConnection(addr pubcluster.Address) *Connection {
-	return m.GetConnectionForAddress(addr)
-}
-
-func (m *ConnectionManager) maybeCreateConnection(ctx context.Context, addr pubcluster.Address) (*Connection, error) {
 	conn := m.createDefaultConnection()
 	if err := conn.start(m.clusterConfig, addr); err != nil {
 		return nil, ihzerrors.NewTargetDisconnectedError(err.Error(), err)
@@ -672,10 +661,6 @@ func (m *connectionMap) GetOrAddConnection(conn *Connection, addr pubcluster.Add
 	m.uuidToConn[conn.memberUUID] = conn
 	m.addrToConn[addr] = conn
 	m.addrs = append(m.addrs, addr)
-	if e := conn.Endpoint(); e != addr {
-		// e contains the address the client uses to connect to the member.
-		m.addrToConn[e] = conn
-	}
 	return conn, true
 }
 
