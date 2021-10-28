@@ -616,7 +616,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		runtime.GC()
 		runtime.ReadMemStats(&m)
 		base := m.Alloc
-		for i := 0; i < 10_000; i++ {
+		for i := 0; i < 1000; i++ {
 			client, err := hz.StartNewClientWithConfig(ctx, config)
 			if err != nil {
 				t.Fatal(err)
