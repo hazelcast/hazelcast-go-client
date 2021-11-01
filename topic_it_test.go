@@ -51,6 +51,7 @@ func TestTopic_Publish(t *testing.T) {
 	})
 }
 func TestTopic_PublishAll(t *testing.T) {
+	it.SkipIf(t, "hz < 4.1")
 	it.TopicTester(t, func(t *testing.T, tp *hz.Topic) {
 		handlerValue := int32(0)
 		subscriptionID, err := tp.AddMessageListener(context.Background(), func(event *hz.MessagePublished) {
