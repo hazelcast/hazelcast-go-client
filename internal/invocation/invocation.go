@@ -48,6 +48,7 @@ type Invocation interface {
 	Close()
 	CanRetry(err error) bool
 	Deadline() time.Time
+	HasGroup(groupID int64) bool
 }
 
 type Impl struct {
@@ -125,12 +126,6 @@ func (i *Impl) Deadline() time.Time {
 	return i.deadline
 }
 
-/*
-func (i *Proxy) StoreSentConnection(conn interface{}) {
-	i.sentConnection.Store(conn)
-}
-*/
-
 // SetEventHandler sets the event handler for the invocation.
 // It should only be called at the site of creation.
 func (i *Impl) SetEventHandler(handler proto.ClientMessageHandler) {
@@ -160,6 +155,10 @@ func (i *Impl) MaybeCanRetry(err error) bool {
 	if errors.Is(err, hzerrors.ErrTargetDisconnected) {
 		return i.Request().Retryable || i.RedoOperation
 	}
+	return false
+}
+
+func (i *Impl) HasGroup(groupID int64) bool {
 	return false
 }
 
