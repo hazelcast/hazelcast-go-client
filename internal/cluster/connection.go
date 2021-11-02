@@ -288,6 +288,7 @@ func (c *Connection) close(closeErr error) {
 	c.socket.Close()
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
+	c.eventDispatcher.Publish(invocation.NewGroupLost(c.connectionID, closeErr))
 	c.logger.Trace(func() string {
 		reason := "normally"
 		if closeErr != nil {

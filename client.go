@@ -453,7 +453,7 @@ func (c *Client) createComponents(config *Config) {
 		Logger:            c.logger,
 		Config:            &config.Cluster,
 	})
-	invocationService := invocation.NewService(invocationHandler, c.logger)
+	invocationService := invocation.NewService(invocationHandler, c.eventDispatcher, c.logger)
 	listenerBinder := icluster.NewConnectionListenerBinder(
 		connectionManager,
 		invocationService,

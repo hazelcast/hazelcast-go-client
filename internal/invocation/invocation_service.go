@@ -19,11 +19,13 @@ package invocation
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
@@ -32,6 +34,8 @@ const (
 	ready   = 0
 	stopped = 1
 )
+
+var serviceSubID = event.NextSubscriptionID()
 
 type Handler interface {
 	Invoke(invocation Invocation) (groupID int64, err error)
@@ -42,30 +46,38 @@ type Service struct {
 	urgentRequestCh chan Invocation
 	responseCh      chan *proto.ClientMessage
 	// removeCh carries correlationIDs to be removed
-	removeCh    chan int64
-	doneCh      chan struct{}
-	invocations map[int64]Invocation
-	handler     Handler
-	logger      ilogger.Logger
-	state       int32
+	removeCh              chan int64
+	doneCh                chan struct{}
+	invocations           map[int64]Invocation
+	groupMu               *sync.Mutex
+	groupToCorrelationIDs map[int64]map[int64]struct{}
+	correlationIDToGroup  map[int64]int64
+	handler               Handler
+	logger                ilogger.Logger
+	state                 int32
 }
 
 func NewService(
 	handler Handler,
+	eventDispacher *event.DispatchService,
 	logger ilogger.Logger) *Service {
-	service := &Service{
-		requestCh:       make(chan Invocation),
-		urgentRequestCh: make(chan Invocation),
-		responseCh:      make(chan *proto.ClientMessage),
-		removeCh:        make(chan int64),
-		doneCh:          make(chan struct{}),
-		invocations:     map[int64]Invocation{},
-		handler:         handler,
-		logger:          logger,
-		state:           ready,
+	s := &Service{
+		requestCh:             make(chan Invocation),
+		urgentRequestCh:       make(chan Invocation),
+		responseCh:            make(chan *proto.ClientMessage),
+		removeCh:              make(chan int64),
+		doneCh:                make(chan struct{}),
+		invocations:           map[int64]Invocation{},
+		groupMu:               &sync.Mutex{},
+		groupToCorrelationIDs: make(map[int64]map[int64]struct{}),
+		correlationIDToGroup:  make(map[int64]int64),
+		handler:               handler,
+		logger:                logger,
+		state:                 ready,
 	}
-	go service.processIncoming()
-	return service
+	eventDispacher.Subscribe(EventGroupLost, serviceSubID, s.handleGroupLost)
+	go s.processIncoming()
+	return s
 }
 
 func (s *Service) Stop() {
@@ -148,9 +160,11 @@ func (s *Service) sendInvocation(invocation Invocation) {
 	})
 	s.registerInvocation(invocation)
 	corrID := invocation.Request().CorrelationID()
-	if _, err := s.handler.Invoke(invocation); err != nil {
+	groupID, err := s.handler.Invoke(invocation)
+	if err != nil {
 		s.handleError(corrID, err)
 	}
+	s.registerInvocationGroup(groupID, corrID)
 }
 
 func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
@@ -176,6 +190,17 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			return fmt.Sprintf("no invocation found with the correlation ID: %d", correlationID)
 		})
 	}
+}
+
+func (s *Service) removeCorrelationFromGroup(id int64) {
+	s.groupMu.Lock()
+	if groupID, ok := s.correlationIDToGroup[id]; ok {
+		delete(s.correlationIDToGroup, id)
+		if cids, ok := s.groupToCorrelationIDs[groupID]; ok {
+			delete(cids, id)
+		}
+	}
+	s.groupMu.Unlock()
 }
 
 func (s *Service) removeCorrelationID(id int64) {
@@ -207,8 +232,20 @@ func (s *Service) registerInvocation(invocation Invocation) {
 	s.invocations[message.CorrelationID()] = invocation
 }
 
+func (s *Service) registerInvocationGroup(groupID int64, correlationID int64) {
+	s.groupMu.Lock()
+	group, ok := s.groupToCorrelationIDs[groupID]
+	if !ok {
+		group = make(map[int64]struct{})
+	}
+	group[correlationID] = struct{}{}
+	s.groupToCorrelationIDs[groupID] = group
+	s.groupMu.Unlock()
+}
+
 func (s *Service) unregisterInvocation(correlationID int64) Invocation {
 	if invocation, ok := s.invocations[correlationID]; ok {
+		s.removeCorrelationFromGroup(correlationID)
 		if invocation.EventHandler() == nil {
 			// invocations with event handlers are removed with RemoveListener functions
 			s.removeCorrelationID(correlationID)
@@ -216,4 +253,26 @@ func (s *Service) unregisterInvocation(correlationID int64) Invocation {
 		return invocation
 	}
 	return nil
+}
+
+func (s *Service) handleGroupLost(event event.Event) {
+	e := event.(*GroupLostEvent)
+	if atomic.LoadInt32(&s.state) == ready {
+		group, ok := s.groupToCorrelationIDs[e.GroupID]
+		if !ok {
+			return
+		}
+		for corrID := range group {
+			inv := s.unregisterInvocation(corrID)
+			if inv == nil {
+				continue
+			}
+			if e.Err != nil {
+				s.logger.Trace(func() string {
+					return fmt.Sprintf("error invoking %d: %s", corrID, e.Err)
+				})
+			}
+			inv.Complete(&proto.ClientMessage{Err: e.Err})
+		}
+	}
 }
