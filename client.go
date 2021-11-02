@@ -34,7 +34,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -89,7 +88,6 @@ type Client struct {
 	heartbeatService        *icluster.HeartbeatService
 	clusterConfig           *cluster.Config
 	membershipListenerMap   map[types.UUID]int64
-	refIDGen                *iproxy.ReferenceIDGenerator
 	lifecyleListenerMap     map[types.UUID]int64
 	lifecyleListenerMapMu   *sync.Mutex
 	name                    string
@@ -125,7 +123,6 @@ func newClient(config Config) (*Client, error) {
 		serializationService:    serializationService,
 		eventDispatcher:         event.NewDispatchService(clientLogger),
 		logger:                  clientLogger,
-		refIDGen:                iproxy.NewReferenceIDGenerator(1),
 		lifecyleListenerMap:     map[types.UUID]int64{},
 		lifecyleListenerMapMu:   &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
@@ -273,7 +270,7 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (type
 		return types.UUID{}, hzerrors.ErrClientNotActive
 	}
 	uuid := types.NewUUID()
-	subscriptionID := c.refIDGen.NextID()
+	subscriptionID := event.NextSubscriptionID()
 	c.addLifecycleListener(subscriptionID, handler)
 	c.lifecyleListenerMapMu.Lock()
 	c.lifecyleListenerMap[uuid] = subscriptionID
@@ -302,7 +299,7 @@ func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHand
 		return types.UUID{}, hzerrors.ErrClientNotActive
 	}
 	uuid := types.NewUUID()
-	subscriptionID := c.refIDGen.NextID()
+	subscriptionID := event.NextSubscriptionID()
 	c.addMembershipListener(subscriptionID, handler)
 	c.membershipListenerMapMu.Lock()
 	c.membershipListenerMap[uuid] = subscriptionID
@@ -397,12 +394,12 @@ func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.Mem
 
 func (c *Client) addConfigEvents(config *Config) {
 	for uuid, handler := range config.lifecycleListeners {
-		subscriptionID := c.refIDGen.NextID()
+		subscriptionID := event.NextSubscriptionID()
 		c.addLifecycleListener(subscriptionID, handler)
 		c.lifecyleListenerMap[uuid] = subscriptionID
 	}
 	for uuid, handler := range config.membershipListeners {
-		subscriptionID := c.refIDGen.NextID()
+		subscriptionID := event.NextSubscriptionID()
 		c.addMembershipListener(subscriptionID, handler)
 		c.membershipListenerMap[uuid] = subscriptionID
 	}
