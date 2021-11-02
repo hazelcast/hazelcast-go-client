@@ -73,7 +73,9 @@ func NewService(
 		state:           ready,
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
-		s.groupLostCh <- event.(*GroupLostEvent)
+		go func() {
+			s.groupLostCh <- event.(*GroupLostEvent)
+		}()
 	})
 	go s.processIncoming()
 	return s
