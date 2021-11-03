@@ -36,7 +36,7 @@ const (
 	infoPrefix      = "INFO"
 )
 
-// DefaultLogger has Go's built in log embedded in it. It adds level logging.
+// DefaultLogger has Go's built-in log embedded in it. It adds level logging.
 // To set the logging level, one should use the LoggingLevel property. For example
 // to set it to debug level:
 //  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
