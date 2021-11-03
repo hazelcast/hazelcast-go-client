@@ -21,8 +21,9 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	logger "github.com/hazelcast/hazelcast-go-client/log"
 )
 
 const (
@@ -39,7 +40,7 @@ const (
 // DefaultLogger has Go's built-in log embedded in it. It adds level logging.
 // To set the logging level, one should use the LoggingLevel property. For example
 // to set it to debug level:
-//  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
+//  config.SetProperty(property.LoggingLevel.Name(), log.DebugLevel)
 // If loggerConfig.SetLogger() method is called, the LoggingLevel property will not be used.
 type DefaultLogger struct {
 	*log.Logger
@@ -61,79 +62,100 @@ func NewWithLevel(loggingLevel logger.Level) *DefaultLogger {
 	}
 }
 
-func (l *DefaultLogger) CanLog(level logger.Level) bool {
+func (l *DefaultLogger) canLog(level logger.Level) bool {
 	numericLevel, err := logger.GetLogLevel(level)
 	if err != nil {
 		return false
 	}
 	loggerLevel, err := logger.GetLogLevel(l.Level)
 	if err != nil {
-		fmt.Println("logger has invalid log level, will not log something useful")
+		fmt.Println("log has invalid log level, will not log something useful")
 		return false
 	}
 	return loggerLevel >= numericLevel
 }
 
-// Debug logs the given arguments at debug level if the level is greater than or equal to debug level.
-func (l *DefaultLogger) Debug(f func() string) {
-	if l.CanLog(logger.DebugLevel) && f != nil {
-		s := fmt.Sprintf("DEBUG: %s", f())
-		l.Output(logCallDepth, s)
+func (l *DefaultLogger) Log(level logger.Level, formatter func() string) {
+	if !l.canLog(logger.DebugLevel) || formatter == nil {
+		return
 	}
-}
-
-func (l *DefaultLogger) Trace(f func() string) {
-	if l.CanLog(logger.TraceLevel) && f != nil {
-		s := fmt.Sprintf("TRACE: %s", f())
-		l.Output(logCallDepth, s)
-	}
-}
-
-// Info logs the given arguments at info level if the level is greater than or equal to info level.
-func (l *DefaultLogger) Info(args ...interface{}) {
-	if l.CanLog(logger.InfoLevel) {
-		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + infoPrefix + ": " + fmt.Sprint(args...)
-		l.Output(logCallDepth, s)
-	}
-}
-
-func (l *DefaultLogger) Infof(format string, values ...interface{}) {
-	if l.CanLog(logger.InfoLevel) {
-		s := fmt.Sprintf("INFO : %s", fmt.Sprintf(format, values...))
-		l.Output(logCallDepth, s)
-	}
-}
-
-// Warn logs the given arguments at warn level if the level is greater than or equal to warn level.
-func (l *DefaultLogger) Warn(args ...interface{}) {
-	if l.CanLog(logger.WarnLevel) {
-		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + warnPrefix + ": " + fmt.Sprint(args...)
-		l.Output(logCallDepth, s)
-	}
-}
-
-func (l *DefaultLogger) Warnf(format string, values ...interface{}) {
-	if l.CanLog(logger.WarnLevel) {
-		s := fmt.Sprintf("WARN : %s", fmt.Sprintf(format, values...))
-		l.Output(logCallDepth, s)
-	}
-}
-
-// Error logs the given arguments at error level if the level is greater than or equal to error level.
-func (l *DefaultLogger) Error(err error) {
-	l.Errorf(err.Error())
-}
-
-func (l *DefaultLogger) Errorf(format string, values ...interface{}) {
-	if l.CanLog(logger.ErrorLevel) {
-		s := fmt.Sprintf("ERROR: %s", fmt.Errorf(format, values...).Error())
-		l.Output(logCallDepth, s)
-	}
+	s := fmt.Sprintf("%s: %s", strings.ToUpper(level.String()), formatter())
+	_ = l.Output(logCallDepth, s)
 }
 
 func (l *DefaultLogger) findCallerFuncName() string {
 	pc, _, _, _ := runtime.Caller(logCallDepth)
 	return runtime.FuncForPC(pc).Name()
+}
+
+// LogAdaptor is used to convert log implementations of public interface logger.Logger to internal logging interface Logger
+type LogAdaptor struct {
+	logger.Logger
+}
+
+// compile time check for interface satisfaction
+var _ Logger = LogAdaptor{}
+
+// Debug runs the given function to generate the log string, if log level is debug or finer.
+func (la LogAdaptor) Debug(f func() string) {
+	la.Log(logger.DebugLevel, f)
+}
+
+// Trace runs the given function to generate the log string, if log level is trace or finer.
+func (la LogAdaptor) Trace(f func() string) {
+	la.Log(logger.TraceLevel, f)
+}
+
+// Info runs the given function to generate the log string, if log level is info or finer.
+func (la LogAdaptor) Info(f func() string) {
+	la.Log(logger.InfoLevel, f)
+}
+
+// Infof formats the given string with the given values, if log level is info or finer.
+func (la LogAdaptor) Infof(format string, values ...interface{}) {
+	la.Log(logger.InfoLevel, func() string {
+		return fmt.Sprintf(format, values...)
+	})
+}
+
+// Warn formats the given string with the given values, if log level is warn or finer.
+func (la LogAdaptor) Warn(f func() string) {
+	la.Log(logger.WarnLevel, f)
+}
+
+// Warnf formats the given string with the given values, if log level is warn or finer.
+func (la LogAdaptor) Warnf(format string, values ...interface{}) {
+	la.Log(logger.WarnLevel, func() string {
+		return fmt.Sprintf(format, values...)
+	})
+}
+
+// Error logs the given args at error level.
+func (la LogAdaptor) Error(err error) {
+	la.Log(logger.ErrorLevel, func() string {
+		return err.Error()
+	})
+}
+
+// Errorf formats the given string with the given values, if log level is error or finer.
+func (la LogAdaptor) Errorf(format string, values ...interface{}) {
+	la.Log(logger.ErrorLevel, func() string {
+		return fmt.Sprintf(format, values...)
+	})
+}
+
+// Logger is the interface that is used internally by client for logging.
+type Logger interface {
+	// Debug logs the given arg at debug level.
+	Debug(f func() string)
+	// Trace logs the given arg at trace level.
+	Trace(f func() string)
+	// Infof logs the given args at info level.
+	Infof(format string, values ...interface{})
+	// Warnf logs the given args at warn level.
+	Warnf(format string, values ...interface{})
+	// Error logs the given args at error level.
+	Error(err error)
+	// Errorf logs the given args at error level with the given format
+	Errorf(format string, values ...interface{})
 }

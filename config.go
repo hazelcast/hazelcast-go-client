@@ -23,7 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/log"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -36,7 +36,7 @@ type Config struct {
 	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 	Labels              []string                          `json:",omitempty"`
 	ClientName          string                            `json:",omitempty"`
-	Logger              logger.Config                     `json:",omitempty"`
+	Logger              log.Config                        `json:",omitempty"`
 	Failover            cluster.FailoverConfig            `json:",omitempty"`
 	Serialization       serialization.Config              `json:",omitempty"`
 	Cluster             cluster.Config                    `json:",omitempty"`

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package logger
+package log
 
 import (
 	"testing"

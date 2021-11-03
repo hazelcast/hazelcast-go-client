@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -34,7 +35,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	ilogger "github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -63,7 +63,7 @@ type creationBundle struct {
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinder
 	Config               *Config
-	Logger               ilogger.Logger
+	Logger               logger.Logger
 }
 
 func (b creationBundle) Check() {
@@ -94,7 +94,7 @@ func (b creationBundle) Check() {
 }
 
 type proxy struct {
-	logger               ilogger.Logger
+	logger               logger.Logger
 	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService

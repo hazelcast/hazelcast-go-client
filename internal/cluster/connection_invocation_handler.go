@@ -23,7 +23,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilogger "github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 var errPartitionOwnerNotAssigned = errors.New("partition owner not assigned")
@@ -31,7 +31,7 @@ var errPartitionOwnerNotAssigned = errors.New("partition owner not assigned")
 type ConnectionInvocationHandlerCreationBundle struct {
 	ConnectionManager *ConnectionManager
 	ClusterService    *Service
-	Logger            ilogger.Logger
+	Logger            logger.Logger
 	Config            *pubcluster.Config
 }
 
@@ -51,7 +51,7 @@ func (b ConnectionInvocationHandlerCreationBundle) Check() {
 }
 
 type ConnectionInvocationHandler struct {
-	logger            ilogger.Logger
+	logger            logger.Logger
 	connectionManager *ConnectionManager
 	clusterService    *Service
 	smart             bool

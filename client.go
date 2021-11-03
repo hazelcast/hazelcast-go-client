@@ -36,7 +36,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/log"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -75,7 +75,7 @@ func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, erro
 // It connects to one or more of the cluster members and delegates all cluster wide operations to them.
 type Client struct {
 	invocationHandler       invocation.Handler
-	logger                  logger.Logger
+	logger                  ilogger.Logger
 	membershipListenerMapMu *sync.Mutex
 	connectionManager       *icluster.ConnectionManager
 	clusterService          *icluster.Service
@@ -116,7 +116,7 @@ func newClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	clientLogger.Trace(func() string { return fmt.Sprintf("creating new client: %s", name) })
+	clientLogger.Log(log.TraceLevel, func() string { return fmt.Sprintf("creating new client: %s", name) })
 	c := &Client{
 		name:                    name,
 		clusterConfig:           &config.Cluster,
@@ -128,12 +128,13 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
 	}
+	c.SetLogger(clientLogger)
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
 	return c, nil
 }
 
-func loggerFromConf(config Config) (logger.Logger, error) {
+func loggerFromConf(config Config) (log.Logger, error) {
 	if config.Logger.Custom != nil {
 		return config.Logger.Custom, nil
 	}
@@ -223,6 +224,11 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 		return nil, err
 	}
 	return codec.DecodeClientGetDistributedObjectsResponse(resp), nil
+}
+
+// SetLogger sets a log implementing log.Logger
+func (c *Client) SetLogger(logger log.Logger) {
+	c.logger = ilogger.LogAdaptor{Logger: logger}
 }
 
 func (c *Client) start(ctx context.Context) error {
@@ -532,7 +538,7 @@ func (c *Client) handleClusterEvent(e event.Event) {
 	}
 }
 
-func addrProviderTranslator(config *cluster.Config, logger logger.Logger) (icluster.AddressProvider, icluster.AddressTranslator) {
+func addrProviderTranslator(config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator) {
 	if config.Cloud.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)

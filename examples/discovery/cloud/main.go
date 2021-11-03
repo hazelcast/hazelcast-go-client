@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	logger "github.com/hazelcast/hazelcast-go-client/log"
 )
 
 const clusterName = "PUT-YOUR-CLUSTER-NAME-HERE!"

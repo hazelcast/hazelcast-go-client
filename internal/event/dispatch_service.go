@@ -22,7 +22,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/log"
 )
 
 var globalSubscriptionID = int64(0)
@@ -45,7 +46,7 @@ const (
 type Handler func(event Event)
 
 type DispatchService struct {
-	logger          logger.Logger
+	logger          ilogger.Logger
 	subscriptions   map[string]map[int64]*subscription
 	subscriptionsMu *sync.RWMutex
 	state           int32
@@ -58,11 +59,11 @@ type DispatchService struct {
 //One will finish, then other will start.
 //3 - If we block an event, it will not block all events, only ones that are related to same subscription.
 //4 - A close after publish in the same thread waits for published item to be handled(finished) .
-func NewDispatchService(logger logger.Logger) *DispatchService {
+func NewDispatchService(logger log.Logger) *DispatchService {
 	service := &DispatchService{
 		subscriptions:   map[string]map[int64]*subscription{},
 		subscriptionsMu: &sync.RWMutex{},
-		logger:          logger,
+		logger:          ilogger.LogAdaptor{Logger: logger},
 		state:           ready,
 	}
 	return service

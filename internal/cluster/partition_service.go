@@ -24,16 +24,16 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	ilogger "github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type PartitionServiceCreationBundle struct {
 	EventDispatcher *event.DispatchService
-	Logger          ilogger.Logger
+	Logger          logger.Logger
 }
 
 func (b PartitionServiceCreationBundle) Check() {
@@ -46,7 +46,7 @@ func (b PartitionServiceCreationBundle) Check() {
 }
 
 type PartitionService struct {
-	logger          ilogger.Logger
+	logger          logger.Logger
 	eventDispatcher *event.DispatchService
 	partitionTable  partitionTable
 	partitionCount  int32

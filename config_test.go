@@ -29,7 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/log"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -169,7 +169,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 			"ReconnectMode": "off"
 		}
 	},
-	"Logger": {
+	"Logger2": {
 		"Level": "error"
 	},
 	"Stats": {
@@ -191,7 +191,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, "foo", config.Cluster.Name)
-	assert.Equal(t, logger.Level("error"), config.Logger.Level)
+	assert.Equal(t, log.Level("error"), config.Logger.Level)
 	assert.Equal(t, types.Duration(20*time.Second), config.Cluster.Network.ConnectionTimeout)
 	assert.Equal(t, types.Duration(10*time.Second), config.Cluster.HeartbeatInterval)
 	assert.Equal(t, types.Duration(15*time.Second), config.Cluster.HeartbeatTimeout)
@@ -209,7 +209,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
+	target := `{"Logger2":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 
@@ -389,7 +389,7 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, false, c.Stats.Enabled)
 	assert.Equal(t, types.Duration(5*time.Second), c.Stats.Period)
 
-	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
+	assert.Equal(t, log.InfoLevel, c.Logger.Level)
 
 	assert.Equal(t, false, c.Failover.Enabled)
 }

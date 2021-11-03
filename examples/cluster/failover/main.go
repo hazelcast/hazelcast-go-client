@@ -24,7 +24,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	logger "github.com/hazelcast/hazelcast-go-client/log"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 

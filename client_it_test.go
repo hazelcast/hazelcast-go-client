@@ -36,7 +36,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	logger "github.com/hazelcast/hazelcast-go-client/log"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 

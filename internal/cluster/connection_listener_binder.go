@@ -25,8 +25,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	logger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -38,7 +38,7 @@ type listenerRegistration struct {
 }
 
 type ConnectionListenerBinder struct {
-	logger                logger.Logger
+	logger                logger2.Logger
 	connectionManager     *ConnectionManager
 	invocationFactory     *ConnectionInvocationFactory
 	eventDispatcher       *event.DispatchService
@@ -57,7 +57,7 @@ func NewConnectionListenerBinder(
 	invocationService *invocation.Service,
 	invocationFactory *ConnectionInvocationFactory,
 	eventDispatcher *event.DispatchService,
-	logger logger.Logger,
+	logger logger2.Logger,
 	smart bool) *ConnectionListenerBinder {
 	binder := &ConnectionListenerBinder{
 		connectionManager:     connManager,

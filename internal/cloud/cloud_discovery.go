@@ -24,19 +24,19 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	logger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/rest"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const envCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 
 type DiscoveryClient struct {
-	logger     logger.Logger
+	logger     logger2.Logger
 	httpClient *rest.HTTPClient
 	token      string
 }
 
-func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.Logger) *DiscoveryClient {
+func NewDiscoveryClient(config *cluster.CloudConfig, logger logger2.Logger) *DiscoveryClient {
 	return &DiscoveryClient{
 		token:      config.Token,
 		httpClient: rest.NewHTTPClient(),

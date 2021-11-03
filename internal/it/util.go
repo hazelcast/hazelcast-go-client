@@ -37,7 +37,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/log"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -78,9 +78,9 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
-		logLevel := logger.WarnLevel
+		logLevel := log.WarnLevel
 		if TraceLoggingEnabled() {
-			logLevel = logger.TraceLevel
+			logLevel = log.TraceLevel
 		}
 		config.Logger.Level = logLevel
 		config.Cluster.Unisocket = !smart
@@ -328,7 +328,7 @@ func (c TestCluster) DefaultConfig() hz.Config {
 		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 	if TraceLoggingEnabled() {
-		config.Logger.Level = logger.TraceLevel
+		config.Logger.Level = log.TraceLevel
 	}
 	return config
 }
@@ -394,11 +394,11 @@ func xmlSSLConfig(clusterName string, port int) string {
 			`, clusterName, port)
 }
 
-func getLoggerLevel() logger.Level {
+func getLoggerLevel() log.Level {
 	if TraceLoggingEnabled() {
-		return logger.TraceLevel
+		return log.TraceLevel
 	}
-	return logger.WarnLevel
+	return log.WarnLevel
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {

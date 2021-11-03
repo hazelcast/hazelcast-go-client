@@ -22,26 +22,27 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/log"
 )
 
 const logMessage = "dummy"
 
-func createWithLevelAndLog(level logger.Level) string {
-	l := New()
-	l.Level = level
+func createWithLevelAndLog(level log.Level) string {
+	dl := New()
+	dl.Level = level
 	buf := new(bytes.Buffer)
-	l.SetOutput(buf)
+	dl.SetOutput(buf)
+	l := LogAdaptor{dl}
 	l.Debug(func() string { return logMessage })
 	l.Trace(func() string { return logMessage })
-	l.Warn(logMessage)
-	l.Info(logMessage)
+	l.Warnf(logMessage)
+	l.Infof(logMessage)
 	l.Errorf(logMessage)
 	return buf.String()
 }
 
 func TestDefaultLogger_TraceLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.TraceLevel)
+	loggedMessages := createWithLevelAndLog(log.TraceLevel)
 	assert.Contains(t, loggedMessages, tracePrefix)
 	assert.Contains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, warnPrefix)
@@ -50,7 +51,7 @@ func TestDefaultLogger_TraceLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_DebugLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.DebugLevel)
+	loggedMessages := createWithLevelAndLog(log.DebugLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.Contains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, warnPrefix)
@@ -59,7 +60,7 @@ func TestDefaultLogger_DebugLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_WarnLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.WarnLevel)
+	loggedMessages := createWithLevelAndLog(log.WarnLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.NotContains(t, loggedMessages, infoPrefix)
@@ -68,7 +69,7 @@ func TestDefaultLogger_WarnLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_InfoLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.InfoLevel)
+	loggedMessages := createWithLevelAndLog(log.InfoLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, infoPrefix)
@@ -77,7 +78,7 @@ func TestDefaultLogger_InfoLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_ErrorLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.ErrorLevel)
+	loggedMessages := createWithLevelAndLog(log.ErrorLevel)
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.NotContains(t, loggedMessages, warnPrefix)
