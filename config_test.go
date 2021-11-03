@@ -169,7 +169,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 			"ReconnectMode": "off"
 		}
 	},
-	"Logger2": {
+	"Logger": {
 		"Level": "error"
 	},
 	"Stats": {
@@ -209,7 +209,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger2":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
+	target := `{"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	assertStringEquivalent(t, target, string(b))
 }
 
