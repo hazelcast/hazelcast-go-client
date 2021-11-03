@@ -76,7 +76,7 @@ func (l *DefaultLogger) canLog(level logger.Level) bool {
 }
 
 func (l *DefaultLogger) Log(level logger.Level, formatter func() string) {
-	if !l.canLog(logger.DebugLevel) || formatter == nil {
+	if !l.canLog(level) || formatter == nil {
 		return
 	}
 	s := fmt.Sprintf("%s: %s", strings.ToUpper(level.String()), formatter())
