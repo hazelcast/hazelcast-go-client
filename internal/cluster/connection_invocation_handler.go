@@ -63,10 +63,8 @@ type ConnectionInvocationHandler struct {
 
 func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {
 	bundle.Check()
-	// TODO: make circuit breaker configurable
 	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(3),
-		cb.MaxFailureCount(3),
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration(attempt) * time.Second
 		}))

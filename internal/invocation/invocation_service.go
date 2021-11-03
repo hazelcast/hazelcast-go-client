@@ -163,9 +163,12 @@ func (s *Service) sendInvocation(invocation Invocation) {
 	})
 	s.registerInvocation(invocation)
 	corrID := invocation.Request().CorrelationID()
-	if _, err := s.handler.Invoke(invocation); err != nil {
+	gid, err := s.handler.Invoke(invocation)
+	if err != nil {
 		s.handleError(corrID, err)
+		return
 	}
+	invocation.SetGroup(gid)
 }
 
 func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
@@ -237,9 +240,9 @@ func (s *Service) handleGroupLost(e *GroupLostEvent) {
 	if atomic.LoadInt32(&s.state) != ready {
 		return
 	}
-	for _, inv := range s.invocations {
-		if inv.HasGroup(e.GroupID) {
-			s.handleError(inv.Request().CorrelationID(), e.Err)
+	for corrID, inv := range s.invocations {
+		if inv.Group() == e.GroupID && !inv.Request().HasEventFlag() {
+			s.handleError(corrID, e.Err)
 		}
 	}
 }

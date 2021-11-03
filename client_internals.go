@@ -1,3 +1,4 @@
+//go:build hazelcastinternal
 // +build hazelcastinternal
 
 /*
@@ -18,16 +19,32 @@
 
 package hazelcast
 
-import "github.com/hazelcast/hazelcast-go-client/internal/cluster"
+import (
+	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+)
 
-type ClientInternals struct {
+type ClientInternal struct {
 	client *Client
 }
 
-func NewClientInternals(c *Client) *ClientInternals {
-	return &ClientInternals{client: c}
+func NewClientInternal(c *Client) *ClientInternal {
+	return &ClientInternal{client: c}
 }
 
-func (ci *ClientInternals) ConnectionManager() *cluster.ConnectionManager {
+func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
 	return ci.client.connectionManager
+}
+
+func (ci *ClientInternal) DispatchService() *event.DispatchService {
+	return ci.client.eventDispatcher
+}
+
+func (ci *ClientInternal) InvocationService() *invocation.Service {
+	return ci.client.invocationService
+}
+
+func (ci *ClientInternal) InvocationHandler() invocation.Handler {
+	return ci.client.invocationHandler
 }

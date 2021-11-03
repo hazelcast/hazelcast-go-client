@@ -48,7 +48,8 @@ type Invocation interface {
 	Close()
 	CanRetry(err error) bool
 	Deadline() time.Time
-	HasGroup(groupID int64) bool
+	Group() int64
+	SetGroup(id int64)
 }
 
 type Impl struct {
@@ -57,6 +58,7 @@ type Impl struct {
 	eventHandler  func(clientMessage *proto.ClientMessage)
 	request       *proto.ClientMessage
 	address       pubcluster.Address
+	group         int64
 	completed     int32
 	partitionID   int32
 	RedoOperation bool
@@ -158,8 +160,12 @@ func (i *Impl) MaybeCanRetry(err error) bool {
 	return false
 }
 
-func (i *Impl) HasGroup(groupID int64) bool {
-	return false
+func (i *Impl) Group() int64 {
+	return i.group
+}
+
+func (i *Impl) SetGroup(id int64) {
+	i.group = id
 }
 
 func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {
