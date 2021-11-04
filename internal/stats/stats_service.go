@@ -38,7 +38,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	logger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
@@ -55,7 +55,7 @@ type binTextStats struct {
 type Service struct {
 	clusterConnectTime atomic.Value
 	connAddr           atomic.Value
-	logger             logger2.Logger
+	logger             logger.Logger
 	mu                 *sync.RWMutex
 	invFactory         *cluster.ConnectionInvocationFactory
 	addrs              map[string]struct{}
@@ -72,7 +72,7 @@ func NewService(
 	invService *invocation.Service,
 	invFactory *cluster.ConnectionInvocationFactory,
 	ed *event.DispatchService,
-	logger logger2.Logger,
+	logger logger.Logger,
 	interval time.Duration,
 	clientName string) *Service {
 	s := &Service{
@@ -217,7 +217,7 @@ type gauge interface {
 }
 
 type runtimeGauges struct {
-	logger          logger2.Logger
+	logger          logger.Logger
 	availProcessors metricDescriptor
 	uptime          metricDescriptor
 	totalMem        metricDescriptor
@@ -229,7 +229,7 @@ type runtimeGauges struct {
 	committedHeap   metricDescriptor
 }
 
-func newGaugeRuntime(lg logger2.Logger) runtimeGauges {
+func newGaugeRuntime(lg logger.Logger) runtimeGauges {
 	return runtimeGauges{
 		logger:          lg,
 		availProcessors: makeCountMD("runtime", "availableProcessors"),
@@ -290,7 +290,7 @@ func (g runtimeGauges) updateMem(bt *binTextStats) {
 }
 
 type gaugeOS struct {
-	logger        logger2.Logger
+	logger        logger.Logger
 	totalMem      metricDescriptor
 	freeMem       metricDescriptor
 	committedVM   metricDescriptor
@@ -302,7 +302,7 @@ type gaugeOS struct {
 	openDecrCount metricDescriptor
 }
 
-func newGaugeOS(lg logger2.Logger) gaugeOS {
+func newGaugeOS(lg logger.Logger) gaugeOS {
 	return gaugeOS{
 		logger:        lg,
 		totalMem:      makeBytesMD("os", "totalPhysicalMemorySize"),

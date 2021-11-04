@@ -34,7 +34,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	logger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -60,7 +60,7 @@ type Connection struct {
 	socket                    net.Conn
 	bWriter                   *bufio.Writer
 	endpoint                  atomic.Value
-	logger                    logger2.Logger
+	logger                    logger.Logger
 	lastRead                  atomic.Value
 	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService

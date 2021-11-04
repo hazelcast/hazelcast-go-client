@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	logger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
 
 type ViewListenerService struct {
@@ -14,10 +14,10 @@ type ViewListenerService struct {
 	cs         *Service
 	cm         *ConnectionManager
 	dispatcher *event.DispatchService
-	logger     logger2.Logger
+	logger     logger.Logger
 }
 
-func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *event.DispatchService, logger logger2.Logger) *ViewListenerService {
+func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *event.DispatchService, logger logger.Logger) *ViewListenerService {
 	vs := &ViewListenerService{
 		cs:         cs,
 		cm:         cm,

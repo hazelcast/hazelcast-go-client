@@ -25,7 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	ilogger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -51,14 +51,14 @@ type Service struct {
 	invocations     map[int64]Invocation
 	handler         Handler
 	eventDispatcher *event.DispatchService
-	logger          logger2.Logger
+	logger          logger.Logger
 	state           int32
 }
 
 func NewService(
 	handler Handler,
 	eventDispacher *event.DispatchService,
-	logger logger2.Logger) *Service {
+	logger logger.Logger) *Service {
 	s := &Service{
 		requestCh:       make(chan Invocation),
 		urgentRequestCh: make(chan Invocation),

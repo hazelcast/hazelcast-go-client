@@ -26,14 +26,14 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	logger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type Service struct {
-	logger            logger2.Logger
+	logger            logger.Logger
 	config            *pubcluster.Config
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
@@ -44,7 +44,7 @@ type Service struct {
 }
 
 type CreationBundle struct {
-	Logger            logger2.Logger
+	Logger            logger.Logger
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
@@ -175,7 +175,7 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
-	logger           logger2.Logger
+	logger           logger.Logger
 	failoverService  *FailoverService
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
@@ -184,7 +184,7 @@ type membersMap struct {
 	version          int32
 }
 
-func newMembersMap(failoverService *FailoverService, lg logger2.Logger) membersMap {
+func newMembersMap(failoverService *FailoverService, lg logger.Logger) membersMap {
 	mm := membersMap{
 		membersMu:       &sync.RWMutex{},
 		failoverService: failoverService,

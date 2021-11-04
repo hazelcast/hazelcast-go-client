@@ -8,7 +8,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	logger2 "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
@@ -17,11 +17,11 @@ type HeartbeatService struct {
 	invFactory *ConnectionInvocationFactory
 	invService *invocation.Service
 	doneCh     chan struct{}
-	logger     logger2.Logger
+	logger     logger.Logger
 	state      int32
 }
 
-func NewHeartbeatService(cm *ConnectionManager, f *ConnectionInvocationFactory, invService *invocation.Service, logger logger2.Logger) *HeartbeatService {
+func NewHeartbeatService(cm *ConnectionManager, f *ConnectionInvocationFactory, invService *invocation.Service, logger logger.Logger) *HeartbeatService {
 	return &HeartbeatService{
 		cm:         cm,
 		invFactory: f,

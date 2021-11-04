@@ -20,9 +20,8 @@ import (
 	"testing"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-
 	"github.com/hazelcast/hazelcast-go-client"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
