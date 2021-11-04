@@ -15,6 +15,7 @@ type Logger interface {
 
 const (
 	offLevel = iota * 100
+	criticalLevel
 	errorLevel
 	warnLevel
 	infoLevel
@@ -24,12 +25,13 @@ const (
 
 // nameToLevel is used to get corresponding level for log level strings.
 var nameToLevel = map[Level]int{
-	ErrorLevel: errorLevel,
-	WarnLevel:  warnLevel,
-	InfoLevel:  infoLevel,
-	DebugLevel: debugLevel,
-	TraceLevel: traceLevel,
-	OffLevel:   offLevel,
+	CriticalLevel: criticalLevel,
+	ErrorLevel:    errorLevel,
+	WarnLevel:     warnLevel,
+	InfoLevel:     infoLevel,
+	DebugLevel:    debugLevel,
+	TraceLevel:    traceLevel,
+	OffLevel:      offLevel,
 }
 
 // isValidLogLevel returns true if the given log level is valid.

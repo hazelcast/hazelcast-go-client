@@ -25,6 +25,8 @@ type Level string
 const (
 	// OffLevel disables logging.
 	OffLevel Level = "off"
+	// CriticalLevel level. Used for errors that should definitely be noted.
+	CriticalLevel Level = "critical"
 	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
 	ErrorLevel Level = "error"
@@ -62,6 +64,8 @@ func (c *Config) Validate() error {
 	}
 	switch string(c.Level) {
 	case "off":
+		fallthrough
+	case "critical":
 		fallthrough
 	case "error":
 		fallthrough
