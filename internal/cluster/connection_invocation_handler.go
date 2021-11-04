@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -64,7 +65,7 @@ type ConnectionInvocationHandler struct {
 func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {
 	bundle.Check()
 	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(3),
+		cb.MaxRetries(math.MaxInt32),
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration(attempt) * time.Second
 		}))
