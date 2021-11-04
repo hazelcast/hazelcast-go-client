@@ -18,10 +18,12 @@ package it
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
-	hz "github.com/hazelcast/hazelcast-go-client"
 	"go.uber.org/goleak"
+
+	hz "github.com/hazelcast/hazelcast-go-client"
 )
 
 func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
@@ -29,13 +31,13 @@ func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 }
 
 func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
-	makeMapName := func() string {
-		return NewUniqueObjectName("map")
+	makeMapName := func(labels ...string) string {
+		return NewUniqueObjectName("map", labels...)
 	}
 	MapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }
 
-func MapTesterWithConfigAndName(t *testing.T, makeMapName func() string, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
+func MapTesterWithConfigAndName(t *testing.T, makeMapName func(...string) string, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
 	var (
 		client *hz.Client
 		m      *hz.Map
@@ -51,7 +53,7 @@ func MapTesterWithConfigAndName(t *testing.T, makeMapName func() string, configC
 			configCallback(&config)
 		}
 		config.Cluster.Unisocket = !smart
-		client, m = GetClientMapWithConfig(makeMapName(), &config)
+		client, m = GetClientMapWithConfig(makeMapName(strconv.FormatBool(smart)), &config)
 		defer func() {
 			ctx := context.Background()
 			if err := m.Destroy(ctx); err != nil {

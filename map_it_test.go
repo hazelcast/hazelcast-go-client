@@ -539,7 +539,8 @@ func TestMap_Flush(t *testing.T) {
 }
 
 func TestMap_LoadAllWithoutReplacing(t *testing.T) {
-	makeMapName := func() string {
+	makeMapName := func(_ ...string) string {
+		// the map name for this test should be static.
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
@@ -560,7 +561,8 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 }
 
 func TestMap_LoadAllReplacing(t *testing.T) {
-	makeMapName := func() string {
+	makeMapName := func(_ ...string) string {
+		// the map name for this test should be static.
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {

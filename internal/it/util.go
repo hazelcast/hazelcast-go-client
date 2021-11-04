@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -190,8 +191,12 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 	return client
 }
 
-func NewUniqueObjectName(service string) string {
-	return fmt.Sprintf("test-%s-%d-%d", service, idGen.NextID(), rand.Int())
+func NewUniqueObjectName(service string, labels ...string) string {
+	ls := strings.Join(labels, "_")
+	if ls != "" {
+		ls = fmt.Sprintf("-%s", ls)
+	}
+	return fmt.Sprintf("test-%s-%d-%d%s", service, idGen.NextID(), rand.Int(), ls)
 }
 
 func TraceLoggingEnabled() bool {

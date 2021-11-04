@@ -84,7 +84,11 @@ func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *
 		handler:       handler,
 		id:            id,
 	}
-	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, b.connectionManager.ActiveConnections()...)
+	conns := b.connectionManager.ActiveConnections()
+	b.logger.Trace(func() string {
+		return fmt.Sprintf("adding listener %d:\nconns: %v,\nregs: %v", id, conns, b.regs)
+	})
+	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, conns...)
 	if err != nil {
 		return err
 	}
@@ -97,6 +101,7 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 		ctx = context.Background()
 	}
 	b.regsMu.Lock()
+	defer b.regsMu.Unlock()
 	reg, ok := b.regs[id]
 	if !ok {
 		b.regsMu.Unlock()
@@ -104,8 +109,11 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	}
 	delete(b.regs, id)
 	b.removeCorrelationIDs(id)
-	b.regsMu.Unlock()
-	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, b.connectionManager.ActiveConnections()...)
+	conns := b.connectionManager.ActiveConnections()
+	b.logger.Trace(func() string {
+		return fmt.Sprintf("removing listener %d:\nconns: %v,\nregs: %v", id, conns, b.regs)
+	})
+	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, conns...)
 }
 
 func (b *ConnectionListenerBinder) updateCorrelationIDs(regID types.UUID, correlationIDs []int64) {
