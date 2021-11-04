@@ -65,7 +65,7 @@ func NewService(
 		responseCh:      make(chan *proto.ClientMessage),
 		removeCh:        make(chan int64),
 		doneCh:          make(chan struct{}),
-		groupLostCh:     make(chan *GroupLostEvent, 1),
+		groupLostCh:     make(chan *GroupLostEvent),
 		invocations:     map[int64]Invocation{},
 		handler:         handler,
 		eventDispatcher: eventDispacher,

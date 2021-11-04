@@ -71,7 +71,3 @@ func (i *ConnectionBoundInvocation) CanRetry(err error) bool {
 	}
 	return false
 }
-
-func (i *ConnectionBoundInvocation) HasGroup(groupID int64) bool {
-	return i.boundConnection != nil && i.boundConnection.connectionID == groupID
-}
