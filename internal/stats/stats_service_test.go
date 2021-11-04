@@ -40,7 +40,7 @@ func (h Handler) Invoke(invocation invocation.Invocation) (groupID int64, err er
 }
 
 func TestNewService(t *testing.T) {
-	lg := logger.New()
+	lg := logger.LogAdaptor{Logger: logger.New()}
 	ed := event.NewDispatchService(lg)
 	okCh := make(chan struct{}, 1)
 	handler := Handler{okCh: okCh}
