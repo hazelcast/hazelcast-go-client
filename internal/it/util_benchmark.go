@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/log"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 )
@@ -42,7 +42,7 @@ func BenchmarkerWithConfigBuilder(b *testing.B, configCallback func(*hz.Config),
 		if configCallback != nil {
 			configCallback(&config)
 		}
-		config.Logger.Level = log.ErrorLevel
+		config.Logger.Level = logger.ErrorLevel
 		config.Cluster.Unisocket = !smart
 		b.ResetTimer()
 		f(b, &config)
@@ -137,6 +137,6 @@ func getMap(mapName string, configCallback func(*hz.Config), smart bool) (*hz.Cl
 		configCallback(&config)
 	}
 	config.Cluster.Unisocket = !smart
-	config.Logger.Level = log.ErrorLevel
+	config.Logger.Level = logger.ErrorLevel
 	return GetClientMapWithConfig(mapName, &config)
 }

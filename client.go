@@ -36,7 +36,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
-	"github.com/hazelcast/hazelcast-go-client/log"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -116,7 +116,7 @@ func newClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	clientLogger.Log(log.TraceLevel, func() string { return fmt.Sprintf("creating new client: %s", name) })
+	clientLogger.Log(logger.TraceLevel, func() string { return fmt.Sprintf("creating new client: %s", name) })
 	c := &Client{
 		name:                    name,
 		clusterConfig:           &config.Cluster,
@@ -134,7 +134,7 @@ func newClient(config Config) (*Client, error) {
 	return c, nil
 }
 
-func loggerFromConf(config Config) (log.Logger, error) {
+func loggerFromConf(config Config) (logger.Logger, error) {
 	if config.Logger.Custom != nil {
 		return config.Logger.Custom, nil
 	}
@@ -226,8 +226,8 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 	return codec.DecodeClientGetDistributedObjectsResponse(resp), nil
 }
 
-// SetLogger sets a log implementing log.Logger
-func (c *Client) SetLogger(logger log.Logger) {
+// SetLogger sets a logger implementing logger.Logger
+func (c *Client) SetLogger(logger logger.Logger) {
 	c.logger = ilogger.LogAdaptor{Logger: logger}
 }
 

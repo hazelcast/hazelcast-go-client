@@ -22,17 +22,17 @@ func Example() {
 	// Start the client.
 	client, err := hazelcast.StartNewClient()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	// Retrieve a map.
 	peopleMap, err := client.GetMap("people")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 	// Call map functions.
 	err = peopleMap.Set("jane", "doe")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }
 */

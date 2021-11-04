@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package log
+package logger
 
 import (
 	"fmt"
@@ -78,5 +78,5 @@ func (c *Config) Validate() error {
 	case "trace":
 		return nil
 	}
-	return fmt.Errorf("invalid log level: %s", c.Level)
+	return fmt.Errorf("invalid logger level: %s", c.Level)
 }

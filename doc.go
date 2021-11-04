@@ -150,7 +150,7 @@ Here are all configuration items with their default values:
 	config.Stats.Enabled = false
 	config.Stats.Period = types.Duration(5 * time.Second)
 
-	config.Logger.Level = log.InfoLevel
+	config.Logger.Level = logger.InfoLevel
 
 Listening for Distributed Object Events
 

@@ -1,4 +1,4 @@
-package log
+package logger
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ const (
 	traceLevel
 )
 
-// nameToLevel is used to get corresponding level for log level strings.
+// nameToLevel is used to get corresponding level for logger level strings.
 var nameToLevel = map[Level]int{
 	CriticalLevel: criticalLevel,
 	ErrorLevel:    errorLevel,
@@ -34,7 +34,7 @@ var nameToLevel = map[Level]int{
 	OffLevel:      offLevel,
 }
 
-// isValidLogLevel returns true if the given log level is valid.
+// isValidLogLevel returns true if the given logger level is valid.
 // The check is done case insensitive.
 func isValidLogLevel(logLevel Level) bool {
 	logLevelStr := strings.ToLower(string(logLevel))
@@ -42,10 +42,10 @@ func isValidLogLevel(logLevel Level) bool {
 	return found
 }
 
-// GetLogLevel returns the corresponding log level with the given string if it exists, otherwise returns an error.
+// GetLogLevel returns the corresponding logger level with the given string if it exists, otherwise returns an error.
 func GetLogLevel(logLevel Level) (int, error) {
 	if !isValidLogLevel(logLevel) {
-		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no log level found for %s", logLevel), nil)
+		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no logger level found for %s", logLevel), nil)
 	}
 	return nameToLevel[logLevel], nil
 }

@@ -31,7 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/log"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 // Tests that require the hazelcastinternal tag.
@@ -96,7 +96,7 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 	config := tc.DefaultConfig()
 	config.Cluster.Network.SetAddresses(fmt.Sprintf("%s:%d", clientHost, port))
 	if it.TraceLoggingEnabled() {
-		config.Logger.Level = log.TraceLevel
+		config.Logger.Level = logger.TraceLevel
 	}
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
