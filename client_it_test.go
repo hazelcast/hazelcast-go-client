@@ -705,6 +705,14 @@ func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 	})
 }
 
+func TestClientStartShutdownWithNilContext(t *testing.T) {
+	config := hz.Config{}
+	config.Cluster.ConnectionStrategy.Timeout = types.Duration(1 * time.Second)
+	// ignoring the error here, since it's OK to get an error here.
+	client, _ := hz.StartNewClientWithConfig(nil, config)
+	client.Shutdown(nil)
+}
+
 func clientTester(t *testing.T, f func(*testing.T, bool)) {
 	if it.SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {

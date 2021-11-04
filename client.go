@@ -222,6 +222,9 @@ func (c *Client) start(ctx context.Context) error {
 		return nil
 	}
 	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateStarting))
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if err := c.connectionManager.Start(ctx); err != nil {
 		c.eventDispatcher.Stop(ctx)
 		c.invocationService.Stop()
@@ -241,6 +244,9 @@ func (c *Client) start(ctx context.Context) error {
 func (c *Client) Shutdown(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&c.state, ready, stopping) {
 		return nil
+	}
+	if ctx == nil {
+		ctx = context.Background()
 	}
 	c.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
 	c.invocationService.Stop()
