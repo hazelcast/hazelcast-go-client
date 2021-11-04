@@ -59,7 +59,7 @@ func TestNotReceivedInvocation(t *testing.T) {
 		ctx := context.Background()
 		config := tc.DefaultConfig()
 		config.Cluster.Unisocket = !smart
-		client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
 		defer client.Shutdown(ctx)
 		ci := hz.NewClientInternal(client)
 		var cnt int32
