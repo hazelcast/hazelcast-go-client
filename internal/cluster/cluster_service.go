@@ -234,12 +234,6 @@ func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 	return member
 }
 
-func (m *membersMap) Info(infoFun func(members map[types.UUID]*pubcluster.MemberInfo)) {
-	m.membersMu.RLock()
-	infoFun(m.members)
-	m.membersMu.RUnlock()
-}
-
 func (m *membersMap) OrderedMembers() []pubcluster.MemberInfo {
 	m.membersMu.Lock()
 	members := make([]pubcluster.MemberInfo, len(m.orderedMembers))

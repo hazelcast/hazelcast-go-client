@@ -67,7 +67,11 @@ func TestSet_AddListener(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(s.Add(context.Background(), value))
 		}
-		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("target: %d, actual: %d", targetCallCount, cc)
+			return cc == targetCallCount
+		})
 		atomic.StoreInt32(&callCount, 0)
 		if err = s.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)

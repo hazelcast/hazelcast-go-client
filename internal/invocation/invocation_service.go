@@ -24,6 +24,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
@@ -32,6 +33,8 @@ const (
 	ready   = 0
 	stopped = 1
 )
+
+var serviceSubID = event.NextSubscriptionID()
 
 type Handler interface {
 	Invoke(invocation Invocation) (groupID int64, err error)
@@ -42,30 +45,40 @@ type Service struct {
 	urgentRequestCh chan Invocation
 	responseCh      chan *proto.ClientMessage
 	// removeCh carries correlationIDs to be removed
-	removeCh    chan int64
-	doneCh      chan struct{}
-	invocations map[int64]Invocation
-	handler     Handler
-	logger      ilogger.Logger
-	state       int32
+	removeCh        chan int64
+	doneCh          chan struct{}
+	groupLostCh     chan *GroupLostEvent
+	invocations     map[int64]Invocation
+	handler         Handler
+	eventDispatcher *event.DispatchService
+	logger          ilogger.Logger
+	state           int32
 }
 
 func NewService(
 	handler Handler,
+	eventDispacher *event.DispatchService,
 	logger ilogger.Logger) *Service {
-	service := &Service{
+	s := &Service{
 		requestCh:       make(chan Invocation),
 		urgentRequestCh: make(chan Invocation),
 		responseCh:      make(chan *proto.ClientMessage),
 		removeCh:        make(chan int64),
 		doneCh:          make(chan struct{}),
+		groupLostCh:     make(chan *GroupLostEvent),
 		invocations:     map[int64]Invocation{},
 		handler:         handler,
+		eventDispatcher: eventDispacher,
 		logger:          logger,
 		state:           ready,
 	}
-	go service.processIncoming()
-	return service
+	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
+		go func() {
+			s.groupLostCh <- event.(*GroupLostEvent)
+		}()
+	})
+	go s.processIncoming()
+	return s
 }
 
 func (s *Service) Stop() {
@@ -131,6 +144,8 @@ loop:
 			s.handleClientMessage(msg)
 		case id := <-s.removeCh:
 			s.removeCorrelationID(id)
+		case e := <-s.groupLostCh:
+			s.handleGroupLost(e)
 		case <-s.doneCh:
 			break loop
 		}
@@ -148,9 +163,12 @@ func (s *Service) sendInvocation(invocation Invocation) {
 	})
 	s.registerInvocation(invocation)
 	corrID := invocation.Request().CorrelationID()
-	if _, err := s.handler.Invoke(invocation); err != nil {
+	gid, err := s.handler.Invoke(invocation)
+	if err != nil {
 		s.handleError(corrID, err)
+		return
 	}
+	invocation.SetGroup(gid)
 }
 
 func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
@@ -216,4 +234,15 @@ func (s *Service) unregisterInvocation(correlationID int64) Invocation {
 		return invocation
 	}
 	return nil
+}
+
+func (s *Service) handleGroupLost(e *GroupLostEvent) {
+	if atomic.LoadInt32(&s.state) != ready {
+		return
+	}
+	for corrID, inv := range s.invocations {
+		if inv.Group() == e.GroupID && !inv.Request().HasEventFlag() {
+			s.handleError(corrID, e.Err)
+		}
+	}
 }

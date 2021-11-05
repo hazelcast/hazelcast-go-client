@@ -17,13 +17,10 @@
 package cluster
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
@@ -57,45 +54,32 @@ type ConnectionInvocationHandler struct {
 	logger            ilogger.Logger
 	connectionManager *ConnectionManager
 	clusterService    *Service
-	cb                *cb.CircuitBreaker
 	smart             bool
 }
 
 func NewConnectionInvocationHandler(bundle ConnectionInvocationHandlerCreationBundle) *ConnectionInvocationHandler {
 	bundle.Check()
-	// TODO: make circuit breaker configurable
-	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(3),
-		cb.MaxFailureCount(3),
-		cb.RetryPolicy(func(attempt int) time.Duration {
-			return time.Duration(attempt) * time.Second
-		}))
 	return &ConnectionInvocationHandler{
 		connectionManager: bundle.ConnectionManager,
 		clusterService:    bundle.ClusterService,
 		logger:            bundle.Logger,
-		cb:                cbr,
 		smart:             !bundle.Config.Unisocket,
 	}
 }
 
 func (h *ConnectionInvocationHandler) Invoke(inv invocation.Invocation) (int64, error) {
-	groupID, err := h.cb.Try(func(ctx context.Context, attempt int) (interface{}, error) {
-		if h.smart {
-			groupID, err := h.invokeSmart(inv)
-			if err != nil {
-				if errors.Is(err, errPartitionOwnerNotAssigned) {
-					h.logger.Debug(func() string { return fmt.Sprintf("invoking non-smart since: %s", err.Error()) })
-					return h.invokeNonSmart(inv)
-				}
-				return int64(0), err
+	if h.smart {
+		groupID, err := h.invokeSmart(inv)
+		if err != nil {
+			if errors.Is(err, errPartitionOwnerNotAssigned) {
+				h.logger.Debug(func() string { return fmt.Sprintf("invoking non-smart since: %s", err.Error()) })
+				return h.invokeNonSmart(inv)
 			}
-			return groupID, err
-		} else {
-			return h.invokeNonSmart(inv)
+			return int64(0), err
 		}
-	})
-	return groupID.(int64), err
+		return groupID, nil
+	}
+	return h.invokeNonSmart(inv)
 }
 
 func (h *ConnectionInvocationHandler) invokeSmart(inv invocation.Invocation) (int64, error) {

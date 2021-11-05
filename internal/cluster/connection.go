@@ -285,9 +285,20 @@ func (c *Connection) close(closeErr error) {
 		return
 	}
 	close(c.doneCh)
-	c.socket.Close()
+	if err := c.socket.Close(); err != nil {
+		c.logger.Trace(func() string {
+			return fmt.Sprintf("error closing socket: %s", err.Error())
+		})
+	}
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
+	var groupErr error
+	if closeErr == nil {
+		groupErr = ihzerrors.NewTargetDisconnectedError("", closeErr)
+	} else {
+		groupErr = ihzerrors.NewTargetDisconnectedError(closeErr.Error(), closeErr)
+	}
+	c.eventDispatcher.Publish(invocation.NewGroupLost(c.connectionID, groupErr))
 	c.logger.Trace(func() string {
 		reason := "normally"
 		if closeErr != nil {

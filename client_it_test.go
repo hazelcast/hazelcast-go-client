@@ -705,6 +705,13 @@ func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 	})
 }
 
+func TestClientStartShutdownWithNilContext(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("nil-context-cluster", 45701, 1)
+	defer tc.Shutdown()
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, tc.DefaultConfig()))
+	it.Must(client.Shutdown(nil))
+}
+
 func clientTester(t *testing.T, f func(*testing.T, bool)) {
 	if it.SmartEnabled() {
 		t.Run("Smart Client", func(t *testing.T) {

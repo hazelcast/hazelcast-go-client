@@ -48,6 +48,8 @@ type Invocation interface {
 	Close()
 	CanRetry(err error) bool
 	Deadline() time.Time
+	Group() int64
+	SetGroup(id int64)
 }
 
 type Impl struct {
@@ -56,6 +58,7 @@ type Impl struct {
 	eventHandler  func(clientMessage *proto.ClientMessage)
 	request       *proto.ClientMessage
 	address       pubcluster.Address
+	group         int64
 	completed     int32
 	partitionID   int32
 	RedoOperation bool
@@ -125,12 +128,6 @@ func (i *Impl) Deadline() time.Time {
 	return i.deadline
 }
 
-/*
-func (i *Proxy) StoreSentConnection(conn interface{}) {
-	i.sentConnection.Store(conn)
-}
-*/
-
 // SetEventHandler sets the event handler for the invocation.
 // It should only be called at the site of creation.
 func (i *Impl) SetEventHandler(handler proto.ClientMessageHandler) {
@@ -161,6 +158,14 @@ func (i *Impl) MaybeCanRetry(err error) bool {
 		return i.Request().Retryable || i.RedoOperation
 	}
 	return false
+}
+
+func (i *Impl) Group() int64 {
+	return i.group
+}
+
+func (i *Impl) SetGroup(id int64) {
+	i.group = id
 }
 
 func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {
