@@ -22,8 +22,8 @@ const (
 )
 
 type GroupLostEvent struct {
-	GroupID int64
 	Err     error
+	GroupID int64
 }
 
 func NewGroupLost(groupID int64, err error) *GroupLostEvent {
