@@ -834,7 +834,9 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == totalCallCount
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }
