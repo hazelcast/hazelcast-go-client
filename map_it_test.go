@@ -825,9 +825,11 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 			Predicate:    predicate.Equal("A", "foo"),
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(context.Background(), listenerConfig, handler); err != nil {
+		subID, err := m.AddEntryListener(context.Background(), listenerConfig, handler)
+		if err != nil {
 			t.Fatal(err)
 		}
+		t.Logf("TestMap_EntryNotifiedEventWithPredicate subscriptionID: %s", subID)
 		for i := 0; i < int(totalCallCount); i++ {
 			key := fmt.Sprintf("key-%d", i)
 			value := &it.SamplePortable{A: "foo", B: int32(i)}

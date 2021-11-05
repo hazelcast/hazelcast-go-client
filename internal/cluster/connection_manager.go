@@ -847,3 +847,52 @@ func EnumerateAddresses(host string, portRange pubcluster.PortRange) []pubcluste
 	}
 	return addrs
 }
+
+// FilterConns removes connections which do not conform to the given criteria.
+// Moodifies conns slice.
+// The order of connections in conns may change.
+func FilterConns(conns []*Connection, ok func(conn *Connection) bool) []*Connection {
+	/*
+			this function efficiently removes non-member connections, by moving non-members to the end of the slice and finally returning a smaller slice which does not contain the non-members part.
+			Example:
+			M: member
+			X: non-member
+			i = 0, r = 0
+			       v (i)
+			cs = [ M X X M M ]
+			               ^ (len(cs)-1-r)
+			i = 1, r = 0
+		             v (i)
+			cs = [ M X X M M ]
+						   ^ (len(cs)-1-r)
+			swap:
+			cs = [ M M X M X ]
+			i = 1, r = 1
+					 v (i)
+			cs = [ M M X M X ]
+			             ^ (len(cs)-1-r)
+			i = 2, r = 1
+				       v (i)
+			cs = [ M M X M X ]
+			             ^ (len(cs)-1-r)
+			swap:
+			cs = [ M M M X X ]
+	*/
+	var i, r int
+	for {
+		if i >= len(conns)-r {
+			break
+		}
+		conn := conns[i]
+		if !ok(conn) {
+			// move not ok conn towards the end of the slice by swapping it with another conn
+			// swapped conn will be ok checked in the next iteration
+			conns[i], conns[len(conns)-1-r] = conns[len(conns)-1-r], conns[i]
+			r++
+			continue
+		}
+		i++
+	}
+	// return the ok slice
+	return conns[:len(conns)-r]
+}

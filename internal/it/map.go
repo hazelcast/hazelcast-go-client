@@ -18,7 +18,6 @@ package it
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"go.uber.org/goleak"
@@ -53,7 +52,11 @@ func MapTesterWithConfigAndName(t *testing.T, makeMapName func(...string) string
 			configCallback(&config)
 		}
 		config.Cluster.Unisocket = !smart
-		client, m = GetClientMapWithConfig(makeMapName(strconv.FormatBool(smart)), &config)
+		ls := "smart"
+		if !smart {
+			ls = "unisocket"
+		}
+		client, m = GetClientMapWithConfig(makeMapName(ls), &config)
 		defer func() {
 			ctx := context.Background()
 			if err := m.Destroy(ctx); err != nil {
