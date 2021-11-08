@@ -33,7 +33,7 @@ import (
 )
 
 type Service struct {
-	logger            logger.Logger
+	logger            logger.LogAdaptor
 	config            *pubcluster.Config
 	eventDispatcher   *event.DispatchService
 	partitionService  *PartitionService
@@ -44,7 +44,7 @@ type Service struct {
 }
 
 type CreationBundle struct {
-	Logger            logger.Logger
+	Logger            logger.LogAdaptor
 	InvocationFactory *ConnectionInvocationFactory
 	EventDispatcher   *event.DispatchService
 	PartitionService  *PartitionService
@@ -62,8 +62,8 @@ func (b CreationBundle) Check() {
 	if b.PartitionService == nil {
 		panic("PartitionService is nil")
 	}
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
 	}
 	if b.Config == nil {
 		panic("Config is nil")
@@ -175,7 +175,7 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
-	logger           logger.Logger
+	logger           logger.LogAdaptor
 	failoverService  *FailoverService
 	members          map[types.UUID]*pubcluster.MemberInfo
 	addrToMemberUUID map[pubcluster.Address]types.UUID
@@ -184,7 +184,7 @@ type membersMap struct {
 	version          int32
 }
 
-func newMembersMap(failoverService *FailoverService, lg logger.Logger) membersMap {
+func newMembersMap(failoverService *FailoverService, lg logger.LogAdaptor) membersMap {
 	mm := membersMap{
 		membersMu:       &sync.RWMutex{},
 		failoverService: failoverService,

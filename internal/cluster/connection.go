@@ -60,7 +60,7 @@ type Connection struct {
 	socket                    net.Conn
 	bWriter                   *bufio.Writer
 	endpoint                  atomic.Value
-	logger                    logger.Logger
+	logger                    logger.LogAdaptor
 	lastRead                  atomic.Value
 	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService

@@ -65,7 +65,7 @@ var connectionManagerSubID = event.NextSubscriptionID()
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
 type ConnectionManagerCreationBundle struct {
-	Logger               logger.Logger
+	Logger               logger.LogAdaptor
 	PartitionService     *PartitionService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
@@ -80,8 +80,8 @@ type ConnectionManagerCreationBundle struct {
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
 	}
 	if b.ClusterService == nil {
 		panic("ClusterService is nil")
@@ -117,7 +117,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 
 type ConnectionManager struct {
 	nextConnID           int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
-	logger               logger.Logger
+	logger               logger.LogAdaptor
 	isClientShutDown     func() bool
 	failoverConfig       *pubcluster.FailoverConfig
 	partitionService     *PartitionService

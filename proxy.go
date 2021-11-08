@@ -62,7 +62,7 @@ type creationBundle struct {
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinder
 	Config               *Config
-	Logger               logger.Logger
+	Logger               logger.LogAdaptor
 }
 
 func (b creationBundle) Check() {
@@ -87,13 +87,13 @@ func (b creationBundle) Check() {
 	if b.Config == nil {
 		panic("Config is nil")
 	}
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
 	}
 }
 
 type proxy struct {
-	logger               logger.Logger
+	logger               logger.LogAdaptor
 	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
@@ -394,7 +394,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 		affectedEntries int32) {
 		key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
 		if err != nil {
-			p.logger.Errorf("error at AddEntryListener: %w", err)
+			p.logger.Errorf("error at AddEntryListener: %s", err)
 			return
 		}
 		member := p.clusterService.GetMemberByUUID(binUUID)

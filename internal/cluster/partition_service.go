@@ -33,20 +33,20 @@ import (
 
 type PartitionServiceCreationBundle struct {
 	EventDispatcher *event.DispatchService
-	Logger          logger.Logger
+	Logger          logger.LogAdaptor
 }
 
 func (b PartitionServiceCreationBundle) Check() {
 	if b.EventDispatcher == nil {
 		panic("EventDispatcher is nil")
 	}
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
 	}
 }
 
 type PartitionService struct {
-	logger          logger.Logger
+	logger          logger.LogAdaptor
 	eventDispatcher *event.DispatchService
 	partitionTable  partitionTable
 	partitionCount  int32

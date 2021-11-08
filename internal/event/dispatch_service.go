@@ -46,7 +46,7 @@ const (
 type Handler func(event Event)
 
 type DispatchService struct {
-	logger          ilogger.Logger
+	logger          ilogger.LogAdaptor
 	subscriptions   map[string]map[int64]*subscription
 	subscriptionsMu *sync.RWMutex
 	state           int32

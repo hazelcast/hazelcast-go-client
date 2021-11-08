@@ -47,7 +47,7 @@ type DefaultLogger struct {
 	Level logger.Level
 }
 
-// New returns a Default Logger with defaultLogLevel.
+// New returns a Default LogAdaptor with defaultLogLevel.
 func New() *DefaultLogger {
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),
@@ -88,13 +88,10 @@ func (l *DefaultLogger) findCallerFuncName() string {
 	return runtime.FuncForPC(pc).Name()
 }
 
-// LogAdaptor is used to convert logger implementations of public interface logger.Logger to internal logging interface Logger
+// LogAdaptor is used to convert logger implementations of public interface logger.LogAdaptor to internal logging interface LogAdaptor
 type LogAdaptor struct {
 	logger.Logger
 }
-
-// compile time check for interface satisfaction
-var _ Logger = LogAdaptor{}
 
 // Debug runs the given function to generate the logger string, if logger level is debug or finer.
 func (la LogAdaptor) Debug(f func() string) {
@@ -142,20 +139,4 @@ func (la LogAdaptor) Errorf(format string, values ...interface{}) {
 	la.Log(logger.ErrorLevel, func() string {
 		return fmt.Sprintf(format, values...)
 	})
-}
-
-// Logger is the interface that is used internally by client for logging.
-type Logger interface {
-	// Debug logs the given arg at debug level.
-	Debug(f func() string)
-	// Trace logs the given arg at trace level.
-	Trace(f func() string)
-	// Infof logs the given args at info level.
-	Infof(format string, values ...interface{})
-	// Warnf logs the given args at warn level.
-	Warnf(format string, values ...interface{})
-	// Error logs the given args at error level.
-	Error(err error)
-	// Errorf logs the given args at error level with the given format
-	Errorf(format string, values ...interface{})
 }

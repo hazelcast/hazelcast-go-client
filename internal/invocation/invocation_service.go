@@ -51,14 +51,14 @@ type Service struct {
 	invocations     map[int64]Invocation
 	handler         Handler
 	eventDispatcher *event.DispatchService
-	logger          logger.Logger
+	logger          logger.LogAdaptor
 	state           int32
 }
 
 func NewService(
 	handler Handler,
 	eventDispacher *event.DispatchService,
-	logger logger.Logger) *Service {
+	logger logger.LogAdaptor) *Service {
 	s := &Service{
 		requestCh:       make(chan Invocation),
 		urgentRequestCh: make(chan Invocation),

@@ -75,7 +75,7 @@ func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, erro
 // It connects to one or more of the cluster members and delegates all cluster wide operations to them.
 type Client struct {
 	invocationHandler       invocation.Handler
-	logger                  ilogger.Logger
+	logger                  ilogger.LogAdaptor
 	membershipListenerMapMu *sync.Mutex
 	connectionManager       *icluster.ConnectionManager
 	clusterService          *icluster.Service
@@ -225,7 +225,7 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 	return codec.DecodeClientGetDistributedObjectsResponse(resp), nil
 }
 
-// SetLogger sets a logger implementing logger.Logger
+// SetLogger sets a logger implementing logger.LogAdaptor
 func (c *Client) SetLogger(logger logger.Logger) {
 	c.logger = ilogger.LogAdaptor{Logger: logger}
 }
@@ -530,14 +530,14 @@ func (c *Client) handleClusterEvent(e event.Event) {
 	c.clusterService.Reset()
 	c.partitionService.Reset()
 	if err := c.connectionManager.Start(ctx); err != nil {
-		c.logger.Errorf("cannot reconnect to cluster, shutting down: %w", err)
+		c.logger.Errorf("cannot reconnect to cluster, shutting down: %s", err)
 		// Shutdown is blocking operation which will make sure all the event goroutines are closed.
 		// If we wait here blocking, it will be a deadlock
 		go c.Shutdown(ctx)
 	}
 }
 
-func addrProviderTranslator(config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator) {
+func addrProviderTranslator(config *cluster.Config, logger ilogger.LogAdaptor) (icluster.AddressProvider, icluster.AddressTranslator) {
 	if config.Cloud.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)
