@@ -34,7 +34,7 @@ go vet -tags hazelcastinternal ./... 2>&1 | \
   grep -v "org-website" \
   || true
 
-staticcheck -tags hazelcastinternal $(go list ./... | grep -v org-website)
+staticcheck -tags hazelcastinternal $(go list ./... | grep -v org-website)  | grep -v -E 'client_it_test.go.*SA1012'
 
 # Ensure fields are optimally aligned
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment

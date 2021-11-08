@@ -38,16 +38,18 @@ type listenerRegistration struct {
 }
 
 type ConnectionListenerBinder struct {
-	logger            logger.Logger
-	connectionManager *ConnectionManager
-	invocationFactory *ConnectionInvocationFactory
-	eventDispatcher   *event.DispatchService
-	invocationService *invocation.Service
-	regs              map[types.UUID]listenerRegistration
-	correlationIDs    map[types.UUID][]int64
-	regsMu            *sync.RWMutex
-	connectionCount   int32
-	smart             bool
+	logger                logger.Logger
+	connectionManager     *ConnectionManager
+	invocationFactory     *ConnectionInvocationFactory
+	eventDispatcher       *event.DispatchService
+	invocationService     *invocation.Service
+	regs                  map[types.UUID]listenerRegistration
+	correlationIDs        map[types.UUID][]int64
+	subscriptionToMembers map[types.UUID]map[types.UUID]struct{}
+	memberSubscriptions   map[types.UUID][]types.UUID
+	regsMu                *sync.RWMutex
+	connectionCount       int32
+	smart                 bool
 }
 
 func NewConnectionListenerBinder(
@@ -58,15 +60,17 @@ func NewConnectionListenerBinder(
 	logger logger.Logger,
 	smart bool) *ConnectionListenerBinder {
 	binder := &ConnectionListenerBinder{
-		connectionManager: connManager,
-		invocationService: invocationService,
-		invocationFactory: invocationFactory,
-		eventDispatcher:   eventDispatcher,
-		regs:              map[types.UUID]listenerRegistration{},
-		correlationIDs:    map[types.UUID][]int64{},
-		regsMu:            &sync.RWMutex{},
-		logger:            logger,
-		smart:             smart,
+		connectionManager:     connManager,
+		invocationService:     invocationService,
+		invocationFactory:     invocationFactory,
+		eventDispatcher:       eventDispatcher,
+		regs:                  map[types.UUID]listenerRegistration{},
+		correlationIDs:        map[types.UUID][]int64{},
+		subscriptionToMembers: map[types.UUID]map[types.UUID]struct{}{},
+		memberSubscriptions:   map[types.UUID][]types.UUID{},
+		regsMu:                &sync.RWMutex{},
+		logger:                logger,
+		smart:                 smart,
 	}
 	eventDispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, binder.handleConnectionEvent)
 	return binder
@@ -84,11 +88,21 @@ func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *
 		handler:       handler,
 		id:            id,
 	}
-	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, b.connectionManager.ActiveConnections()...)
+	conns := b.connectionManager.ActiveConnections()
+	conns = FilterConns(conns, func(conn *Connection) bool {
+		return !b.connExists(conn, id)
+	})
+	b.logger.Trace(func() string {
+		return fmt.Sprintf("adding listener %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
+	})
+	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, conns...)
 	if err != nil {
 		return err
 	}
 	b.updateCorrelationIDs(id, corrIDs)
+	for _, conn := range conns {
+		b.addSubscriptionToMember(id, conn.memberUUID)
+	}
 	return nil
 }
 
@@ -97,6 +111,7 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 		ctx = context.Background()
 	}
 	b.regsMu.Lock()
+	defer b.regsMu.Unlock()
 	reg, ok := b.regs[id]
 	if !ok {
 		b.regsMu.Unlock()
@@ -104,8 +119,14 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	}
 	delete(b.regs, id)
 	b.removeCorrelationIDs(id)
-	b.regsMu.Unlock()
-	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, b.connectionManager.ActiveConnections()...)
+	conns := b.connectionManager.ActiveConnections()
+	b.logger.Trace(func() string {
+		return fmt.Sprintf("removing listener %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
+	})
+	for _, conn := range conns {
+		b.removeMemberSubscriptions(conn.memberUUID)
+	}
+	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, conns...)
 }
 
 func (b *ConnectionListenerBinder) updateCorrelationIDs(regID types.UUID, correlationIDs []int64) {
@@ -227,17 +248,60 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionStateChan
 	b.regsMu.Lock()
 	defer b.regsMu.Unlock()
 	for regID, reg := range b.regs {
-		b.logger.Debug(func() string {
-			return fmt.Sprintf("%d: adding listener %s (new connection)", e.Conn.connectionID, regID.String())
-		})
-		if corrIDs, err := b.sendAddListenerRequests(context.Background(), reg.addRequest, reg.handler, e.Conn); err != nil {
-			b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
-		} else {
-			b.updateCorrelationIDs(regID, corrIDs)
+		if b.connExists(e.Conn, regID) {
+			b.logger.Trace(func() string {
+				return fmt.Sprintf("listener %s already subscribed to member %s", regID, e.Conn.memberUUID)
+			})
+			continue
 		}
+		b.logger.Debug(func() string {
+			return fmt.Sprintf("adding listener %s:\nconns: [%v],\nregs: %v, source: handleConnectionOpened", regID, e.Conn, b.regs)
+		})
+		corrIDs, err := b.sendAddListenerRequests(context.Background(), reg.addRequest, reg.handler, e.Conn)
+		if err != nil {
+			b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
+			return
+		}
+		b.updateCorrelationIDs(regID, corrIDs)
+		b.addSubscriptionToMember(regID, e.Conn.memberUUID)
 	}
 }
 
-func (b *ConnectionListenerBinder) handleConnectionClosed(_ *ConnectionStateChangedEvent) {
+func (b *ConnectionListenerBinder) handleConnectionClosed(e *ConnectionStateChangedEvent) {
 	atomic.AddInt32(&b.connectionCount, -1)
+	b.regsMu.Lock()
+	b.removeMemberSubscriptions(e.Conn.memberUUID)
+	b.regsMu.Unlock()
+}
+
+func (b *ConnectionListenerBinder) connExists(conn *Connection, subID types.UUID) bool {
+	mems, found := b.subscriptionToMembers[subID]
+	if !found {
+		return false
+	}
+	_, found = mems[conn.memberUUID]
+	return found
+}
+
+func (b *ConnectionListenerBinder) addSubscriptionToMember(subID types.UUID, memberUUID types.UUID) {
+	// this method should be called under lock
+	mems, found := b.subscriptionToMembers[subID]
+	if !found {
+		mems = make(map[types.UUID]struct{})
+		b.subscriptionToMembers[subID] = mems
+	}
+	mems[memberUUID] = struct{}{}
+	b.memberSubscriptions[memberUUID] = append(b.memberSubscriptions[memberUUID], subID)
+}
+
+func (b *ConnectionListenerBinder) removeMemberSubscriptions(memberUUID types.UUID) {
+	// this method should be called under lock
+	subs, found := b.memberSubscriptions[memberUUID]
+	if !found {
+		return
+	}
+	for _, sub := range subs {
+		delete(b.subscriptionToMembers, sub)
+	}
+	delete(b.memberSubscriptions, memberUUID)
 }

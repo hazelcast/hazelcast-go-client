@@ -539,7 +539,8 @@ func TestMap_Flush(t *testing.T) {
 }
 
 func TestMap_LoadAllWithoutReplacing(t *testing.T) {
-	makeMapName := func() string {
+	makeMapName := func(_ ...string) string {
+		// the map name for this test should be static.
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
@@ -560,7 +561,8 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 }
 
 func TestMap_LoadAllReplacing(t *testing.T) {
-	makeMapName := func() string {
+	makeMapName := func(_ ...string) string {
+		// the map name for this test should be static.
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
@@ -823,16 +825,20 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 			Predicate:    predicate.Equal("A", "foo"),
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(context.Background(), listenerConfig, handler); err != nil {
+		subID, err := m.AddEntryListener(context.Background(), listenerConfig, handler)
+		if err != nil {
 			t.Fatal(err)
 		}
+		t.Logf("TestMap_EntryNotifiedEventWithPredicate subscriptionID: %s", subID)
 		for i := 0; i < int(totalCallCount); i++ {
 			key := fmt.Sprintf("key-%d", i)
 			value := &it.SamplePortable{A: "foo", B: int32(i)}
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == totalCallCount
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }
