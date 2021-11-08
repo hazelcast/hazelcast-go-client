@@ -65,7 +65,7 @@ Entries only with key "somekey" and matching to predicate year > 2000 are consid
 	entryListenerConfig.NotifyEntryAdded(true)
 	entryListenerConfig.NotifyEntryUpdated(true)
 
-After creating the configuration, the second step is adding an event listener and a handler o act on received events:
+After creating the configuration, the second step is adding an event listener and a handler to act on received events:
 
 	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
 		switch event.EventType {

@@ -36,7 +36,76 @@ const (
 //type lockID int64
 //type lockIDKeyType string
 
-//todo write docs
+/*
+MultiMap is a distributed map.
+Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast MultiMap with methods like Get and Put.
+For details, see https://docs.hazelcast.com/hazelcast/latest/data-structures/multimap.html
+
+Listening for MultiMap Entry Events
+
+The first step of listening to entry-based events is  creating an instance of MultiMapEntryListenerConfig.
+MultiMapEntryListenerConfig contains options to filter the events by key and has an option to include the value of the entry, not just the key.
+You should also choose which type of events you want to receive.
+In the example below, a listener configuration for added and updated entries is created.
+Entries only with key "somekey":
+
+	entryListenerConfig := hazelcast.MultiMapEntryListenerConfig{
+		Key: "somekey",
+		IncludeValue: true,
+	}
+	m, err := client.GetMap(ctx, "somemap")
+	entryListenerConfig.NotifyEntryAdded(true)
+	entryListenerConfig.NotifyEntryUpdated(true)
+
+After creating the configuration, the second step is adding an event listener and a handler to act on received events:
+
+	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
+		switch event.EventType {
+		case hazelcast.EntryAdded:
+			fmt.Println("Entry Added:", event.Value)
+		case hazelcast.EntryRemoved:
+			fmt.Println("Entry Removed:", event.Value)
+		case hazelcast.EntryUpdated:
+			fmt.Println("Entry Updated:", event.Value)
+		case hazelcast.EntryEvicted:
+			fmt.Println("Entry Remove:", event.Value)
+		case hazelcast.EntryLoaded:
+			fmt.Println("Entry Loaded:", event.Value)
+		}
+	})
+
+Adding an event listener returns a subscription ID, which you can later use to remove the listener:
+
+	err = m.RemoveEntryListener(ctx, subscriptionID)
+
+Using Locks
+
+You can lock entries in a MultiMap.
+When an entry is locked, only the owner of that lock can access that entry in the cluster until it is unlocked by the owner of force unlocked.
+See https://docs.hazelcast.com/imdg/latest/data-structures/map.html#locking-maps for details, usage is identical.
+
+Locks are reentrant.
+The owner of a lock can acquire the lock again without waiting for the lock to be unlocked.
+If the key is locked N times, it should be unlocked N times before another goroutine can acquire it.
+
+Lock ownership in Hazelcast Go Client is explicit.
+The first step to own a lock is creating a lock context, which is similar to a key.
+The lock context is a regular context.Context which carry a special value that uniquely identifies the lock context in the cluster.
+Once the lock context is created, it can be used to lock/unlock entries and used with any function that is lock aware, such as Put.
+
+	m, err := client.GetMultiMap(ctx, "my-map")
+	lockCtx := m.NewLockContext(ctx)
+	// block acquiring the lock
+	err = m.Lock(lockCtx, "some-key")
+	// pass lock context to use the locked entry
+	err = m.Put(lockCtx, "some-key", "some-value")
+	// release the lock once done with it
+	err = m.Unlock(lockCtx, "some-key")
+
+As mentioned before, lock context is a regular context.Context which carry a special lock ID.
+You can pass any context.Context to any MultiMap function, but in that case lock ownership between operations using the same hazelcast.Client instance is not possible.
+
+*/
 type MultiMap struct {
 	*proxy
 }
@@ -206,7 +275,7 @@ Other goroutines or threads on other systems would block on their invoke of Lock
 If the lock holder introduces the key to the map, the Put operation is not blocked.
 If a goroutine not holding a lock on the non-existent key tries to introduce the key while a lock exists on the non-existent key, the Put operation blocks until it is unlocked.
 
-Scope of the lock is this Map only.
+Scope of the lock is this MultiMap only.
 Acquired lock is only for the key in this map.
 
 Locks are re-entrant.
@@ -388,7 +457,7 @@ func (m *MultiMap) makeListenerDecoder(msg *proto.ClientMessage, keyData *serial
 	codec.HandleMultiMapAddEntryListener(msg, handler)
 }
 
-// MultiMapEntryListenerConfig contains configuration for a map entry listener.
+// MultiMapEntryListenerConfig contains configuration for a multi-map entry listener.
 type MultiMapEntryListenerConfig struct {
 	Key          interface{}
 	flags        int32
