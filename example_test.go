@@ -144,6 +144,16 @@ func ExampleMultiMap() {
 	if !success {
 		log.Fatal("map operation failed")
 	}
+	// Add multiple values to existing key
+	if err = peopleMap.PutAll(ctx, "jane", "smith", "mason"); err != nil {
+		log.Fatal(err)
+	}
+	values, err := peopleMap.Get(ctx, "jane")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// ["smith", "mason", "doe"] order of values are not may not be preserved
+	fmt.Println(values)
 	// Stop the client once you are done with it.
 	client.Shutdown(ctx)
 }
