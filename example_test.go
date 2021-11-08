@@ -125,6 +125,29 @@ func ExampleMap() {
 	client.Shutdown(ctx)
 }
 
+func ExampleMultiMap() {
+	ctx := context.TODO()
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Retrieve a map.
+	peopleMap, err := client.GetMultiMap(ctx, "people")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Call map functions.
+	success, err := peopleMap.Put(ctx, "jane", "doe")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !success {
+		log.Fatal("map operation failed")
+	}
+	// Stop the client once you are done with it.
+	client.Shutdown(ctx)
+}
+
 func ExampleMap_Aggregate() {
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)

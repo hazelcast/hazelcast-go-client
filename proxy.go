@@ -41,6 +41,7 @@ import (
 const (
 	ServiceNameMap              = "hz:impl:mapService"
 	ServiceNameReplicatedMap    = "hz:impl:replicatedMapService"
+	ServiceNameMultiMap         = "hz:impl:multiMapService"
 	ServiceNameQueue            = "hz:impl:queueService"
 	ServiceNameTopic            = "hz:impl:topicService"
 	ServiceNameList             = "hz:impl:listService"

@@ -575,7 +575,7 @@ func (m *Map) Lock(ctx context.Context, key interface{}) error {
 }
 
 // LockWithLease acquires the lock for the specified lease time.
-// Otherwise it behaves the same as Lock function.
+// Otherwise, it behaves the same as Lock function.
 func (m *Map) LockWithLease(ctx context.Context, key interface{}, leaseTime time.Duration) error {
 	return m.lock(ctx, key, leaseTime.Milliseconds())
 }
@@ -604,8 +604,8 @@ func (m *Map) PutWithTTLAndMaxIdle(ctx context.Context, key interface{}, value i
 	return m.putMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
-// PutAll copies all of the mappings from the specified map to this map.
-// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
+// PutAll copies all the mappings from the specified map to this map.
+// No atomicity guarantees are given. In the case of a failure, some key-value tuples may get written,
 // while others are not.
 func (m *Map) PutAll(ctx context.Context, entries ...types.Entry) error {
 	if len(entries) == 0 {
@@ -1233,27 +1233,4 @@ func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
 // NotifyEntryLoaded enables receiving an entry event when an entry is loaded.
 func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
-}
-
-func flagsSetOrClear(flags *int32, flag int32, enable bool) {
-	if enable {
-		*flags |= flag
-	} else {
-		*flags &^= flag
-	}
-}
-
-// extractLockID extracts lock ID from the context.
-// If the lock ID is not found, it returns the default lock ID.
-func extractLockID(ctx context.Context) int64 {
-	if ctx == nil {
-		return defaultLockID
-	}
-	if lockIDValue := ctx.Value(lockIDKey); lockIDValue == nil {
-		return defaultLockID
-	} else if lid, ok := lockIDValue.(lockID); !ok {
-		return defaultLockID
-	} else {
-		return int64(lid)
-	}
 }

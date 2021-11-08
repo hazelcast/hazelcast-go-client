@@ -956,8 +956,6 @@ func TestMap_TryLock(t *testing.T) {
 	})
 }
 
-// TODO: Test Map TryLockWithLeaseAndTimeout
-
 func TestMap_LockWithLease(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		wg := &sync.WaitGroup{}
