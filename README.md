@@ -67,7 +67,7 @@ Requirements:
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
 # Depend on a specific release
-$ go get github.com/hazelcast/hazelcast-go-client@v1.1.0
+$ go get github.com/hazelcast/hazelcast-go-client@v1.1.1
 ```
 
 ## Quick Start
@@ -119,7 +119,7 @@ client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 
 ## Documentation
 
-Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.1.0).
+Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.1.1).
 
 You can view the documentation locally by using godoc:
 ```  

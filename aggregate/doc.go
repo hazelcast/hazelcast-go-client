@@ -16,5 +16,7 @@
 
 /*
 Package aggregate provides aggregation functions.
+
+Aggregations allow computing a value of some function (e.g Sum or Max) over the stored map entries. The computation is performed in a fully distributed manner, so no data other than the computed function value is transferred to the client, making the computation fast.
 */
 package aggregate

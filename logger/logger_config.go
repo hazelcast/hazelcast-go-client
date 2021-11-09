@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Package logger contains logger configuration.
 package logger
 
 import (
