@@ -130,13 +130,10 @@ func newClient(config Config) (*Client, error) {
 }
 
 func loggerFromConf(config Config) ilogger.LogAdaptor {
-	var logger ilogger.LogAdaptor
 	if config.Logger.Custom != nil {
-		logger.Logger = config.Logger.Custom
-	} else {
-		logger.Logger = ilogger.NewWithLevel(config.Logger.Level)
+		return ilogger.LogAdaptor{Logger: config.Logger.Custom}
 	}
-	return logger
+	return ilogger.LogAdaptor{Logger: ilogger.NewWithLevel(config.Logger.Level)}
 }
 
 // Name returns client's name
