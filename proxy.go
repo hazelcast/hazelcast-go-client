@@ -394,7 +394,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 		affectedEntries int32) {
 		key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
 		if err != nil {
-			p.logger.Errorf("error at AddEntryListener: %s", err)
+			p.logger.Errorf("error at AddEntryListener: %w", err)
 			return
 		}
 		member := p.clusterService.GetMemberByUUID(binUUID)

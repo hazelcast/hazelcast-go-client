@@ -137,6 +137,6 @@ func (la LogAdaptor) Error(err error) {
 // Errorf formats the given string with the given values, if logger level is error or finer.
 func (la LogAdaptor) Errorf(format string, values ...interface{}) {
 	la.Log(logger.ErrorLevel, func() string {
-		return fmt.Sprintf(format, values...)
+		return fmt.Errorf(format, values...).Error()
 	})
 }

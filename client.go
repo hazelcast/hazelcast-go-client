@@ -530,7 +530,7 @@ func (c *Client) handleClusterEvent(e event.Event) {
 	c.clusterService.Reset()
 	c.partitionService.Reset()
 	if err := c.connectionManager.Start(ctx); err != nil {
-		c.logger.Errorf("cannot reconnect to cluster, shutting down: %s", err)
+		c.logger.Errorf("cannot reconnect to cluster, shutting down: %w", err)
 		// Shutdown is blocking operation which will make sure all the event goroutines are closed.
 		// If we wait here blocking, it will be a deadlock
 		go c.Shutdown(ctx)
