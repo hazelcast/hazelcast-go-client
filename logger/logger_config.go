@@ -46,8 +46,8 @@ func (l Level) String() string {
 }
 
 type Config struct {
-	Level  Level  `json:",omitempty"`
 	Custom Logger `json:"-"`
+	Level  Level  `json:",omitempty"`
 }
 
 func (c *Config) SetLogger(customLogger Logger) {
