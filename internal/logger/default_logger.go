@@ -47,7 +47,7 @@ type DefaultLogger struct {
 	Level logger.Level
 }
 
-// New returns a Default LogAdaptor with defaultLogLevel.
+// New returns a Default Logger with defaultLogLevel.
 func New() *DefaultLogger {
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),

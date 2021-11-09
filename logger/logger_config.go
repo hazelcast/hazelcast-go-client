@@ -50,10 +50,6 @@ type Config struct {
 	Level  Level  `json:",omitempty"`
 }
 
-func (c *Config) SetLogger(customLogger Logger) {
-	c.Custom = customLogger
-}
-
 func (c Config) Clone() Config {
 	return Config{Level: c.Level, Custom: c.Custom}
 }

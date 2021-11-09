@@ -35,7 +35,7 @@ var nameToLevel = map[Level]int{
 }
 
 // isValidLogLevel returns true if the given logger level is valid.
-// The check is done case insensitive.
+// The check is done case-insensitive.
 func isValidLogLevel(logLevel Level) bool {
 	logLevelStr := strings.ToLower(string(logLevel))
 	_, found := nameToLevel[Level(logLevelStr)]

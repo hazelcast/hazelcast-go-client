@@ -36,7 +36,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -108,17 +107,15 @@ func newClient(config Config) (*Client, error) {
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
 	}
-	clientLogger, err := loggerFromConf(config)
-	if err != nil {
-		return nil, err
-	}
 	serializationService, err := serialization.NewService(&config.Serialization)
 	if err != nil {
 		return nil, err
 	}
-	clientLogger.Log(logger.TraceLevel, func() string { return fmt.Sprintf("creating new client: %s", name) })
+	clientLogger := loggerFromConf(config)
+	clientLogger.Trace(func() string { return fmt.Sprintf("creating new client: %s", name) })
 	c := &Client{
 		name:                    name,
+		logger:                  clientLogger,
 		clusterConfig:           &config.Cluster,
 		serializationService:    serializationService,
 		eventDispatcher:         event.NewDispatchService(clientLogger),
@@ -127,18 +124,19 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
 	}
-	c.SetLogger(clientLogger)
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
 	return c, nil
 }
 
-func loggerFromConf(config Config) (logger.Logger, error) {
+func loggerFromConf(config Config) ilogger.LogAdaptor {
+	var logger ilogger.LogAdaptor
 	if config.Logger.Custom != nil {
-		return config.Logger.Custom, nil
+		logger.Logger = config.Logger.Custom
+	} else {
+		logger.Logger = ilogger.NewWithLevel(config.Logger.Level)
 	}
-	clientLogger := ilogger.NewWithLevel(config.Logger.Level)
-	return clientLogger, nil
+	return logger
 }
 
 // Name returns client's name
@@ -223,11 +221,6 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 		return nil, err
 	}
 	return codec.DecodeClientGetDistributedObjectsResponse(resp), nil
-}
-
-// SetLogger sets a logger implementing logger.LogAdaptor
-func (c *Client) SetLogger(logger logger.Logger) {
-	c.logger = ilogger.LogAdaptor{Logger: logger}
 }
 
 func (c *Client) start(ctx context.Context) error {
