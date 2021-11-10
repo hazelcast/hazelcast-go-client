@@ -31,7 +31,7 @@ func MultiMapTester(t *testing.T, f func(t *testing.T, m *hz.MultiMap)) {
 
 func MultiMapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, m *hz.MultiMap)) {
 	makeMapName := func() string {
-		return NewUniqueObjectName("map")
+		return NewUniqueObjectName("multi-map")
 	}
 	MultiMapTesterWithConfigAndName(t, makeMapName, configCallback, f)
 }

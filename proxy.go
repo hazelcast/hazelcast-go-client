@@ -427,11 +427,13 @@ func extractLockID(ctx context.Context) int64 {
 	if ctx == nil {
 		return defaultLockID
 	}
-	if lockIDValue := ctx.Value(lockIDKey); lockIDValue == nil {
+	lidv := ctx.Value(lockIDKey)
+	if lidv == nil {
 		return defaultLockID
-	} else if lid, ok := lockIDValue.(lockID); !ok {
-		return defaultLockID
-	} else {
-		return int64(lid)
 	}
+	lid, ok := lidv.(lockID)
+	if !ok {
+		return defaultLockID
+	}
+	return int64(lid)
 }

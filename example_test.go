@@ -152,7 +152,7 @@ func ExampleMultiMap() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// ["smith", "mason", "doe"] order of values are not may not be preserved
+	// ["smith", "mason", "doe"] order of values may not be preserved
 	fmt.Println(values)
 	// Stop the client once you are done with it.
 	client.Shutdown(ctx)
