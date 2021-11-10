@@ -55,6 +55,16 @@ const (
 	ttlUnlimited = 0
 )
 
+const (
+	maxIndexAttributes               = 255
+	defaultLockID                    = 0
+	lockIDKey          lockIDKeyType = "__hz_lock_id"
+	leaseUnset                       = -1
+)
+
+type lockID int64
+type lockIDKeyType string
+
 type creationBundle struct {
 	InvocationService    *invocation.Service
 	SerializationService *iserialization.Service

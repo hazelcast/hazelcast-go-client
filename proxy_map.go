@@ -33,16 +33,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-const (
-	maxIndexAttributes               = 255
-	defaultLockID                    = 0
-	lockIDKey          lockIDKeyType = "__hz_lock_id"
-	leaseUnset                       = -1
-)
-
-type lockID int64
-type lockIDKeyType string
-
 /*
 Map is a distributed map.
 Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast Map with methods like Get and Put.
