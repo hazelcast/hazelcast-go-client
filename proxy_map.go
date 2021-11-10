@@ -37,6 +37,7 @@ const (
 	maxIndexAttributes               = 255
 	defaultLockID                    = 0
 	lockIDKey          lockIDKeyType = "__hz_lock_id"
+	leaseUnset                       = -1
 )
 
 type lockID int64
@@ -255,21 +256,44 @@ func (m *Map) EvictAll(ctx context.Context) error {
 
 // ExecuteOnEntries applies the user defined EntryProcessor to all the entries in the map.
 func (m *Map) ExecuteOnEntries(ctx context.Context, entryProcessor interface{}) ([]types.Entry, error) {
-	if processorData, err := m.validateAndSerialize(entryProcessor); err != nil {
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
 		return nil, err
-	} else {
-		request := codec.EncodeMapExecuteOnAllKeysRequest(m.name, processorData)
-		if resp, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
-			return nil, err
-		} else {
-			pairs := codec.DecodeMapExecuteOnAllKeysResponse(resp)
-			if kvPairs, err := m.convertPairsToEntries(pairs); err != nil {
-				return nil, err
-			} else {
-				return kvPairs, nil
-			}
-		}
 	}
+	request := codec.EncodeMapExecuteOnAllKeysRequest(m.name, processorData)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	pairs := codec.DecodeMapExecuteOnAllKeysResponse(resp)
+	kvPairs, err := m.convertPairsToEntries(pairs)
+	if err != nil {
+		return nil, err
+	}
+	return kvPairs, nil
+}
+
+// ExecuteOnEntriesWithPredicate applies the user defined EntryProcessor to all the entries in the map which satisfies the predicate
+func (m *Map) ExecuteOnEntriesWithPredicate(ctx context.Context, entryProcessor interface{}, pred predicate.Predicate) ([]types.Entry, error) {
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	predData, err := m.validateAndSerializePredicate(pred)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapExecuteWithPredicateRequest(m.name, processorData, predData)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	pairs := codec.DecodeMapExecuteWithPredicateResponse(resp)
+	kvPairs, err := m.convertPairsToEntries(pairs)
+	if err != nil {
+		return nil, err
+	}
+	return kvPairs, nil
 }
 
 // Flush flushes all the local dirty entries.
@@ -592,11 +616,12 @@ func (m *Map) PutAll(ctx context.Context, entries ...types.Entry) error {
 	}
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		request := codec.EncodeMapPutAllRequest(m.name, entries, true)
+		now := time.Now()
 		return m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 			if attempt > 0 {
 				request = request.Copy()
 			}
-			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
 				return nil, err
 			} else {
 				return inv.GetWithContext(ctx)
@@ -810,7 +835,7 @@ func (m *Map) Size(ctx context.Context) (int, error) {
 // TryLock tries to acquire the lock for the specified key.
 // When the lock is not available, the current goroutine doesn't wait and returns false immediately.
 func (m *Map) TryLock(ctx context.Context, key interface{}) (bool, error) {
-	return m.tryLock(ctx, key, 0, 0)
+	return m.tryLock(ctx, key, leaseUnset, 0)
 }
 
 // TryLockWithLease tries to acquire the lock for the specified key.
@@ -822,7 +847,7 @@ func (m *Map) TryLockWithLease(ctx context.Context, key interface{}, lease time.
 // TryLockWithTimeout tries to acquire the lock for the specified key.
 // The current goroutine is blocked until the lock is acquired using the same lock context, or he specified waiting time elapses.
 func (m *Map) TryLockWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (bool, error) {
-	return m.tryLock(ctx, key, 0, timeout.Milliseconds())
+	return m.tryLock(ctx, key, leaseUnset, timeout.Milliseconds())
 }
 
 // TryLockWithLeaseAndTimeout tries to acquire the lock for the specified key.

@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package nilutil
+package invocation
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+const (
+	// EventGroupLost is dispatched if an invocation group is lost, e.g., a connection closed
+	EventGroupLost = "internal.invocation.grouplost"
 )
 
-func TestIsNil(t *testing.T) {
-	assert.True(t, IsNil(nil))
-
+type GroupLostEvent struct {
+	Err     error
+	GroupID int64
 }
 
-func TestIsNil_forValueNil_TypeKnown(t *testing.T) {
-	var pnt *int
-	var i interface{} = pnt
-	assert.True(t, IsNil(i))
+func NewGroupLost(groupID int64, err error) *GroupLostEvent {
+	return &GroupLostEvent{
+		GroupID: groupID,
+		Err:     err,
+	}
+}
+
+func (e *GroupLostEvent) EventName() string {
+	return EventGroupLost
 }

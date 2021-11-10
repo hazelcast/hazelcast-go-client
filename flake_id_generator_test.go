@@ -18,12 +18,14 @@ package hazelcast_test
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func TestFlakeIDGenerator_ExpiredBatch(t *testing.T) {
@@ -84,6 +86,7 @@ func TestFlakeIDGenerator_UsedBatch(t *testing.T) {
 
 func TestFlakeIDBatch_NextID(t *testing.T) {
 	testCases := []struct {
+		name             string
 		expectedSequence []int64
 		base             int64
 		increment        int64
@@ -115,12 +118,12 @@ func TestFlakeIDBatch_NextID(t *testing.T) {
 			base:             10,
 			increment:        10,
 			size:             3,
-			expiry:           0,
+			expiry:           -1 * time.Minute,
 			expectedSequence: []int64{hazelcast.InvalidFlakeID},
 		},
 	}
-	for _, tc := range testCases {
-		t.Run("", func(t *testing.T) {
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			batch := hazelcast.NewFlakeIDBatch(tc.base, tc.increment, tc.size, tc.expiry)
 			for _, v := range tc.expectedSequence {
 				assert.Equal(t, v, batch.NextID())

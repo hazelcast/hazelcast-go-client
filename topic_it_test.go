@@ -21,8 +21,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
@@ -40,7 +38,7 @@ func TestTopic_Publish(t *testing.T) {
 		if err = tp.Publish(context.Background(), "HEY!"); err != nil {
 			t.Fatal(err)
 		}
-		it.Eventually(t, func() bool { return assert.Equal(t, "value1", handlerValue.Load()) })
+		it.Eventually(t, func() bool { return handlerValue.Load() == "value1" })
 
 		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
@@ -53,6 +51,7 @@ func TestTopic_Publish(t *testing.T) {
 	})
 }
 func TestTopic_PublishAll(t *testing.T) {
+	it.SkipIf(t, "hz < 4.1")
 	it.TopicTester(t, func(t *testing.T, tp *hz.Topic) {
 		handlerValue := int32(0)
 		subscriptionID, err := tp.AddMessageListener(context.Background(), func(event *hz.MessagePublished) {
@@ -64,7 +63,9 @@ func TestTopic_PublishAll(t *testing.T) {
 		if err = tp.PublishAll(context.Background(), "v1", "v2", "v3"); err != nil {
 			t.Fatal(err)
 		}
-		it.Eventually(t, func() bool { return assert.Equal(t, int32(3), atomic.LoadInt32(&handlerValue)) })
+		it.Eventually(t, func() bool {
+			return int32(3) == atomic.LoadInt32(&handlerValue)
+		})
 
 		if err := tp.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)

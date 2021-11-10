@@ -23,18 +23,25 @@
 # And the following packages which contain the functions above:
 # - github.com/hazelcast/hazelcast-go-client/serialization
 # - github.com/hazelcast/hazelcast-go-client/internal/serialization
+# And exclude any files with "org-website" in the path because these
+# are examples
 
-go vet ./... 2>&1 | \
+go vet -tags hazelcastinternal ./... 2>&1 | \
   grep -v "should have signature WriteByte(byte) error" | \
   grep -v "should have signature ReadByte() (byte, error)" | \
   grep -v "# github.com/hazelcast/hazelcast-go-client/serialization" | \
-  grep -v "# github.com/hazelcast/hazelcast-go-client/internal/serialization" \
+  grep -v "# github.com/hazelcast/hazelcast-go-client/internal/serialization" | \
+  grep -v "org-website" \
   || true
 
-# If missing install via: go get honnef.co/go/tools/cmd/staticcheck@latest
-staticcheck ./...
+staticcheck -tags hazelcastinternal $(go list ./... | grep -v org-website)  | grep -v -E 'client_it_test.go.*SA1012'
 
 # Ensure fields are optimally aligned
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment
 # If missing install via: go get -u golang.org/x/tools/...
-fieldalignment ./...
+# Structs in following files should not be sorted due to: https://pkg.go.dev/sync/atomic#pkg-note-BUG
+fieldalignment -tags $(go list ./... | grep -v org-website) 2>&1 | \
+  grep -v "internal/cluster/connection_manager.go" | \
+  grep -v "internal/cluster/view_listener_service.go" | \
+  grep -v "flake_id_generator.go" \
+  || true

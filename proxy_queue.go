@@ -20,10 +20,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/validationutil"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -135,7 +135,7 @@ func (q *Queue) Drain(ctx context.Context) ([]interface{}, error) {
 
 // DrainWithMaxSize returns maximum maxSize items in tne queue and removes returned items from the queue.
 func (q *Queue) DrainWithMaxSize(ctx context.Context, maxSize int) ([]interface{}, error) {
-	maxSizeAsInt32, err := validationutil.ValidateAsNonNegativeInt32(maxSize)
+	maxSizeAsInt32, err := check.NonNegativeInt32(maxSize)
 	if err != nil {
 		return nil, err
 	}

@@ -59,7 +59,7 @@ type Service struct {
 	mu                 *sync.RWMutex
 	invFactory         *cluster.ConnectionInvocationFactory
 	addrs              map[string]struct{}
-	requestCh          chan<- invocation.Invocation
+	invocationService  *invocation.Service
 	doneCh             chan struct{}
 	ed                 *event.DispatchService
 	btStats            binTextStats
@@ -69,27 +69,27 @@ type Service struct {
 }
 
 func NewService(
-	requestCh chan<- invocation.Invocation,
+	invService *invocation.Service,
 	invFactory *cluster.ConnectionInvocationFactory,
 	ed *event.DispatchService,
 	logger logger.Logger,
 	interval time.Duration,
 	clientName string) *Service {
 	s := &Service{
-		requestCh:  requestCh,
-		invFactory: invFactory,
-		doneCh:     make(chan struct{}),
-		interval:   interval,
-		logger:     logger,
-		addrs:      map[string]struct{}{},
-		mu:         &sync.RWMutex{},
-		clientName: clientName,
-		ed:         ed,
-		btStats:    binTextStats{mc: NewMetricCompressor()},
+		invocationService: invService,
+		invFactory:        invFactory,
+		doneCh:            make(chan struct{}),
+		interval:          interval,
+		logger:            logger,
+		addrs:             map[string]struct{}{},
+		mu:                &sync.RWMutex{},
+		clientName:        clientName,
+		ed:                ed,
+		btStats:           binTextStats{mc: NewMetricCompressor()},
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
-	ed.Subscribe(cluster.EventConnected, event.DefaultSubscriptionID, s.handleClusterConnected)
+	ed.Subscribe(cluster.EventCluster, event.DefaultSubscriptionID, s.handleClusterEvent)
 	s.addGauges()
 	return s
 }
@@ -100,8 +100,8 @@ func (s *Service) Start() {
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	subID := event.MakeSubscriptionID(s.handleClusterConnected)
-	s.ed.Unsubscribe(cluster.EventConnected, subID)
+	subID := event.MakeSubscriptionID(s.handleClusterEvent)
+	s.ed.Unsubscribe(cluster.EventCluster, subID)
 }
 
 func (s *Service) loop() {
@@ -120,11 +120,13 @@ func (s *Service) loop() {
 	}
 }
 
-func (s *Service) handleClusterConnected(event event.Event) {
-	if e, ok := event.(*cluster.Connected); ok {
-		s.clusterConnectTime.Store(time.Now())
-		s.connAddr.Store(e.Addr)
+func (s *Service) handleClusterEvent(event event.Event) {
+	e := event.(*cluster.ClusterStateChangedEvent)
+	if e.State == cluster.ClusterStateDisconnected {
+		return
 	}
+	s.clusterConnectTime.Store(time.Now())
+	s.connAddr.Store(e.Addr)
 }
 
 func (s *Service) sendStats(ctx context.Context) {
@@ -139,16 +141,17 @@ func (s *Service) sendStats(ctx context.Context) {
 		return fmt.Sprintf("sending stats: %s", statsStr)
 	})
 	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, statsStr, blob)
-	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil)
-	select {
-	case <-ctx.Done():
-		break
-	case s.requestCh <- inv:
-		if _, err := inv.GetWithContext(ctx); err == nil {
-			return
-		}
+	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil, time.Now())
+	if err := s.invocationService.SendRequest(ctx, inv); err != nil {
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("sending stats: %s", err.Error())
+		})
 	}
-	s.logger.Debug(func() string { return fmt.Sprintf("error sending stats: %s", ctx.Err().Error()) })
+	if _, err := inv.GetWithContext(ctx); err != nil {
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("sending stats: %s", err.Error())
+		})
+	}
 }
 
 func (s *Service) addBasicStats(ts time.Time) {

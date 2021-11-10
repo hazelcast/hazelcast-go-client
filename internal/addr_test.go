@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 type parseAddrTarget struct {

@@ -20,8 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -118,10 +118,8 @@ func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 }
 
 func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
-	t.SkipNow()
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		// TODO: better test
 		if _, err := m.PutIfAbsentWithTTLAndMaxIdle(context.Background(), "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
 			t.Fatal(err)
 		}
@@ -540,14 +538,9 @@ func TestMap_Flush(t *testing.T) {
 	})
 }
 
-// TODO: Test Map AddInterceptor
-// TODO: Test Map TryPut
-// TODO: Test Map TryPutWithTimeout
-// TODO: Test Map TryRemove
-// TODO: Test Map TryRemoveWithTimeout
-
 func TestMap_LoadAllWithoutReplacing(t *testing.T) {
-	makeMapName := func() string {
+	makeMapName := func(_ ...string) string {
+		// the map name for this test should be static.
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
@@ -568,7 +561,8 @@ func TestMap_LoadAllWithoutReplacing(t *testing.T) {
 }
 
 func TestMap_LoadAllReplacing(t *testing.T) {
-	makeMapName := func() string {
+	makeMapName := func(_ ...string) string {
+		// the map name for this test should be static.
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
@@ -633,15 +627,15 @@ func TestMap_ForceUnlock(t *testing.T) {
 			t.Fatal(err)
 		}
 		if locked, err := cm.IsLocked(lockCtx, "k1"); err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		} else {
 			it.AssertEquals(t, true, locked)
 		}
 		if err := cm.ForceUnlock(lockCtx, "k1"); err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		if locked, err := cm.IsLocked(lockCtx, "k1"); err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		} else {
 			assert.Equal(t, false, locked)
 		}
@@ -664,17 +658,21 @@ func TestMap_IsEmptySize(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.MustValue(m.Put(context.Background(), "k2", "v2"))
 		it.MustValue(m.Put(context.Background(), "k3", "v3"))
-		if value, err := m.IsEmpty(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if value {
-			t.Fatalf("target: false != true")
-		}
+		it.Eventually(t, func() bool {
+			value, err := m.IsEmpty(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return !value
+		})
 		targetSize = 3
-		if value, err := m.Size(context.Background()); err != nil {
-			t.Fatal(err)
-		} else if targetSize != value {
-			t.Fatalf("target: %d != %d", targetSize, value)
-		}
+		it.Eventually(t, func() bool {
+			value, err := m.Size(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			return targetSize == value
+		})
 	})
 }
 
@@ -774,7 +772,7 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount))
+			return atomic.LoadInt32(&callCount) == totalCallCount
 		})
 		atomic.StoreInt32(&callCount, 0)
 		if err := m.RemoveEntryListener(context.Background(), subscriptionID); err != nil {
@@ -807,7 +805,7 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 		}
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, int32(1), atomic.LoadInt32(&callCount))
+			return atomic.LoadInt32(&callCount) == int32(1)
 		})
 	})
 }
@@ -827,16 +825,20 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 			Predicate:    predicate.Equal("A", "foo"),
 		}
 		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(context.Background(), listenerConfig, handler); err != nil {
+		subID, err := m.AddEntryListener(context.Background(), listenerConfig, handler)
+		if err != nil {
 			t.Fatal(err)
 		}
+		t.Logf("TestMap_EntryNotifiedEventWithPredicate subscriptionID: %s", subID)
 		for i := 0; i < int(totalCallCount); i++ {
 			key := fmt.Sprintf("key-%d", i)
 			value := &it.SamplePortable{A: "foo", B: int32(i)}
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, totalCallCount, atomic.LoadInt32(&callCount))
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }
@@ -863,7 +865,7 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
 		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
 		it.Eventually(t, func() bool {
-			return assert.Equal(t, int32(1), atomic.LoadInt32(&callCount))
+			return atomic.LoadInt32(&callCount) == 1
 		})
 	})
 }
@@ -928,12 +930,14 @@ func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"
-		if err := m.SetWithTTLAndMaxIdle(ctx, "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+		if err := m.SetWithTTLAndMaxIdle(ctx, "key", targetValue, 20*time.Second, 5*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
+		time.Sleep(10 * time.Second)
 		it.Eventually(t, func() bool {
-			return it.MustValue(m.Get(ctx, "key")) == nil
+			v := it.MustValue(m.Get(ctx, "key"))
+			return v == nil
 		})
 	})
 }
@@ -1045,7 +1049,7 @@ func TestMap_SetTTL(t *testing.T) {
 		ctx := context.Background()
 		targetValue := "value"
 		it.Must(m.Set(ctx, "key", targetValue))
-		if err := m.SetTTL(ctx, "key", 1*time.Second); err != nil {
+		if err := m.SetTTL(ctx, "key", 20*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
@@ -1068,6 +1072,168 @@ func TestMap_ExecuteOnEntries(t *testing.T) {
 		}
 		target := []types.Entry{{Key: "my-key", Value: "test"}}
 		assert.Equal(t, target, vs)
+	})
+}
+
+func TestMap_ExecuteOnEntriesWithPredicate(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
+	}
+	it.MapTesterWithConfig(t, cb, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.Must(m.Set(ctx, "k1", serialization.JSON(`{"A": 10, "B": 200}`)))
+		it.Must(m.Set(ctx, "k2", serialization.JSON(`{"A": 10, "B": 30}`)))
+		it.Must(m.Set(ctx, "k3", serialization.JSON(`{"A": 5, "B": 200}`)))
+		vs, err := m.ExecuteOnEntriesWithPredicate(ctx, &SimpleEntryProcessor{value: "test"}, predicate.Equal("A", 10))
+		if err != nil {
+			t.Fatal(err)
+		}
+		updatedTo := []types.Entry{{Key: "k1", Value: "test"}, {Key: "k2", Value: "test"}}
+		sort.Slice(vs, func(i, j int) bool {
+			return vs[i].Key.(string) < vs[j].Key.(string)
+		})
+		assert.Equal(t, updatedTo, vs)
+		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get(context.Background(), "k3"))) //ensure this should not change
+	})
+}
+
+func TestMap_AddInterceptor(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		prefix := "My Prefix"
+		id, err := m.AddInterceptor(ctx, &MapGetInterceptor{Prefix: prefix})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if _, err := m.RemoveInterceptor(ctx, id); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		v, err := m.Get(ctx, "foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, prefix, v)
+		ok, err := m.RemoveInterceptor(ctx, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, ok, true)
+		v, err = m.Get(ctx, "foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, nil, v)
+	})
+}
+
+func TestMap_TryPut(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx1 := m.NewLockContext(context.Background())
+		if err := m.Lock(ctx1, "foo"); err != nil {
+			t.Fatal(err)
+		}
+		defer m.Unlock(ctx1, "foo")
+		// TryPut with a different lock context returns false
+		ctx2 := m.NewLockContext(context.Background())
+		ok, err := m.TryPut(ctx2, "foo", "bar")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, false, ok)
+		// TryPut with the same lock context returns true
+		ok, err = m.TryPut(ctx1, "foo", "bar")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, true, ok)
+	})
+}
+
+func TestMap_TryPutWithTimeout(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx1 := m.NewLockContext(context.Background())
+		if err := m.Lock(ctx1, "foo"); err != nil {
+			t.Fatal(err)
+		}
+		// TryPut with a different lock context returns false
+		ctx2 := m.NewLockContext(context.Background())
+		ok, err := m.TryPutWithTimeout(ctx2, "foo", "bar", 1*time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, false, ok)
+		// unlock 5 seconds later
+		go func() {
+			time.Sleep(5 * time.Second)
+			if err := m.Unlock(ctx1, "foo"); err != nil {
+				panic(err)
+			}
+		}()
+		// TryPut after the timeout
+		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 2*time.Minute)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, true, ok)
+	})
+}
+
+func TestMap_TryRemove(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx1 := m.NewLockContext(context.Background())
+		if _, err := m.Put(ctx1, "foo", "bar"); err != nil {
+			t.Fatal(err)
+		}
+		if err := m.Lock(ctx1, "foo"); err != nil {
+			t.Fatal(err)
+		}
+		// TryRemove with a different lock context returns false
+		ctx2 := m.NewLockContext(context.Background())
+		ok, err := m.TryRemove(ctx2, "foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, false, ok)
+		// TryPut with the same lock context returns true
+		ok, err = m.TryRemove(ctx1, "foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, true, ok)
+	})
+}
+
+func TestMap_TryRemoveWithTimeout(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx1 := m.NewLockContext(context.Background())
+		if _, err := m.Put(ctx1, "foo", "bar"); err != nil {
+			t.Fatal(err)
+		}
+		if err := m.Lock(ctx1, "foo"); err != nil {
+			t.Fatal(err)
+		}
+		// TryPut with a different lock context returns false
+		ctx2 := m.NewLockContext(context.Background())
+		ok, err := m.TryPutWithTimeout(ctx2, "foo", "bar", 1*time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, false, ok)
+		// unlock 5 seconds later
+		go func() {
+			time.Sleep(5 * time.Second)
+			if err := m.Unlock(ctx1, "foo"); err != nil {
+				panic(err)
+			}
+		}()
+		// TryPut after the timeout
+		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 2*time.Minute)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, true, ok)
 	})
 }
 
@@ -1187,4 +1353,24 @@ func (f SimpleEntryProcessorFactory) Create(id int32) serialization.IdentifiedDa
 
 func (f SimpleEntryProcessorFactory) FactoryID() int32 {
 	return simpleEntryProcessorFactoryID
+}
+
+type MapGetInterceptor struct {
+	Prefix string
+}
+
+func (m MapGetInterceptor) FactoryID() int32 {
+	return 666
+}
+
+func (m MapGetInterceptor) ClassID() int32 {
+	return 6
+}
+
+func (m MapGetInterceptor) WriteData(output serialization.DataOutput) {
+	output.WriteString(m.Prefix)
+}
+
+func (m *MapGetInterceptor) ReadData(input serialization.DataInput) {
+	m.Prefix = input.ReadString()
 }

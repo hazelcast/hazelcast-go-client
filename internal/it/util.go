@@ -26,6 +26,7 @@ import (
 	"reflect"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -190,8 +191,12 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 	return client
 }
 
-func NewUniqueObjectName(service string) string {
-	return fmt.Sprintf("test-%s-%d-%d", service, idGen.NextID(), rand.Int())
+func NewUniqueObjectName(service string, labels ...string) string {
+	ls := strings.Join(labels, "_")
+	if ls != "" {
+		ls = fmt.Sprintf("-%s", ls)
+	}
+	return fmt.Sprintf("test-%s-%d-%d%s", service, idGen.NextID(), rand.Int(), ls)
 }
 
 func TraceLoggingEnabled() bool {
@@ -288,6 +293,11 @@ func StartNewClusterWithOptions(clusterName string, port, memberCount int) *Test
 	return startNewCluster(rc, memberCount, config, port)
 }
 
+func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
+	ensureRemoteController(false)
+	return startNewCluster(rc, memberCount, config, port)
+}
+
 func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
 	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
@@ -317,6 +327,9 @@ func (c TestCluster) DefaultConfig() hz.Config {
 		config.Cluster.Network.SSL.Enabled = true
 		config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 	}
+	if TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
 	return config
 }
 
@@ -337,8 +350,8 @@ func xmlConfig(clusterName string, port int) string {
 			</map>
 			<serialization>
 				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
-					</data-serializable-factory>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
         </hazelcast>
@@ -373,8 +386,8 @@ func xmlSSLConfig(clusterName string, port int) string {
 			</map>
 			<serialization>
 				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory
-					</data-serializable-factory>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
 		</hazelcast>
@@ -428,10 +441,12 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 		defer close(c)
 		wg.Wait()
 	}()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
 	select {
 	case <-c:
 		//done successfully
-	case <-time.After(timeout):
+	case <-timer.C:
 		t.FailNow()
 	}
 }

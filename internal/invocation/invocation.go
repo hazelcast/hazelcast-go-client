@@ -47,6 +47,9 @@ type Invocation interface {
 	Address() pubcluster.Address
 	Close()
 	CanRetry(err error) bool
+	Deadline() time.Time
+	Group() int64
+	SetGroup(id int64)
 }
 
 type Impl struct {
@@ -55,6 +58,7 @@ type Impl struct {
 	eventHandler  func(clientMessage *proto.ClientMessage)
 	request       *proto.ClientMessage
 	address       pubcluster.Address
+	group         int64
 	completed     int32
 	partitionID   int32
 	RedoOperation bool
@@ -120,11 +124,9 @@ func (i *Impl) Address() pubcluster.Address {
 	return i.address
 }
 
-/*
-func (i *Proxy) StoreSentConnection(conn interface{}) {
-	i.sentConnection.Store(conn)
+func (i *Impl) Deadline() time.Time {
+	return i.deadline
 }
-*/
 
 // SetEventHandler sets the event handler for the invocation.
 // It should only be called at the site of creation.
@@ -158,9 +160,21 @@ func (i *Impl) MaybeCanRetry(err error) bool {
 	return false
 }
 
+func (i *Impl) Group() int64 {
+	return i.group
+}
+
+func (i *Impl) SetGroup(id int64) {
+	i.group = id
+}
+
 func (i *Impl) unwrapResponse(response *proto.ClientMessage) (*proto.ClientMessage, error) {
 	if response.Err != nil {
 		if i.CanRetry(response.Err) {
+			return nil, response.Err
+		}
+		if _, ok := response.Err.(*cb.NonRetryableError); ok {
+			// the error was already wrapped as nonretryable
 			return nil, response.Err
 		}
 		return nil, cb.WrapNonRetryableError(response.Err)

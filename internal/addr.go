@@ -32,17 +32,19 @@ func ParseAddr(addr string) (string, int, error) {
 	if !strings.Contains(addr, ":") {
 		return addr, 0, nil
 	}
-	if host, port, err := net.SplitHostPort(addr); err != nil {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
 		return "", 0, err
-	} else if portInt, err := strconv.Atoi(port); err != nil {
-		return "", 0, err
-	} else {
-		if host == "" || strings.TrimSpace(host) == "" {
-			host = defaultHost
-		}
-		if portInt < 0 { // port number should be more than 0
-			return "", 0, fmt.Errorf("invalid port number: '%d'", portInt)
-		}
-		return host, portInt, nil
 	}
+	portInt, err := strconv.Atoi(port)
+	if err != nil {
+		return "", 0, err
+	}
+	if host == "" || strings.TrimSpace(host) == "" {
+		host = defaultHost
+	}
+	if portInt < 0 { // port number should be more than 0
+		return "", 0, fmt.Errorf("invalid port number: '%d'", portInt)
+	}
+	return host, portInt, nil
 }

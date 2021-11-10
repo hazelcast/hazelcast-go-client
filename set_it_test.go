@@ -19,7 +19,6 @@ package hazelcast_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync/atomic"
 	"testing"
 
@@ -68,7 +67,11 @@ func TestSet_AddListener(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(s.Add(context.Background(), value))
 		}
-		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount })
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("target: %d, actual: %d", targetCallCount, cc)
+			return cc == targetCallCount
+		})
 		atomic.StoreInt32(&callCount, 0)
 		if err = s.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
@@ -123,7 +126,7 @@ func TestSet_GetAll(t *testing.T) {
 		it.MustValue(s.AddAll(context.Background(), "v1", "v2", "v3"))
 		values, err := s.GetAll(context.Background())
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		assert.ElementsMatch(t, []interface{}{"v1", "v2", "v3"}, values)
 	})

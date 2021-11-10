@@ -25,6 +25,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -33,7 +34,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/nilutil"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -55,8 +55,7 @@ const (
 )
 
 type creationBundle struct {
-	RequestCh            chan<- invocation.Invocation
-	RemoveCh             chan<- int64
+	InvocationService    *invocation.Service
 	SerializationService *iserialization.Service
 	PartitionService     *cluster.PartitionService
 	ClusterService       *cluster.Service
@@ -67,11 +66,8 @@ type creationBundle struct {
 }
 
 func (b creationBundle) Check() {
-	if b.RequestCh == nil {
-		panic("RequestCh is nil")
-	}
-	if b.RemoveCh == nil {
-		panic("RemoveCh is nil")
+	if b.InvocationService == nil {
+		panic("InvocationService is nil")
 	}
 	if b.SerializationService == nil {
 		panic("SerializationService is nil")
@@ -98,8 +94,7 @@ func (b creationBundle) Check() {
 
 type proxy struct {
 	logger               ilogger.Logger
-	requestCh            chan<- invocation.Invocation
-	removeCh             chan<- int64
+	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
 	listenerBinder       *cluster.ConnectionListenerBinder
@@ -126,7 +121,7 @@ func newProxy(
 	bundle.Check()
 	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt64),
+		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
 		cb.RetryPolicy(func(attempt int) time.Duration {
 			return time.Duration((attempt+1)*100) * time.Millisecond
@@ -134,8 +129,7 @@ func newProxy(
 	p := &proxy{
 		serviceName:          serviceName,
 		name:                 objectName,
-		requestCh:            bundle.RequestCh,
-		removeCh:             bundle.RemoveCh,
+		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
@@ -182,7 +176,7 @@ func (p *proxy) Destroy(ctx context.Context) error {
 }
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
-	if nilutil.IsNil(arg1) {
+	if check.Nil(arg1) {
 		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	return p.serializationService.ToData(arg1)
@@ -190,7 +184,7 @@ func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, er
 
 func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, err error) {
-	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) {
+	if check.Nil(arg1) || check.Nil(arg2) {
 		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
@@ -203,7 +197,7 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 
 func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *iserialization.Data,
 	arg2Data *iserialization.Data, arg3Data *iserialization.Data, err error) {
-	if nilutil.IsNil(arg1) || nilutil.IsNil(arg2) || nilutil.IsNil(arg3) {
+	if check.Nil(arg1) || check.Nil(arg2) || check.Nil(arg3) {
 		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(arg1)
@@ -219,7 +213,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 }
 
 func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data *iserialization.Data, err error) {
-	if nilutil.IsNil(agg) {
+	if check.Nil(agg) {
 		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(agg)
@@ -227,7 +221,7 @@ func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Dat
 }
 
 func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data *iserialization.Data, err error) {
-	if nilutil.IsNil(pred) {
+	if check.Nil(pred) {
 		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil", nil)
 	}
 	arg1Data, err = p.serializationService.ToData(pred)
@@ -266,11 +260,12 @@ func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, k
 }
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	now := time.Now()
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
 		}
-		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler)
+		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler, now)
 		if err := p.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}
@@ -279,8 +274,9 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
+	now := time.Now()
 	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID); err != nil {
+		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
 			return nil, err
 		} else {
 			return inv.GetWithContext(ctx)
@@ -288,8 +284,8 @@ func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMess
 	})
 }
 
-func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32) (invocation.Invocation, error) {
-	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID)
+func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32, now time.Time) (invocation.Invocation, error) {
+	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID, now)
 	err := p.sendInvocation(ctx, inv)
 	return inv, err
 }
@@ -407,13 +403,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 }
 
 func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
-	select {
-	case p.requestCh <- inv:
-		return nil
-	case <-ctx.Done():
-		p.removeCh <- inv.Request().CorrelationID()
-		return ctx.Err()
-	}
+	return p.invocationService.SendRequest(ctx, inv)
 }
 
 type entryNotifiedHandler func(

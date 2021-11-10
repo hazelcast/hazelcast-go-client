@@ -24,6 +24,8 @@ import (
 	"io"
 	"math"
 	"net"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -35,7 +37,7 @@ import (
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/util/versionutil"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -62,10 +64,11 @@ type Connection struct {
 	lastRead                  atomic.Value
 	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService
-	pending                   chan *proto.ClientMessage
-	responseCh                chan<- *proto.ClientMessage
+	pending                   chan invocation.Invocation
+	invocationService         *invocation.Service
 	doneCh                    chan struct{}
 	connectedServerVersionStr string
+	memberUUID                types.UUID
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
@@ -83,18 +86,23 @@ func (c *Connection) Endpoint() pubcluster.Address {
 	return c.endpoint.Load().(pubcluster.Address)
 }
 
+func (c *Connection) SetEndpoint(addr pubcluster.Address) {
+	c.endpoint.Store(addr)
+}
+
 func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
 	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
 		return err
 	} else {
-		c.endpoint.Store(pubcluster.Address(socket.RemoteAddr().String()))
+		c.SetEndpoint(addr)
 		c.socket = socket
 		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
 		c.lastWrite.Store(time.Time{})
 		c.closedTime.Store(time.Time{})
 		c.lastRead.Store(time.Now())
-		if err := c.sendProtocolStarter(); err != nil {
-			c.socket.Close()
+		if err = c.sendProtocolStarter(); err != nil {
+			// ignoring the socket close error
+			_ = c.socket.Close()
 			c.socket = nil
 			return err
 		}
@@ -153,11 +161,12 @@ func (c *Connection) isAlive() bool {
 func (c *Connection) socketWriteLoop() {
 	for {
 		select {
-		case request, ok := <-c.pending:
+		case inv, ok := <-c.pending:
 			if !ok {
 				return
 			}
-			err := c.write(request)
+			req := inv.Request()
+			err := c.write(req)
 			// Note: Go lang spec guarantees that it's safe to call len()
 			// on any number of goroutines without further synchronization.
 			// See: https://golang.org/ref/spec#Channel_types
@@ -166,10 +175,16 @@ func (c *Connection) socketWriteLoop() {
 				err = c.bWriter.Flush()
 			}
 			if err != nil {
-				c.logger.Errorf("write error: %w", err)
-				request = request.Copy()
-				request.Err = ihzerrors.NewIOError("writing message", err)
-				c.responseCh <- request
+				c.logger.Errorf("cluster.Connection write error: %w", err)
+				req = req.Copy()
+				req.Err = ihzerrors.NewIOError("writing message", err)
+				if respErr := c.invocationService.WriteResponse(req); respErr != nil {
+					c.logger.Debug(func() string {
+						return fmt.Sprintf("sending response: %s", err.Error())
+					})
+					// prevent respawning the connection
+					err = nil
+				}
 				c.close(err)
 			} else {
 				c.lastWrite.Store(time.Now())
@@ -205,6 +220,7 @@ func (c *Connection) socketReadLoop() {
 		if n == 0 {
 			continue
 		}
+		c.lastRead.Store(time.Now())
 		clientMessageReader.Append(buf[:n])
 		for {
 			clientMessage := clientMessageReader.Read()
@@ -219,9 +235,14 @@ func (c *Connection) socketReadLoop() {
 					if err := codec.DecodeError(clientMessage); err != nil {
 						clientMessage.Err = wrapError(err)
 					}
-
 				}
-				c.responseCh <- clientMessage
+				if err := c.invocationService.WriteResponse(clientMessage); err != nil {
+					c.logger.Debug(func() string {
+						return fmt.Sprintf("sending response: %s", err.Error())
+					})
+					c.close(nil)
+					return
+				}
 				clientMessageReader.ResetMessage()
 			}
 		}
@@ -234,8 +255,7 @@ func (c *Connection) send(inv invocation.Invocation) bool {
 	select {
 	case <-c.doneCh:
 		return false
-	case c.pending <- inv.Request():
-		//inv.StoreSentConnection(c)
+	case c.pending <- inv:
 		return true
 	}
 }
@@ -257,7 +277,7 @@ func (c *Connection) isTimeoutError(err error) bool {
 
 func (c *Connection) setConnectedServerVersion(connectedServerVersion string) {
 	c.connectedServerVersionStr = connectedServerVersion
-	c.connectedServerVersion = versionutil.CalculateVersion(connectedServerVersion)
+	c.connectedServerVersion = calculateVersion(connectedServerVersion)
 }
 
 func (c *Connection) close(closeErr error) {
@@ -265,9 +285,20 @@ func (c *Connection) close(closeErr error) {
 		return
 	}
 	close(c.doneCh)
-	c.socket.Close()
+	if err := c.socket.Close(); err != nil {
+		c.logger.Trace(func() string {
+			return fmt.Sprintf("error closing socket: %s", err.Error())
+		})
+	}
 	c.closedTime.Store(time.Now())
 	c.eventDispatcher.Publish(NewConnectionClosed(c, closeErr))
+	var groupErr error
+	if closeErr == nil {
+		groupErr = ihzerrors.NewTargetDisconnectedError("", closeErr)
+	} else {
+		groupErr = ihzerrors.NewTargetDisconnectedError(closeErr.Error(), closeErr)
+	}
+	c.eventDispatcher.Publish(invocation.NewGroupLost(c.connectionID, groupErr))
 	c.logger.Trace(func() string {
 		reason := "normally"
 		if closeErr != nil {
@@ -279,7 +310,7 @@ func (c *Connection) close(closeErr error) {
 
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{isAlive=%t, connectionID=%d, endpoint=%s, lastReadTime=%s, lastWriteTime=%s, closedTime=%s, connected server version=%s",
-		c.isAlive(), c.connectionID, c.endpoint.Load(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
+		c.isAlive(), c.connectionID, c.Endpoint(), c.lastRead.Load(), c.lastWrite.Load(), c.closedTime.Load(), c.connectedServerVersionStr)
 }
 
 func positiveDurationOrMax(duration time.Duration) time.Duration {
@@ -498,4 +529,39 @@ func convertErrorCodeToError(code errorCode) error {
 		return hzerrors.ErrNoClassDefFound
 	}
 	return nil
+}
+
+const (
+	unknownVersion         int32 = -1
+	majorVersionMultiplier int32 = 10000
+	minorVersionMultiplier int32 = 100
+)
+
+func calculateVersion(version string) int32 {
+	if version == "" {
+		return unknownVersion
+	}
+	mainParts := strings.Split(version, "-")
+	tokens := strings.Split(mainParts[0], ".")
+	if len(tokens) < 2 {
+		return unknownVersion
+	}
+	majorCoeff, err := strconv.Atoi(tokens[0])
+	if err != nil {
+		return unknownVersion
+	}
+	minorCoeff, err := strconv.Atoi(tokens[1])
+	if err != nil {
+		return unknownVersion
+	}
+	calculatedVersion := int32(majorCoeff) * majorVersionMultiplier
+	calculatedVersion += int32(minorCoeff) * minorVersionMultiplier
+	if len(tokens) > 2 {
+		lastCoeff, err := strconv.Atoi(tokens[2])
+		if err != nil {
+			return unknownVersion
+		}
+		calculatedVersion += int32(lastCoeff)
+	}
+	return calculatedVersion
 }

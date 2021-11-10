@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -83,12 +84,11 @@ func TestClientLifecycleEvents(t *testing.T) {
 			hz.LifecycleStateShuttingDown,
 			hz.LifecycleStateShutDown,
 		}
-
 		it.Eventually(t, func() bool {
 			receivedStatesMu.RLock()
 			defer receivedStatesMu.RUnlock()
 			return reflect.DeepEqual(targetStates, receivedStates)
-		}, "target %v != %v", targetStates, receivedStates)
+		})
 	})
 }
 
@@ -276,8 +276,7 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	it.WaitEventually(t, &reconnectedWg)
 	cls.Shutdown()
 	c.Shutdown(ctx)
-	mu.Lock()
-	defer mu.Unlock()
+
 	target := []hz.LifecycleState{
 		hz.LifecycleStateStarting,
 		hz.LifecycleStateConnected,
@@ -290,8 +289,10 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 		hz.LifecycleStateShutDown,
 	}
 	it.Eventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
 		return reflect.DeepEqual(target, events)
-	}, "target : %v, events %v ", target, events)
+	})
 }
 
 func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
@@ -337,10 +338,7 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 			mapInfo     = types.DistributedObjectInfo{Name: testMapName, ServiceName: hz.ServiceNameMap}
 			setInfo     = types.DistributedObjectInfo{Name: testSetName, ServiceName: hz.ServiceNameSet}
 		)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
-		defer cancel()
-
+		ctx := context.Background()
 		testMap, err := client.GetMap(ctx, testMapName)
 		if err != nil {
 			t.Fatal(err)
@@ -349,27 +347,26 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		objects, err := client.GetDistributedObjectsInfo(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Contains(t, objects, mapInfo)
-		assert.Contains(t, objects, setInfo)
-
+		it.Eventually(t, func() bool {
+			objects, err := client.GetDistributedObjectsInfo(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return containsDistributedObject(objects, mapInfo) && containsDistributedObject(objects, setInfo)
+		})
 		if err = testMap.Destroy(ctx); err != nil {
 			t.Fatal(err)
 		}
 		if err = testSet.Destroy(ctx); err != nil {
 			t.Fatal(err)
 		}
-
-		objects, err = client.GetDistributedObjectsInfo(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.NotContains(t, objects, mapInfo)
-		assert.NotContains(t, objects, setInfo)
+		it.Eventually(t, func() bool {
+			objects, err := client.GetDistributedObjectsInfo(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return !containsDistributedObject(objects, mapInfo) && !containsDistributedObject(objects, setInfo)
+		})
 	})
 }
 
@@ -487,14 +484,16 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	defer cls2.Shutdown()
 	var wg sync.WaitGroup
 	wg.Add(1)
-	config := cls1.DefaultConfig()
-	config.Logger.Level = logger.DebugLevel
+	config1 := cls1.DefaultConfig()
+	config1.Cluster.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+	config2 := cls2.DefaultConfig()
+	config := hz.Config{}
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
 	config.Failover.Enabled = true
-	config.Failover.TryCount = 1
-	failoverConfig := config.Cluster
-	failoverConfig.Name = "failover-test-cluster2"
-	failoverConfig.Network.SetAddresses(fmt.Sprintf("localhost:%d", 15702))
-	config.Failover.SetConfigs(failoverConfig)
+	config.Failover.TryCount = 10
+	config.Failover.SetConfigs(config1.Cluster, config2.Cluster)
 	config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 		if event.State == hz.LifecycleStateChangedCluster {
 			wg.Done()
@@ -545,7 +544,7 @@ func TestClientFixConnection(t *testing.T) {
 	}
 	client, err := hz.StartNewClientWithConfig(ctx, config)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	defer client.Shutdown(ctx)
 	// terminate the member that corresponds to the connection which receives cluster membership updates
@@ -553,14 +552,14 @@ func TestClientFixConnection(t *testing.T) {
 	highlight(t, "Terminated member: %s", mUUID)
 	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, mUUID)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	if !ok {
-		log.Fatalf("could not terminate member: %s", err.Error())
+		t.Fatalf("could not terminate member: %s", err.Error())
 	}
 	m, err := cls.RC.StartMember(ctx, cls.ClusterID)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	highlight(t, "Started member: %s", m.UUID)
 	it.Eventually(t, func() bool {
@@ -571,5 +570,184 @@ func TestClientFixConnection(t *testing.T) {
 
 func TestClientVersion(t *testing.T) {
 	// adding this test here, so there's no "unused lint warning.
-	assert.Equal(t, "1.1.0", hz.ClientVersion)
+	assert.Equal(t, "1.1.1", hz.ClientVersion)
+}
+
+func TestInvocationTimeout(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		config.Cluster.InvocationTimeout = types.Duration(5 * time.Second)
+		ctx := context.Background()
+		client, err := hz.StartNewClientWithConfig(ctx, config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer client.Shutdown(ctx)
+		myMap, err := client.GetMap(ctx, "my-map")
+		if err != nil {
+			t.Fatal(err)
+		}
+		tc.Shutdown()
+		it.Eventually(t, func() bool {
+			_, err = myMap.Get(ctx, "k1")
+			return err != nil
+		})
+	})
+}
+
+func TestClientStartShutdownMemoryLeak(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		config.Cluster.Unisocket = !smart
+		ctx := context.Background()
+		var max uint64
+		var m runtime.MemStats
+		const limit = 8 * 1024 * 1024 // 8 MB
+		runtime.GC()
+		runtime.ReadMemStats(&m)
+		base := m.Alloc
+		for i := 0; i < 1000; i++ {
+			client, err := hz.StartNewClientWithConfig(ctx, config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := client.Shutdown(ctx); err != nil {
+				t.Fatal(err)
+			}
+			runtime.ReadMemStats(&m)
+			t.Logf("memory allocation: %d at iteration: %d", m.Alloc, i)
+			if m.Alloc > base && m.Alloc-base > limit {
+				max = m.Alloc - base
+			}
+			if max > limit {
+				t.Fatalf("memory allocation: %d > %d (base: %d) at iteration: %d", max, limit, base, i)
+			}
+		}
+	})
+}
+
+func TestClientInvocationAfterShutdown(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		tc := it.StartNewClusterWithOptions("invocation-after-shutdown", 43701, it.MemberCount())
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		ctx := context.Background()
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		m, err := client.GetMap(ctx, "my-map")
+		if err != nil {
+			t.Fatal(err)
+		}
+		it.Must(client.Shutdown(ctx))
+		_, err = m.Get(ctx, "foo")
+		if !errors.Is(err, hzerrors.ErrClientNotActive) {
+			t.Fatalf("expected hzerrors.ErrClientNotActive but received: %s", err.Error())
+		}
+	})
+}
+
+func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		cn := fmt.Sprintf("invocation-after-shutdown-2-%t", smart)
+		tc := it.StartNewClusterWithOptions(cn, 44701, it.MemberCount())
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		cc := &config.Cluster
+		cc.InvocationTimeout = types.Duration(24 * time.Hour)
+		cc.RedoOperation = true
+		cc.ConnectionStrategy.Timeout = types.Duration(20 * time.Second)
+		if it.TraceLoggingEnabled() {
+			config.Logger.Level = logger.TraceLevel
+		}
+		config.Cluster.Unisocket = !smart
+		ctx := context.Background()
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		m, err := client.GetMap(ctx, it.NewUniqueObjectName("my-map"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		const mapSize = 1000
+		const gc = 100 // goroutine count
+		wg := &sync.WaitGroup{}
+		wg.Add(gc)
+		startWg := &sync.WaitGroup{}
+		startWg.Add(1)
+		o := &sync.Once{}
+		for i := 0; i < gc; i++ {
+			go func(i int) {
+				defer wg.Done()
+				for j := 0; j < mapSize; j++ {
+					if j == mapSize/4 {
+						o.Do(func() {
+							startWg.Done()
+						})
+					}
+					// ignoring the error below, it's not relevant
+					_, _ = m.Put(ctx, j, j)
+				}
+			}(i)
+		}
+		it.WaitEventually(t, startWg)
+		it.Must(client.Shutdown(ctx))
+		it.WaitEventually(t, wg)
+	})
+}
+
+func TestClientStartShutdownWithNilContext(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("nil-context-cluster", 45701, 1)
+	defer tc.Shutdown()
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, tc.DefaultConfig()))
+	it.Must(client.Shutdown(nil))
+}
+
+func clientTester(t *testing.T, f func(*testing.T, bool)) {
+	if it.SmartEnabled() {
+		t.Run("Smart Client", func(t *testing.T) {
+			f(t, true)
+		})
+	}
+	if it.NonSmartEnabled() {
+		t.Run("Non-Smart Client", func(t *testing.T) {
+			f(t, false)
+		})
+	}
+}
+
+func containsDistributedObject(where []types.DistributedObjectInfo, what types.DistributedObjectInfo) bool {
+	for _, o := range where {
+		if o == what {
+			return true
+		}
+	}
+	return false
+}
+
+func listenersAfterClientDisconnectedXMLConfig(clusterName, publicAddr string, port, heartBeatSec int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+				<public-address>%s</public-address>
+				<port>%d</port>
+            </network>
+			<properties>
+				<property name="hazelcast.heartbeat.interval.seconds">%d</property>
+			</properties>
+        </hazelcast>
+	`, clusterName, publicAddr, port, heartBeatSec)
 }

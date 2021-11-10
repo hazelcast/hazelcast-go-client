@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-package util_test
+package check_test
 
 import (
 	"testing"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/util"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 )
 
-func TestGetAddresses(t *testing.T) {
-	host := "127.0.0.1"
-	portRange := pubcluster.PortRange{
-		Min: 5701,
-		Max: 5703,
-	}
-	expectedAddrs := []pubcluster.Address{
-		pubcluster.NewAddress(host, 5701),
-		pubcluster.NewAddress(host, 5702),
-		pubcluster.NewAddress(host, 5703),
-	}
-	addrs := util.GetAddresses(host, portRange)
-	assert.Equal(t, addrs, expectedAddrs)
+func TestIsNil(t *testing.T) {
+	assert.True(t, check.Nil(nil))
+
+}
+
+func TestIsNil_forValueNil_TypeKnown(t *testing.T) {
+	var pnt *int
+	var i interface{} = pnt
+	assert.True(t, check.Nil(i))
 }
