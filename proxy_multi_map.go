@@ -135,7 +135,7 @@ func (m *MultiMap) ContainsKey(ctx context.Context, key interface{}) (bool, erro
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return false, err
 		} else {
-			return codec.DecodeMapContainsKeyResponse(response), nil
+			return codec.DecodeMultiMapContainsKeyResponse(response), nil
 		}
 	}
 }
