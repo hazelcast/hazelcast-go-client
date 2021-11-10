@@ -2,7 +2,6 @@ package logger
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
@@ -23,29 +22,24 @@ const (
 	traceLevel
 )
 
-// nameToLevel is used to get corresponding level for logger level strings.
-var nameToLevel = map[Level]int{
-	CriticalLevel: criticalLevel,
-	ErrorLevel:    errorLevel,
-	WarnLevel:     warnLevel,
-	InfoLevel:     infoLevel,
-	DebugLevel:    debugLevel,
-	TraceLevel:    traceLevel,
-	OffLevel:      offLevel,
-}
-
-// isValidLogLevel returns true if the given logger level is valid.
-// The check is done case-insensitive.
-func isValidLogLevel(logLevel Level) bool {
-	logLevelStr := strings.ToLower(string(logLevel))
-	_, found := nameToLevel[Level(logLevelStr)]
-	return found
-}
-
 // GetLogLevel returns the corresponding logger level with the given string if it exists, otherwise returns an error.
 func GetLogLevel(logLevel Level) (int, error) {
-	if !isValidLogLevel(logLevel) {
+	switch logLevel {
+	case OffLevel:
+		return offLevel, nil
+	case CriticalLevel:
+		return criticalLevel, nil
+	case ErrorLevel:
+		return errorLevel, nil
+	case WarnLevel:
+		return warnLevel, nil
+	case InfoLevel:
+		return infoLevel, nil
+	case DebugLevel:
+		return debugLevel, nil
+	case TraceLevel:
+		return traceLevel, nil
+	default:
 		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no logger level found for %s", logLevel), nil)
 	}
-	return nameToLevel[logLevel], nil
 }

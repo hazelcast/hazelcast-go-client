@@ -27,9 +27,13 @@ import (
 
 const logMessage = "dummy"
 
-func createWithLevelAndLog(level logger.Level) string {
+func createWithLevelAndLog(level logger.Level) (string, error) {
+	var err error
 	dl := New()
-	dl.Level = level
+	dl.Level, err = logger.GetLogLevel(level)
+	if err != nil {
+		return "", err
+	}
 	buf := new(bytes.Buffer)
 	dl.SetOutput(buf)
 	l := LogAdaptor{dl}
@@ -38,11 +42,14 @@ func createWithLevelAndLog(level logger.Level) string {
 	l.Warnf(logMessage)
 	l.Infof(logMessage)
 	l.Errorf(logMessage)
-	return buf.String()
+	return buf.String(), nil
 }
 
 func TestDefaultLogger_TraceLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.TraceLevel)
+	loggedMessages, err := createWithLevelAndLog(logger.TraceLevel)
+	if err != nil {
+		t.Fatal("invalid log level")
+	}
 	assert.Contains(t, loggedMessages, tracePrefix)
 	assert.Contains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, warnPrefix)
@@ -51,7 +58,10 @@ func TestDefaultLogger_TraceLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_DebugLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.DebugLevel)
+	loggedMessages, err := createWithLevelAndLog(logger.DebugLevel)
+	if err != nil {
+		t.Fatal("invalid log level")
+	}
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.Contains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, warnPrefix)
@@ -60,7 +70,10 @@ func TestDefaultLogger_DebugLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_WarnLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.WarnLevel)
+	loggedMessages, err := createWithLevelAndLog(logger.WarnLevel)
+	if err != nil {
+		t.Fatal("invalid log level")
+	}
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.NotContains(t, loggedMessages, infoPrefix)
@@ -69,7 +82,10 @@ func TestDefaultLogger_WarnLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_InfoLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.InfoLevel)
+	loggedMessages, err := createWithLevelAndLog(logger.InfoLevel)
+	if err != nil {
+		t.Fatal("invalid log level")
+	}
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.Contains(t, loggedMessages, infoPrefix)
@@ -78,7 +94,10 @@ func TestDefaultLogger_InfoLevel(t *testing.T) {
 }
 
 func TestDefaultLogger_ErrorLevel(t *testing.T) {
-	loggedMessages := createWithLevelAndLog(logger.ErrorLevel)
+	loggedMessages, err := createWithLevelAndLog(logger.ErrorLevel)
+	if err != nil {
+		t.Fatal("invalid log level")
+	}
 	assert.NotContains(t, loggedMessages, tracePrefix)
 	assert.NotContains(t, loggedMessages, debugPrefix)
 	assert.NotContains(t, loggedMessages, warnPrefix)

@@ -111,7 +111,10 @@ func newClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	clientLogger := loggerFromConf(config)
+	clientLogger, err := loggerFromConf(config)
+	if err != nil {
+		return nil, err
+	}
 	clientLogger.Trace(func() string { return fmt.Sprintf("creating new client: %s", name) })
 	c := &Client{
 		name:                    name,
@@ -129,11 +132,15 @@ func newClient(config Config) (*Client, error) {
 	return c, nil
 }
 
-func loggerFromConf(config Config) ilogger.LogAdaptor {
+func loggerFromConf(config Config) (ilogger.LogAdaptor, error) {
 	if config.Logger.Custom != nil {
-		return ilogger.LogAdaptor{Logger: config.Logger.Custom}
+		return ilogger.LogAdaptor{Logger: config.Logger.Custom}, nil
 	}
-	return ilogger.LogAdaptor{Logger: ilogger.NewWithLevel(config.Logger.Level)}
+	logger, err := ilogger.NewWithLevel(config.Logger.Level)
+	if err != nil {
+		return ilogger.LogAdaptor{}, err
+	}
+	return ilogger.LogAdaptor{Logger: logger}, nil
 }
 
 // Name returns client's name

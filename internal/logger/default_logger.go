@@ -44,43 +44,39 @@ const (
 // If loggerConfig.SetLogger() method is called, the LoggingLevel property will not be used.
 type DefaultLogger struct {
 	*log.Logger
-	Level logger.Level
+	Level int
 }
 
 // New returns a Default Logger with defaultLogLevel.
 func New() *DefaultLogger {
+	numericLevel, _ := logger.GetLogLevel(defaultLogLevel) // defaultLogLevel exists, no err
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),
-		Level:  defaultLogLevel,
+		Level:  numericLevel,
 	}
 }
 
-func NewWithLevel(loggingLevel logger.Level) *DefaultLogger {
+func NewWithLevel(loggingLevel logger.Level) (*DefaultLogger, error) {
+	numericLevel, err := logger.GetLogLevel(loggingLevel)
+	if err != nil {
+		return nil, err
+	}
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),
-		Level:  loggingLevel,
-	}
-}
-
-func (l *DefaultLogger) canLog(level logger.Level) bool {
-	numericLevel, err := logger.GetLogLevel(level)
-	if err != nil {
-		return false
-	}
-	loggerLevel, err := logger.GetLogLevel(l.Level)
-	if err != nil {
-		fmt.Println("logger has invalid logger level, will not logger something useful")
-		return false
-	}
-	return loggerLevel >= numericLevel
+		Level:  numericLevel,
+	}, nil
 }
 
 func (l *DefaultLogger) Log(level logger.Level, formatter func() string) {
-	if !l.canLog(level) || formatter == nil {
+	numericLevel, err := logger.GetLogLevel(level)
+	if err != nil {
 		return
 	}
-	s := fmt.Sprintf("%s: %s", strings.ToUpper(level.String()), formatter())
-	_ = l.Output(logCallDepth, s)
+	if l.Level < numericLevel {
+		return
+	}
+	s := fmt.Sprintf("%-5s: %s", strings.ToUpper(level.String()), formatter())
+	_ = l.Output(logCallDepth, s) // don't have retry mechanism in case writing to buffer fails
 }
 
 func (l *DefaultLogger) findCallerFuncName() string {
@@ -103,11 +99,6 @@ func (la LogAdaptor) Trace(f func() string) {
 	la.Log(logger.TraceLevel, f)
 }
 
-// Info runs the given function to generate the logger string, if logger level is info or finer.
-func (la LogAdaptor) Info(f func() string) {
-	la.Log(logger.InfoLevel, f)
-}
-
 // Infof formats the given string with the given values, if logger level is info or finer.
 func (la LogAdaptor) Infof(format string, values ...interface{}) {
 	la.Log(logger.InfoLevel, func() string {
@@ -115,22 +106,10 @@ func (la LogAdaptor) Infof(format string, values ...interface{}) {
 	})
 }
 
-// Warn formats the given string with the given values, if logger level is warn or finer.
-func (la LogAdaptor) Warn(f func() string) {
-	la.Log(logger.WarnLevel, f)
-}
-
 // Warnf formats the given string with the given values, if logger level is warn or finer.
 func (la LogAdaptor) Warnf(format string, values ...interface{}) {
 	la.Log(logger.WarnLevel, func() string {
 		return fmt.Sprintf(format, values...)
-	})
-}
-
-// Error logs the given args at error level.
-func (la LogAdaptor) Error(err error) {
-	la.Log(logger.ErrorLevel, func() string {
-		return err.Error()
 	})
 }
 

@@ -22,40 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsValidLogLevel(t *testing.T) {
-	logLevels := []string{
-		"debug",
-		"error",
-		"info",
-		"trace",
-		"warn",
-	}
-	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(Level(logLevel))
-		assert.True(t, isValid)
-	}
-}
-
-func TestIsValidLogLevelCaseInsensitive(t *testing.T) {
-	logLevels := []string{
-		"deBUg",
-		"erRor",
-		"Info",
-		"traCe",
-		"WARN",
-	}
-	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(Level(logLevel))
-		assert.True(t, isValid)
-	}
-}
-
-func TestIsValidLogLevelInvalidLevel(t *testing.T) {
-	logLevel := "deb"
-	isValid := isValidLogLevel(Level(logLevel))
-	assert.False(t, isValid)
-}
-
 func TestGetLogLevel(t *testing.T) {
 	logLevels := []struct {
 		level    string
@@ -63,6 +29,8 @@ func TestGetLogLevel(t *testing.T) {
 	}{
 		{"error", errorLevel},
 		{"trace", traceLevel},
+		{"off", offLevel},
+		{"critical", criticalLevel},
 		{"warn", warnLevel},
 		{"debug", debugLevel},
 		{"info", infoLevel},
