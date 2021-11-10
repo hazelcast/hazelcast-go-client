@@ -85,11 +85,11 @@ func (cd *ClassDefinition) AddPortableField(fieldName string, def *ClassDefiniti
 	if def.ClassID == 0 {
 		return ihzerrors.NewIllegalArgumentError("portable class ID cannot be zero", nil)
 	}
-	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
+	return cd.AddField(newFieldDefinition(cd.FieldCount(), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
 }
 
 func (cd *ClassDefinition) addNewFieldDefinition(fieldName string, fieldType FieldDefinitionType) error {
-	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, fieldType, 0, 0, cd.Version))
+	return cd.AddField(newFieldDefinition(cd.FieldCount(), fieldName, fieldType, 0, 0, cd.Version))
 }
 
 func (cd *ClassDefinition) AddByteArrayField(fieldName string) error {
@@ -128,11 +128,15 @@ func (cd *ClassDefinition) AddPortableArrayField(fieldName string, def *ClassDef
 	if def.ClassID == 0 {
 		return ihzerrors.NewIllegalArgumentError("portable class ID cannot be zero", nil)
 	}
-	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
+	return cd.AddField(newFieldDefinition(cd.FieldCount(), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
 }
 
 func (cd *ClassDefinition) AddStringArrayField(fieldName string) error {
 	return cd.addNewFieldDefinition(fieldName, TypeStringArray)
+}
+
+func (cd *ClassDefinition) FieldCount() int32 {
+	return int32(len(cd.Fields))
 }
 
 type FieldDefinitionType int32

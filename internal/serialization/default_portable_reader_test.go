@@ -18,6 +18,7 @@ package serialization
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -503,4 +504,108 @@ func TestDefaultPortableReader_ReadString_NonASCIIFieldName(t *testing.T) {
 	pr := NewDefaultPortableReader(nil, i, pw.classDefinition)
 	ret := pr.ReadString("şerıalızatıon")
 	assert.Equal(t, "foo", ret)
+}
+
+func TestDefaultPortableReader_PortableFieldsAfterRawData(t *testing.T) {
+	const (
+		writeErr = "cannot write Portable fields after getRawDataOutput() is called: hazelcast serialization error"
+		readErr  = "cannot read Portable fields after getRawDataInput() is called: hazelcast serialization error"
+
+		portableFieldName        = "foo"
+		portableFieldValue int64 = 42
+	)
+	classDef := serialization.NewClassDefinition(1, 2, 3)
+	classDef.AddField(NewFieldDefinition(0, portableFieldName, serialization.TypeInt64,
+		classDef.FactoryID, classDef.ClassID, 0))
+	out := NewPositionalObjectDataOutput(0, nil, false)
+
+	writer := NewDefaultPortableWriter(nil, out, classDef)
+	writer.WriteInt64(portableFieldName, portableFieldValue)
+	writer.GetRawDataOutput()
+	t.Run("WritePortableField_AfterGetRawDataOutput", func(t *testing.T) {
+		writerType := reflect.TypeOf(writer)
+		for i := 0; i < writerType.NumMethod(); i++ {
+			if method := writerType.Method(i); strings.HasPrefix(method.Name, "Write") {
+				arg1 := reflect.ValueOf(writer)            // receiver type
+				arg2 := reflect.ValueOf(portableFieldName) // non-empty fieldName string
+				args := []reflect.Value{arg1, arg2}
+				for argIdx := 2; argIdx < method.Type.NumIn(); argIdx++ {
+					args = append(args, reflect.Zero(method.Type.In(argIdx)))
+				}
+				assert.PanicsWithError(t, writeErr, func() {
+					method.Func.Call(args)
+				})
+			}
+		}
+	})
+
+	in := NewObjectDataInput(out.ToBuffer(), 0, nil, false)
+	reader := NewDefaultPortableReader(nil, in, writer.classDefinition)
+	assert.Equal(t, portableFieldValue, reader.readInt64(portableFieldName))
+	reader.GetRawDataInput()
+	t.Run("ReadPortableField_AfterGetRawDataInput", func(t *testing.T) {
+		readerType := reflect.TypeOf(reader)
+		for i := 0; i < readerType.NumMethod(); i++ {
+			if method := readerType.Method(i); strings.HasPrefix(method.Name, "Read") {
+				assert.PanicsWithError(t, readErr, func() {
+					arg1 := reflect.ValueOf(reader)            // receiver type
+					arg2 := reflect.ValueOf(portableFieldName) // non-empty fieldName string
+					method.Func.Call([]reflect.Value{arg1, arg2})
+				})
+			}
+		}
+	})
+}
+
+type rawPortable struct {
+	id int32
+}
+
+func (*rawPortable) FactoryID() int32 {
+	return 1
+}
+
+func (*rawPortable) ClassID() int32 {
+	return 1
+}
+
+func (r *rawPortable) WritePortable(writer serialization.PortableWriter) {
+	writer.GetRawDataOutput().WriteInt32(r.id)
+}
+
+func (r *rawPortable) ReadPortable(reader serialization.PortableReader) {
+	r.id = reader.GetRawDataInput().ReadInt32()
+}
+
+type rawPortableFactory struct {
+}
+
+func (*rawPortableFactory) Create(classID int32) serialization.Portable {
+	if classID == 1 {
+		return &rawPortable{}
+	}
+	return nil
+}
+
+func (*rawPortableFactory) FactoryID() int32 {
+	return 1
+}
+
+func TestNewPortableSerializer_RawData(t *testing.T) {
+	config := &serialization.Config{}
+	config.SetPortableFactories(&rawPortableFactory{})
+	service, err := NewService(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := &rawPortable{id: 42}
+	data, err := service.ToData(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, expected, actual)
 }
