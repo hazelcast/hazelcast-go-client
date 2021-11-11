@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -397,8 +398,12 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 			p.logger.Errorf("error at AddEntryListener: %w", err)
 			return
 		}
-		member := p.clusterService.GetMemberByUUID(binUUID)
-		handler(newEntryNotifiedEvent(p.name, *member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
+		// prevent panic if member not found
+		var member pubcluster.MemberInfo
+		if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
+			member = *m
+		}
+		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
 	}
 }
 

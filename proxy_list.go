@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -362,8 +363,12 @@ func (l *List) addListener(ctx context.Context, includeValue bool, handler ListI
 				l.logger.Warnf("cannot convert data to Go value: %v", err)
 				return
 			}
-			member := l.clusterService.GetMemberByUUID(uuid)
-			handler(newListItemNotified(l.name, item, *member, eventType))
+			// prevent panic if member not found
+			var member pubcluster.MemberInfo
+			if m := l.clusterService.GetMemberByUUID(uuid); m != nil {
+				member = *m
+			}
+			handler(newListItemNotified(l.name, item, member, eventType))
 		})
 	}
 	err := l.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
