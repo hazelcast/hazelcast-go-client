@@ -25,20 +25,20 @@ const (
 // GetLogLevel returns the corresponding logger level with the given string if it exists, otherwise returns an error.
 func GetLogLevel(logLevel Level) (int, error) {
 	switch logLevel {
-	case OffLevel:
-		return offLevel, nil
-	case CriticalLevel:
-		return criticalLevel, nil
-	case ErrorLevel:
-		return errorLevel, nil
-	case WarnLevel:
-		return warnLevel, nil
-	case InfoLevel:
-		return infoLevel, nil
-	case DebugLevel:
-		return debugLevel, nil
 	case TraceLevel:
 		return traceLevel, nil
+	case DebugLevel:
+		return debugLevel, nil
+	case InfoLevel:
+		return infoLevel, nil
+	case WarnLevel:
+		return warnLevel, nil
+	case ErrorLevel:
+		return errorLevel, nil
+	case CriticalLevel:
+		return criticalLevel, nil
+	case OffLevel:
+		return offLevel, nil
 	default:
 		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no logger level found for %s", logLevel), nil)
 	}

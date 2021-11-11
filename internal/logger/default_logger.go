@@ -49,11 +49,8 @@ type DefaultLogger struct {
 
 // New returns a Default Logger with defaultLogLevel.
 func New() *DefaultLogger {
-	numericLevel, _ := logger.GetLogLevel(defaultLogLevel) // defaultLogLevel exists, no err
-	return &DefaultLogger{
-		Logger: log.New(os.Stderr, "", log.LstdFlags),
-		Level:  numericLevel,
-	}
+	l, _ := NewWithLevel(defaultLogLevel) // defaultLogLevel exists, no err
+	return l
 }
 
 func NewWithLevel(loggingLevel logger.Level) (*DefaultLogger, error) {
@@ -68,11 +65,11 @@ func NewWithLevel(loggingLevel logger.Level) (*DefaultLogger, error) {
 }
 
 func (l *DefaultLogger) Log(level logger.Level, formatter func() string) {
-	numericLevel, err := logger.GetLogLevel(level)
+	wantedLevel, err := logger.GetLogLevel(level)
 	if err != nil {
 		return
 	}
-	if l.Level < numericLevel {
+	if l.Level < wantedLevel {
 		return
 	}
 	s := fmt.Sprintf("%-5s: %s", strings.ToUpper(level.String()), formatter())
