@@ -956,7 +956,6 @@ func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interfa
 func (m *Map) convertToDataList(keys []interface{}) ([]*serialization.Data, error) {
 	keyDatas := make([]*serialization.Data, 0, len(keys))
 	for _, key := range keys {
-		// todo check if this null check done with validateAndSerialize cause problem for keys
 		keyData, err := m.validateAndSerialize(key)
 		if err != nil {
 			return nil, err
