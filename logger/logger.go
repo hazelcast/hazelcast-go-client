@@ -14,7 +14,7 @@ type Logger interface {
 
 const (
 	offLevel = iota * 100
-	criticalLevel
+	fatalLevel
 	errorLevel
 	warnLevel
 	infoLevel
@@ -35,8 +35,8 @@ func GetLogLevel(logLevel Level) (int, error) {
 		return warnLevel, nil
 	case ErrorLevel:
 		return errorLevel, nil
-	case CriticalLevel:
-		return criticalLevel, nil
+	case FatalLevel:
+		return fatalLevel, nil
 	case OffLevel:
 		return offLevel, nil
 	default:
