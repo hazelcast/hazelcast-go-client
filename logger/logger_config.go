@@ -27,17 +27,17 @@ const (
 	OffLevel Level = "off"
 	// CriticalLevel is used for errors that halts the client.
 	CriticalLevel Level = "critical"
-	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
+	// ErrorLevel is used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
 	ErrorLevel Level = "error"
-	// WarnLevel level. Non-critical entries that deserve eyes.
+	// WarnLevel is used for non-critical entries that deserve eyes.
 	WarnLevel Level = "warn"
-	// InfoLevel level. General operational entries about what's going on inside the
+	// InfoLevel is used for general operational entries about what's going on inside the
 	// application.
 	InfoLevel Level = "info"
-	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
+	// DebugLevel is used for very verbose logging. Usually only enabled when debugging.
 	DebugLevel Level = "debug"
-	// TraceLevel level. Designates finer-grained informational events than the Debug.
+	// TraceLevel is used for finer-grained informational events than the Debug.
 	TraceLevel Level = "trace"
 )
 
