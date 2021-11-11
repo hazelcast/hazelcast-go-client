@@ -46,12 +46,12 @@ func EncodeSqlFetchRequest(queryId isql.QueryID, cursorBufferSize int32) *proto.
 	return clientMessage
 }
 
-func DecodeSqlFetchResponse(clientMessage *proto.ClientMessage) (rowPage isql.Page, error isql.Error) {
+func DecodeSqlFetchResponse(clientMessage *proto.ClientMessage) (rowPage *isql.Page, error *isql.Error) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	rowPage = CodecUtil.DecodeNullableForSqlPage(frameIterator)
-	error = CodecUtil.DecodeNullableForSqlError(frameIterator)
+	rowPage = DecodeNullableForSQLPage(frameIterator)
+	error = DecodeNullableForSQLError(frameIterator)
 
 	return rowPage, error
 }

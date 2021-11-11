@@ -39,7 +39,7 @@ func EncodeSqlError(clientMessage *proto.ClientMessage, sqlError isql.Error) {
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeSqlError(frameIterator *proto.ForwardFrameIterator) isql.Error {
+func DecodeSqlError(frameIterator *proto.ForwardFrameIterator) *isql.Error {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -49,7 +49,7 @@ func DecodeSqlError(frameIterator *proto.ForwardFrameIterator) isql.Error {
 	message := CodecUtil.DecodeNullableForString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return isql.Error{
+	return &isql.Error{
 		Code:                code,
 		Message:             message,
 		OriginatingMemberId: originatingMemberId,

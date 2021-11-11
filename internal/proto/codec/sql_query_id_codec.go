@@ -41,7 +41,7 @@ func EncodeSqlQueryId(clientMessage *proto.ClientMessage, sqlQueryId isql.QueryI
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeSqlQueryId(frameIterator *proto.ForwardFrameIterator) isql.QueryID {
+func DecodeSqlQueryId(frameIterator *proto.ForwardFrameIterator) *isql.QueryID {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -51,7 +51,7 @@ func DecodeSqlQueryId(frameIterator *proto.ForwardFrameIterator) isql.QueryID {
 	localIdLow := FixSizedTypesCodec.DecodeLong(initialFrame.Content, SqlQueryIdCodecLocalIdLowFieldOffset)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return isql.QueryID{
+	return &isql.QueryID{
 		MemberIDHigh: memberIdHigh,
 		MemberIDLow:  memberIdLow,
 		LocalIDHigh:  localIdHigh,

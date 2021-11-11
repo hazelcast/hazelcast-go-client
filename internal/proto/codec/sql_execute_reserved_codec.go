@@ -19,8 +19,6 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
-	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -55,16 +53,19 @@ func EncodeSqlExecute_reservedRequest(sql string, parameters []*iserialization.D
 	return clientMessage
 }
 
-func DecodeSqlExecute_reservedResponse(clientMessage *proto.ClientMessage) (queryId isql.QueryID, rowMetadata []sql.ColumnMetadata, rowPage []*iserialization.Data, rowPageLast bool, updateCount int64, error isql.Error) {
+/*
+func DecodeSqlExecute_reservedResponse(clientMessage *proto.ClientMessage) (queryId *isql.QueryID, rowMetadata []sql.ColumnMetadata, rowPage []*iserialization.Data, rowPageLast bool, updateCount int64, error *isql.Error) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
 	rowPageLast = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SqlExecute_reservedResponseRowPageLastOffset)
 	updateCount = FixSizedTypesCodec.DecodeLong(initialFrame.Content, SqlExecute_reservedResponseUpdateCountOffset)
-	queryId = CodecUtil.DecodeNullableForSqlQueryId(frameIterator)
+	queryId = DecodeNullableForSQLQueryId(frameIterator)
 	rowMetadata = DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator)
 	rowPage = DecodeNullableListMultiFrameForListCNData(frameIterator)
-	error = CodecUtil.DecodeNullableForSqlError(frameIterator)
+	error = DecodeNullableForSQLError(frameIterator)
 
 	return queryId, rowMetadata, rowPage, rowPageLast, updateCount, error
 }
+
+*/

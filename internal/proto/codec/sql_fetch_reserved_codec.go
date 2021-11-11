@@ -18,7 +18,6 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 )
 
@@ -49,6 +48,7 @@ func EncodeSqlFetch_reservedRequest(queryId isql.QueryID, cursorBufferSize int32
 	return clientMessage
 }
 
+/*
 func DecodeSqlFetch_reservedResponse(clientMessage *proto.ClientMessage) (rowPage []*iserialization.Data, rowPageLast bool, error isql.Error) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
@@ -59,3 +59,4 @@ func DecodeSqlFetch_reservedResponse(clientMessage *proto.ClientMessage) (rowPag
 
 	return rowPage, rowPageLast, error
 }
+*/

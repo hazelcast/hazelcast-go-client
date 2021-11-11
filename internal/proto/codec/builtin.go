@@ -19,10 +19,11 @@ package codec
 import (
 	"encoding/binary"
 	"fmt"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"net"
 	"strconv"
 	"strings"
+
+	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 
 	"github.com/hazelcast/hazelcast-go-client/sql"
 
@@ -563,7 +564,7 @@ func DecodeListMultiFrame(frameIterator *proto.ForwardFrameIterator, decoder fun
 	frameIterator.Next()
 }
 
-func DecodeNullableListMultiFrame(frameIterator *proto.ForwardFrameIterator, decoder func(frameIterator *proto.ForwardFrameIterator) {
+func DecodeNullableListMultiFrame(frameIterator *proto.ForwardFrameIterator, decoder func(frameIterator *proto.ForwardFrameIterator)) {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return
 	}
@@ -620,11 +621,11 @@ func DecodeListMultiFrameForString(frameIterator *proto.ForwardFrameIterator) []
 	return result
 }
 
-func DecodeListMultiFrameContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
-}
+//func DecodeListMultiFrameContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
+//}
 
 func DecodeListMultiFrameForDataContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
-	result := make([]*iserialization.Data, 0)
+	var result []*iserialization.Data
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		if CodecUtil.NextFrameIsNullFrame(frameIterator) {
@@ -648,7 +649,11 @@ func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFr
 }
 
 func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []sql.ColumnMetadata {
-	return DecodeNullableListMultiFrame(frameIterator, DecodeSqlColumnMetadata)
+	var cm []sql.ColumnMetadata
+	DecodeNullableListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
+		cm = append(cm, DecodeSqlColumnMetadata(it))
+	})
+	return cm
 }
 
 func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) types.DistributedObjectInfo {
@@ -840,23 +845,50 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-
-func DecodeSQLPage(it *proto.ForwardFrameIterator) isql.Page {
+func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator) *isql.Page {
 	// begin frame
 	it.Next()
 	frame := it.Next()
+	if CodecUtil.NextFrameIsNullFrame(it) {
+		return nil
+	}
 	// read the "last" flag
 	last := FixSizedTypesCodec.DecodeByte(frame.Content, 0) == 1
 	// read column types
-	types := DecodeListIntegerIntegerInteger(it)
-	cols := make([]interface{}, len(types))
-
+	colTypeIDs := DecodeListInteger(it)
+	colTypes := make([]sql.ColumnType, len(colTypeIDs))
+	cols := make([]interface{}, len(colTypeIDs))
+	for i, t := range colTypeIDs {
+		colTypes[i] = sql.ColumnType(t)
+		cols[i] = DecodeSQLColumn(sql.ColumnType(t), it)
+	}
+	CodecUtil.FastForwardToEndFrame(it)
+	return &isql.Page{
+		Columns:     cols,
+		ColumnTypes: colTypes,
+		Last:        last,
+	}
 }
 
-func DecodeSQLColumn(type_ int32, msg *proto.ClientMessage) interface{} {
-	t := sql.ColumnType(type_)
+func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *isql.Error {
+	if CodecUtil.NextFrameIsNullFrame(it) {
+		return nil
+	}
+	return DecodeSqlError(it)
+}
+
+func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *isql.QueryID {
+	if CodecUtil.NextFrameIsNullFrame(it) {
+		return nil
+	}
+	return DecodeSqlQueryId(it)
+}
+
+func DecodeSQLColumn(t sql.ColumnType, it *proto.ForwardFrameIterator) interface{} {
 	switch t {
 	case sql.ColumnTypeVarchar:
-		return DecodeListMultiFrameForDataContainsNullable()
+		return DecodeListMultiFrameForDataContainsNullable(it)
+	default:
+		panic("implement me!")
 	}
 }
