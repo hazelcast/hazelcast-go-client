@@ -62,6 +62,8 @@ const (
 )
 
 // EntryNotified contains information about an entry event.
+// Member may have the zero value of cluster.MemberInfo if the member is not known at the time the corresponding callback runs.
+// You can check that situation by checking whether Member.UUID is the default UUID.
 type EntryNotified struct {
 	MergingValue            interface{}
 	Key                     interface{}
@@ -157,6 +159,8 @@ func newLifecycleStateChanged(state LifecycleState) *LifecycleStateChanged {
 }
 
 // MessagePublished contains information about a message published event.
+// Member may have the zero value of cluster.MemberInfo if the member is not known at the time the corresponding callback runs.
+// You can check that situation by checking whether Member.UUID is the default UUID.
 type MessagePublished struct {
 	PublishTime time.Time
 	Value       interface{}
@@ -191,6 +195,8 @@ const (
 type QueueItemNotifiedHandler func(event *QueueItemNotified)
 
 // QueueItemNotified contains information about an item notified event.
+// Member may have the zero value of cluster.MemberInfo if the member is not known at the time the corresponding callback runs.
+// You can check that situation by checking whether Member.UUID is the default UUID.
 type QueueItemNotified struct {
 	Value     interface{}
 	QueueName string
@@ -215,6 +221,8 @@ func newQueueItemNotified(name string, value interface{}, member cluster.MemberI
 type ListItemNotifiedHandler func(event *ListItemNotified)
 
 // ListItemNotified describes the List item event.
+// Member may have the zero value of cluster.MemberInfo if the member is not known at the time the corresponding callback runs.
+// You can check that situation by checking whether Member.UUID is the default UUID.
 type ListItemNotified struct {
 	Value     interface{}
 	ListName  string
@@ -240,6 +248,8 @@ func newListItemNotified(name string, value interface{}, member cluster.MemberIn
 type SetItemNotifiedHandler func(event *SetItemNotified)
 
 // SetItemNotified contains information about an item notified event.
+// Member may have the zero value of cluster.MemberInfo if the member is not known at the time the corresponding callback runs.
+// You can check that situation by checking whether Member.UUID is the default UUID.
 type SetItemNotified struct {
 	Value     interface{}
 	SetName   string
