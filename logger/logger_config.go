@@ -26,7 +26,7 @@ const (
 	// OffLevel disables logging.
 	OffLevel Level = "off"
 	// FatalLevel is used for errors that halts the client.
-	FatalLevel Level = "critical"
+	FatalLevel Level = "fatal"
 	// ErrorLevel is used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
 	ErrorLevel Level = "error"

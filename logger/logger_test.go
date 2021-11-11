@@ -30,7 +30,7 @@ func TestGetLogLevel(t *testing.T) {
 		{"error", errorLevel},
 		{"trace", traceLevel},
 		{"off", offLevel},
-		{"critical", fatalLevel},
+		{"fatal", fatalLevel},
 		{"warn", warnLevel},
 		{"debug", debugLevel},
 		{"info", infoLevel},
