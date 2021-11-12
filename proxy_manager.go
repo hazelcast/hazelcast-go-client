@@ -72,6 +72,16 @@ func (m *proxyManager) getReplicatedMap(ctx context.Context, name string) (*Repl
 	return p.(*ReplicatedMap), nil
 }
 
+func (m *proxyManager) getMultiMap(ctx context.Context, name string) (*MultiMap, error) {
+	p, err := m.proxyFor(ctx, ServiceNameMultiMap, name, func(p *proxy) (interface{}, error) {
+		return newMultiMap(p), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return p.(*MultiMap), nil
+}
+
 func (m *proxyManager) getQueue(ctx context.Context, name string) (*Queue, error) {
 	p, err := m.proxyFor(ctx, ServiceNameQueue, name, func(p *proxy) (interface{}, error) {
 		return newQueue(p)

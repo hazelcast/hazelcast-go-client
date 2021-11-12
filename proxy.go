@@ -42,6 +42,7 @@ import (
 const (
 	ServiceNameMap              = "hz:impl:mapService"
 	ServiceNameReplicatedMap    = "hz:impl:replicatedMapService"
+	ServiceNameMultiMap         = "hz:impl:multiMapService"
 	ServiceNameQueue            = "hz:impl:queueService"
 	ServiceNameTopic            = "hz:impl:topicService"
 	ServiceNameList             = "hz:impl:listService"
@@ -54,6 +55,16 @@ const (
 	ttlUnset     = -1
 	ttlUnlimited = 0
 )
+
+const (
+	maxIndexAttributes               = 255
+	defaultLockID                    = 0
+	lockIDKey          lockIDKeyType = "__hz_lock_id"
+	leaseUnset                       = -1
+)
+
+type lockID int64
+type lockIDKeyType string
 
 type creationBundle struct {
 	InvocationService    *invocation.Service
@@ -416,3 +427,28 @@ type entryNotifiedHandler func(
 	binEventType int32,
 	binUUID types.UUID,
 	affectedEntries int32)
+
+func flagsSetOrClear(flags *int32, flag int32, enable bool) {
+	if enable {
+		*flags |= flag
+	} else {
+		*flags &^= flag
+	}
+}
+
+// extractLockID extracts lock ID from the context.
+// If the lock ID is not found, it returns the default lock ID.
+func extractLockID(ctx context.Context) int64 {
+	if ctx == nil {
+		return defaultLockID
+	}
+	lidv := ctx.Value(lockIDKey)
+	if lidv == nil {
+		return defaultLockID
+	}
+	lid, ok := lidv.(lockID)
+	if !ok {
+		return defaultLockID
+	}
+	return int64(lid)
+}
