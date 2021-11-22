@@ -9,36 +9,38 @@ import (
 // Logger is the interface that is used by client for logging.
 // Level is: type Level string
 type Logger interface {
-	Log(level Level, formatter func() string)
+	Log(weight Weight, f func() string)
 }
 
+type Weight int
+
 const (
-	offLevel = iota * 100
-	fatalLevel
-	errorLevel
-	warnLevel
-	infoLevel
-	debugLevel
-	traceLevel
+	WeightOff Weight = iota * 100
+	WeightFatal
+	WeightError
+	WeightWarn
+	WeightInfo
+	WeightDebug
+	WeightTrace
 )
 
-// GetLogLevel returns the corresponding logger level with the given string if it exists, otherwise returns an error.
-func GetLogLevel(logLevel Level) (int, error) {
+// GetLogLevel returns the corresponding logger Weight with the given string if it exists, otherwise returns an error.
+func GetLogLevel(logLevel Level) (Weight, error) {
 	switch logLevel {
 	case TraceLevel:
-		return traceLevel, nil
+		return WeightTrace, nil
 	case DebugLevel:
-		return debugLevel, nil
+		return WeightDebug, nil
 	case InfoLevel:
-		return infoLevel, nil
+		return WeightInfo, nil
 	case WarnLevel:
-		return warnLevel, nil
+		return WeightWarn, nil
 	case ErrorLevel:
-		return errorLevel, nil
+		return WeightError, nil
 	case FatalLevel:
-		return fatalLevel, nil
+		return WeightFatal, nil
 	case OffLevel:
-		return offLevel, nil
+		return WeightOff, nil
 	default:
 		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no logger level found for %s", logLevel), nil)
 	}

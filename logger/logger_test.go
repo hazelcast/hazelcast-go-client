@@ -25,15 +25,15 @@ import (
 func TestGetLogLevel(t *testing.T) {
 	logLevels := []struct {
 		level    string
-		levelInt int
+		levelInt Weight
 	}{
-		{"error", errorLevel},
-		{"trace", traceLevel},
-		{"off", offLevel},
-		{"fatal", fatalLevel},
-		{"warn", warnLevel},
-		{"debug", debugLevel},
-		{"info", infoLevel},
+		{"error", WeightError},
+		{"trace", WeightTrace},
+		{"off", WeightOff},
+		{"fatal", WeightFatal},
+		{"warn", WeightWarn},
+		{"debug", WeightDebug},
+		{"info", WeightInfo},
 	}
 	for _, logLevel := range logLevels {
 		level, err := GetLogLevel(Level(logLevel.level))
