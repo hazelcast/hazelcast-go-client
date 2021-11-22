@@ -356,6 +356,18 @@ func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 	return kvPairs, nil
 }
 
+func (p *proxy) convertPairsToValues(pairs []proto.Pair) ([]interface{}, error) {
+	values := make([]interface{}, len(pairs))
+	for i, pair := range pairs {
+		value, err := p.convertToObject(pair.Value().(*iserialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		values[i] = value
+	}
+	return values, nil
+}
+
 func (p *proxy) putAll(keyValuePairs []types.Entry, f func(partitionID int32, entries []proto.Pair) cb.Future) error {
 	if partitionToPairs, err := p.partitionToPairs(keyValuePairs); err != nil {
 		return err

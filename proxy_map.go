@@ -263,6 +263,28 @@ func (m *Map) ExecuteOnEntries(ctx context.Context, entryProcessor interface{}) 
 	return kvPairs, nil
 }
 
+// ExecuteOnKeys applies the user defined EntryProcessor to the entries with the specified keys in the map.
+func (m *Map) ExecuteOnKeys(ctx context.Context, entryProcessor interface{}, keys ...interface{}) ([]interface{}, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	keysDataList, err := m.convertToDataList(keys)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapExecuteOnKeysRequest(m.name, processorData, keysDataList)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	pairs := codec.DecodeMapExecuteOnKeysResponse(resp)
+	return m.convertPairsToValues(pairs)
+}
+
 // ExecuteOnEntriesWithPredicate applies the user defined EntryProcessor to all the entries in the map which satisfies the predicate.
 func (m *Map) ExecuteOnEntriesWithPredicate(ctx context.Context, entryProcessor interface{}, pred predicate.Predicate) ([]types.Entry, error) {
 	processorData, err := m.validateAndSerialize(entryProcessor)
@@ -921,18 +943,26 @@ func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interfa
 	if len(keys) == 0 {
 		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
 	} else {
-		keyDatas := make([]*serialization.Data, 0, len(keys))
-		for _, key := range keys {
-			if keyData, err := m.convertToData(key); err != nil {
-				return err
-			} else {
-				keyDatas = append(keyDatas, keyData)
-			}
+		keyDatas, err := m.convertToDataList(keys)
+		if err != nil {
+			return err
 		}
 		request = codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
 	}
 	_, err := m.invokeOnRandomTarget(ctx, request, nil)
 	return err
+}
+
+func (m *Map) convertToDataList(keys []interface{}) ([]*serialization.Data, error) {
+	keyDatas := make([]*serialization.Data, 0, len(keys))
+	for _, key := range keys {
+		keyData, err := m.validateAndSerialize(key)
+		if err != nil {
+			return nil, err
+		}
+		keyDatas = append(keyDatas, keyData)
+	}
+	return keyDatas, nil
 }
 
 func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
