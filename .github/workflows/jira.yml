@@ -1,0 +1,20 @@
+name: Create Jira issue
+
+on:
+  issues:
+    types: labeled
+
+jobs:
+  jira:
+    if: ${{ github.event.label.name == 'to-jira' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call composite action
+        uses: hazelcast/github-jira-tool-action@v3
+        with:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          TARGET_JIRA_PROJECT: API
+          JIRA_LABEL: Go
+          ISSUE_TYPE: Bug
