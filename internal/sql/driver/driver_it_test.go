@@ -21,9 +21,12 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
 func TestConnector_Driver(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
 	db, err := sql.Open("hazelcast", "localhost:5701")
 	if err != nil {
 		panic(err)

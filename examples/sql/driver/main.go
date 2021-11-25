@@ -33,8 +33,8 @@ var names = []string{"Gorkem", "Ezgi", "Joe", "Jane", "Mike", "Mandy", "Tom", "T
 var surnames = []string{"Tekol", "Brown", "Taylor", "McGregor", "Bronson"}
 
 type Employee struct {
-	Age  int16
 	Name string
+	Age  int16
 }
 
 // createMapping creates the mapping for the given map name.
@@ -137,5 +137,8 @@ func main() {
 		panic(err)
 	}
 	emps, err := queryMap(db, mapName, 40)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println(emps)
 }

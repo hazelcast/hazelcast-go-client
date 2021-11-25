@@ -34,18 +34,18 @@ import (
 
 func TestSQLQuery(t *testing.T) {
 	testCases := []struct {
-		keyFmt, valueFmt string
 		keyFn, valueFn   func(i int) interface{}
+		keyFmt, valueFmt string
 	}{
 		{
-			"int", "int",
-			func(i int) interface{} { return int32(i) },
-			func(i int) interface{} { return int32(i * 100) },
+			keyFmt: "int", valueFmt: "int",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return int32(i * 100) },
 		},
 		{
-			"int", "varchar",
-			func(i int) interface{} { return int32(i) },
-			func(i int) interface{} { return fmt.Sprintf("val-%d", i*100) },
+			keyFmt: "int", valueFmt: "varchar",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return fmt.Sprintf("val-%d", i*100) },
 		},
 	}
 	for _, tc := range testCases {

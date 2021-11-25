@@ -22,9 +22,8 @@ import (
 )
 
 type Statement struct {
-	query   string
-	ss      *SQLService
-	counter int32
+	ss    *SQLService
+	query string
 }
 
 func newStatement(query string, ss *SQLService) *Statement {
@@ -47,9 +46,5 @@ func (s *Statement) Exec(args []driver.Value) (driver.Result, error) {
 }
 
 func (s Statement) Query(args []driver.Value) (driver.Rows, error) {
-	// TODO: remove
-	//if atomic.AddInt32(&s.counter, 1)-1 > 3 {
-	//return nil, io.EOF
-	//}
 	return s.ss.QuerySQL(context.Background(), s.query, args)
 }

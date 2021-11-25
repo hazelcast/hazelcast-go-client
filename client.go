@@ -96,10 +96,6 @@ func newClient(config Config) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) start(ctx context.Context) error {
-	return c.ic.Start(ctx)
-}
-
 // Name returns client's name
 // Use config.Name to set the client name.
 // If not set manually, an automatically generated name is used.

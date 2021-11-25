@@ -32,12 +32,12 @@ const (
 )
 
 type QueryResult struct {
-	queryID          sql.QueryID
-	metadata         sql.RowMetadata
-	page             *sql.Page
 	Err              error
+	page             *sql.Page
 	ss               *SQLService
 	conn             *icluster.Connection
+	metadata         sql.RowMetadata
+	queryID          sql.QueryID
 	cursorBufferSize int32
 	index            int32
 	state            int32

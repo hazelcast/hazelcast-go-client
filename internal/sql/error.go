@@ -3,9 +3,9 @@ package sql
 import "github.com/hazelcast/hazelcast-go-client/types"
 
 type Error struct {
-	Code                int32
-	OriginatingMemberId types.UUID
 	Message             string
+	OriginatingMemberId types.UUID
+	Code                int32
 }
 
 func (e Error) Error() string {

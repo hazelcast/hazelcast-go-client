@@ -67,8 +67,8 @@ type Connection struct {
 	pending                   chan invocation.Invocation
 	invocationService         *invocation.Service
 	doneCh                    chan struct{}
-	connectedServerVersionStr string
 	memberUUID                atomic.Value
+	connectedServerVersionStr string
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
