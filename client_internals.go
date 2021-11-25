@@ -34,17 +34,17 @@ func NewClientInternal(c *Client) *ClientInternal {
 }
 
 func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
-	return ci.client.connectionManager
+	return ci.client.ic.ConnectionManager
 }
 
 func (ci *ClientInternal) DispatchService() *event.DispatchService {
-	return ci.client.eventDispatcher
+	return ci.client.ic.EventDispatcher
 }
 
 func (ci *ClientInternal) InvocationService() *invocation.Service {
-	return ci.client.invocationService
+	return ci.client.ic.InvocationService
 }
 
 func (ci *ClientInternal) InvocationHandler() invocation.Handler {
-	return ci.client.invocationHandler
+	return ci.client.ic.InvocationHandler
 }

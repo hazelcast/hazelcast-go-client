@@ -9,5 +9,5 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	panic("implement me")
+	return e.Message
 }

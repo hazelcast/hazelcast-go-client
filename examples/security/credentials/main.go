@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package sql
+package main
 
-import "github.com/hazelcast/hazelcast-go-client/types"
+import (
+	"context"
 
-type QueryID struct {
-	MemberIDHigh int64
-	MemberIDLow  int64
-	LocalIDHigh  int64
-	LocalIDLow   int64
-}
+	"github.com/hazelcast/hazelcast-go-client"
+)
 
-func NewQueryIDFromUUID(uuid types.UUID) QueryID {
-	local := types.UUID{}
-	return QueryID{
-		MemberIDHigh: int64(uuid.MostSignificantBits()),
-		MemberIDLow:  int64(uuid.LeastSignificantBits()),
-		LocalIDHigh:  int64(local.MostSignificantBits()),
-		LocalIDLow:   int64(local.LeastSignificantBits()),
+func main() {
+	ctx := context.TODO()
+	config := hazelcast.Config{}
+	cc := &config.Cluster
+	cc.Network.SetAddresses("192.168.1.101:5701")
+	cc.Name = "hello-world"
+	creds := &cc.Security.Credentials
+	creds.Username = "member1"
+	creds.Password = "s3crEt"
+	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		panic(err)
 	}
+	client.Shutdown(ctx)
 }

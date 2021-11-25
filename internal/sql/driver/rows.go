@@ -14,23 +14,39 @@
  * limitations under the License.
  */
 
-package sql
+package driver
 
-import "github.com/hazelcast/hazelcast-go-client/types"
+import (
+	"database/sql/driver"
+	"io"
 
-type QueryID struct {
-	MemberIDHigh int64
-	MemberIDLow  int64
-	LocalIDHigh  int64
-	LocalIDLow   int64
+	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+)
+
+type Rows struct {
+	row   *isql.Row
+	index int
 }
 
-func NewQueryIDFromUUID(uuid types.UUID) QueryID {
-	local := types.UUID{}
-	return QueryID{
-		MemberIDHigh: int64(uuid.MostSignificantBits()),
-		MemberIDLow:  int64(uuid.LeastSignificantBits()),
-		LocalIDHigh:  int64(local.MostSignificantBits()),
-		LocalIDLow:   int64(local.LeastSignificantBits()),
+func (r *Rows) Columns() []string {
+	names := make([]string, len(r.row.Metadata.Columns))
+	for i := 0; i < len(names); i++ {
+		names[i] = r.row.Metadata.Columns[i].Name
 	}
+	return names
+}
+
+func (r *Rows) Close() error {
+	return nil
+}
+
+func (r *Rows) Next(dest []driver.Value) error {
+	cols := r.row.Columns
+	if r.index >= len(cols) {
+		return io.EOF
+	}
+	for i := 0; i < len(cols); i++ {
+		dest[i] = cols[i]
+	}
+	return nil
 }

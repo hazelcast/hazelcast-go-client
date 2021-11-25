@@ -481,7 +481,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
-		conn.memberUUID = uuid
+		conn.setMemberUUID(uuid)
 		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return nil, err
 		}
@@ -512,7 +512,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		m.clusterIDMu.Unlock()
 		if oldConn, ok := m.connMap.GetOrAddConnection(conn, *address); !ok {
 			// there is already a connection to this member
-			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.memberUUID)
+			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.MemberUUID())
 			conn.close(nil)
 			return oldConn, nil
 		}
@@ -654,10 +654,10 @@ func (m *connectionMap) GetOrAddConnection(conn *Connection, addr pubcluster.Add
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	// if the connection was already added, skip it
-	if old, ok := m.uuidToConn[conn.memberUUID]; ok {
+	if old, ok := m.uuidToConn[conn.MemberUUID()]; ok {
 		return old, false
 	}
-	m.uuidToConn[conn.memberUUID] = conn
+	m.uuidToConn[conn.MemberUUID()] = conn
 	m.addrToConn[addr] = conn
 	m.addrs = append(m.addrs, addr)
 	return conn, true
@@ -670,7 +670,7 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	for addr, conn := range m.addrToConn {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.addrToConn, addr)
-			delete(m.uuidToConn, conn.memberUUID)
+			delete(m.uuidToConn, conn.MemberUUID())
 			m.removeAddr(addr)
 			break
 		}

@@ -20,7 +20,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
-	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -57,7 +56,7 @@ func EncodeSqlExecuteRequest(sql string, parameters []*iserialization.Data, time
 	return clientMessage
 }
 
-func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage) (rowMetadata []sql.ColumnMetadata, rowPage *isql.Page, updateCount int64, error *isql.Error) {
+func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage) (rowMetadata []isql.ColumnMetadata, rowPage *isql.Page, updateCount int64, error *isql.Error) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 

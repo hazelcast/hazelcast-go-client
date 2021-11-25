@@ -24,7 +24,7 @@ import (
 )
 
 func TestConnector_Driver(t *testing.T) {
-	db, err := sql.Open("hazelcast", "localhost;Cluster.Unisocket=true")
+	db, err := sql.Open("hazelcast", "localhost:5701")
 	if err != nil {
 		panic(err)
 	}

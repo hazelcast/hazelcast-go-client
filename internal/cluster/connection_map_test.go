@@ -28,9 +28,9 @@ import (
 
 func TestRemoveAddr(t *testing.T) {
 	cm := newConnectionMap(pubcluster.NewRoundRobinLoadBalancer())
-	conn1 := &Connection{memberUUID: types.NewUUID(), endpoint: valueOf(pubcluster.Address("1.2.3.4:5678"))}
-	conn2 := &Connection{memberUUID: types.NewUUID(), endpoint: valueOf(pubcluster.Address("1.2.3.5:5678"))}
-	conn3 := &Connection{memberUUID: types.NewUUID(), endpoint: valueOf(pubcluster.Address("1.2.3.6:5678"))}
+	conn1 := &Connection{memberUUID: valueOf(types.NewUUID()), endpoint: valueOf(pubcluster.Address("1.2.3.4:5678"))}
+	conn2 := &Connection{memberUUID: valueOf(types.NewUUID()), endpoint: valueOf(pubcluster.Address("1.2.3.5:5678"))}
+	conn3 := &Connection{memberUUID: valueOf(types.NewUUID()), endpoint: valueOf(pubcluster.Address("1.2.3.6:5678"))}
 	cm.removeAddr("1.2.3.4:5600")
 	assert.Equal(t, 0, len(cm.addrs))
 	cm.GetOrAddConnection(conn1, "100.200.300.400:5678")

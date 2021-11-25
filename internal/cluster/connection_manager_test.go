@@ -144,45 +144,45 @@ func TestFilterConns(t *testing.T) {
 		},
 		{
 			description: "single member",
-			input:       []*Connection{{memberUUID: uuid1}},
+			input:       []*Connection{makeConn(uuid1)},
 			members:     map[types.UUID]struct{}{uuid1: {}},
-			target:      []*Connection{{memberUUID: uuid1}},
+			target:      []*Connection{makeConn(uuid1)},
 		},
 		{
 			description: "single non-member",
-			input:       []*Connection{{memberUUID: uuid1}},
+			input:       []*Connection{makeConn(uuid1)},
 			members:     map[types.UUID]struct{}{},
 			target:      []*Connection{},
 		},
 		{
 			description: "none members",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{},
 			target:      []*Connection{},
 		},
 		{
 			description: "first member",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid1: {}},
-			target:      []*Connection{{memberUUID: uuid1}},
+			target:      []*Connection{makeConn(uuid1)},
 		},
 		{
 			description: "last member",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid5: {}},
-			target:      []*Connection{{memberUUID: uuid5}},
+			target:      []*Connection{makeConn(uuid5)},
 		},
 		{
 			description: "mixed members",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid1: {}, uuid3: {}, uuid5: {}},
-			target:      []*Connection{{memberUUID: uuid1}, {memberUUID: uuid5}, {memberUUID: uuid3}},
+			target:      []*Connection{makeConn(uuid1), makeConn(uuid5), makeConn(uuid3)},
 		},
 		{
 			description: "all members",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid1: {}, uuid2: {}, uuid3: {}, uuid4: {}, uuid5: {}},
-			target:      []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			target:      []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 		},
 	}
 	for _, tc := range tcs {
@@ -190,10 +190,16 @@ func TestFilterConns(t *testing.T) {
 			input := make([]*Connection, len(tc.input))
 			copy(input, tc.input)
 			output := FilterConns(input, func(conn *Connection) bool {
-				_, found := tc.members[conn.memberUUID]
+				_, found := tc.members[conn.MemberUUID()]
 				return found
 			})
 			assert.Equal(t, tc.target, output)
 		})
 	}
+}
+
+func makeConn(uuid types.UUID) *Connection {
+	c := &Connection{}
+	c.memberUUID.Store(uuid)
+	return c
 }

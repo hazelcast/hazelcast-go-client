@@ -16,21 +16,23 @@
 
 package sql
 
-import "github.com/hazelcast/hazelcast-go-client/types"
-
-type QueryID struct {
-	MemberIDHigh int64
-	MemberIDLow  int64
-	LocalIDHigh  int64
-	LocalIDLow   int64
+type Row struct {
+	Metadata RowMetadata
+	Columns  [][]interface{}
 }
 
-func NewQueryIDFromUUID(uuid types.UUID) QueryID {
-	local := types.UUID{}
-	return QueryID{
-		MemberIDHigh: int64(uuid.MostSignificantBits()),
-		MemberIDLow:  int64(uuid.LeastSignificantBits()),
-		LocalIDHigh:  int64(local.MostSignificantBits()),
-		LocalIDLow:   int64(local.LeastSignificantBits()),
-	}
+func (r Row) ColumnByName(name string) interface{} {
+	panic("not implemented")
+}
+
+func (r Row) ColumnByIndex(index int) interface{} {
+	panic("not implemented")
+}
+
+type RowMetadata struct {
+	Columns []ColumnMetadata
+}
+
+func (m RowMetadata) ColumnByName(name string) ColumnMetadata {
+	panic("not implemented")
 }

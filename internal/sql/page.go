@@ -1,9 +1,9 @@
 package sql
 
-import "github.com/hazelcast/hazelcast-go-client/sql"
+import "database/sql/driver"
 
 type Page struct {
-	ColumnTypes []sql.ColumnType
-	Columns     []interface{}
+	ColumnTypes []ColumnType
+	Columns     [][]driver.Value
 	Last        bool
 }

@@ -17,20 +17,19 @@
 package codec
 
 import (
+	"database/sql/driver"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"net"
 	"strconv"
 	"strings"
-
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
-
-	"github.com/hazelcast/hazelcast-go-client/sql"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -400,22 +399,6 @@ type fixSizedTypesCodec struct{}
 
 var FixSizedTypesCodec fixSizedTypesCodec
 
-func (fixSizedTypesCodec) EncodeInt(buffer []byte, offset, value int32) {
-	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
-}
-
-func (fixSizedTypesCodec) DecodeInt(buffer []byte, offset int32) int32 {
-	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
-}
-
-func (fixSizedTypesCodec) EncodeLong(buffer []byte, offset int32, value int64) {
-	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
-}
-
-func (fixSizedTypesCodec) DecodeLong(buffer []byte, offset int32) int64 {
-	return int64(binary.LittleEndian.Uint64(buffer[offset:]))
-}
-
 func (fixSizedTypesCodec) EncodeBoolean(buffer []byte, offset int32, value bool) {
 	if value {
 		buffer[offset] = 1
@@ -434,6 +417,46 @@ func (fixSizedTypesCodec) EncodeByte(buffer []byte, offset int32, value byte) {
 
 func (fixSizedTypesCodec) DecodeByte(buffer []byte, offset int32) byte {
 	return buffer[offset]
+}
+
+func (fixSizedTypesCodec) EncodeShort(buffer []byte, offset, value int32) {
+	binary.LittleEndian.PutUint16(buffer[offset:], uint16(value))
+}
+
+func (fixSizedTypesCodec) DecodeShort(buffer []byte, offset int32) int16 {
+	return int16(binary.LittleEndian.Uint16(buffer[offset:]))
+}
+
+func (fixSizedTypesCodec) EncodeInt(buffer []byte, offset, value int32) {
+	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
+}
+
+func (fixSizedTypesCodec) DecodeInt(buffer []byte, offset int32) int32 {
+	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
+}
+
+func (fixSizedTypesCodec) EncodeLong(buffer []byte, offset int32, value int64) {
+	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
+}
+
+func (fixSizedTypesCodec) DecodeLong(buffer []byte, offset int32) int64 {
+	return int64(binary.LittleEndian.Uint64(buffer[offset:]))
+}
+
+func (fixSizedTypesCodec) EncodeFloat(buffer []byte, offset int32, value float32) {
+	binary.LittleEndian.PutUint32(buffer[offset:], math.Float32bits(value))
+}
+
+func (fixSizedTypesCodec) DecodeFloat(buffer []byte, offset int32) float32 {
+	return math.Float32frombits(binary.LittleEndian.Uint32(buffer[offset:]))
+}
+
+func (fixSizedTypesCodec) EncodeDouble(buffer []byte, offset int32, value float64) {
+	binary.LittleEndian.PutUint64(buffer[offset:], math.Float64bits(value))
+}
+
+func (fixSizedTypesCodec) DecodeDouble(buffer []byte, offset int32) float64 {
+	return math.Float64frombits(binary.LittleEndian.Uint64(buffer[offset:]))
 }
 
 func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
@@ -621,8 +644,19 @@ func DecodeListMultiFrameForString(frameIterator *proto.ForwardFrameIterator) []
 	return result
 }
 
-//func DecodeListMultiFrameContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
-//}
+func DecodeListMultiFrameContainsNullable(it *proto.ForwardFrameIterator, decoder func(it *proto.ForwardFrameIterator) driver.Value) []driver.Value {
+	var res []driver.Value
+	it.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(it) {
+		if CodecUtil.NextFrameIsNullFrame(it) {
+			res = append(res, nil)
+			continue
+		}
+		res = append(res, decoder(it))
+	}
+	it.Next()
+	return res
+}
 
 func DecodeListMultiFrameForDataContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
 	var result []*iserialization.Data
@@ -648,9 +682,12 @@ func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFr
 	return result
 }
 
-func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []sql.ColumnMetadata {
-	var cm []sql.ColumnMetadata
-	DecodeNullableListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
+func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []isql.ColumnMetadata {
+	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
+		return nil
+	}
+	var cm []isql.ColumnMetadata
+	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		cm = append(cm, DecodeSqlColumnMetadata(it))
 	})
 	return cm
@@ -846,21 +883,20 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 }
 
 func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator) *isql.Page {
-	// begin frame
-	it.Next()
-	frame := it.Next()
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil
 	}
+	it.Next()
+	frame := it.Next()
 	// read the "last" flag
 	last := FixSizedTypesCodec.DecodeByte(frame.Content, 0) == 1
 	// read column types
 	colTypeIDs := DecodeListInteger(it)
-	colTypes := make([]sql.ColumnType, len(colTypeIDs))
-	cols := make([]interface{}, len(colTypeIDs))
+	colTypes := make([]isql.ColumnType, len(colTypeIDs))
+	cols := make([][]driver.Value, len(colTypeIDs))
 	for i, t := range colTypeIDs {
-		colTypes[i] = sql.ColumnType(t)
-		cols[i] = DecodeSQLColumn(sql.ColumnType(t), it)
+		colTypes[i] = isql.ColumnType(t)
+		cols[i] = DecodeSQLColumn(isql.ColumnType(t), it)
 	}
 	CodecUtil.FastForwardToEndFrame(it)
 	return &isql.Page{
@@ -884,11 +920,128 @@ func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *isql.QueryID {
 	return DecodeSqlQueryId(it)
 }
 
-func DecodeSQLColumn(t sql.ColumnType, it *proto.ForwardFrameIterator) interface{} {
+func DecodeSQLColumn(t isql.ColumnType, it *proto.ForwardFrameIterator) []driver.Value {
 	switch t {
-	case sql.ColumnTypeVarchar:
-		return DecodeListMultiFrameForDataContainsNullable(it)
+	case isql.ColumnTypeVarchar:
+		return DecodeListMultiFrameContainsNullableString(it)
+	case isql.ColumnTypeBoolean:
+		return DecodeListCNBoolean(it)
+	case isql.ColumnTypeTinyInt:
+		return DecodeListCNByte(it)
+	case isql.ColumnTypeSmallInt:
+		return DecodeListCNShort(it)
+	case isql.ColumnTypeInt:
+		return DecodeListCNInt(it)
+	case isql.ColumnTypeBigInt:
+		return DecodeListCNLong(it)
+	case isql.ColumnTypeReal:
+		return DecodeListCNFloat(it)
+	case isql.ColumnTypeDouble:
+		return DecodeListCNDouble(it)
+	case isql.ColumnTypeNull:
+		return DecodeListCNNull(it)
 	default:
 		panic("implement me!")
 	}
+}
+
+type CNDecoder func(buf []byte, offset int32) driver.Value
+
+const (
+	cnFixedSizeTypeNull    = 1
+	cnFixedSizeTypeNotNull = 2
+	cnFixedSizeTypeMixed   = 3
+	cnHeaderSize           = int32(proto.ByteSizeInBytes + proto.IntSizeInBytes)
+	cnItemsPerBitmask      = 8
+)
+
+func DecodeListCNFixedSize(it *proto.ForwardFrameIterator, itemSize int32, f CNDecoder) []driver.Value {
+	frame := it.Next()
+	buf := frame.Content
+	typ := FixSizedTypesCodec.DecodeByte(buf, 0)
+	count := FixSizedTypesCodec.DecodeInt(buf, 1)
+	result := make([]driver.Value, count)
+	if typ == cnFixedSizeTypeNull {
+		return result
+	}
+	pos := cnHeaderSize
+	if typ == cnFixedSizeTypeNotNull {
+		for i := int32(0); i < count; i++ {
+			result[i] = f(buf, pos)
+			pos += itemSize
+		}
+		return result
+	}
+	var readCount int32
+	for readCount < count {
+		bitmask := FixSizedTypesCodec.DecodeByte(buf, pos)
+		pos++
+		batchSize := count - readCount
+		if cnItemsPerBitmask < batchSize {
+			batchSize = cnItemsPerBitmask
+		}
+		for i := int32(0); i < batchSize; i++ {
+			mask := byte(1 << i)
+			if bitmask&mask == mask {
+				result[readCount] = f(buf, pos)
+				pos += itemSize
+			}
+			readCount++
+		}
+	}
+	return result
+}
+
+func DecodeListCNBoolean(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.BooleanSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeBoolean(buf, offset)
+	})
+}
+
+func DecodeListCNByte(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.ByteSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeByte(buf, offset)
+	})
+}
+
+func DecodeListCNShort(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.ShortSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeShort(buf, offset)
+	})
+}
+
+func DecodeListCNInt(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.IntSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeInt(buf, offset)
+	})
+}
+
+func DecodeListCNLong(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.LongSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeLong(buf, offset)
+	})
+}
+
+func DecodeListCNFloat(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.FloatSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeFloat(buf, offset)
+	})
+}
+
+func DecodeListCNDouble(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.DoubleSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeDouble(buf, offset)
+	})
+}
+
+func DecodeListCNNull(it *proto.ForwardFrameIterator) []driver.Value {
+	frame := it.Next()
+	size := FixSizedTypesCodec.DecodeInt(frame.Content, 0)
+	return make([]driver.Value, size)
+}
+
+func DecodeListMultiFrameContainsNullableString(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) driver.Value {
+		return DecodeString(it)
+	})
 }

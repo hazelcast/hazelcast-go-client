@@ -68,7 +68,7 @@ type Connection struct {
 	invocationService         *invocation.Service
 	doneCh                    chan struct{}
 	connectedServerVersionStr string
-	memberUUID                types.UUID
+	memberUUID                atomic.Value
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
@@ -88,6 +88,18 @@ func (c *Connection) Endpoint() pubcluster.Address {
 
 func (c *Connection) SetEndpoint(addr pubcluster.Address) {
 	c.endpoint.Store(addr)
+}
+
+func (c *Connection) MemberUUID() types.UUID {
+	v := c.memberUUID.Load()
+	if v == nil {
+		return types.UUID{}
+	}
+	return v.(types.UUID)
+}
+
+func (c *Connection) setMemberUUID(uuid types.UUID) {
+	c.memberUUID.Store(uuid)
 }
 
 func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {

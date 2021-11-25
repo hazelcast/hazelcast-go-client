@@ -21,7 +21,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/client"
 )
 
 var (
@@ -29,24 +29,35 @@ var (
 )
 
 type Conn struct {
-	client *hazelcast.Client
+	ic *client.Client
+	ss *SQLService
 }
 
 func newConn(name string) (*Conn, error) {
-	config := hazelcast.Config{}
-	client, err := hazelcast.StartNewClientWithConfig(context.Background(), config)
+	config, err := ParseDSN(name)
+	if err != nil {
+		return nil, fmt.Errorf("configuring internal client: %w", err)
+	}
+	ic, err := client.New(config)
 	if err != nil {
 		return nil, fmt.Errorf("starting Hazelcast client: %w", err)
 	}
-	return &Conn{client: client}, nil
+	if err := ic.Start(context.Background()); err != nil {
+		return nil, err
+	}
+	ss := newSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService)
+	return &Conn{
+		ic: ic,
+		ss: ss,
+	}, nil
 }
 
-func (c Conn) Prepare(query string) (driver.Stmt, error) {
-	return newStatement(query, c.client), nil
+func (c *Conn) Prepare(query string) (driver.Stmt, error) {
+	return newStatement(query, c.ss), nil
 }
 
 func (c *Conn) Close() error {
-	return c.client.Shutdown(context.Background())
+	return c.ic.Shutdown(context.Background())
 }
 
 func (c Conn) Begin() (driver.Tx, error) {
