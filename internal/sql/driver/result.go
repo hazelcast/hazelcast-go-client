@@ -32,7 +32,7 @@ const (
 )
 
 type QueryResult struct {
-	Err              error
+	err              error
 	page             *sql.Page
 	ss               *SQLService
 	conn             *icluster.Connection
@@ -105,7 +105,7 @@ func (r *QueryResult) fetchNextPage() error {
 		return fmt.Errorf("fetching the next page: %w", err)
 	}
 	r.page = page
-	r.Err = err
+	r.err = err
 	r.index = 0
 	return nil
 }

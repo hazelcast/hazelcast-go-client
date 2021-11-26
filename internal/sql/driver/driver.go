@@ -28,6 +28,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (
@@ -91,6 +92,8 @@ func ParseDSN(dsn string) (*client.Config, error) {
 					return nil, ihzerrors.NewIllegalArgumentError("invalid Cluster.Unisocket", err)
 				}
 				config.Cluster.Unisocket = b
+			case "logger.level":
+				config.Logger.Level = logger.Level(v)
 			}
 		}
 	}
