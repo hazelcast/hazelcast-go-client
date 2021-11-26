@@ -175,6 +175,14 @@ func MustValue(value interface{}, err error) interface{} {
 	return value
 }
 
+// MustSlice returns a slice of values if err is nil, otherwise it panics.
+func MustSlice(slice []interface{}, err error) []interface{} {
+	if err != nil {
+		panic(err)
+	}
+	return slice
+}
+
 // MustBool returns value if err is nil, otherwise it panics.
 func MustBool(value bool, err error) bool {
 	if err != nil {

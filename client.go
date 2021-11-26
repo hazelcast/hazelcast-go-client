@@ -127,6 +127,14 @@ func (c *Client) GetReplicatedMap(ctx context.Context, name string) (*Replicated
 	return c.proxyManager.getReplicatedMap(ctx, name)
 }
 
+// GetMultiMap returns a MultiMap instance.
+func (c *Client) GetMultiMap(ctx context.Context, name string) (*MultiMap, error) {
+	if atomic.LoadInt32(&c.state) != ready {
+		return nil, hzerrors.ErrClientNotActive
+	}
+	return c.proxyManager.getMultiMap(ctx, name)
+}
+
 // GetQueue returns a queue instance.
 func (c *Client) GetQueue(ctx context.Context, name string) (*Queue, error) {
 	if c.ic.State() != client.Ready {

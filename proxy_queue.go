@@ -20,6 +20,7 @@ import (
 	"context"
 	"time"
 
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -302,12 +303,18 @@ func (q *Queue) addListener(ctx context.Context, includeValue bool, handler Queu
 	removeRequest := codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
 		codec.HandleQueueAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {
-			if item, err := q.convertToObject(itemData); err != nil {
+			item, err := q.convertToObject(itemData)
+			if err != nil {
 				q.logger.Warnf("cannot convert data to Go value")
-			} else {
-				member := q.clusterService.GetMemberByUUID(uuid)
-				handler(newQueueItemNotified(q.name, item, *member, eventType))
+				return
 			}
+			// prevent panic if member not found
+			var member pubcluster.MemberInfo
+			if m := q.clusterService.GetMemberByUUID(uuid); m != nil {
+				member = *m
+			}
+			handler(newQueueItemNotified(q.name, item, member, eventType))
+
 		})
 	}
 	err := q.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)

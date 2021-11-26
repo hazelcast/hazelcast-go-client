@@ -33,16 +33,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-const (
-	maxIndexAttributes               = 255
-	defaultLockID                    = 0
-	lockIDKey          lockIDKeyType = "__hz_lock_id"
-	leaseUnset                       = -1
-)
-
-type lockID int64
-type lockIDKeyType string
-
 /*
 Map is a distributed map.
 Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast Map with methods like Get and Put.
@@ -61,11 +51,11 @@ Entries only with key "somekey" and matching to predicate year > 2000 are consid
 		Predicate: predicate.Greater("year", 2000),
 		IncludeValue: true,
 	}
-	m, err := client.GetMap(ctx, "somemap")
 	entryListenerConfig.NotifyEntryAdded(true)
 	entryListenerConfig.NotifyEntryUpdated(true)
+	m, err := client.GetMap(ctx, "somemap")
 
-After creating the configuration, the second step is adding an event listener and a handler o act on received events:
+After creating the configuration, the second step is adding an event listener and a handler to act on received events:
 
 	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
 		switch event.EventType {
@@ -76,7 +66,7 @@ After creating the configuration, the second step is adding an event listener an
 		case hazelcast.EntryUpdated:
 			fmt.Println("Entry Updated:", event.Value)
 		case hazelcast.EntryEvicted:
-			fmt.Println("Entry Remove:", event.Value)
+			fmt.Println("Entry Evicted:", event.Value)
 		case hazelcast.EntryLoaded:
 			fmt.Println("Entry Loaded:", event.Value)
 		}
@@ -180,14 +170,14 @@ func (m *Map) AggregateWithPredicate(ctx context.Context, agg aggregate.Aggregat
 	return m.aggregate(ctx, request, codec.DecodeMapAggregateWithPredicateResponse)
 }
 
-// Clear deletes all entries one by one and fires related events
+// Clear deletes all entries one by one and fires related events.
 func (m *Map) Clear(ctx context.Context) error {
 	request := codec.EncodeMapClearRequest(m.name)
 	_, err := m.invokeOnRandomTarget(ctx, request, nil)
 	return err
 }
 
-// ContainsKey returns true if the map contains an entry with the given key
+// ContainsKey returns true if the map contains an entry with the given key.
 func (m *Map) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
 	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
@@ -202,7 +192,7 @@ func (m *Map) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
 	}
 }
 
-// ContainsValue returns true if the map contains an entry with the given value
+// ContainsValue returns true if the map contains an entry with the given value.
 func (m *Map) ContainsValue(ctx context.Context, value interface{}) (bool, error) {
 	if valueData, err := m.validateAndSerialize(value); err != nil {
 		return false, err
@@ -216,7 +206,7 @@ func (m *Map) ContainsValue(ctx context.Context, value interface{}) (bool, error
 	}
 }
 
-// Delete removes the mapping for a key from this map if it is present
+// Delete removes the mapping for a key from this map if it is present.
 // Unlike remove(object), this operation does not return the removed value, which avoids the serialization cost of
 // the returned value. If the removed value will not be used, a delete operation is preferred over a remove
 // operation for better performance.
@@ -247,7 +237,7 @@ func (m *Map) Evict(ctx context.Context, key interface{}) (bool, error) {
 	}
 }
 
-// EvictAll deletes all entries without firing releated events
+// EvictAll deletes all entries without firing related events.
 func (m *Map) EvictAll(ctx context.Context) error {
 	request := codec.EncodeMapEvictAllRequest(m.name)
 	_, err := m.invokeOnRandomTarget(ctx, request, nil)
@@ -273,7 +263,29 @@ func (m *Map) ExecuteOnEntries(ctx context.Context, entryProcessor interface{}) 
 	return kvPairs, nil
 }
 
-// ExecuteOnEntriesWithPredicate applies the user defined EntryProcessor to all the entries in the map which satisfies the predicate
+// ExecuteOnKeys applies the user defined EntryProcessor to the entries with the specified keys in the map.
+func (m *Map) ExecuteOnKeys(ctx context.Context, entryProcessor interface{}, keys ...interface{}) ([]interface{}, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	keysDataList, err := m.convertToDataList(keys)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapExecuteOnKeysRequest(m.name, processorData, keysDataList)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	pairs := codec.DecodeMapExecuteOnKeysResponse(resp)
+	return m.convertPairsToValues(pairs)
+}
+
+// ExecuteOnEntriesWithPredicate applies the user defined EntryProcessor to all the entries in the map which satisfies the predicate.
 func (m *Map) ExecuteOnEntriesWithPredicate(ctx context.Context, entryProcessor interface{}, pred predicate.Predicate) ([]types.Entry, error) {
 	processorData, err := m.validateAndSerialize(entryProcessor)
 	if err != nil {
@@ -457,7 +469,7 @@ func (m *Map) GetEntryView(ctx context.Context, key interface{}) (*types.SimpleE
 	}
 }
 
-// GetKeySet returns keys contained in this map
+// GetKeySet returns keys contained in this map.
 func (m *Map) GetKeySet(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeMapKeySetRequest(m.name)
 	if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
@@ -476,7 +488,7 @@ func (m *Map) GetKeySet(ctx context.Context) ([]interface{}, error) {
 	}
 }
 
-// GetKeySetWithPredicate returns keys contained in this map
+// GetKeySetWithPredicate returns keys contained in this map.
 func (m *Map) GetKeySetWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]interface{}, error) {
 	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
 		return nil, err
@@ -490,7 +502,7 @@ func (m *Map) GetKeySetWithPredicate(ctx context.Context, predicate predicate.Pr
 	}
 }
 
-// GetValues returns a list clone of the values contained in this map
+// GetValues returns a list clone of the values contained in this map.
 func (m *Map) GetValues(ctx context.Context) ([]interface{}, error) {
 	request := codec.EncodeMapValuesRequest(m.name)
 	if response, err := m.invokeOnRandomTarget(ctx, request, nil); err != nil {
@@ -500,7 +512,7 @@ func (m *Map) GetValues(ctx context.Context) ([]interface{}, error) {
 	}
 }
 
-// GetValuesWithPredicate returns a list clone of the values contained in this map
+// GetValuesWithPredicate returns a list clone of the values contained in this map.
 func (m *Map) GetValuesWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]interface{}, error) {
 	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
 		return nil, err
@@ -575,7 +587,7 @@ func (m *Map) Lock(ctx context.Context, key interface{}) error {
 }
 
 // LockWithLease acquires the lock for the specified lease time.
-// Otherwise it behaves the same as Lock function.
+// Otherwise, it behaves the same as Lock function.
 func (m *Map) LockWithLease(ctx context.Context, key interface{}, leaseTime time.Duration) error {
 	return m.lock(ctx, key, leaseTime.Milliseconds())
 }
@@ -604,8 +616,8 @@ func (m *Map) PutWithTTLAndMaxIdle(ctx context.Context, key interface{}, value i
 	return m.putMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
-// PutAll copies all of the mappings from the specified map to this map.
-// No atomicity guarantees are given. In the case of a failure, some of the key-value tuples may get written,
+// PutAll copies all the mappings from the specified map to this map.
+// No atomicity guarantees are given. In the case of a failure, some key-value tuples may get written,
 // while others are not.
 func (m *Map) PutAll(ctx context.Context, entries ...types.Entry) error {
 	if len(entries) == 0 {
@@ -931,18 +943,26 @@ func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interfa
 	if len(keys) == 0 {
 		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
 	} else {
-		keyDatas := make([]*serialization.Data, 0, len(keys))
-		for _, key := range keys {
-			if keyData, err := m.convertToData(key); err != nil {
-				return err
-			} else {
-				keyDatas = append(keyDatas, keyData)
-			}
+		keyDatas, err := m.convertToDataList(keys)
+		if err != nil {
+			return err
 		}
 		request = codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
 	}
 	_, err := m.invokeOnRandomTarget(ctx, request, nil)
 	return err
+}
+
+func (m *Map) convertToDataList(keys []interface{}) ([]*serialization.Data, error) {
+	keyDatas := make([]*serialization.Data, 0, len(keys))
+	for _, key := range keys {
+		keyData, err := m.validateAndSerialize(key)
+		if err != nil {
+			return nil, err
+		}
+		keyDatas = append(keyDatas, keyData)
+	}
+	return keyDatas, nil
 }
 
 func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
@@ -1233,27 +1253,4 @@ func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
 // NotifyEntryLoaded enables receiving an entry event when an entry is loaded.
 func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
-}
-
-func flagsSetOrClear(flags *int32, flag int32, enable bool) {
-	if enable {
-		*flags |= flag
-	} else {
-		*flags &^= flag
-	}
-}
-
-// extractLockID extracts lock ID from the context.
-// If the lock ID is not found, it returns the default lock ID.
-func extractLockID(ctx context.Context) int64 {
-	if ctx == nil {
-		return defaultLockID
-	}
-	if lockIDValue := ctx.Value(lockIDKey); lockIDValue == nil {
-		return defaultLockID
-	} else if lid, ok := lockIDValue.(lockID); !ok {
-		return defaultLockID
-	} else {
-		return int64(lid)
-	}
 }

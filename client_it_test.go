@@ -388,6 +388,12 @@ func TestClient_GetProxyInstance(t *testing.T) {
 			},
 		},
 		{
+			name: "multi-map",
+			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
+				return client.GetMultiMap(ctx, name)
+			},
+		},
+		{
 			name: "list",
 			getFn: func(ctx context.Context, client *hz.Client, name string) (interface{}, error) {
 				return client.GetList(ctx, name)

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -41,6 +42,7 @@ import (
 const (
 	ServiceNameMap              = "hz:impl:mapService"
 	ServiceNameReplicatedMap    = "hz:impl:replicatedMapService"
+	ServiceNameMultiMap         = "hz:impl:multiMapService"
 	ServiceNameQueue            = "hz:impl:queueService"
 	ServiceNameTopic            = "hz:impl:topicService"
 	ServiceNameList             = "hz:impl:listService"
@@ -53,6 +55,16 @@ const (
 	ttlUnset     = -1
 	ttlUnlimited = 0
 )
+
+const (
+	maxIndexAttributes               = 255
+	defaultLockID                    = 0
+	lockIDKey          lockIDKeyType = "__hz_lock_id"
+	leaseUnset                       = -1
+)
+
+type lockID int64
+type lockIDKeyType string
 
 type creationBundle struct {
 	InvocationService    *invocation.Service
@@ -344,6 +356,18 @@ func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 	return kvPairs, nil
 }
 
+func (p *proxy) convertPairsToValues(pairs []proto.Pair) ([]interface{}, error) {
+	values := make([]interface{}, len(pairs))
+	for i, pair := range pairs {
+		value, err := p.convertToObject(pair.Value().(*iserialization.Data))
+		if err != nil {
+			return nil, err
+		}
+		values[i] = value
+	}
+	return values, nil
+}
+
 func (p *proxy) putAll(keyValuePairs []types.Entry, f func(partitionID int32, entries []proto.Pair) cb.Future) error {
 	if partitionToPairs, err := p.partitionToPairs(keyValuePairs); err != nil {
 		return err
@@ -397,8 +421,12 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) e
 			p.logger.Errorf("error at AddEntryListener: %w", err)
 			return
 		}
-		member := p.clusterService.GetMemberByUUID(binUUID)
-		handler(newEntryNotifiedEvent(p.name, *member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
+		// prevent panic if member not found
+		var member pubcluster.MemberInfo
+		if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
+			member = *m
+		}
+		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
 	}
 }
 
@@ -411,3 +439,28 @@ type entryNotifiedHandler func(
 	binEventType int32,
 	binUUID types.UUID,
 	affectedEntries int32)
+
+func flagsSetOrClear(flags *int32, flag int32, enable bool) {
+	if enable {
+		*flags |= flag
+	} else {
+		*flags &^= flag
+	}
+}
+
+// extractLockID extracts lock ID from the context.
+// If the lock ID is not found, it returns the default lock ID.
+func extractLockID(ctx context.Context) int64 {
+	if ctx == nil {
+		return defaultLockID
+	}
+	lidv := ctx.Value(lockIDKey)
+	if lidv == nil {
+		return defaultLockID
+	}
+	lid, ok := lidv.(lockID)
+	if !ok {
+		return defaultLockID
+	}
+	return int64(lid)
+}

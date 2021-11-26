@@ -962,8 +962,6 @@ func TestMap_TryLock(t *testing.T) {
 	})
 }
 
-// TODO: Test Map TryLockWithLeaseAndTimeout
-
 func TestMap_LockWithLease(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		wg := &sync.WaitGroup{}
@@ -1094,6 +1092,34 @@ func TestMap_ExecuteOnEntriesWithPredicate(t *testing.T) {
 		})
 		assert.Equal(t, updatedTo, vs)
 		it.AssertEquals(t, serialization.JSON(`{"A": 5, "B": 200}`), it.MustValue(m.Get(context.Background(), "k3"))) //ensure this should not change
+	})
+}
+
+func TestMap_ExecuteOnKeys(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
+	}
+	it.MapTesterWithConfig(t, cb, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		var (
+			k1     = "my-key1"            //stable key
+			k2, k3 = "my-key2", "my-key3" //to be updated
+		)
+		it.MustValue(m.Put(ctx, k1, "my-value"))
+		it.MustValue(m.Put(ctx, k2, "my-value"))
+		it.MustValue(m.Put(ctx, k3, "my-value"))
+		vs, err := m.ExecuteOnKeys(ctx, &SimpleEntryProcessor{value: "test"}, k2, k3)
+		if err != nil {
+			t.Fatal(err)
+		}
+		target := []interface{}{"test", "test"}
+		assert.Equal(t, target, vs)
+		assert.Equal(t, "my-value", it.MustValue(m.Get(ctx, k1)))
+
+		// Zero length keys
+		vs, err = m.ExecuteOnKeys(ctx, &SimpleEntryProcessor{value: "test"})
+		assert.Nil(t, vs, "zero length key list should return nil value")
+		assert.Nil(t, err, "error should be nil on zero length key list")
 	})
 }
 
