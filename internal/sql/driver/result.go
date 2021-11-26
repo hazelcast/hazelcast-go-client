@@ -77,7 +77,6 @@ func (r *QueryResult) Close() error {
 func (r *QueryResult) Next(dest []driver.Value) error {
 	cols := r.page.Columns
 	if len(cols) == 0 {
-
 		return io.EOF
 	}
 	rowCount := int32(len(cols[0]))

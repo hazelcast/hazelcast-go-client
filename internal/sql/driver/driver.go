@@ -82,11 +82,10 @@ func ParseDSN(dsn string) (*client.Config, error) {
 				return nil, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid option: %s", seg), nil)
 			}
 			k, v := kv[0], kv[1]
-
-			switch k {
-			case "ClusterName":
+			switch strings.ToLower(k) {
+			case "cluster.name":
 				config.Cluster.Name = v
-			case "Cluster.Unisocket":
+			case "cluster.unisocket":
 				b, err := strconv.ParseBool(v)
 				if err != nil {
 					return nil, ihzerrors.NewIllegalArgumentError("invalid Cluster.Unisocket", err)
