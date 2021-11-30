@@ -27,10 +27,44 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
-	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
+	"github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
+
+const (
+	recordFactoryID = 100
+	recordClassID   = 1
+)
+
+type Record struct {
+	StrValue string
+}
+
+func (r Record) Create(classID int32) serialization.Portable {
+	if classID == recordClassID {
+		return &Record{}
+	}
+	panic(fmt.Sprintf("unknown class ID: %d", classID))
+}
+
+func (r Record) FactoryID() int32 {
+	return recordFactoryID
+}
+
+func (r Record) ClassID() int32 {
+	return recordClassID
+}
+
+func (r Record) WritePortable(writer serialization.PortableWriter) {
+	writer.WriteString("strvalue", r.StrValue)
+}
+
+func (r *Record) ReadPortable(reader serialization.PortableReader) {
+	r.StrValue = reader.ReadString("strvalue")
+}
 
 func TestSQLQuery(t *testing.T) {
 	testCases := []struct {
@@ -54,6 +88,70 @@ func TestSQLQuery(t *testing.T) {
 			testSQLQuery(t, tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn)
 		})
 	}
+}
+
+func TestSQLWithPortableData(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetPortableFactories(&Record{})
+	}
+	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		dsn := makeDSN(config)
+		sc := &serialization.Config{}
+		sc.SetPortableFactories(&Record{})
+		if err := driver.SetSerializationConfig(sc); err != nil {
+			t.Fatal(err)
+		}
+		defer driver.SetSerializationConfig(nil)
+		db, err := sql.Open("hazelcast", dsn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer db.Close()
+		it.MustValue(db.Exec(fmt.Sprintf(`
+			CREATE MAPPING "%s" (
+				__key BIGINT,
+				strvalue VARCHAR
+			)
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'portable',
+				'valuePortableFactoryId' = '100',
+				'valuePortableClassId' = '1'
+			)
+		`, mapName)))
+		rec := &Record{StrValue: "hello"}
+		it.Must(m.Set(context.TODO(), 1, rec))
+		// select the value
+		rows, err := db.Query(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var vs []interface{}
+		var k int64
+		var v interface{}
+		for rows.Next() {
+			if err := rows.Scan(&k, &v); err != nil {
+				t.Fatal(err)
+			}
+			vs = append(vs, v)
+		}
+		assert.Equal(t, []interface{}{&Record{StrValue: "hello"}}, vs)
+		// select individual fields
+		rows, err = db.Query(fmt.Sprintf(`SELECT __key, strvalue from "%s"`, mapName))
+		if err != nil {
+			t.Fatal(err)
+		}
+		vs = nil
+		var vstr string
+		for rows.Next() {
+			if err := rows.Scan(&k, &vstr); err != nil {
+				t.Fatal(err)
+			}
+			vs = append(vs, vstr)
+		}
+		assert.Equal(t, []interface{}{"hello"}, vs)
+	})
 }
 
 func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {
@@ -123,5 +221,9 @@ func populateMap(m *hz.Map, count int, keyFn, valueFn func(i int) interface{}) (
 }
 
 func makeDSN(config *hz.Config) string {
-	return fmt.Sprintf("%s;ClusterName=%s;Cluster.Unisocket=%t", config.Cluster.Network.Addresses[0], config.Cluster.Name, config.Cluster.Unisocket)
+	ll := logger.InfoLevel
+	if it.TraceLoggingEnabled() {
+		ll = logger.TraceLevel
+	}
+	return fmt.Sprintf("%s;cluster.name=%s;cluster.unisocket=%t;logger.level=%s", config.Cluster.Network.Addresses[0], config.Cluster.Name, config.Cluster.Unisocket, ll)
 }

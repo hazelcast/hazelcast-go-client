@@ -29,6 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const (
@@ -36,9 +37,10 @@ const (
 )
 
 var (
-	_                driver.Driver = (*Driver)(nil)
-	cursorBufferSize int32         = 4096
-	timeoutMillis    int64         = -1
+	_                   driver.Driver = (*Driver)(nil)
+	cursorBufferSize    int32         = 4096
+	timeoutMillis       int64         = -1
+	serializationConfig atomic.Value
 )
 
 func CursorBufferSize() int32 {
@@ -55,6 +57,29 @@ func TimeoutMillis() int64 {
 
 func SetTimeoutMillis(ms int64) {
 	atomic.StoreInt64(&timeoutMillis, ms)
+}
+
+// SerializationConfig returns the current serialization config.
+// Note that it doesn't return a copy.
+func SerializationConfig() *serialization.Config {
+	sc := serializationConfig.Load()
+	if sc == nil {
+		return nil
+	}
+	return sc.(*serialization.Config)
+}
+
+func SetSerializationConfig(c *serialization.Config) error {
+	if c == nil {
+		serializationConfig.Store(c)
+		return nil
+	}
+	cc := c.Clone()
+	if err := cc.Validate(); err != nil {
+		return err
+	}
+	serializationConfig.Store(&cc)
+	return nil
 }
 
 type Driver struct {
@@ -97,11 +122,15 @@ func ParseDSN(dsn string) (*client.Config, error) {
 			}
 		}
 	}
+	sc := SerializationConfig()
+	if sc == nil {
+		sc = &config.Serialization
+	}
 	return &client.Config{
 		Name:          config.ClientName,
 		Cluster:       &config.Cluster,
 		Failover:      &config.Failover,
-		Serialization: &config.Serialization,
+		Serialization: sc,
 		Logger:        &config.Logger,
 		Labels:        config.Labels,
 		StatsEnabled:  config.Stats.Enabled,

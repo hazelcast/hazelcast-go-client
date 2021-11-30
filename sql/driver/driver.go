@@ -17,5 +17,32 @@
 package driver
 
 import (
-	_ "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
+
+// CursorBufferSize returns the current cursor buffer size for the SQL driver.
+func CursorBufferSize() int32 {
+	return driver.CursorBufferSize()
+}
+
+// SetCursorBufferSize sets the cursor buffer size for the SQL driver.
+func SetCursorBufferSize(size int32) {
+	driver.SetCursorBufferSize(size)
+}
+
+// Timeout returns the current query timeout for the SQL driver.
+func Timeout() time.Duration {
+	return time.Duration(driver.TimeoutMillis() * 1_000_000)
+}
+
+// SetTimeout sets the query timeout for the SQL driver.
+func SetTimeout(timeout time.Duration) {
+	driver.SetTimeoutMillis(timeout.Milliseconds())
+}
+
+func SetSerializationConfig(config *serialization.Config) error {
+	return driver.SetSerializationConfig(config)
+}

@@ -18,6 +18,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 )
 
@@ -46,12 +47,15 @@ func EncodeSqlFetchRequest(queryId isql.QueryID, cursorBufferSize int32) *proto.
 	return clientMessage
 }
 
-func DecodeSqlFetchResponse(clientMessage *proto.ClientMessage) (rowPage *isql.Page, error *isql.Error) {
+func DecodeSqlFetchResponse(clientMessage *proto.ClientMessage, ss *iserialization.Service) (rowPage *isql.Page, err error) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 
-	rowPage = DecodeNullableForSQLPage(frameIterator)
-	error = DecodeNullableForSQLError(frameIterator)
+	rowPage, err = DecodeNullableForSQLPage(frameIterator, ss)
+	if err != nil {
+		return nil, err
+	}
+	err = DecodeNullableForSQLError(frameIterator)
 
-	return rowPage, error
+	return rowPage, err
 }

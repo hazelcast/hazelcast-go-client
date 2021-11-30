@@ -56,14 +56,17 @@ func EncodeSqlExecuteRequest(sql string, parameters []*iserialization.Data, time
 	return clientMessage
 }
 
-func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage) (rowMetadata []isql.ColumnMetadata, rowPage *isql.Page, updateCount int64, error *isql.Error) {
+func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage, ss *iserialization.Service) (rowMetadata []isql.ColumnMetadata, rowPage *isql.Page, updateCount int64, err error) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
 	updateCount = FixSizedTypesCodec.DecodeLong(initialFrame.Content, SqlExecuteResponseUpdateCountOffset)
 	rowMetadata = DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator)
-	rowPage = DecodeNullableForSQLPage(frameIterator)
-	error = DecodeNullableForSQLError(frameIterator)
+	rowPage, err = DecodeNullableForSQLPage(frameIterator, ss)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	err = DecodeNullableForSQLError(frameIterator)
 
-	return rowMetadata, rowPage, updateCount, error
+	return rowMetadata, rowPage, updateCount, err
 }

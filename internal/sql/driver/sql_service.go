@@ -94,7 +94,7 @@ func (s *SQLService) Fetch(qid isql.QueryID, conn *cluster.Connection, cbs int32
 	if err != nil {
 		return nil, err
 	}
-	page, err := codec.DecodeSqlFetchResponse(resp)
+	page, err := codec.DecodeSqlFetchResponse(resp, s.serializationService)
 	if !reflect.ValueOf(err).IsNil() {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	if err != nil {
 		return nil, err
 	}
-	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp)
+	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
 	if !reflect.ValueOf(err).IsNil() {
 		return nil, err
 	}

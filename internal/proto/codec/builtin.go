@@ -24,6 +24,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -459,6 +460,33 @@ func (fixSizedTypesCodec) DecodeDouble(buffer []byte, offset int32) float64 {
 	return math.Float64frombits(binary.LittleEndian.Uint64(buffer[offset:]))
 }
 
+func (fixSizedTypesCodec) DecodeLocalDate(buffer []byte, offset int32) time.Time {
+	y, m, d := decodeLocalDate(buffer, offset)
+	return time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+}
+
+func (fixSizedTypesCodec) DecodeLocalTime(buffer []byte, offset int32) time.Time {
+	h, m, s, nanos := decodeLocalTime(buffer, offset)
+	return time.Date(0, 1, 1, h, m, s, nanos, time.Local)
+}
+
+func (fixSizedTypesCodec) DecodeLocalDateTime(buffer []byte, offset int32) time.Time {
+	y, m, d := decodeLocalDate(buffer, offset)
+	offset += proto.LocalDateSizeInBytes
+	h, mn, s, nanos := decodeLocalTime(buffer, offset)
+	return time.Date(y, m, d, h, mn, s, nanos, time.Local)
+}
+
+func (fixSizedTypesCodec) DecodeDateTimeWithTimeZone(buffer []byte, offset int32) time.Time {
+	y, m, d := decodeLocalDate(buffer, offset)
+	offset += proto.LocalDateSizeInBytes
+	h, mn, s, nanos := decodeLocalTime(buffer, offset)
+	offset += proto.LocalTimeSizeInBytes
+	offsetSecs := int(FixSizedTypesCodec.DecodeInt(buffer, offset))
+	tz := time.FixedZone("", offsetSecs)
+	return time.Date(y, m, d, h, mn, s, nanos, tz)
+}
+
 func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
 	isNullEncode := uuid.Default()
 	FixSizedTypesCodec.EncodeBoolean(buffer, offset, isNullEncode)
@@ -644,7 +672,7 @@ func DecodeListMultiFrameForString(frameIterator *proto.ForwardFrameIterator) []
 	return result
 }
 
-func DecodeListMultiFrameContainsNullable(it *proto.ForwardFrameIterator, decoder func(it *proto.ForwardFrameIterator) driver.Value) []driver.Value {
+func DecodeListMultiFrameContainsNullable(it *proto.ForwardFrameIterator, decoder func(it *proto.ForwardFrameIterator) (driver.Value, error)) ([]driver.Value, error) {
 	var res []driver.Value
 	it.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(it) {
@@ -652,24 +680,14 @@ func DecodeListMultiFrameContainsNullable(it *proto.ForwardFrameIterator, decode
 			res = append(res, nil)
 			continue
 		}
-		res = append(res, decoder(it))
+		v, err := decoder(it)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, v)
 	}
 	it.Next()
-	return res
-}
-
-func DecodeListMultiFrameForDataContainsNullable(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
-	var result []*iserialization.Data
-	frameIterator.Next()
-	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		if CodecUtil.NextFrameIsNullFrame(frameIterator) {
-			result = append(result, nil)
-		} else {
-			result = append(result, DecodeData(frameIterator))
-		}
-	}
-	frameIterator.Next()
-	return result
+	return res, nil
 }
 
 func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) []types.DistributedObjectInfo {
@@ -882,9 +900,9 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator) *isql.Page {
+func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization.Service) (*isql.Page, error) {
 	if CodecUtil.NextFrameIsNullFrame(it) {
-		return nil
+		return nil, nil
 	}
 	it.Next()
 	frame := it.Next()
@@ -894,16 +912,25 @@ func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator) *isql.Page {
 	colTypeIDs := DecodeListInteger(it)
 	colTypes := make([]isql.ColumnType, len(colTypeIDs))
 	cols := make([][]driver.Value, len(colTypeIDs))
+	var err error
 	for i, t := range colTypeIDs {
-		colTypes[i] = isql.ColumnType(t)
-		cols[i] = DecodeSQLColumn(isql.ColumnType(t), it)
+		ct := isql.ColumnType(t)
+		colTypes[i] = ct
+		if ct == isql.ColumnTypeObject {
+			cols[i], err = DecodeListMultiFrameContainsNullableData(it, ss)
+		} else {
+			cols[i], err = DecodeSQLColumn(ct, it)
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	CodecUtil.FastForwardToEndFrame(it)
 	return &isql.Page{
 		Columns:     cols,
 		ColumnTypes: colTypes,
 		Last:        last,
-	}
+	}, nil
 }
 
 func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *isql.Error {
@@ -920,28 +947,36 @@ func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *isql.QueryID {
 	return DecodeSqlQueryId(it)
 }
 
-func DecodeSQLColumn(t isql.ColumnType, it *proto.ForwardFrameIterator) []driver.Value {
+func DecodeSQLColumn(t isql.ColumnType, it *proto.ForwardFrameIterator) ([]driver.Value, error) {
 	switch t {
 	case isql.ColumnTypeVarchar:
-		return DecodeListMultiFrameContainsNullableString(it)
+		return DecodeListMultiFrameContainsNullableString(it), nil
 	case isql.ColumnTypeBoolean:
-		return DecodeListCNBoolean(it)
+		return DecodeListCNBoolean(it), nil
 	case isql.ColumnTypeTinyInt:
-		return DecodeListCNByte(it)
+		return DecodeListCNByte(it), nil
 	case isql.ColumnTypeSmallInt:
-		return DecodeListCNShort(it)
+		return DecodeListCNShort(it), nil
 	case isql.ColumnTypeInt:
-		return DecodeListCNInt(it)
+		return DecodeListCNInt(it), nil
 	case isql.ColumnTypeBigInt:
-		return DecodeListCNLong(it)
+		return DecodeListCNLong(it), nil
 	case isql.ColumnTypeReal:
-		return DecodeListCNFloat(it)
+		return DecodeListCNFloat(it), nil
 	case isql.ColumnTypeDouble:
-		return DecodeListCNDouble(it)
+		return DecodeListCNDouble(it), nil
+	case isql.ColumnTypeDate:
+		return DecodeListCNDate(it), nil
+	case isql.ColumnTypeTime:
+		return DecodeListCNTime(it), nil
+	case isql.ColumnTypeTimestamp:
+		return DecodeListCNTimestamp(it), nil
+	case isql.ColumnTypeTimestampWithTimeZone:
+		return DecodeListCNTimestampWithTimeZone(it), nil
 	case isql.ColumnTypeNull:
-		return DecodeListCNNull(it)
+		return DecodeListCNNull(it), nil
 	default:
-		panic("implement me!")
+		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("unknown type for SQL column: %d", t), nil)
 	}
 }
 
@@ -1034,6 +1069,30 @@ func DecodeListCNDouble(it *proto.ForwardFrameIterator) []driver.Value {
 	})
 }
 
+func DecodeListCNDate(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.LocalDateSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeLocalDate(buf, offset)
+	})
+}
+
+func DecodeListCNTime(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.LocalDateSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeLocalTime(buf, offset)
+	})
+}
+
+func DecodeListCNTimestamp(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.LocalDateTimeSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeLocalDateTime(buf, offset)
+	})
+}
+
+func DecodeListCNTimestampWithTimeZone(it *proto.ForwardFrameIterator) []driver.Value {
+	return DecodeListCNFixedSize(it, proto.OffsetDateTimeSizeInBytes, func(buf []byte, offset int32) driver.Value {
+		return FixSizedTypesCodec.DecodeDateTimeWithTimeZone(buf, offset)
+	})
+}
+
 func DecodeListCNNull(it *proto.ForwardFrameIterator) []driver.Value {
 	frame := it.Next()
 	size := FixSizedTypesCodec.DecodeInt(frame.Content, 0)
@@ -1041,7 +1100,35 @@ func DecodeListCNNull(it *proto.ForwardFrameIterator) []driver.Value {
 }
 
 func DecodeListMultiFrameContainsNullableString(it *proto.ForwardFrameIterator) []driver.Value {
-	return DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) driver.Value {
-		return DecodeString(it)
+	// the decoder below never returns an error, so ignoring the error
+	vs, _ := DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) (driver.Value, error) {
+		return DecodeString(it), nil
 	})
+	return vs
+}
+
+func DecodeListMultiFrameContainsNullableData(it *proto.ForwardFrameIterator, ss *iserialization.Service) ([]driver.Value, error) {
+	return DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) (driver.Value, error) {
+		return ss.ToObject(DecodeData(it))
+	})
+}
+
+func decodeLocalDate(buffer []byte, offset int32) (y int, m time.Month, d int) {
+	y = int(FixSizedTypesCodec.DecodeInt(buffer, offset))
+	offset += proto.IntSizeInBytes
+	m = time.Month(FixSizedTypesCodec.DecodeByte(buffer, offset))
+	offset += proto.ByteSizeInBytes
+	d = int(FixSizedTypesCodec.DecodeByte(buffer, offset))
+	return y, m, d
+}
+
+func decodeLocalTime(buffer []byte, offset int32) (h, m, s, nanos int) {
+	h = int(FixSizedTypesCodec.DecodeByte(buffer, offset))
+	offset += proto.ByteSizeInBytes
+	m = int(FixSizedTypesCodec.DecodeByte(buffer, offset))
+	offset += proto.ByteSizeInBytes
+	s = int(FixSizedTypesCodec.DecodeByte(buffer, offset))
+	offset += proto.ByteSizeInBytes
+	nanos = int(FixSizedTypesCodec.DecodeInt(buffer, offset))
+	return h, m, s, nanos
 }

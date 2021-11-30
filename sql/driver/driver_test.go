@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package main
+package driver_test
 
 import (
-	"database/sql"
-	"log"
+	"testing"
+	"time"
 
-	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
-func main() {
-	log.Println("Creating the database value.")
-	db, err := sql.Open("hazelcast", ";logger.level=info")
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-	log.Println("The database value was created. Note that the connection to Hazelcast is not established at this point.")
-	log.Println("Sending a ping request to establish the connection...")
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
-	log.Println("Connection establshed, and the ping was successful. TIme to exit.")
+func TestCursorBufferSize(t *testing.T) {
+	const target = int32(100)
+	driver.SetCursorBufferSize(target)
+	assert.Equal(t, target, driver.CursorBufferSize())
+}
+
+func TestTimeout(t *testing.T) {
+	const target = 5 * time.Second
+	driver.SetTimeout(target)
+	assert.Equal(t, target, driver.Timeout())
 }

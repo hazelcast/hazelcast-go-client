@@ -18,8 +18,8 @@ package serialization
 
 // IdentifiedDataSerializableFactory is used to create IdentifiedDataSerializable instances during deserialization.
 type IdentifiedDataSerializableFactory interface {
-	// Creates an IdentifiedDataSerializable instance using given type ID.
-	Create(id int32) (instance IdentifiedDataSerializable)
+	// Create ceates an IdentifiedDataSerializable instance using given type ID.
+	Create(id int32) IdentifiedDataSerializable
 	// FactoryID returns the factory ID.
 	FactoryID() int32
 }
@@ -28,10 +28,10 @@ type IdentifiedDataSerializableFactory interface {
 // Each IdentifiedDataSerializable is created by a registered IdentifiedDataSerializableFactory.
 type IdentifiedDataSerializable interface {
 	// FactoryID returns IdentifiedDataSerializableFactory factory ID for this struct.
-	FactoryID() (factoryID int32)
+	FactoryID() int32
 
 	// ClassID returns type identifier for this struct. It should be unique per IdentifiedDataSerializableFactory.
-	ClassID() (classID int32)
+	ClassID() int32
 
 	// WriteData writes object fields to output stream.
 	WriteData(output DataOutput)
@@ -48,10 +48,10 @@ type IdentifiedDataSerializable interface {
 // * Querying and indexing support without deserialization and/or reflection.
 type Portable interface {
 	// FactoryID returns PortableFactory ID for this portable struct.
-	FactoryID() (factoryID int32)
+	FactoryID() int32
 
 	// ClassID returns type identifier for this portable struct. Class ID should be unique per PortableFactory.
-	ClassID() (classID int32)
+	ClassID() int32
 
 	// WritePortable serializes this portable object using PortableWriter.
 	WritePortable(writer PortableWriter)
@@ -66,14 +66,14 @@ type VersionedPortable interface {
 	Portable
 
 	// Version returns version for this Portable struct.
-	Version() (version int32)
+	Version() int32
 }
 
 // PortableFactory is used to create Portable instances during deserialization.
 type PortableFactory interface {
 	// Create creates a Portable instance using given class ID and
 	// returns portable instance or nil if class ID is not known by this factory.
-	Create(classID int32) (instance Portable)
+	Create(classID int32) Portable
 	// FactoryID returns the factory ID.
 	FactoryID() int32
 }
@@ -81,7 +81,7 @@ type PortableFactory interface {
 // Serializer is base interface of serializers.
 type Serializer interface {
 	// ID returns id of serializer.
-	ID() (id int32)
+	ID() int32
 
 	// Read reads an object from ObjectDataInput.
 	Read(input DataInput) interface{}
