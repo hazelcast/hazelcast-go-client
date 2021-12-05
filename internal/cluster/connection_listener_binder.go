@@ -46,7 +46,6 @@ type ConnectionListenerBinder struct {
 	regs                  map[types.UUID]listenerRegistration
 	correlationIDs        map[types.UUID][]int64
 	subscriptionToMembers map[types.UUID]map[types.UUID]struct{}
-	memberSubscriptions   map[types.UUID][]types.UUID
 	regsMu                *sync.RWMutex
 	connectionCount       int32
 	smart                 bool
@@ -67,7 +66,6 @@ func NewConnectionListenerBinder(
 		regs:                  map[types.UUID]listenerRegistration{},
 		correlationIDs:        map[types.UUID][]int64{},
 		subscriptionToMembers: map[types.UUID]map[types.UUID]struct{}{},
-		memberSubscriptions:   map[types.UUID][]types.UUID{},
 		regsMu:                &sync.RWMutex{},
 		logger:                logger,
 		smart:                 smart,
@@ -123,9 +121,6 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	b.logger.Trace(func() string {
 		return fmt.Sprintf("removing listener %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
 	})
-	for _, conn := range conns {
-		b.removeMemberSubscriptions(conn.memberUUID)
-	}
 	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, conns...)
 }
 
@@ -269,9 +264,6 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionStateChan
 
 func (b *ConnectionListenerBinder) handleConnectionClosed(e *ConnectionStateChangedEvent) {
 	atomic.AddInt32(&b.connectionCount, -1)
-	b.regsMu.Lock()
-	b.removeMemberSubscriptions(e.Conn.memberUUID)
-	b.regsMu.Unlock()
 }
 
 func (b *ConnectionListenerBinder) connExists(conn *Connection, subID types.UUID) bool {
@@ -291,17 +283,4 @@ func (b *ConnectionListenerBinder) addSubscriptionToMember(subID types.UUID, mem
 		b.subscriptionToMembers[subID] = mems
 	}
 	mems[memberUUID] = struct{}{}
-	b.memberSubscriptions[memberUUID] = append(b.memberSubscriptions[memberUUID], subID)
-}
-
-func (b *ConnectionListenerBinder) removeMemberSubscriptions(memberUUID types.UUID) {
-	// this method should be called under lock
-	subs, found := b.memberSubscriptions[memberUUID]
-	if !found {
-		return
-	}
-	for _, sub := range subs {
-		delete(b.subscriptionToMembers, sub)
-	}
-	delete(b.memberSubscriptions, memberUUID)
 }
