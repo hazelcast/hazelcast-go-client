@@ -79,6 +79,7 @@ func NewService(
 			s.groupLostCh <- event.(*GroupLostEvent)
 		}()
 	})
+	s.executor.start()
 	go s.processIncoming()
 	return s
 }
@@ -87,6 +88,7 @@ func (s *Service) Stop() {
 	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
 		return
 	}
+	s.executor.stop()
 	close(s.doneCh)
 }
 
