@@ -53,6 +53,7 @@ type Service struct {
 	eventDispatcher *event.DispatchService
 	logger          ilogger.Logger
 	state           int32
+	executor        stripeExecutor
 }
 
 func NewService(
@@ -71,6 +72,7 @@ func NewService(
 		eventDispatcher: eventDispatcher,
 		logger:          logger,
 		state:           ready,
+		executor:        newStripeExecutor(5, 100),
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
 		go func() {
@@ -183,7 +185,9 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 				return fmt.Sprintf("invocation with unknown correlation ID: %d", correlationID)
 			})
 		} else if inv.EventHandler() != nil {
-			go inv.EventHandler()(msg)
+			s.executor.dispatch(inv.PartitionID(), func() {
+				inv.EventHandler()(msg)
+			})
 		}
 		return
 	}
