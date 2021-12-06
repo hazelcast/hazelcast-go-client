@@ -12,8 +12,8 @@ import (
 )
 
 type orderChecker struct {
-	previousCallArg int
 	*testing.T
+	previousCallArg int
 }
 
 func (oc *orderChecker) call(arg int) {
@@ -102,8 +102,8 @@ func Test_serialExecutor_start(t *testing.T) {
 	t.Run("Functionality test", func(t *testing.T) {
 		var orderCheckers []*orderChecker
 		type pair struct {
-			key     uint32
 			handler func()
+			key     uint32
 		}
 		// create orderCheckers, index corresponding to key
 		for i := 1; i <= 100; i++ {

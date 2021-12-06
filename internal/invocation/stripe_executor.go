@@ -8,11 +8,11 @@ import (
 // stripeExecutor executes given "tasks" preserving the order among the ones
 // that are given with the same key
 type stripeExecutor struct {
+	quit            chan struct{}
+	wg              *sync.WaitGroup
+	executeFunction func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)
 	tasks           []chan func()
 	queueCount      uint32
-	quit            chan struct{}
-	executeFunction func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)
-	wg              *sync.WaitGroup
 }
 
 // newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize

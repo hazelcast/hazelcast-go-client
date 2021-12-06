@@ -41,19 +41,19 @@ type Handler interface {
 }
 
 type Service struct {
+	handler         Handler
+	logger          ilogger.Logger
 	requestCh       chan Invocation
-	urgentRequestCh chan Invocation
 	responseCh      chan *proto.ClientMessage
-	// removeCh carries correlationIDs to be removed
-	removeCh        chan int64
 	doneCh          chan struct{}
 	groupLostCh     chan *GroupLostEvent
 	invocations     map[int64]Invocation
-	handler         Handler
+	urgentRequestCh chan Invocation
 	eventDispatcher *event.DispatchService
-	logger          ilogger.Logger
-	state           int32
-	executor        stripeExecutor
+	// removeCh carries correlationIDs to be removed
+	removeCh chan int64
+	executor stripeExecutor
+	state    int32
 }
 
 func NewService(
