@@ -187,9 +187,16 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 				return fmt.Sprintf("invocation with unknown correlation ID: %d", correlationID)
 			})
 		} else if inv.EventHandler() != nil {
-			s.executor.dispatch(inv.PartitionID(), func() {
+			handler := func() {
 				inv.EventHandler()(msg)
-			})
+			}
+			if inv.PartitionID() == -1 {
+				// Execute on a random worker
+				s.executor.dispatchRandom(handler)
+				return
+			}
+			partitionID := uint32(inv.PartitionID())
+			s.executor.dispatch(partitionID, handler)
 		}
 		return
 	}

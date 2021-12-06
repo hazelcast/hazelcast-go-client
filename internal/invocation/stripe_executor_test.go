@@ -50,8 +50,8 @@ func Test_defaultExecuteFnc(t *testing.T) {
 
 func Test_serialExecutor_dispatch(t *testing.T) {
 	tests := []struct {
-		queueCount    int32
-		key           int32
+		queueCount    uint32
+		key           uint32
 		expectedIndex int32
 	}{
 		{
@@ -102,7 +102,7 @@ func Test_serialExecutor_start(t *testing.T) {
 	t.Run("Functionality test", func(t *testing.T) {
 		var orderCheckers []*orderChecker
 		type pair struct {
-			key     int32
+			key     uint32
 			handler func()
 		}
 		// create orderCheckers, index corresponding to key
@@ -117,7 +117,7 @@ func Test_serialExecutor_start(t *testing.T) {
 			tmp := i
 			for _, perm := range rand.Perm(100) {
 				key := perm
-				tasks = append(tasks, pair{key: int32(key), handler: func() {
+				tasks = append(tasks, pair{key: uint32(key), handler: func() {
 					orderCheckers[key].call(tmp)
 				}})
 			}

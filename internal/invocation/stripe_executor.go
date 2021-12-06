@@ -1,19 +1,22 @@
 package invocation
 
-import "sync"
+import (
+	"math/rand"
+	"sync"
+)
 
 // stripeExecutor executes given "tasks" preserving the order among the ones
 // that are given with the same key
 type stripeExecutor struct {
 	tasks           []chan func()
-	queueCount      int32
+	queueCount      uint32
 	quit            chan struct{}
 	executeFunction func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)
 	wg              *sync.WaitGroup
 }
 
 // newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize
-func newStripeExecutor(queueCount, queueSize int32) stripeExecutor {
+func newStripeExecutor(queueCount, queueSize uint32) stripeExecutor {
 	se := stripeExecutor{
 		tasks:      make([]chan func(), queueCount),
 		queueCount: queueCount,
@@ -38,8 +41,13 @@ func (se stripeExecutor) start() {
 
 // dispatch sends the handler "task" to the appropriate queue, "tasks"
 // with the same key end up on the same queue
-func (se stripeExecutor) dispatch(key int32, handler func()) {
+func (se stripeExecutor) dispatch(key uint32, handler func()) {
 	se.tasks[key%se.queueCount] <- handler
+}
+
+func (se stripeExecutor) dispatchRandom(handler func()) {
+	key := rand.Int31n(int32(se.queueCount))
+	se.dispatch(uint32(key), handler)
 }
 
 // stop blocks until all workers are stopped.
