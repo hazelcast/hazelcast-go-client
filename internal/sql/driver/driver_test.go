@@ -77,7 +77,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "10.20.30.40:5000;Cluster.Name=my-cluster",
+			DSN: "10.20.30.40:5000;Cluster.Name=my-cluster;Cluster.Unisocket=true",
 			Cluster: &cluster.Config{
 				Name: "my-cluster",
 				Network: cluster.NetworkConfig{
@@ -85,6 +85,7 @@ func TestParseDSN(t *testing.T) {
 					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
 					ConnectionTimeout: types.Duration(5 * time.Second),
 				},
+				Unisocket: true,
 			},
 		},
 	}
