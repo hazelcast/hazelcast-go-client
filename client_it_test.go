@@ -207,10 +207,10 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		m := it.MustValue(client.GetMap(context.Background(), "dolistener-tester")).(*hz.Map)
+		name := it.NewUniqueObjectName("dolistener-tester")
+		m := it.MustValue(client.GetMap(context.Background(), name)).(*hz.Map)
 		it.Must(m.Destroy(context.Background()))
-
-		targetObjInfo := objInfo{service: hz.ServiceNameMap, object: "dolistener-tester", count: 1}
+		targetObjInfo := objInfo{service: hz.ServiceNameMap, object: name, count: 1}
 		it.Eventually(t, func() bool {
 			mu.Lock()
 			defer mu.Unlock()
@@ -219,15 +219,15 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 			}
 			return targetObjInfo == destroyed
 		})
-
-		if err := client.RemoveDistributedObjectListener(context.Background(), subID); err != nil {
+		if err = client.RemoveDistributedObjectListener(context.Background(), subID); err != nil {
 			t.Fatal(err)
 		}
-		m = it.MustValue(client.GetMap(context.Background(), "dolistener-tester")).(*hz.Map)
+		m = it.MustValue(client.GetMap(context.Background(), name)).(*hz.Map)
 		it.Must(m.Destroy(context.Background()))
 		it.Eventually(t, func() bool {
 			mu.Lock()
 			defer mu.Unlock()
+			log.Printf("targetObj: %v, created: %v, destroyed: %v", targetObjInfo, created, destroyed)
 			if targetObjInfo != created {
 				return false
 			}
