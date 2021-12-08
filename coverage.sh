@@ -15,4 +15,5 @@
 #
 
 export MEMBER_COUNT=3
-go test -count=1 -coverprofile=coverage.out -coverpkg "$(go list ./... | grep -v /internal/it | grep -v /benchmarks | grep -v /stress_tests | grep -v /soak_tests | grep -v /examples | grep -v /cmd | tr '\n' ",")" ./...
+echo "TEST_FLAGS: ${TEST_FLAGS}"
+go test ${TEST_FLAGS} -coverprofile=coverage.out -coverpkg "$(go list ./... | grep -v /internal/it | grep -v /benchmarks | grep -v /stress_tests | grep -v /soak_tests | grep -v /examples | grep -v /cmd | tr '\n' ",")" ./...
