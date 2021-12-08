@@ -19,6 +19,7 @@ package driver
 import (
 	"context"
 	"database/sql/driver"
+	"sort"
 )
 
 type Statement struct {
@@ -47,4 +48,26 @@ func (s *Statement) Exec(args []driver.Value) (driver.Result, error) {
 
 func (s Statement) Query(args []driver.Value) (driver.Rows, error) {
 	return s.ss.QuerySQL(context.Background(), s.query, args)
+}
+
+func (s *Statement) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
+	return s.ss.ExecuteSQL(ctx, s.query, namedValuesToValues(args))
+}
+
+func (s *Statement) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	return s.ss.QuerySQL(ctx, s.query, namedValuesToValues(args))
+}
+
+func namedValuesToValues(nArgs []driver.NamedValue) []driver.Value {
+	var args []driver.Value
+	if len(nArgs) > 0 {
+		sort.Slice(nArgs, func(i, j int) bool {
+			return nArgs[i].Ordinal < nArgs[j].Ordinal
+		})
+		args = make([]driver.Value, len(nArgs))
+		for i, arg := range nArgs {
+			args[i] = arg.Value
+		}
+	}
+	return args
 }

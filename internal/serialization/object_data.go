@@ -19,6 +19,7 @@ package serialization
 import (
 	"encoding/binary"
 	"fmt"
+	"time"
 	"unsafe"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -271,6 +272,53 @@ func (o *ObjectDataOutput) WriteStringBytes(v string) {
 	o.writeStringBytes([]rune(v))
 }
 
+func (o *ObjectDataOutput) WriteRawBytes(b []byte) {
+	o.EnsureAvailable(ByteSizeInBytes * len(b))
+	o.position += int32(copy(o.buffer[o.position:], b))
+}
+
+func (o *ObjectDataOutput) WriteDate(t time.Time) {
+	y, m, d := t.Date()
+	o.WriteInt32(int32(y))
+	o.WriteByte(byte(m))
+	o.WriteByte(byte(d))
+}
+
+func (o *ObjectDataOutput) WriteTime(t time.Time) {
+	h, m, s := t.Clock()
+	o.WriteByte(byte(h))
+	o.WriteByte(byte(m))
+	o.WriteByte(byte(s))
+	o.WriteInt32(int32(t.Nanosecond()))
+}
+
+func (o *ObjectDataOutput) WriteTimestamp(t time.Time) {
+	o.WriteDate(t)
+	o.WriteTime(t)
+}
+
+func (o *ObjectDataOutput) WriteTimestampWithTimezone(t time.Time) {
+	o.WriteTimestamp(t)
+	_, off := t.Zone()
+	o.WriteInt32(int32(off))
+}
+
+func (o *ObjectDataOutput) WriteDateArray(ts []time.Time) {
+	o.writeArrayOfTime(ts, o.WriteDate)
+}
+
+func (o *ObjectDataOutput) WriteTimeArray(ts []time.Time) {
+	o.writeArrayOfTime(ts, o.WriteTime)
+}
+
+func (o *ObjectDataOutput) WriteTimestampArray(ts []time.Time) {
+	o.writeArrayOfTime(ts, o.WriteTimestamp)
+}
+
+func (o *ObjectDataOutput) WriteTimestampWithTimezoneArray(ts []time.Time) {
+	o.writeArrayOfTime(ts, o.WriteTimestampWithTimezone)
+}
+
 func (o *ObjectDataOutput) writeStringBytes(rv []rune) {
 	// See: https://github.com/hazelcast/hazelcast/issues/17955#issuecomment-778152424
 	runeCount := len(rv)
@@ -282,9 +330,15 @@ func (o *ObjectDataOutput) writeStringBytes(rv []rune) {
 	o.position += int32(runeCount)
 }
 
-func (o *ObjectDataOutput) WriteRawBytes(b []byte) {
-	o.EnsureAvailable(ByteSizeInBytes * len(b))
-	o.position += int32(copy(o.buffer[o.position:], b))
+func (o *ObjectDataOutput) writeArrayOfTime(ts []time.Time, f func(t time.Time)) {
+	if len(ts) == 0 {
+		o.WriteInt32(nilArrayLength)
+		return
+	}
+	o.WriteInt32(int32(len(ts)))
+	for _, t := range ts {
+		f(t)
+	}
 }
 
 //// ObjectDataInput ////
@@ -641,6 +695,80 @@ func (i *ObjectDataInput) ReadStringArrayAtPosition(pos int32) []string {
 	return arr
 }
 
+func (i *ObjectDataInput) ReadDate() time.Time {
+	y, m, d := i.readDate()
+	return time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+}
+
+func (i *ObjectDataInput) ReadTime() time.Time {
+	h, m, s, nanos := i.readTime()
+	return time.Date(0, 1, 1, h, m, s, nanos, time.Local)
+}
+
+func (i *ObjectDataInput) ReadTimestamp() time.Time {
+	y, m, d := i.readDate()
+	h, mn, s, nanos := i.readTime()
+	return time.Date(y, m, d, h, mn, s, nanos, time.Local)
+}
+
+func (i *ObjectDataInput) ReadTimestampWithTimezone() time.Time {
+	y, m, d := i.readDate()
+	h, mn, s, nanos := i.readTime()
+	offset := i.readInt32()
+	return time.Date(y, m, d, h, mn, s, nanos, time.FixedZone("", int(offset)))
+}
+
+func (i *ObjectDataInput) ReadDateArray() []time.Time {
+	return i.readArrayOfTime(i.ReadDate)
+}
+
+func (i *ObjectDataInput) ReadTimeArray() []time.Time {
+	return i.readArrayOfTime(i.ReadTime)
+}
+
+func (i *ObjectDataInput) ReadTimestampArray() []time.Time {
+	return i.readArrayOfTime(i.ReadTimestamp)
+}
+
+func (i *ObjectDataInput) ReadTimestampWithTimezoneArray() []time.Time {
+	return i.readArrayOfTime(i.ReadTimestampWithTimezone)
+}
+
+func (i *ObjectDataInput) readDate() (y int, m time.Month, d int) {
+	y = int(i.readInt32())
+	m = time.Month(i.readByte())
+	d = int(i.readByte())
+	return
+}
+
+func (i *ObjectDataInput) readTime() (h, m, s, nanos int) {
+	h = int(i.ReadByte())
+	m = int(i.ReadByte())
+	s = int(i.ReadByte())
+	nanos = int(i.ReadInt32())
+	return
+}
+
+func (i *ObjectDataInput) backup(pos int32, f func()) {
+	backup := i.position
+	i.position = pos
+	f()
+	i.position = backup
+}
+
+func (i *ObjectDataInput) readArrayOfTime(f func() time.Time) []time.Time {
+	var ts []time.Time
+	cnt := int(i.readInt32())
+	if cnt == 0 {
+		return ts
+	}
+	ts = make([]time.Time, cnt)
+	for j := 0; j < cnt; j++ {
+		ts = append(ts, f())
+	}
+	return ts
+}
+
 type PositionalObjectDataOutput struct {
 	*ObjectDataOutput
 }
@@ -739,3 +867,19 @@ func (e *EmptyObjectDataOutput) WriteStringArray([]string) {}
 func (e *EmptyObjectDataOutput) WriteStringBytes(string) {}
 
 func (e *EmptyObjectDataOutput) WriteZeroBytes(int) {}
+
+func (e *EmptyObjectDataOutput) WriteDate(t time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteTime(t time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteTimestamp(t time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteTimestampWithTimezone(t time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteDateArray(ts []time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteTimeArray(ts []time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteTimestampArray(ts []time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteTimestampWithTimezoneArray(ts []time.Time) {}

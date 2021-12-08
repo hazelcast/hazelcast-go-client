@@ -20,14 +20,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
-func TestConnector_Driver(t *testing.T) {
-	it.SkipIf(t, "hz < 5.0")
-	db, err := sql.Open("hazelcast", "localhost:5701")
+func ExampleDriver_Open() {
+	db, err := sql.Open("hazelcast", "localhost;Cluster.Unisocket=true")
 	if err != nil {
 		panic(err)
 	}
@@ -41,7 +39,6 @@ func TestConnector_Driver(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
 	for rows.Next() {
 		if rows.Err() != nil {
 			panic(rows.Err())

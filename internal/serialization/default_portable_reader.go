@@ -18,6 +18,7 @@ package serialization
 
 import (
 	"fmt"
+	"time"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -315,7 +316,7 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) []serializa
 
 func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
 	if !pr.raw {
-		off := pr.offset + pr.classDefinition.FieldCount()*Int32SizeInBytes
+		off := pr.offset + int32(len(pr.classDefinition.Fields))*Int32SizeInBytes
 		pr.input.SetPosition(off)
 		pos := pr.input.ReadInt32()
 		pr.input.SetPosition(pos)
@@ -324,6 +325,85 @@ func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
 	return pr.input
 }
 
+func (pr *DefaultPortableReader) ReadDate(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeDate, func() {
+		v := pr.input.ReadDate()
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTime(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTime, func() {
+		v := pr.input.ReadTime()
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestamp(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTimestamp, func() {
+		v := pr.input.ReadTimestamp()
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestampWithTimezone(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTimestampWithTimezone, func() {
+		v := pr.input.ReadTimestampWithTimezone()
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadDateArray(fieldName string) (t []time.Time) {
+	pr.readNullable(fieldName, serialization.TypeDateArray, func() {
+		t = pr.input.ReadDateArray()
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimeArray(fieldName string) (t []time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTimeArray, func() {
+		t = pr.input.ReadTimeArray()
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestampArray(fieldName string) (t []time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTimestampArray, func() {
+		t = pr.input.ReadTimestampArray()
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestampWithTimezoneArray(fieldName string) (t []time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTimestampWithTimezone, func() {
+		t = pr.input.ReadTimestampWithTimezoneArray()
+	})
+	return
+}
+
 func (pr *DefaultPortableReader) End() {
 	pr.input.SetPosition(pr.finalPos)
+}
+
+func (pr *DefaultPortableReader) readNullable(fieldName string, fieldType serialization.FieldDefinitionType, f func()) {
+	pos := pr.positionByField(fieldName, fieldType)
+	pr.runAtPosition(pos, func() {
+		isNil := pr.input.ReadBool()
+		if isNil {
+			return
+		}
+		f()
+	})
+}
+
+// runAtPosition runs the given function without advancing the current input position.
+func (pr *DefaultPortableReader) runAtPosition(pos int32, f func()) {
+	backup := pr.input.Position()
+	pr.input.SetPosition(pos)
+	f()
+	pr.input.SetPosition(backup)
 }

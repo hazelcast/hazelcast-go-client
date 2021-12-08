@@ -1035,7 +1035,7 @@ func DecodeListCNBoolean(it *proto.ForwardFrameIterator) []driver.Value {
 
 func DecodeListCNByte(it *proto.ForwardFrameIterator) []driver.Value {
 	return DecodeListCNFixedSize(it, proto.ByteSizeInBytes, func(buf []byte, offset int32) driver.Value {
-		return FixSizedTypesCodec.DecodeByte(buf, offset)
+		return int8(FixSizedTypesCodec.DecodeByte(buf, offset))
 	})
 }
 

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -40,7 +41,19 @@ const (
 )
 
 type Record struct {
-	StrValue string
+	VarcharValue               string
+	TinyIntValue               int8
+	SmallIntValue              int16
+	IntegerValue               int32
+	BigIntValue                int64
+	BoolValue                  bool
+	RealValue                  float32
+	DoubleValue                float64
+	DateValue                  time.Time
+	TimeValue                  time.Time
+	TimestampValue             time.Time
+	TimestampWithTimeZoneValue time.Time
+	NullValue                  interface{}
 }
 
 func (r Record) Create(classID int32) serialization.Portable {
@@ -59,11 +72,29 @@ func (r Record) ClassID() int32 {
 }
 
 func (r Record) WritePortable(writer serialization.PortableWriter) {
-	writer.WriteString("strvalue", r.StrValue)
+	writer.WriteString("varcharvalue", r.VarcharValue)
+	writer.WriteByte("tinyintvalue", byte(r.TinyIntValue))
+	writer.WriteInt16("smallintvalue", r.SmallIntValue)
+	writer.WriteInt32("integervalue", r.IntegerValue)
+	writer.WriteInt64("bigintvalue", r.BigIntValue)
+	writer.WriteBool("boolvalue", r.BoolValue)
+	writer.WriteFloat32("realvalue", r.RealValue)
+	writer.WriteFloat64("doublevalue", r.DoubleValue)
+	//writer.WriteDate("datevalue", &r.DateValue)
+	//writer.WriteTime("timevalue", &r.TimeValue)
+	//writer.WriteTimestamp("timestampvalue", &r.TimestampValue)
+	//writer.WriteTimestampWithTimezone("timestampwithtimezone", &r.TimestampWithTimeZoneValue)
 }
 
 func (r *Record) ReadPortable(reader serialization.PortableReader) {
-	r.StrValue = reader.ReadString("strvalue")
+	r.VarcharValue = reader.ReadString("varcharvalue")
+	r.TinyIntValue = int8(reader.ReadByte("tinyintvalue"))
+	r.SmallIntValue = reader.ReadInt16("smallintvalue")
+	r.IntegerValue = reader.ReadInt32("integervalue")
+	r.BigIntValue = reader.ReadInt64("bigintvalue")
+	r.BoolValue = reader.ReadBool("boolvalue")
+	r.RealValue = reader.ReadFloat32("realvalue")
+	r.DoubleValue = reader.ReadFloat64("doublevalue")
 }
 
 func TestSQLQuery(t *testing.T) {
@@ -110,7 +141,14 @@ func TestSQLWithPortableData(t *testing.T) {
 		it.MustValue(db.Exec(fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key BIGINT,
-				strvalue VARCHAR
+				varcharvalue VARCHAR,
+				tinyintvalue TINYINT,
+				smallintvalue SMALLINT,
+				integervalue INTEGER,
+				bigintvalue BIGINT,
+				boolvalue BOOLEAN,
+				realvalue REAL,
+				doublevalue DOUBLE
 			)
 			TYPE IMAP
 			OPTIONS (
@@ -120,7 +158,21 @@ func TestSQLWithPortableData(t *testing.T) {
 				'valuePortableClassId' = '1'
 			)
 		`, mapName)))
-		rec := &Record{StrValue: "hello"}
+		//tt := time.Date(2021, 12, 6, 12, 33, 50, 876, time.FixedZone("Europe/Istanbul", 3*60*60))
+		rec := &Record{
+			VarcharValue:  "hello",
+			TinyIntValue:  -128,
+			SmallIntValue: 32767,
+			IntegerValue:  -27,
+			BigIntValue:   38,
+			BoolValue:     true,
+			RealValue:     -5.32,
+			DoubleValue:   12.789,
+			//DateValue:                  tt,
+			//TimeValue:                  tt,
+			//TimestampValue:             tt,
+			//TimestampWithTimeZoneValue: tt,
+		}
 		it.Must(m.Set(context.TODO(), 1, rec))
 		// select the value
 		rows, err := db.Query(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
@@ -136,21 +188,32 @@ func TestSQLWithPortableData(t *testing.T) {
 			}
 			vs = append(vs, v)
 		}
-		assert.Equal(t, []interface{}{&Record{StrValue: "hello"}}, vs)
+		targetThis := []interface{}{rec}
+		assert.Equal(t, targetThis, vs)
 		// select individual fields
-		rows, err = db.Query(fmt.Sprintf(`SELECT __key, strvalue from "%s"`, mapName))
+		rows, err = db.Query(fmt.Sprintf(`
+			SELECT __key, varcharvalue, tinyintvalue, smallintvalue, integervalue,	
+			bigintvalue, boolvalue, realvalue, doublevalue from "%s"`, mapName))
 		if err != nil {
 			t.Fatal(err)
 		}
 		vs = nil
-		var vstr string
+		var vVarchar string
+		var vTinyInt int8
+		var vSmallInt int16
+		var vInteger int32
+		var vBigInt int64
+		var vBool bool
+		var vReal float32
+		var vDouble float64
 		for rows.Next() {
-			if err := rows.Scan(&k, &vstr); err != nil {
+			if err := rows.Scan(&k, &vVarchar, &vTinyInt, &vSmallInt, &vInteger, &vBigInt, &vBool, &vReal, &vDouble); err != nil {
 				t.Fatal(err)
 			}
-			vs = append(vs, vstr)
+			vs = append(vs, vVarchar, vTinyInt, vSmallInt, vInteger, vBigInt, vBool, vReal, vDouble)
 		}
-		assert.Equal(t, []interface{}{"hello"}, vs)
+		target := []interface{}{"hello", int8(-128), int16(32767), int32(-27), int64(38), true, float32(-5.32), 12.789}
+		assert.Equal(t, target, vs)
 	})
 }
 

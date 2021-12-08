@@ -17,6 +17,8 @@
 package serialization
 
 import (
+	"time"
+
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -122,6 +124,38 @@ func (cdw *ClassDefinitionWriter) WriteFloat64Array(fieldName string, value []fl
 
 func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []string) {
 	must(cdw.classDefinition.AddStringArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDate(fieldName string, value *time.Time) {
+	must(cdw.classDefinition.AddDateField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTime(fieldName string, value *time.Time) {
+	must(cdw.classDefinition.AddTimeField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestamp(fieldName string, value *time.Time) {
+	must(cdw.classDefinition.AddTimestampField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezone(fieldName string, value *time.Time) {
+	must(cdw.classDefinition.AddTimestampWithTimezoneField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDateArray(fieldName string, value []time.Time) {
+	must(cdw.classDefinition.AddDateArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimeArray(fieldName string, value []time.Time) {
+	must(cdw.classDefinition.AddTimeArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestampArray(fieldName string, value []time.Time) {
+	must(cdw.classDefinition.AddTimestampArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezoneArray(fieldName string, value []time.Time) {
+	must(cdw.classDefinition.AddTimestampWithTimezoneArrayField(fieldName))
 }
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) {

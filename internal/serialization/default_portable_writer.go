@@ -18,6 +18,7 @@ package serialization
 
 import (
 	"fmt"
+	"time"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -182,6 +183,65 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	}
 }
 
+func (pw *DefaultPortableWriter) WriteDate(fieldName string, t *time.Time) {
+	pw.writeNullableField(fieldName, serialization.TypeDate, t == nil, func() {
+		pw.output.WriteDate(*t)
+	})
+}
+
+func (pw *DefaultPortableWriter) WriteTime(fieldName string, t *time.Time) {
+	pw.writeNullableField(fieldName, serialization.TypeTime, t == nil, func() {
+		pw.output.WriteTime(*t)
+	})
+}
+
+func (pw *DefaultPortableWriter) WriteTimestamp(fieldName string, t *time.Time) {
+	pw.writeNullableField(fieldName, serialization.TypeTimestamp, t == nil, func() {
+		pw.output.WriteTimestamp(*t)
+	})
+}
+
+func (pw *DefaultPortableWriter) WriteTimestampWithTimezone(fieldName string, t *time.Time) {
+	pw.writeNullableField(fieldName, serialization.TypeTimestampWithTimezone, t == nil, func() {
+		pw.output.WriteTimestampWithTimezone(*t)
+	})
+}
+
+func (pw *DefaultPortableWriter) WriteDateArray(fieldName string, ts []time.Time) {
+	pw.setPosition(fieldName, int32(serialization.TypeDateArray))
+	pw.output.WriteDateArray(ts)
+}
+
+func (pw *DefaultPortableWriter) WriteTimeArray(fieldName string, ts []time.Time) {
+	pw.setPosition(fieldName, int32(serialization.TypeTimeArray))
+	pw.output.WriteDateArray(ts)
+}
+
+func (pw *DefaultPortableWriter) WriteTimestampArray(fieldName string, ts []time.Time) {
+	pw.setPosition(fieldName, int32(serialization.TypeTimestampArray))
+	pw.output.WriteTimestampArray(ts)
+}
+
+func (pw *DefaultPortableWriter) WriteTimestampWithTimezoneArray(fieldName string, ts []time.Time) {
+	pw.setPosition(fieldName, int32(serialization.TypeTimestampWithTimezoneArray))
+	pw.output.WriteTimestampWithTimezoneArray(ts)
+}
+
+func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
+	if !pw.raw {
+		pos := pw.output.Position()
+		index := int32(len(pw.classDefinition.Fields))
+		pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
+		pw.raw = true
+	}
+	return pw.output.ObjectDataOutput
+}
+
+func (pw *DefaultPortableWriter) End() {
+	position := pw.output.Position()
+	pw.output.PWriteInt32(pw.begin, position)
+}
+
 func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) {
 	if pw.raw {
 		panic(ihzerrors.NewSerializationError("cannot write Portable fields after getRawDataOutput() is called", nil))
@@ -198,17 +258,10 @@ func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) 
 	pw.output.WriteByte(byte(fieldType))
 }
 
-func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
-	if !pw.raw {
-		pos := pw.output.Position()
-		index := pw.classDefinition.FieldCount()
-		pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
-		pw.raw = true
+func (pw *DefaultPortableWriter) writeNullableField(fieldName string, fieldType serialization.FieldDefinitionType, isNil bool, f func()) {
+	pw.setPosition(fieldName, int32(fieldType))
+	pw.output.WriteBool(isNil)
+	if !isNil {
+		f()
 	}
-	return pw.output.ObjectDataOutput
-}
-
-func (pw *DefaultPortableWriter) End() {
-	position := pw.output.Position()
-	pw.output.PWriteInt32(pw.begin, position)
 }

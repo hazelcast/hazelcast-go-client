@@ -16,6 +16,8 @@
 
 package serialization
 
+import "time"
+
 // IdentifiedDataSerializableFactory is used to create IdentifiedDataSerializable instances during deserialization.
 type IdentifiedDataSerializableFactory interface {
 	// Create ceates an IdentifiedDataSerializable instance using given type ID.
@@ -155,11 +157,35 @@ type DataOutput interface {
 	// WriteStringArray writes a []string in UTF-8 format.
 	WriteStringArray(v []string)
 
-	// WriteBytes writes a string's characters.
+	// WriteStringBytes writes a string's characters.
 	WriteStringBytes(bytes string)
 
 	// WriteZeroBytes writes zero bytes as given length.
 	WriteZeroBytes(count int)
+
+	// WriteDate writes the given date.
+	WriteDate(t time.Time)
+
+	// WriteTime writes the given time.
+	WriteTime(t time.Time)
+
+	// WriteTimestamp writes the given timestamp without timezone.
+	WriteTimestamp(t time.Time)
+
+	// WriteTimestampWithTimezone writes the given timestamp with timezone.
+	WriteTimestampWithTimezone(t time.Time)
+
+	// WriteDateArray writes the given dates.
+	WriteDateArray(ts []time.Time)
+
+	// WriteTimeArray writes the given times.
+	WriteTimeArray(ts []time.Time)
+
+	// WriteTimestampArray writes the given timestamps.
+	WriteTimestampArray(ts []time.Time)
+
+	// WriteTimestampWithTimezoneArray writes the given timestamps with timezones.
+	WriteTimestampWithTimezoneArray(ts []time.Time)
 }
 
 // DataInput provides deserialization methods.
@@ -171,85 +197,81 @@ type DataOutput interface {
 type DataInput interface {
 	// Position returns the head position in the byte array.
 	Position() int32
-
 	// SetPosition sets the head position in the byte array.
 	SetPosition(pos int32)
-
 	// ReadByte returns byte read .
 	// It returns zero if an error is set previously.
 	ReadByte() byte
-
 	// ReadBool returns bool read.
 	// It returns false if an error is set previously.
 	ReadBool() bool
-
 	// ReadUInt16 returns uint16 read.
 	// It returns zero if an error is set previously.
 	ReadUInt16() uint16
-
 	// ReadInt16 returns int16 read.
 	// It returns zero if an error is set previously.
 	ReadInt16() int16
-
 	// ReadInt32 returns int32 read.
 	// It returns zero if an error is set previously.
 	ReadInt32() int32
-
 	// ReadInt64 returns int64 read.
 	// It returns zero if an error is set previously.
 	ReadInt64() int64
-
 	// ReadFloat32 returns float32 read.
 	// It returns zero if an error is set previously.
 	ReadFloat32() float32
-
 	// ReadFloat64 returns float64 read.
 	// It returns zero if an error is set previously.
 	ReadFloat64() float64
-
 	// ReadString returns string read.
 	// It returns empty string if an error is set previously.
 	ReadString() string
-
 	// ReadObject returns object read.
 	// It returns nil if an error is set previously.
 	ReadObject() interface{}
-
 	// ReadByteArray returns []byte read.
 	// It returns nil if an error is set previously.
 	ReadByteArray() []byte
-
 	// ReadBoolArray returns []bool read.
 	// It returns nil if an error is set previously.
 	ReadBoolArray() []bool
-
 	// ReadUInt16Array returns []uint16 read.
 	// It returns nil if an error is set previously.
 	ReadUInt16Array() []uint16
-
 	// ReadInt16Array returns []int16 read.
 	// It returns nil if an error is set previously.
 	ReadInt16Array() []int16
-
 	// ReadInt32Array returns []int32 read.
 	// It returns nil if an error is set previously.
 	ReadInt32Array() []int32
-
 	// ReadInt64Array returns []int64 read.
 	// It returns nil if an error is set previously.
 	ReadInt64Array() []int64
-
 	// ReadFloat32Array returns []float32 read.
 	// It returns nil if an error is set previously.
 	ReadFloat32Array() []float32
-
 	// ReadFloat64Array returns []float64 read.
 	// It returns nil if an error is set previously.
 	ReadFloat64Array() []float64
-
 	// ReadStringArray returns []string read.
 	// It returns nil if an error is set previously.
 	ReadStringArray() []string
+	// ReadDate reads and returns a date.
+	ReadDate() time.Time
+	// ReadTime reads and returns a time.
+	ReadTime() time.Time
+	// ReadTimestamp reads and returns a time stamp.
+	ReadTimestamp() time.Time
+	// ReadTimestampWithTimezone reads and returns a time stamp with timezone.
+	ReadTimestampWithTimezone() time.Time
+	// ReadDateArray reads and returns a date array.
+	ReadDateArray() []time.Time
+	// ReadTimeArray reads and returns a time array.
+	ReadTimeArray() []time.Time
+	// ReadTimestampArray reads and returns a time stamp array.
+	ReadTimestampArray() []time.Time
+	// ReadTimestampWithTimezoneArray reads and returns a time stamp with time zone array.
+	ReadTimestampWithTimezoneArray() []time.Time
 }
 
 // PortableWriter provides a mean of writing portable fields to a binary in form of go primitives
@@ -318,11 +340,34 @@ type PortableWriter interface {
 	// WritePortableArray writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable)
 
-	// GetRawDataOutput returns raw DataOutput to write unnamed fields like
-	// IdentifiedDataSerializable does. All unnamed fields must be written after
-	// portable fields. Attempts to write named fields after GetRawDataOutput is
-	// called will panic.
+	// GetRawDataOutput returns raw DataOutput to write unnamed fields like IdentifiedDataSerializable does.
+	// All unnamed fields must be written after portable fields.
+	// Attempts to write named fields after GetRawDataOutput is called will panic.
 	GetRawDataOutput() DataOutput
+
+	// WriteDate writes the date part of a time.Time value.
+	WriteDate(fieldName string, t *time.Time)
+
+	// WriteTime writes the time part of a time.Time value.
+	WriteTime(fieldName string, t *time.Time)
+
+	// WriteTimestamp writes the date and time of a time.Time value, without the timezone offset.
+	WriteTimestamp(fieldName string, t *time.Time)
+
+	// WriteTimestampWithTimezone writes the date and time of a time.Time value, with the timezone offset.
+	WriteTimestampWithTimezone(fieldName string, t *time.Time)
+
+	// WriteDateArray writes date parts of time.Time values.
+	WriteDateArray(fieldName string, t []time.Time)
+
+	// WriteTimeArray writes time parts of time.Time values.
+	WriteTimeArray(fieldName string, t []time.Time)
+
+	// WriteTimestampArray writes date and time of time.Time values, without the timezone offset.
+	WriteTimestampArray(fieldName string, t []time.Time)
+
+	// WriteTimestampWithTimezoneArray writes date and time of time.Time values, with the timezone offset.
+	WriteTimestampWithTimezoneArray(fieldName string, t []time.Time)
 }
 
 // PortableReader provides a mean of reading portable fields from a binary in form of go primitives
@@ -335,86 +380,82 @@ type PortableReader interface {
 	// ReadByte takes fieldName Name of the field and returns the byte value read.
 	// It returns zero if an error is set previously.
 	ReadByte(fieldName string) byte
-
 	// ReadBool takes fieldName Name of the field and returns the bool value read.
 	// It returns false if an error is set previously.
 	ReadBool(fieldName string) bool
-
 	// ReadUInt16 takes fieldName Name of the field and returns the uint16 value read.
 	// It returns zero if an error is set previously.
 	ReadUInt16(fieldName string) uint16
-
 	// ReadInt16 takes fieldName Name of the field and returns the int16 value read.
 	// It returns zero if an error is set previously.
 	ReadInt16(fieldName string) int16
-
 	// ReadInt32 takes fieldName Name of the field and returns the int32 value read.
 	// It returns zero if an error is set previously.
 	ReadInt32(fieldName string) int32
-
 	// ReadInt64 takes fieldName Name of the field and returns the int64 value read.
 	// It returns zero if an error is set previously.
 	ReadInt64(fieldName string) int64
-
 	// ReadFloat32 takes fieldName Name of the field and returns the float32 value read.
 	// It returns zero if an error is set previously.
 	ReadFloat32(fieldName string) float32
-
 	// ReadFloat64 takes fieldName Name of the field and returns the float64 value read.
 	// It returns zero if an error is set previously.
 	ReadFloat64(fieldName string) float64
-
 	// ReadString takes fieldName Name of the field and returns the string value read.
 	// It returns empty string if an error is set previously.
 	ReadString(fieldName string) string
-
 	// ReadPortable takes fieldName Name of the field and returns the Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortable(fieldName string) Portable
-
 	// ReadByteArray takes fieldName Name of the field and returns the []byte value read.
 	// It returns nil if an error is set previously.
 	ReadByteArray(fieldName string) []byte
-
 	// ReadBoolArray takes fieldName Name of the field and returns the []bool value read.
 	// It returns nil if an error is set previously.
 	ReadBoolArray(fieldName string) []bool
-
 	// ReadUInt16Array takes fieldName Name of the field and returns the []uint16 value read.
 	// It returns nil if an error is set previously.
 	ReadUInt16Array(fieldName string) []uint16
-
 	// ReadInt16Array takes fieldName Name of the field and returns the []int16 value read.
 	// It returns nil if an error is set previously.
 	ReadInt16Array(fieldName string) []int16
-
 	// ReadInt32Array takes fieldName Name of the field and returns the []int32 value read.
 	// It returns nil if an error is set previously.
 	ReadInt32Array(fieldName string) []int32
-
 	// ReadInt64Array takes fieldName Name of the field and returns the []int64 value read.
 	// It returns nil if an error is set previously.
 	ReadInt64Array(fieldName string) []int64
-
 	// ReadFloat32Array takes fieldName Name of the field and returns the []float32 value read.
 	// It returns nil if an error is set previously.
 	ReadFloat32Array(fieldName string) []float32
-
 	// ReadFloat64Array takes fieldName Name of the field and returns the []float64 value read.
 	// It returns nil if an error is set previously.
 	ReadFloat64Array(fieldName string) []float64
-
 	// ReadStringArray takes fieldName Name of the field and returns the []string value read.
 	// It returns nil if an error is set previously.
 	ReadStringArray(fieldName string) []string
-
 	// ReadPortableArray takes fieldName Name of the field and returns the []Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
-
 	// GetRawDataInput returns raw DataInput to read unnamed fields like
 	// IdentifiedDataSerializable does. All unnamed fields must be read after
 	// portable fields. Attempts to read named fields after GetRawDataInput is
 	// called will panic.
 	GetRawDataInput() DataInput
+	// ReadDate reads the date.
+	ReadDate(fieldName string) *time.Time
+	// ReadTime reads the time.
+	ReadTime(fieldName string) *time.Time
+	// ReadTimestamp reads the time stamp.
+	ReadTimestamp(fieldName string) *time.Time
+	// ReadTimestampWithTimezone reads the time stamp with time zone.
+	ReadTimestampWithTimezone(fieldName string) *time.Time
+	// ReadDateArray reads the date arrau.
+	ReadDateArray(fieldName string) []time.Time
+	// ReadTimeArray reads the time array.
+	ReadTimeArray(fieldName string) []time.Time
+	// ReadTimestampArray reads the time stamp array.
+	ReadTimestampArray(fieldName string) []time.Time
+	// ReadTimestampWithTimezoneArray reads the time stamp with time zone array.
+	ReadTimestampWithTimezoneArray(fieldName string) []time.Time
 }

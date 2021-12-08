@@ -443,6 +443,64 @@ func (JavaArrayListSerializer) Write(output serialization.DataOutput, i interfac
 	// no-op
 }
 
+type JavaLocalDateSerializer struct{}
+
+func (JavaLocalDateSerializer) ID() int32 {
+	return TypeJavaLocalDate
+}
+
+func (JavaLocalDateSerializer) Read(input serialization.DataInput) interface{} {
+	return input.ReadDate()
+}
+
+func (JavaLocalDateSerializer) Write(output serialization.DataOutput, i interface{}) {
+	output.WriteDate(i.(time.Time))
+}
+
+type JavaLocalTimeSerializer struct{}
+
+func (JavaLocalTimeSerializer) ID() int32 {
+	return TypeJavaLocalTime
+}
+
+func (JavaLocalTimeSerializer) Read(input serialization.DataInput) interface{} {
+	return input.ReadTime()
+}
+
+func (JavaLocalTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+	output.WriteTime(i.(time.Time))
+}
+
+type TypeJavaLocalDateTimeSerializer struct{}
+
+func (TypeJavaLocalDateTimeSerializer) ID() int32 {
+	return TypeJavaLocalDateTime
+}
+
+func (TypeJavaLocalDateTimeSerializer) Read(input serialization.DataInput) interface{} {
+	return input.ReadTimestamp()
+}
+
+func (TypeJavaLocalDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+	t := i.(time.Time)
+	output.WriteTimestamp(t)
+}
+
+type TypeJavaOffsetDateTimeSerializer struct{}
+
+func (TypeJavaOffsetDateTimeSerializer) ID() int32 {
+	return TypeJavaLocalDateTime
+}
+
+func (TypeJavaOffsetDateTimeSerializer) Read(input serialization.DataInput) interface{} {
+	return input.ReadTimestampWithTimezone()
+}
+
+func (TypeJavaOffsetDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+	t := i.(time.Time)
+	output.WriteTimestampWithTimezone(t)
+}
+
 type GobSerializer struct{}
 
 func (GobSerializer) ID() int32 {

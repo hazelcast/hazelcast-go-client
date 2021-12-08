@@ -44,6 +44,17 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
+			DSN: "localhost",
+			Cluster: &cluster.Config{
+				Name: "dev",
+				Network: cluster.NetworkConfig{
+					Addresses:         []string{"localhost"},
+					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
+					ConnectionTimeout: types.Duration(5 * time.Second),
+				},
+			},
+		},
+		{
 			DSN: "10.20.30.40:5000",
 			Cluster: &cluster.Config{
 				Name: "dev",
@@ -66,7 +77,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "10.20.30.40:5000;ClusterName=my-cluster",
+			DSN: "10.20.30.40:5000;Cluster.Name=my-cluster",
 			Cluster: &cluster.Config{
 				Name: "my-cluster",
 				Network: cluster.NetworkConfig{

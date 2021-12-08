@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -222,6 +225,8 @@ type fake struct {
 	ui16        uint16
 	boo         bool
 	byt         byte
+	nilDate     *time.Time
+	date        time.Time
 }
 
 func (*fake) FactoryID() int32 {
@@ -257,6 +262,8 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteFloat64Array("f64Arr", f.f64Arr)
 	writer.WriteStringArray("utfArr", f.utfArr)
 	writer.WritePortableArray("portableArr", f.portableArr)
+	writer.WriteDate("nilDate", f.nilDate)
+	writer.WriteDate("date", &f.date)
 }
 
 func (f *fake) ReadPortable(reader serialization.PortableReader) {
@@ -280,6 +287,8 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) {
 	f.f64Arr = reader.ReadFloat64Array("f64Arr")
 	f.utfArr = reader.ReadStringArray("utfArr")
 	f.portableArr = reader.ReadPortableArray("portableArr")
+	f.nilDate = reader.ReadDate("nilDate")
+	f.date = *reader.ReadDate("date")
 }
 
 func TestPortableSerializer2(t *testing.T) {
@@ -312,8 +321,11 @@ func TestPortableSerializer2(t *testing.T) {
 		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{id: 2, age: 20, name: "Micheal Micheal"},
 	}
-	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
-		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
+	expectedRet := &fake{
+		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
+		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
+		date: time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
+	}
 	data, err := service.ToData(expectedRet)
 	if err != nil {
 		t.Fatal(err)
@@ -322,10 +334,7 @@ func TestPortableSerializer2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Error("ReadObject() failed")
-	}
-
+	assert.Equal(t, expectedRet, ret)
 }
 
 func TestPortableSerializer3(t *testing.T) {
@@ -376,8 +385,11 @@ func TestPortableSerializer4(t *testing.T) {
 		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{id: 2, age: 20, name: "Micheal Micheal"},
 	}
-	expectedRet := &fake{byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
-		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr}
+	expectedRet := &fake{
+		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
+		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
+		date: time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
+	}
 	data, err := service.ToData(expectedRet)
 	if err != nil {
 		t.Fatal(err)
@@ -386,9 +398,7 @@ func TestPortableSerializer4(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(ret, expectedRet) {
-		t.Error("ReadObject() failed")
-	}
+	assert.Equal(t, expectedRet, ret)
 }
 
 type portableFactory struct {

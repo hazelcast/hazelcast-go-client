@@ -18,9 +18,9 @@ package cluster
 
 import (
 	"fmt"
-	"net"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
 type AddressProvider interface {
@@ -32,17 +32,17 @@ type DefaultAddressProvider struct {
 }
 
 func ParseAddress(addr string) (pubcluster.Address, error) {
-	if _, _, err := net.SplitHostPort(addr); err != nil {
+	host, port, err := internal.ParseAddr(addr)
+	if err != nil {
 		return "", fmt.Errorf("parsing address: %w", err)
 	}
-	return pubcluster.Address(addr), nil
+	return pubcluster.Address(fmt.Sprintf("%s:%d", host, port)), nil
 }
 
 func NewDefaultAddressProvider(networkConfig *pubcluster.NetworkConfig) *DefaultAddressProvider {
 	var err error
 	addresses := make([]pubcluster.Address, len(networkConfig.Addresses))
 	for i, addr := range networkConfig.Addresses {
-		addresses[i] = pubcluster.Address(addr)
 		if addresses[i], err = ParseAddress(addr); err != nil {
 			panic(err)
 		}

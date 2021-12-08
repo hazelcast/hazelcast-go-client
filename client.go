@@ -274,26 +274,6 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
 }
 
-/*
-func (c *Client) ExecuteSQL(ctx context.Context, sql string, params ...interface{}) (*sql.ExecResult, error) {
-	if atomic.LoadInt32(&c.state) >= stopping {
-		return nil, hzerrors.ErrClientNotActive
-	}
-	return c.sqlService.ExecuteSQL(ctx, sql, params...)
-}
-
-// QuerySQL runs the given SQL query on the member-side.
-// Placeholders in the query is replaced by params.
-// A placeholder is the question mark (?) character.
-// For each placeholder, a corresponding param should exist.
-func (c *Client) QuerySQL(ctx context.Context, query string, params ...interface{}) (*sql.QueryResult, error) {
-	if atomic.LoadInt32(&c.state) >= stopping {
-		return nil, hzerrors.ErrClientNotActive
-	}
-	return c.sqlService.QuerySQL(ctx, query, params...)
-}
-*/
-
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.

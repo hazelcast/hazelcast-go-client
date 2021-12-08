@@ -19,7 +19,7 @@ test-all-race:
 	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -race $(PACKAGES)
 
 test-cover:
-	bash ./coverage.sh
+	env TEST_FLAGS="$(TEST_FLAGS)" bash ./coverage.sh
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:

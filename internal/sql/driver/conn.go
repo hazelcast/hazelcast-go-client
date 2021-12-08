@@ -38,6 +38,10 @@ func newConn(name string) (*Conn, error) {
 	if err != nil {
 		return nil, fmt.Errorf("configuring internal client: %w", err)
 	}
+	return NewConnWithConfig(config)
+}
+
+func NewConnWithConfig(config *client.Config) (*Conn, error) {
 	ic, err := client.New(config)
 	if err != nil {
 		return nil, fmt.Errorf("starting Hazelcast client: %w", err)

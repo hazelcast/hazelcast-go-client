@@ -126,7 +126,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return nil, err
 	}
 	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
-	if !reflect.ValueOf(err).IsNil() {
+	if err != (*isql.Error)(nil) {
 		return nil, err
 	}
 	if updateCount >= 0 {

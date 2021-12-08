@@ -83,13 +83,9 @@ func (c *NetworkConfig) Validate() error {
 	if len(c.Addresses) == 0 {
 		c.Addresses = []string{defaultAddress}
 	} else {
-		for i, addr := range c.Addresses {
-			host, port, err := internal.ParseAddr(addr)
-			if err != nil {
+		for _, addr := range c.Addresses {
+			if _, _, err := internal.ParseAddr(addr); err != nil {
 				return fmt.Errorf("invalid address '%s': %w", addr, err)
-			}
-			if port == 0 { // we do not have any port defined
-				c.Addresses[i] = fmt.Sprintf("%s:%d", host, port)
 			}
 		}
 	}

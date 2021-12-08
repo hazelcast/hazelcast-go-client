@@ -206,6 +206,14 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return jsonSerializer
 	case TypeJavaArrayList:
 		return javaArrayListSerializer
+	case TypeJavaLocalDate:
+		return javaLocalDateSerializer
+	case TypeJavaLocalTime:
+		return javaLocalTimeSerializer
+	case TypeJavaLocalDateTime:
+		return javaLocalDateTimeSerializer
+	case TypeJavaOffsetDateTime:
+		return javaOffsetDateTimeSerializer
 	case TypeGobSerialization:
 		return gobSerializer
 	}
@@ -328,7 +336,7 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 	case types.UUID:
 		return uuidSerializer
 	case time.Time:
-		return javaDateSerializer
+		return dateTimeSerializer(obj.(time.Time))
 	case pubserialization.JSON:
 		return jsonSerializer
 	}
@@ -344,6 +352,21 @@ func makeError(rec interface{}) error {
 	default:
 		return fmt.Errorf("%v", rec)
 	}
+}
+
+func dateTimeSerializer(t time.Time) pubserialization.Serializer {
+	// if t has its year 0, then assume it contains only the time
+	if t.Year() == 0 {
+		return javaLocalTimeSerializer
+	}
+	h, mn, s := t.Clock()
+	if h == 0 && mn == 0 && s == 0 && t.Nanosecond() == 0 {
+		return javaLocalDateSerializer
+	}
+	if t.Location() == time.Local {
+		return javaLocalDateTimeSerializer
+	}
+	return javaOffsetDateTimeSerializer
 }
 
 var nilSerializer = &NilSerializer{}
@@ -370,4 +393,8 @@ var uuidSerializer = &UUIDSerializer{}
 var jsonSerializer = &JSONValueSerializer{}
 var javaDateSerializer = &JavaDateSerializer{}
 var javaArrayListSerializer = &JavaArrayListSerializer{}
+var javaLocalDateSerializer = &JavaLocalDateSerializer{}
+var javaLocalTimeSerializer = &JavaLocalTimeSerializer{}
+var javaLocalDateTimeSerializer = &TypeJavaLocalDateTimeSerializer{}
+var javaOffsetDateTimeSerializer = &TypeJavaOffsetDateTimeSerializer{}
 var gobSerializer = &GobSerializer{}
