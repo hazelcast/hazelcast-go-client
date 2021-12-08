@@ -114,9 +114,9 @@ func TestSerializationImprovements(t *testing.T) {
 				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
 			},
 			{
-				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", 3*60*60)),
+				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
 				name:   "JavaOffsetDateTime",
-				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", 3*60*60)),
+				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
 			},
 		}
 		for _, tc := range testCases {

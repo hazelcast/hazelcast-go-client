@@ -489,7 +489,7 @@ func (TypeJavaLocalDateTimeSerializer) Write(output serialization.DataOutput, i 
 type TypeJavaOffsetDateTimeSerializer struct{}
 
 func (TypeJavaOffsetDateTimeSerializer) ID() int32 {
-	return TypeJavaLocalDateTime
+	return TypeJavaOffsetDateTime
 }
 
 func (TypeJavaOffsetDateTimeSerializer) Read(input serialization.DataInput) interface{} {
