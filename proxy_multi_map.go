@@ -115,7 +115,12 @@ func (m *MultiMap) NewLockContext(ctx context.Context) context.Context {
 
 // AddEntryListener adds a continuous entry listener to this multi-map.
 func (m *MultiMap) AddEntryListener(ctx context.Context, config MultiMapEntryListenerConfig, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(ctx, config.IncludeValue, m.smart, config.Key, handler)
+	return m.addEntryListener(ctx, config.IncludeValue, m.smart, config.Key, func(event *EntryNotified) {
+		if int32(event.EventType)&config.flags == 0 {
+			return
+		}
+		handler(event)
+	})
 }
 
 // Clear deletes all entries one by one and fires related events.
@@ -462,37 +467,7 @@ func (c *MultiMapEntryListenerConfig) NotifyEntryRemoved(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryRemoved), enable)
 }
 
-// NotifyEntryUpdated enables receiving an entry event when an entry is updated.
-func (c *MultiMapEntryListenerConfig) NotifyEntryUpdated(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryUpdated), enable)
-}
-
-// NotifyEntryEvicted enables receiving an entry event when an entry is evicted.
-func (c *MultiMapEntryListenerConfig) NotifyEntryEvicted(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryEvicted), enable)
-}
-
-// NotifyEntryAllEvicted enables receiving an entry event when all entries are evicted.
-func (c *MultiMapEntryListenerConfig) NotifyEntryAllEvicted(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryAllEvicted), enable)
-}
-
 // NotifyEntryAllCleared enables receiving an entry event when all entries are cleared.
 func (c *MultiMapEntryListenerConfig) NotifyEntryAllCleared(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAllCleared), enable)
-}
-
-// NotifyEntryMerged enables receiving an entry event when an entry is merged.
-func (c *MultiMapEntryListenerConfig) NotifyEntryMerged(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryMerged), enable)
-}
-
-// NotifyEntryInvalidated enables receiving an entry event when an entry is invalidated.
-func (c *MultiMapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryInvalidated), enable)
-}
-
-// NotifyEntryLoaded enables receiving an entry event when an entry is loaded.
-func (c *MultiMapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
 }

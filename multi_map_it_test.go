@@ -526,21 +526,6 @@ func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 					assert.Equal(t, []interface{}{"testValue"}, val)
 				},
 			},
-			/*{
-				listenerName: "EntryUpdated",
-				event: hz.EntryUpdated,
-				enableListener: func(conf *hz.MultiMapEntryListenerConfig) {
-					conf.NotifyEntryUpdated(true)
-				},
-				trigger: func() {
-					it.MustBool(m.Put(ctx, key, "testValue"))
-					ok, err := m.Put(ctx, key, "testValue")
-					if err != nil {
-						t.Fatal(err)
-					}
-					assert.True(t, ok)
-				},
-			},*/
 			{
 				listenerName: "EntryAllCleared",
 				event:        hz.EntryAllCleared,
