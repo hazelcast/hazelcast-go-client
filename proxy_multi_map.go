@@ -472,11 +472,6 @@ func (c *MultiMapEntryListenerConfig) NotifyEntryEvicted(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryEvicted), enable)
 }
 
-// NotifyEntryExpired enables receiving an entry event when an entry is expired.
-func (c *MultiMapEntryListenerConfig) NotifyEntryExpired(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryExpired), enable)
-}
-
 // NotifyEntryAllEvicted enables receiving an entry event when all entries are evicted.
 func (c *MultiMapEntryListenerConfig) NotifyEntryAllEvicted(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAllEvicted), enable)

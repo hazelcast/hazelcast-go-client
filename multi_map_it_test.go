@@ -450,3 +450,137 @@ func TestMultiMap_TryLockWithLeaseAndTimeout(t *testing.T) {
 		assert.False(t, b)
 	})
 }
+
+func TestMultiMap_ContainsKey(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		ctx := context.Background()
+		keyExists, err := m.ContainsKey(ctx, "key")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, keyExists)
+		// assert key value pair
+		it.MustValue(m.Put(ctx, "key", "value"))
+		keyExists, err = m.ContainsKey(ctx, "key")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, keyExists)
+	})
+}
+
+func TestMultiMap_ContainsValue(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		ctx := context.Background()
+		valueExists, err := m.ContainsValue(ctx, "value")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, valueExists)
+		// assert key value pair
+		it.MustValue(m.Put(ctx, "key", "value"))
+		valueExists, err = m.ContainsValue(ctx, "value")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, valueExists)
+	})
+}
+
+func TestMultiMap_MultiMapEntryListener(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		ctx := context.Background()
+		key := "k1"
+		cases := []struct {
+			listenerName   string
+			event          hz.EntryEventType
+			enableListener func(*hz.MultiMapEntryListenerConfig)
+			trigger        func()
+		}{
+			{
+				listenerName: "EntryAdded",
+				event:        hz.EntryAdded,
+				enableListener: func(conf *hz.MultiMapEntryListenerConfig) {
+					conf.NotifyEntryAdded(true)
+				},
+				trigger: func() {
+					ok, err := m.Put(ctx, key, "testValue")
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.True(t, ok)
+				},
+			},
+			{
+				listenerName: "EntryRemoved",
+				event:        hz.EntryRemoved,
+				enableListener: func(conf *hz.MultiMapEntryListenerConfig) {
+					conf.NotifyEntryRemoved(true)
+				},
+				trigger: func() {
+					it.MustBool(m.Put(ctx, key, "testValue"))
+					val, err := m.Remove(ctx, key)
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.Equal(t, []interface{}{"testValue"}, val)
+				},
+			},
+			/*{
+				listenerName: "EntryUpdated",
+				event: hz.EntryUpdated,
+				enableListener: func(conf *hz.MultiMapEntryListenerConfig) {
+					conf.NotifyEntryUpdated(true)
+				},
+				trigger: func() {
+					it.MustBool(m.Put(ctx, key, "testValue"))
+					ok, err := m.Put(ctx, key, "testValue")
+					if err != nil {
+						t.Fatal(err)
+					}
+					assert.True(t, ok)
+				},
+			},*/
+			{
+				listenerName: "EntryAllCleared",
+				event:        hz.EntryAllCleared,
+				enableListener: func(conf *hz.MultiMapEntryListenerConfig) {
+					conf.NotifyEntryAllCleared(true)
+				},
+				trigger: func() {
+					it.MustBool(m.Put(ctx, key, "testValue"))
+					err := m.Clear(ctx)
+					if err != nil {
+						t.Fatal(err)
+					}
+				},
+			},
+		}
+		opSucceed := atomic.Value{}
+		opSucceed.Store(false)
+		for _, testcase := range cases {
+			t.Run(testcase.listenerName, func(t *testing.T) {
+				listenerConfig := hz.MultiMapEntryListenerConfig{
+					IncludeValue: true,
+					Key:          key,
+				}
+				testcase.enableListener(&listenerConfig)
+				subsID, err := m.AddEntryListener(ctx, listenerConfig, func(event *hz.EntryNotified) {
+					assert.Equal(t, testcase.event, event.EventType)
+					assert.False(t, opSucceed.Load().(bool))
+					opSucceed.Swap(true)
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				testcase.trigger()
+				it.Eventually(t, func() bool {
+					tmp := opSucceed.Load()
+					return tmp.(bool)
+				})
+				opSucceed.Swap(false)
+				it.Must(m.RemoveEntryListener(ctx, subsID))
+			})
+		}
+	})
+}
