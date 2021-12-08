@@ -553,7 +553,7 @@ func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 				subsID, err := m.AddEntryListener(ctx, listenerConfig, func(event *hz.EntryNotified) {
 					assert.Equal(t, testcase.event, event.EventType)
 					assert.False(t, opSucceed.Load().(bool))
-					opSucceed.Swap(true)
+					opSucceed.Store(true)
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -563,7 +563,7 @@ func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 					tmp := opSucceed.Load()
 					return tmp.(bool)
 				})
-				opSucceed.Swap(false)
+				opSucceed.Store(false)
 				it.Must(m.RemoveEntryListener(ctx, subsID))
 			})
 		}
