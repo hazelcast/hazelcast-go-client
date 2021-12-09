@@ -119,6 +119,9 @@ func ParseDSN(dsn string) (*client.Config, error) {
 				config.Cluster.Unisocket = b
 			case "logger.level":
 				config.Logger.Level = logger.Level(v)
+			case "cloud.token":
+				config.Cluster.Cloud.Enabled = true
+				config.Cluster.Cloud.Token = v
 			}
 		}
 	}

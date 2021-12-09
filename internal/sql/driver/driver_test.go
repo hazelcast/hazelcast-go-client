@@ -88,6 +88,21 @@ func TestParseDSN(t *testing.T) {
 				Unisocket: true,
 			},
 		},
+		{
+			DSN: "10.20.30.40:5000;Cluster.Name=my-cluster;Cloud.Token=clfofaakEuQyCH4tANv863eOaa4GAi0arGqJjlzK7WfR9J8HkI",
+			Cluster: &cluster.Config{
+				Name: "my-cluster",
+				Network: cluster.NetworkConfig{
+					Addresses:         []string{"10.20.30.40:5000"},
+					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
+					ConnectionTimeout: types.Duration(5 * time.Second),
+				},
+				Cloud: cluster.CloudConfig{
+					Token:   "clfofaakEuQyCH4tANv863eOaa4GAi0arGqJjlzK7WfR9J8HkI",
+					Enabled: true,
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.DSN, func(t *testing.T) {
