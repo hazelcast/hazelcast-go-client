@@ -454,36 +454,36 @@ func TestMultiMap_TryLockWithLeaseAndTimeout(t *testing.T) {
 func TestMultiMap_ContainsKey(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
-		keyExists, err := m.ContainsKey(ctx, "key")
+		exists, err := m.ContainsKey(ctx, "key")
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.False(t, keyExists)
+		assert.False(t, exists)
 		// assert key value pair
 		it.MustValue(m.Put(ctx, "key", "value"))
-		keyExists, err = m.ContainsKey(ctx, "key")
+		exists, err = m.ContainsKey(ctx, "key")
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.True(t, keyExists)
+		assert.True(t, exists)
 	})
 }
 
 func TestMultiMap_ContainsValue(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
-		valueExists, err := m.ContainsValue(ctx, "value")
+		exists, err := m.ContainsValue(ctx, "value")
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.False(t, valueExists)
+		assert.False(t, exists)
 		// assert key value pair
 		it.MustValue(m.Put(ctx, "key", "value"))
-		valueExists, err = m.ContainsValue(ctx, "value")
+		exists, err = m.ContainsValue(ctx, "value")
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.True(t, valueExists)
+		assert.True(t, exists)
 	})
 }
 
@@ -541,7 +541,7 @@ func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 				},
 			},
 		}
-		opSucceed := false
+		success := false
 		for _, testcase := range cases {
 			t.Run(testcase.listenerName, func(t *testing.T) {
 				listenerConfig := hz.MultiMapEntryListenerConfig{
@@ -551,17 +551,17 @@ func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 				testcase.setConf(&listenerConfig)
 				subsID, err := m.AddEntryListener(ctx, listenerConfig, func(event *hz.EntryNotified) {
 					assert.Equal(t, testcase.event, event.EventType)
-					assert.False(t, opSucceed)
-					opSucceed = true
+					assert.False(t, success)
+					success = true
 				})
 				if err != nil {
 					t.Fatal(err)
 				}
 				testcase.triggerEvent()
 				it.Eventually(t, func() bool {
-					return opSucceed
+					return success
 				})
-				opSucceed = false
+				success = false
 				it.Must(m.RemoveEntryListener(ctx, subsID))
 			})
 		}
