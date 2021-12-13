@@ -57,14 +57,13 @@ const (
 )
 
 const (
-	maxIndexAttributes               = 255
-	defaultLockID                    = 0
-	lockIDKey          lockIDKeyType = "__hz_lock_id"
-	leaseUnset                       = -1
+	maxIndexAttributes = 255
+	defaultLockID      = 0
+	leaseUnset         = -1
 )
 
 type lockID int64
-type lockIDKeyType string
+type lockIDKey struct{}
 
 type creationBundle struct {
 	InvocationService    *invocation.Service
@@ -454,7 +453,7 @@ func extractLockID(ctx context.Context) int64 {
 	if ctx == nil {
 		return defaultLockID
 	}
-	lidv := ctx.Value(lockIDKey)
+	lidv := ctx.Value(lockIDKey{})
 	if lidv == nil {
 		return defaultLockID
 	}

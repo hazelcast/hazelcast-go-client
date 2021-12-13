@@ -116,7 +116,7 @@ func TestSQLQuery(t *testing.T) {
 	for _, tc := range testCases {
 		name := fmt.Sprintf("%s/%s", tc.keyFmt, tc.valueFmt)
 		t.Run(name, func(t *testing.T) {
-			testSQLQuery(t, tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn)
+			testSQLQuery(t, context.Background(), tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn)
 		})
 	}
 }
@@ -217,9 +217,21 @@ func TestSQLWithPortableData(t *testing.T) {
 	})
 }
 
-func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {
+func TestSQLQueryWithCursorBufferSize(t *testing.T) {
+	fn := func(i int) interface{} { return int32(i) }
+	ctx := driver.WithCursorBufferSize(context.Background(), 10)
+	testSQLQuery(t, ctx, "int", "int", fn, fn)
+}
+
+func TestSQLQueryWithQueryTimeout(t *testing.T) {
+	fn := func(i int) interface{} { return int32(i) }
+	ctx := driver.WithQueryTimeout(context.Background(), 5*time.Second)
+	testSQLQuery(t, ctx, "int", "int", fn, fn)
+}
+
+func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		const rowCount = 10
+		const rowCount = 50
 		target, err := populateMap(m, rowCount, keyFn, valueFn)
 		if err != nil {
 			t.Fatal(err)
@@ -235,7 +247,7 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 		}
 		defer db.Close()
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
-		rows, err := db.Query(query)
+		rows, err := db.QueryContext(ctx, query)
 		if err != nil {
 			log.Fatal(err)
 		}

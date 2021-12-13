@@ -21,7 +21,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"math"
-	"reflect"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -69,7 +68,9 @@ func newSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fa
 // A placeholder is the question mark (?) character.
 // For each placeholder, a corresponding param should exist.
 func (s *SQLService) ExecuteSQL(ctx context.Context, query string, params []driver.Value) (*ExecResult, error) {
-	resp, err := s.executeSQL(ctx, query, expectedResultUpdateCount, TimeoutMillis(), CursorBufferSize(), params)
+	cbs := ExtractCursorBufferSize(ctx)
+	tom := ExtractTimeoutMillis(ctx)
+	resp, err := s.executeSQL(ctx, query, expectedResultUpdateCount, tom, cbs, params)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +80,11 @@ func (s *SQLService) ExecuteSQL(ctx context.Context, query string, params []driv
 // QuerySQL runs the given SQL query on the member-side.
 // Placeholders in the query is replaced by params.
 // A placeholder is the question mark (?) character.
-// For each placeholder, a corresponding param should exist.
+// For each placeholder, a corresponding parameter should exist.
 func (s *SQLService) QuerySQL(ctx context.Context, query string, params []driver.Value) (*QueryResult, error) {
-	resp, err := s.executeSQL(ctx, query, expectedResultRows, TimeoutMillis(), CursorBufferSize(), params)
+	cbs := ExtractCursorBufferSize(ctx)
+	tom := ExtractTimeoutMillis(ctx)
+	resp, err := s.executeSQL(ctx, query, expectedResultRows, tom, cbs, params)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +98,7 @@ func (s *SQLService) Fetch(qid isql.QueryID, conn *cluster.Connection, cbs int32
 		return nil, err
 	}
 	page, err := codec.DecodeSqlFetchResponse(resp, s.serializationService)
-	if !reflect.ValueOf(err).IsNil() {
+	if err != (*isql.Error)(nil) {
 		return nil, err
 	}
 	return page, nil
@@ -171,4 +174,26 @@ func (s *SQLService) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.Cli
 		return nil, err
 	}
 	return res.(*proto.ClientMessage), nil
+}
+
+func ExtractCursorBufferSize(ctx context.Context) int32 {
+	if ctx == nil {
+		return DefaultCursorBufferSize
+	}
+	cbsv := ctx.Value(QueryCursorBufferSizeKey{})
+	if cbsv == nil {
+		return DefaultCursorBufferSize
+	}
+	return cbsv.(int32)
+}
+
+func ExtractTimeoutMillis(ctx context.Context) int64 {
+	if ctx == nil {
+		return DefaultTimeoutMillis
+	}
+	tomv := ctx.Value(QueryTimeoutKey{})
+	if tomv == nil {
+		return DefaultTimeoutMillis
+	}
+	return tomv.(int64)
 }

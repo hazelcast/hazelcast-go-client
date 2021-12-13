@@ -32,32 +32,19 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+type QueryCursorBufferSizeKey struct{}
+type QueryTimeoutKey struct{}
+
 const (
-	driverName = "hazelcast"
+	driverName                    = "hazelcast"
+	DefaultCursorBufferSize int32 = 4096
+	DefaultTimeoutMillis    int64 = -1
 )
 
 var (
 	_                   driver.Driver = (*Driver)(nil)
-	cursorBufferSize    int32         = 4096
-	timeoutMillis       int64         = -1
 	serializationConfig atomic.Value
 )
-
-func CursorBufferSize() int32 {
-	return atomic.LoadInt32(&cursorBufferSize)
-}
-
-func SetCursorBufferSize(size int32) {
-	atomic.StoreInt32(&cursorBufferSize, size)
-}
-
-func TimeoutMillis() int64 {
-	return atomic.LoadInt64(&timeoutMillis)
-}
-
-func SetTimeoutMillis(ms int64) {
-	atomic.StoreInt64(&timeoutMillis, ms)
-}
 
 // SerializationConfig returns the current serialization config.
 // Note that it doesn't return a copy.

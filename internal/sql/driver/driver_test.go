@@ -17,13 +17,17 @@
 package driver_test
 
 import (
+	"context"
+	"math"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	pubdriver "github.com/hazelcast/hazelcast-go-client/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -112,6 +116,106 @@ func TestParseDSN(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.Equal(t, tc.Cluster, c.Cluster)
+		})
+	}
+}
+
+type cursorBufferSizeTestCase struct {
+	Name   string
+	CtxFn  func() context.Context
+	Target int32
+	Panics bool
+}
+
+func TestExtractCursorBufferSize(t *testing.T) {
+	testCases := []cursorBufferSizeTestCase{
+		{
+			Name:   "default",
+			CtxFn:  func() context.Context { return context.Background() },
+			Target: driver.DefaultCursorBufferSize,
+		},
+		{
+			Name:   "positive int32 size",
+			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), 1000) },
+			Target: 1000,
+		},
+		{
+			Name:   "positive max int32 size",
+			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), math.MaxInt32) },
+			Target: math.MaxInt32,
+		},
+		{
+			Name:   "zero size",
+			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), 0) },
+			Panics: true,
+		},
+		{
+			Name:   "negative size",
+			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), -1) },
+			Panics: true,
+		},
+		{
+			Name:   "nil parent",
+			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(nil, 1000) },
+			Panics: true,
+		},
+	}
+	if !runtime.Is32BitArch() {
+		v := math.MaxInt32
+		testCases = append(testCases, cursorBufferSizeTestCase{
+			Name:   "> 32bit",
+			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), v+1) },
+			Panics: true,
+		})
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			if tc.Panics {
+				assert.Panics(t, func() { tc.CtxFn() })
+				return
+			}
+			ctx := tc.CtxFn()
+			assert.Equal(t, tc.Target, driver.ExtractCursorBufferSize(ctx))
+		})
+	}
+}
+
+func TestExtractTimeoutMillis(t *testing.T) {
+	testCases := []struct {
+		Name   string
+		CtxFn  func() context.Context
+		Target int64
+		Panics bool
+	}{
+		{
+			Name:   "default",
+			CtxFn:  func() context.Context { return context.Background() },
+			Target: driver.DefaultTimeoutMillis,
+		},
+		{
+			Name:   "positive duration",
+			CtxFn:  func() context.Context { return pubdriver.WithQueryTimeout(context.Background(), 10*time.Second) },
+			Target: 10_000,
+		},
+		{
+			Name:   "negative duration",
+			CtxFn:  func() context.Context { return pubdriver.WithQueryTimeout(context.Background(), -1000) },
+			Target: -1,
+		},
+		{
+			Name:   "nil parent",
+			CtxFn:  func() context.Context { return pubdriver.WithQueryTimeout(nil, 10*time.Second) },
+			Panics: true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			if tc.Panics {
+				assert.Panics(t, func() { tc.CtxFn() })
+				return
+			}
+			ctx := tc.CtxFn()
+			assert.Equal(t, tc.Target, driver.ExtractTimeoutMillis(ctx))
 		})
 	}
 }

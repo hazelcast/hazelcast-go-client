@@ -25,8 +25,6 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-
-	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
 var names = []string{"Gorkem", "Ezgi", "Joe", "Jane", "Mike", "Mandy", "Tom", "Tina"}
