@@ -121,8 +121,8 @@ func TestParseDSN(t *testing.T) {
 }
 
 type cursorBufferSizeTestCase struct {
-	Name   string
 	CtxFn  func() context.Context
+	Name   string
 	Target int32
 	Panics bool
 }
@@ -182,8 +182,8 @@ func TestExtractCursorBufferSize(t *testing.T) {
 
 func TestExtractTimeoutMillis(t *testing.T) {
 	testCases := []struct {
-		Name   string
 		CtxFn  func() context.Context
+		Name   string
 		Target int64
 		Panics bool
 	}{

@@ -205,28 +205,28 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 }
 
 type fake struct {
+	date        time.Time
 	portable    serialization.Portable
+	nilDate     *time.Time
 	utf         string
-	boolArr     []bool
 	utfArr      []string
 	i64Arr      []int64
-	i32Arr      []int32
 	i16Arr      []int16
 	ui16Arr     []uint16
 	f64Arr      []float64
 	f32Arr      []float32
 	bytArr      []byte
+	i32Arr      []int32
+	boolArr     []bool
 	portableArr []serialization.Portable
-	f64         float64
 	i64         int64
+	f64         float64
 	f32         float32
 	i32         int32
 	i16         int16
 	ui16        uint16
 	boo         bool
 	byt         byte
-	nilDate     *time.Time
-	date        time.Time
 }
 
 func (*fake) FactoryID() int32 {

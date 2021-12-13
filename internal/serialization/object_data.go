@@ -749,13 +749,6 @@ func (i *ObjectDataInput) readTime() (h, m, s, nanos int) {
 	return
 }
 
-func (i *ObjectDataInput) backup(pos int32, f func()) {
-	backup := i.position
-	i.position = pos
-	f()
-	i.position = backup
-}
-
 func (i *ObjectDataInput) readArrayOfTime(f func() time.Time) []time.Time {
 	var ts []time.Time
 	cnt := int(i.readInt32())

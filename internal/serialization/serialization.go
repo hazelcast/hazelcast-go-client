@@ -290,7 +290,7 @@ func (s *Service) registerIdentifiedFactories() error {
 }
 
 func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Serializer {
-	switch obj.(type) {
+	switch o := obj.(type) {
 	case nil:
 		return nilSerializer
 	case bool:
@@ -336,7 +336,7 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 	case types.UUID:
 		return uuidSerializer
 	case time.Time:
-		return dateTimeSerializer(obj.(time.Time))
+		return dateTimeSerializer(o)
 	case pubserialization.JSON:
 		return jsonSerializer
 	}

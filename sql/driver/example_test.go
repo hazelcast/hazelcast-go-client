@@ -24,7 +24,7 @@ import (
 	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
-func ExampleDriver_Open() {
+func Example() {
 	db, err := sql.Open("hazelcast", "localhost;Cluster.Unisocket=true")
 	if err != nil {
 		panic(err)

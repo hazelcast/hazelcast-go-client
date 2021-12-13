@@ -35,5 +35,5 @@ func main() {
 	if err := db.Ping(); err != nil {
 		panic(err)
 	}
-	log.Println("Connection establshed, and the ping was successful. TIme to exit.")
+	log.Println("Connection established, and the ping was successful. Time to exit.")
 }

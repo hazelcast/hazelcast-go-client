@@ -41,19 +41,19 @@ const (
 )
 
 type Record struct {
-	VarcharValue               string
-	TinyIntValue               int8
-	SmallIntValue              int16
-	IntegerValue               int32
-	BigIntValue                int64
-	BoolValue                  bool
-	RealValue                  float32
-	DoubleValue                float64
-	DateValue                  time.Time
-	TimeValue                  time.Time
-	TimestampValue             time.Time
 	TimestampWithTimeZoneValue time.Time
+	TimestampValue             time.Time
+	TimeValue                  time.Time
+	DateValue                  time.Time
 	NullValue                  interface{}
+	VarcharValue               string
+	DoubleValue                float64
+	BigIntValue                int64
+	RealValue                  float32
+	IntegerValue               int32
+	SmallIntValue              int16
+	TinyIntValue               int8
+	BoolValue                  bool
 }
 
 func (r Record) Create(classID int32) serialization.Portable {

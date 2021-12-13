@@ -94,9 +94,9 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 func TestSerializationImprovements(t *testing.T) {
 	serializationImprovementsTester(func(ss *iserialization.Service) {
 		testCases := []struct {
-			name   string
 			input  interface{}
 			target interface{}
+			name   string
 		}{
 			{
 				input:  time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
