@@ -1,3 +1,4 @@
+//go:build hazelcastinternal
 // +build hazelcastinternal
 
 /*
@@ -20,10 +21,13 @@ package hazelcast_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -84,6 +88,31 @@ func TestNotReceivedInvocation(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+func TestLiteMembersPartitionService(t *testing.T) {
+	conf := it.MemberXMLConf{
+		ClusterName: it.DefaultClusterName,
+		Port:        it.DefaultPort,
+		// enable lite members
+		LiteMember: true,
+	}
+	tc := it.StartNewClusterWithConfig(3, conf.String(), it.DefaultPort)
+	defer tc.Shutdown()
+	ctx := context.Background()
+	config := tc.DefaultConfig()
+	config.Cluster.Unisocket = false
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	_, found := ci.PartitionService().GetPartitionOwner(0)
+	assert.False(t, found)
+	pCount := ci.PartitionService().PartitionCount()
+	tmap, err := client.GetMap(ctx, "test-map")
+	assert.Nil(t, err)
+	_, err = tmap.Put(ctx, "key", "value")
+	assert.True(t, errors.Is(err, hzerrors.ErrNoDataMember))
+	assert.True(t, errors.Is(err, hzerrors.ErrNoDataMember))
 }
 
 func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clientHost string, port int) {

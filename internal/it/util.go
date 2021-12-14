@@ -272,7 +272,7 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 		}
 	}
 	if launchDefaultCluster && defaultTestCluster == nil {
-		conf := xmlConfig{
+		conf := MemberXMLConf{
 			ClusterName: DefaultClusterName,
 			Port:        DefaultPort,
 			SSL:         SSLEnabled(),
@@ -295,7 +295,7 @@ func StartNewCluster(memberCount int) *TestCluster {
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
 	ensureRemoteController(false)
-	conf := xmlConfig{
+	conf := MemberXMLConf{
 		ClusterName: clusterName,
 		Port:        port,
 		SSL:         SSLEnabled(),
@@ -343,14 +343,14 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	return config
 }
 
-type xmlConfig struct {
+type MemberXMLConf struct {
 	ClusterName string
 	Port        int
 	SSL         bool
 	LiteMember  bool
 }
 
-func (xc *xmlConfig) String() string {
+func (xc *MemberXMLConf) String() string {
 	var (
 		clusterName = "dev"
 		port        = 5701
