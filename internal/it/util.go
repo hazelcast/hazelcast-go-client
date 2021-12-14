@@ -272,11 +272,12 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 		}
 	}
 	if launchDefaultCluster && defaultTestCluster == nil {
-		if SSLEnabled() {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
-		} else {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
+		conf := xmlConfig{
+			ClusterName: DefaultClusterName,
+			Port:        DefaultPort,
+			SSL:         SSLEnabled(),
 		}
+		defaultTestCluster = startNewCluster(rc, MemberCount(), conf.String(), DefaultPort)
 	}
 	return rc
 }
@@ -294,11 +295,12 @@ func StartNewCluster(memberCount int) *TestCluster {
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
 	ensureRemoteController(false)
-	config := xmlConfig(clusterName, port)
-	if SSLEnabled() {
-		config = xmlSSLConfig(clusterName, port)
+	conf := xmlConfig{
+		ClusterName: clusterName,
+		Port:        port,
+		SSL:         SSLEnabled(),
 	}
-	return startNewCluster(rc, memberCount, config, port)
+	return startNewCluster(rc, memberCount, conf.String(), port)
 }
 
 func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
@@ -341,32 +343,32 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	return config
 }
 
-func xmlConfig(clusterName string, port int) string {
-	return fmt.Sprintf(`
-        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
-            <cluster-name>%s</cluster-name>
-            <network>
-               <port>%d</port>
-            </network>
-			<map name="test-map">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<serialization>
-				<data-serializable-factories>
-					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
-					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
-				</data-serializable-factories>
-			</serialization>
-        </hazelcast>
-	`, clusterName, port)
+type xmlConfig struct {
+	ClusterName string
+	Port        int
+	SSL         bool
+	LiteMember  bool
 }
 
-func xmlSSLConfig(clusterName string, port int) string {
+func (xc *xmlConfig) String() string {
+	var (
+		clusterName = "dev"
+		port        = 5701
+		ssl         = "false"
+		lite        = "false"
+	)
+	if xc.ClusterName != "" {
+		clusterName = xc.ClusterName
+	}
+	if xc.Port != 0 {
+		port = xc.Port
+	}
+	if xc.SSL {
+		ssl = "true"
+	}
+	if xc.LiteMember {
+		lite = "true"
+	}
 	return fmt.Sprintf(`
 		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -375,7 +377,7 @@ func xmlSSLConfig(clusterName string, port int) string {
 			<cluster-name>%s</cluster-name>
 			<network>
 			   <port>%d</port>
-				<ssl enabled="true">
+				<ssl enabled="%s">
 					<factory-class-name>
 						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
 					</factory-class-name>
@@ -398,8 +400,9 @@ func xmlSSLConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<lite-member enabled="%s"/>
 		</hazelcast>
-			`, clusterName, port)
+			`, clusterName, port, ssl, lite)
 }
 
 func getLoggerLevel() logger.Level {
