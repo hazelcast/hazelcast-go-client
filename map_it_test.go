@@ -1095,6 +1095,24 @@ func TestMap_ExecuteOnEntriesWithPredicate(t *testing.T) {
 	})
 }
 
+func TestMap_ExecuteOnKey(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
+	}
+	it.MapTesterWithConfig(t, cb, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, "k1", "my-value"))
+		it.MustValue(m.Put(ctx, "k2", "my-value"))
+		vs, err := m.ExecuteOnKey(ctx, &SimpleEntryProcessor{value: "test"}, "k1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, "test", vs)
+		assert.Equal(t, "test", it.MustValue(m.Get(ctx, "k1")))
+		assert.Equal(t, "my-value", it.MustValue(m.Get(ctx, "k2")))
+	})
+}
+
 func TestMap_ExecuteOnKeys(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
