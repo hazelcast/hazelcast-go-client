@@ -19,6 +19,7 @@ package serialization_test
 import (
 	"encoding/binary"
 	"math"
+	"math/big"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -118,6 +119,11 @@ func TestSerializationImprovements(t *testing.T) {
 				name:   "JavaOffsetDateTime",
 				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
 			},
+			{
+				input:  big.NewInt(-10_000_000),
+				name:   "JavaBigInteger",
+				target: big.NewInt(-10_000_000),
+			},
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
@@ -129,11 +135,15 @@ func TestSerializationImprovements(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				tt := tc.target.(time.Time)
-				ii := value.(time.Time)
-				if !tt.Equal(ii) {
-					t.Fatalf("%s != %s", tt.String(), ii.String())
+				if tt, ok := tc.target.(time.Time); ok {
+					ii := value.(time.Time)
+					if !tt.Equal(ii) {
+						t.Fatalf("%s != %s", tt.String(), ii.String())
+					}
+				} else {
+					assert.Equal(t, tc.target, tc.input)
 				}
+
 			})
 		}
 
