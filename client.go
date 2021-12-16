@@ -133,8 +133,8 @@ func newClient(config Config) (*Client, error) {
 }
 
 func loggerFromConf(config Config) (ilogger.LogAdaptor, error) {
-	if config.Logger.Custom != nil {
-		return ilogger.LogAdaptor{Logger: config.Logger.Custom}, nil
+	if config.Logger.CustomLogger != nil {
+		return ilogger.LogAdaptor{Logger: config.Logger.CustomLogger}, nil
 	}
 	logger, err := ilogger.NewWithLevel(config.Logger.Level)
 	if err != nil {

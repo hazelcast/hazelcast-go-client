@@ -41,7 +41,7 @@ func Example() {
 	// Create the configuration.
 	config := hazelcast.Config{}
 	// Set attributes as fit.
-	config.Logger.Custom = &CustomLogger{}
+	config.Logger.CustomLogger = &CustomLogger{}
 	// Start the client with the configuration provider.
 	ctx := context.TODO()
 	_, err := hazelcast.StartNewClientWithConfig(ctx, config)

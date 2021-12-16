@@ -17,7 +17,7 @@ Setting it to "trace" enables logging for every level.
 You can also provide a custom logger that satisfies logger.Logger similarly:
 	config := hazelcast.Config{}
 	var customLogger logger.Logger := MyCustomLogger{}
-	config.Logger.Custom = logger.WarnLevel
+	config.Logger.CustomLogger = customLogger
 See the example for a detailed custom logger implementation.
 */
 package logger
