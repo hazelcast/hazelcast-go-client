@@ -6,8 +6,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
-// Logger is the interface that is used by client for logging.
-// Level is: type Level string
+// Logger interface is used to provide a custom logger to client via logger.Config
+// weight of type Weight, describes the log level and f returns the message to be logged.
 type Logger interface {
 	Log(weight Weight, f func() string)
 }
