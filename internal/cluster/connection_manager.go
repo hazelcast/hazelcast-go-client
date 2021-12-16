@@ -411,7 +411,7 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 	for _, addr := range seedAddrs {
 		initialAddr, err = m.tryConnectAddress(ctx, addr, connectMember)
 		if err != nil {
-			return "", err
+			continue
 		}
 	}
 	if initialAddr == "" {
