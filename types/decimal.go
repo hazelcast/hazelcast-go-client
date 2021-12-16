@@ -16,13 +16,17 @@
 
 package types
 
-import "math/big"
+import (
+	"math/big"
+)
 
+// Decimal is a wrapper for Hazelcast Decimal.
 type Decimal struct {
 	unscaledValue *big.Int
 	scale         int32
 }
 
+// NewDecimal creates and returns a Decimal value with the given big int and scale.
 func NewDecimal(unscaledValue *big.Int, scale int32) Decimal {
 	return Decimal{
 		unscaledValue: unscaledValue,
@@ -30,10 +34,12 @@ func NewDecimal(unscaledValue *big.Int, scale int32) Decimal {
 	}
 }
 
+// UnscaledValue returns the unscaled value of the decimal.
 func (d Decimal) UnscaledValue() *big.Int {
 	return d.unscaledValue
 }
 
+// Scale returns the scale of the decimal.
 func (d Decimal) Scale() int32 {
 	return d.scale
 }

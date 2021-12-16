@@ -503,7 +503,6 @@ func (fixSizedTypesCodec) DecodeUUID(buffer []byte, offset int32) types.UUID {
 	if isNull {
 		return types.UUID{}
 	}
-
 	mostSignificantOffset := offset + proto.BooleanSizeInBytes
 	leastSignificantOffset := mostSignificantOffset + proto.LongSizeInBytes
 	mostSignificant := uint64(FixSizedTypesCodec.DecodeLong(buffer, mostSignificantOffset))
@@ -975,6 +974,8 @@ func DecodeSQLColumn(t isql.ColumnType, it *proto.ForwardFrameIterator) ([]drive
 		return DecodeListCNTimestampWithTimeZone(it), nil
 	case isql.ColumnTypeNull:
 		return DecodeListCNNull(it), nil
+	case isql.ColumnTypeDecimal:
+		return DecodeListMultiFrameContainsNullableDecimal(it), nil
 	default:
 		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("unknown type for SQL column: %d", t), nil)
 	}
@@ -1111,6 +1112,24 @@ func DecodeListMultiFrameContainsNullableData(it *proto.ForwardFrameIterator, ss
 	return DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) (driver.Value, error) {
 		return ss.ToObject(DecodeData(it))
 	})
+}
+
+func DecodeListMultiFrameContainsNullableDecimal(it *proto.ForwardFrameIterator) []driver.Value {
+	// the decoder below never returns an error, so ignoring the error
+	vs, _ := DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) (driver.Value, error) {
+		return DecodeDecimal(it), nil
+	})
+	return vs
+}
+
+func DecodeDecimal(it *proto.ForwardFrameIterator) types.Decimal {
+	frame := it.Next()
+	bl := int(FixSizedTypesCodec.DecodeInt(frame.Content, 0))
+	pos := proto.IntSizeInBytes
+	bint := iserialization.JavaBytesToBigInt(frame.Content[pos : pos+bl])
+	pos += bl
+	scale := FixSizedTypesCodec.DecodeInt(frame.Content, int32(pos))
+	return types.NewDecimal(bint, scale)
 }
 
 func decodeLocalDate(buffer []byte, offset int32) (y int, m time.Month, d int) {

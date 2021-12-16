@@ -19,10 +19,12 @@ package serialization
 import (
 	"encoding/binary"
 	"fmt"
+	"math/big"
 	"time"
 	"unsafe"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -301,6 +303,39 @@ func (o *ObjectDataOutput) WriteTimestampWithTimezone(t time.Time) {
 	o.WriteTimestamp(t)
 	_, off := t.Zone()
 	o.WriteInt32(int32(off))
+}
+
+func (o *ObjectDataOutput) WriteBigInt(b *big.Int) {
+	bs := BigIntToJavaBytes(b)
+	o.WriteInt32(int32(len(bs)))
+	o.WriteByteArray(bs)
+}
+
+func (o *ObjectDataOutput) WriteBigIntArray(bs []*big.Int) {
+	if len(bs) == 0 {
+		o.WriteInt32(nilArrayLength)
+		return
+	}
+	o.WriteInt32(int32(len(bs)))
+	for _, b := range bs {
+		o.WriteBigInt(b)
+	}
+}
+
+func (o *ObjectDataOutput) WriteDecimal(d types.Decimal) {
+	o.WriteBigInt(d.UnscaledValue())
+	o.WriteInt32(d.Scale())
+}
+
+func (o *ObjectDataOutput) WriteDecimalArray(ds []types.Decimal) {
+	if len(ds) == 0 {
+		o.WriteInt32(nilArrayLength)
+		return
+	}
+	o.WriteInt32(int32(len(ds)))
+	for _, d := range ds {
+		o.WriteDecimal(d)
+	}
 }
 
 func (o *ObjectDataOutput) WriteDateArray(ts []time.Time) {
@@ -734,6 +769,28 @@ func (i *ObjectDataInput) ReadTimestampWithTimezoneArray() []time.Time {
 	return i.readArrayOfTime(i.ReadTimestampWithTimezone)
 }
 
+func (i *ObjectDataInput) ReadBigInt() *big.Int {
+	return JavaBytesToBigInt(i.ReadByteArray())
+}
+
+func (i *ObjectDataInput) ReadDecimal() types.Decimal {
+	v := i.ReadBigInt()
+	scale := i.readInt32()
+	return types.NewDecimal(v, scale)
+}
+
+func (i *ObjectDataInput) ReadDecimalArray() []types.Decimal {
+	var ds []types.Decimal
+	l := i.readInt32()
+	if l == nilArrayLength {
+		return ds
+	}
+	for j := 0; j < int(l); j++ {
+		ds[j] = i.ReadDecimal()
+	}
+	return ds
+}
+
 func (i *ObjectDataInput) readDate() (y int, m time.Month, d int) {
 	y = int(i.readInt32())
 	m = time.Month(i.readByte())
@@ -751,13 +808,13 @@ func (i *ObjectDataInput) readTime() (h, m, s, nanos int) {
 
 func (i *ObjectDataInput) readArrayOfTime(f func() time.Time) []time.Time {
 	var ts []time.Time
-	cnt := int(i.readInt32())
-	if cnt == 0 {
+	l := i.readInt32()
+	if l == nilArrayLength {
 		return ts
 	}
-	ts = make([]time.Time, cnt)
-	for j := 0; j < cnt; j++ {
-		ts = append(ts, f())
+	ts = make([]time.Time, l)
+	for j := 0; j < int(l); j++ {
+		ts[j] = f()
 	}
 	return ts
 }
@@ -876,3 +933,11 @@ func (e *EmptyObjectDataOutput) WriteTimeArray(ts []time.Time) {}
 func (e *EmptyObjectDataOutput) WriteTimestampArray(ts []time.Time) {}
 
 func (e *EmptyObjectDataOutput) WriteTimestampWithTimezoneArray(ts []time.Time) {}
+
+func (e *EmptyObjectDataOutput) WriteBigInt(b *big.Int) {}
+
+func (e *EmptyObjectDataOutput) WriteBigIntArray(bs []*big.Int) {}
+
+func (e *EmptyObjectDataOutput) WriteDecimal(d types.Decimal) {}
+
+func (e *EmptyObjectDataOutput) WriteDecimalArray(ds []types.Decimal) {}

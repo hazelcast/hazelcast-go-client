@@ -22,6 +22,7 @@ import (
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type DefaultPortableWriter struct {
@@ -225,6 +226,17 @@ func (pw *DefaultPortableWriter) WriteTimestampArray(fieldName string, ts []time
 func (pw *DefaultPortableWriter) WriteTimestampWithTimezoneArray(fieldName string, ts []time.Time) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimestampWithTimezoneArray))
 	pw.output.WriteTimestampWithTimezoneArray(ts)
+}
+
+func (pw *DefaultPortableWriter) WriteDecimal(fieldName string, d *types.Decimal) {
+	pw.writeNullableField(fieldName, serialization.TypeDecimal, d == nil, func() {
+		pw.output.WriteDecimal(*d)
+	})
+}
+
+func (pw *DefaultPortableWriter) WriteDecimalArray(fieldName string, ds []types.Decimal) {
+	pw.setPosition(fieldName, int32(serialization.TypeDecimalArray))
+	pw.output.WriteDecimalArray(ds)
 }
 
 func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {

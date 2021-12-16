@@ -22,6 +22,7 @@ import (
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type DefaultPortableReader struct {
@@ -358,29 +359,49 @@ func (pr *DefaultPortableReader) ReadTimestampWithTimezone(fieldName string) (t 
 }
 
 func (pr *DefaultPortableReader) ReadDateArray(fieldName string) (t []time.Time) {
-	pr.readNullable(fieldName, serialization.TypeDateArray, func() {
+	pos := pr.positionByField(fieldName, serialization.TypeDateArray)
+	pr.runAtPosition(pos, func() {
 		t = pr.input.ReadDateArray()
 	})
 	return
 }
 
 func (pr *DefaultPortableReader) ReadTimeArray(fieldName string) (t []time.Time) {
-	pr.readNullable(fieldName, serialization.TypeTimeArray, func() {
+	pos := pr.positionByField(fieldName, serialization.TypeTimeArray)
+	pr.runAtPosition(pos, func() {
 		t = pr.input.ReadTimeArray()
 	})
 	return
 }
 
 func (pr *DefaultPortableReader) ReadTimestampArray(fieldName string) (t []time.Time) {
-	pr.readNullable(fieldName, serialization.TypeTimestampArray, func() {
+	pos := pr.positionByField(fieldName, serialization.TypeTimestampArray)
+	pr.runAtPosition(pos, func() {
 		t = pr.input.ReadTimestampArray()
 	})
 	return
 }
 
 func (pr *DefaultPortableReader) ReadTimestampWithTimezoneArray(fieldName string) (t []time.Time) {
-	pr.readNullable(fieldName, serialization.TypeTimestampWithTimezone, func() {
+	pos := pr.positionByField(fieldName, serialization.TypeTimestampWithTimezoneArray)
+	pr.runAtPosition(pos, func() {
 		t = pr.input.ReadTimestampWithTimezoneArray()
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadDecimal(fieldName string) (d *types.Decimal) {
+	pr.readNullable(fieldName, serialization.TypeDecimal, func() {
+		v := pr.input.ReadDecimal()
+		d = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadDecimalArray(fieldName string) (ds []types.Decimal) {
+	pos := pr.positionByField(fieldName, serialization.TypeDecimalArray)
+	pr.runAtPosition(pos, func() {
+		ds = pr.input.ReadDecimalArray()
 	})
 	return
 }

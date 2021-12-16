@@ -94,7 +94,7 @@ func makePositive(a []byte) []big.Word {
 			b--
 		}
 		// Mask indicates which bits must be complemented
-		mask := math.MaxUint32 >> (8 * (3 - numBytesToTransfer))
+		mask := int64(math.MaxUint32 >> (8 * (3 - numBytesToTransfer)))
 		res[i] = ^res[i] & big.Word(mask)
 	}
 	// Add one to one's complement to generate two's complement.

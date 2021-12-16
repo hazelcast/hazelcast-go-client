@@ -167,6 +167,14 @@ func (cd *ClassDefinition) AddTimestampWithTimezoneArrayField(fieldName string) 
 	return cd.addNewFieldDefinition(fieldName, TypeTimestampWithTimezoneArray)
 }
 
+func (cd *ClassDefinition) AddDecimalField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeDecimal)
+}
+
+func (cd *ClassDefinition) AddDecimalArrayField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeDecimalArray)
+}
+
 type FieldDefinitionType int32
 
 const (

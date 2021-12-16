@@ -21,6 +21,7 @@ import (
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type ClassDefinitionWriter struct {
@@ -156,6 +157,14 @@ func (cdw *ClassDefinitionWriter) WriteTimestampArray(fieldName string, value []
 
 func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezoneArray(fieldName string, value []time.Time) {
 	must(cdw.classDefinition.AddTimestampWithTimezoneArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDecimal(fieldName string, d *types.Decimal) {
+	must(cdw.classDefinition.AddDecimalField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDecimalArray(fieldName string, ds []types.Decimal) {
+	must(cdw.classDefinition.AddDecimalArrayField(fieldName))
 }
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) {

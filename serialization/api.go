@@ -16,7 +16,12 @@
 
 package serialization
 
-import "time"
+import (
+	"math/big"
+	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/types"
+)
 
 // IdentifiedDataSerializableFactory is used to create IdentifiedDataSerializable instances during deserialization.
 type IdentifiedDataSerializableFactory interface {
@@ -186,6 +191,18 @@ type DataOutput interface {
 
 	// WriteTimestampWithTimezoneArray writes the given timestamps with timezones.
 	WriteTimestampWithTimezoneArray(ts []time.Time)
+
+	// WriteBigInt writes the given big int.
+	WriteBigInt(b *big.Int)
+
+	// WriteBigIntArray writes the given big int array.
+	WriteBigIntArray(bs []*big.Int)
+
+	// WriteDecimal writes the given decimal.
+	WriteDecimal(d types.Decimal)
+
+	// WriteDecimalArray writes the given decimal array.
+	WriteDecimalArray(ds []types.Decimal)
 }
 
 // DataInput provides deserialization methods.
@@ -272,6 +289,12 @@ type DataInput interface {
 	ReadTimestampArray() []time.Time
 	// ReadTimestampWithTimezoneArray reads and returns a time stamp with time zone array.
 	ReadTimestampWithTimezoneArray() []time.Time
+	// ReadBigInt reads and returns a big int.
+	ReadBigInt() *big.Int
+	// ReadDecimal reads and returns a decimal.
+	ReadDecimal() types.Decimal
+	// ReadDecimalArray reads and returns a decimal array.
+	ReadDecimalArray() []types.Decimal
 }
 
 // PortableWriter provides a mean of writing portable fields to a binary in form of go primitives
@@ -279,95 +302,71 @@ type DataInput interface {
 type PortableWriter interface {
 	// WriteByte writes a byte with fieldName.
 	WriteByte(fieldName string, value byte)
-
 	// WriteBool writes a bool with fieldName.
 	WriteBool(fieldName string, value bool)
-
 	// WriteUInt16 writes a uint16 with fieldName.
 	WriteUInt16(fieldName string, value uint16)
-
 	// WriteInt16 writes a int16 with fieldName.
 	WriteInt16(fieldName string, value int16)
-
 	// WriteInt32 writes a int32 with fieldName.
 	WriteInt32(fieldName string, value int32)
-
 	// WriteInt64 writes a int64 with fieldName.
 	WriteInt64(fieldName string, value int64)
-
 	// WriteFloat32 writes a float32 with fieldName.
 	WriteFloat32(fieldName string, value float32)
-
 	// WriteFloat64 writes a float64 with fieldName.
 	WriteFloat64(fieldName string, value float64)
-
 	// WriteString writes a string in UTF-8 format with fieldName.
 	WriteString(fieldName string, value string)
-
 	// WritePortable writes a Portable with fieldName.
 	WritePortable(fieldName string, value Portable)
-
 	// WriteNilPortable writes a NilPortable with fieldName, factoryID and classID.
 	WriteNilPortable(fieldName string, factoryID int32, classID int32)
-
 	// WriteByteArray writes a []byte with fieldName.
 	WriteByteArray(fieldName string, value []byte)
-
 	// WriteBoolArray writes a []bool with fieldName.
 	WriteBoolArray(fieldName string, value []bool)
-
 	// WriteUInt16Array writes a []uint16 with fieldName.
 	WriteUInt16Array(fieldName string, value []uint16)
-
 	// WriteInt16Array writes a []int16 with fieldName.
 	WriteInt16Array(fieldName string, value []int16)
-
 	// WriteInt32Array writes a []int32 with fieldName.
 	WriteInt32Array(fieldName string, value []int32)
-
 	// WriteInt64Array writes a []int64 with fieldName.
 	WriteInt64Array(fieldName string, value []int64)
-
 	// WriteFloat32Array writes a []float32 with fieldName.
 	WriteFloat32Array(fieldName string, value []float32)
-
 	// WriteFloat64Array writes a []float64 with fieldName.
 	WriteFloat64Array(fieldName string, value []float64)
-
 	// WriteStringArray writes a []string in UTF-8 format with fieldName.
 	WriteStringArray(fieldName string, value []string)
-
 	// WritePortableArray writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable)
-
 	// GetRawDataOutput returns raw DataOutput to write unnamed fields like IdentifiedDataSerializable does.
 	// All unnamed fields must be written after portable fields.
 	// Attempts to write named fields after GetRawDataOutput is called will panic.
 	GetRawDataOutput() DataOutput
-
 	// WriteDate writes the date part of a time.Time value.
 	WriteDate(fieldName string, t *time.Time)
-
 	// WriteTime writes the time part of a time.Time value.
 	WriteTime(fieldName string, t *time.Time)
-
 	// WriteTimestamp writes the date and time of a time.Time value, without the timezone offset.
 	WriteTimestamp(fieldName string, t *time.Time)
-
 	// WriteTimestampWithTimezone writes the date and time of a time.Time value, with the timezone offset.
 	WriteTimestampWithTimezone(fieldName string, t *time.Time)
-
 	// WriteDateArray writes date parts of time.Time values.
 	WriteDateArray(fieldName string, t []time.Time)
-
 	// WriteTimeArray writes time parts of time.Time values.
 	WriteTimeArray(fieldName string, t []time.Time)
-
 	// WriteTimestampArray writes date and time of time.Time values, without the timezone offset.
 	WriteTimestampArray(fieldName string, t []time.Time)
-
 	// WriteTimestampWithTimezoneArray writes date and time of time.Time values, with the timezone offset.
 	WriteTimestampWithTimezoneArray(fieldName string, t []time.Time)
+	// WriteDecimal writes the given decimal value.
+	// The decimal value may be nil.
+	WriteDecimal(fieldName string, d *types.Decimal)
+	// WriteDecimalArray writes the given decimal array.
+	WriteDecimalArray(fieldName string, ds []types.Decimal)
 }
 
 // PortableReader provides a mean of reading portable fields from a binary in form of go primitives
@@ -443,12 +442,16 @@ type PortableReader interface {
 	// called will panic.
 	GetRawDataInput() DataInput
 	// ReadDate reads the date.
+	// It may return nil.
 	ReadDate(fieldName string) *time.Time
 	// ReadTime reads the time.
+	// It may return nil.
 	ReadTime(fieldName string) *time.Time
 	// ReadTimestamp reads the time stamp.
+	// It may return nil.
 	ReadTimestamp(fieldName string) *time.Time
 	// ReadTimestampWithTimezone reads the time stamp with time zone.
+	// It may return nil.
 	ReadTimestampWithTimezone(fieldName string) *time.Time
 	// ReadDateArray reads the date arrau.
 	ReadDateArray(fieldName string) []time.Time
@@ -458,4 +461,9 @@ type PortableReader interface {
 	ReadTimestampArray(fieldName string) []time.Time
 	// ReadTimestampWithTimezoneArray reads the time stamp with time zone array.
 	ReadTimestampWithTimezoneArray(fieldName string) []time.Time
+	// ReadDecimal reads a decimal.
+	// It may return nil.
+	ReadDecimal(fieldName string) (d *types.Decimal)
+	// ReadDecimalArray a decimal array.
+	ReadDecimalArray(fieldName string) (ds []types.Decimal)
 }
