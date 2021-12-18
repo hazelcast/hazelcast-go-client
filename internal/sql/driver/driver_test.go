@@ -35,8 +35,8 @@ import (
 func TestParseDSN(t *testing.T) {
 	testCases := []struct {
 		Cluster *cluster.Config
-		DSN     string
 		Err     error
+		DSN     string
 	}{
 		{
 			DSN: "",
