@@ -90,14 +90,14 @@ func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parsing DSN: %w", err)
 		}
-		if u.Scheme == "" {
-			return nil, fmt.Errorf("parsing DSN: scheme is required")
+		if err := parseDSNScheme(&config, u.Scheme); err != nil {
+			return nil, fmt.Errorf("parsing DSN: %w", err)
 		}
-		if u.Scheme != protocolHz && u.Scheme != protocolHzViaTLS {
-			return nil, fmt.Errorf("parsing DSN: unknown scheme: %s", u.Scheme)
+		if u.Host != "" {
+			config.Cluster.Network.SetAddresses(strings.Split(u.Host, ",")...)
 		}
-		config.Cluster.Network.SetAddresses(strings.Split(u.Host, ",")...)
-		if err := parseDSNOptions(u.Query(), &config); err != nil {
+		updateCredentials(&config, u.User)
+		if err := updateConfig(u.Query(), &config); err != nil {
 			return nil, fmt.Errorf("parsing DSN options: %w", err)
 		}
 	}
@@ -117,7 +117,28 @@ func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 	}, nil
 }
 
-func parseDSNOptions(values map[string][]string, config *hazelcast.Config) error {
+func parseDSNScheme(config *hazelcast.Config, scheme string) error {
+	switch scheme {
+	case "":
+		return fmt.Errorf("scheme is required")
+	case protocolHz:
+	case protocolHzViaTLS:
+		config.Cluster.Network.SSL.Enabled = true
+	default:
+		return fmt.Errorf("unknown scheme: %s", scheme)
+	}
+	return nil
+}
+
+func updateCredentials(config *hazelcast.Config, ui *url.Userinfo) {
+	// ignoring the second return value, since pass is blank if it's true or false.
+	pass, _ := ui.Password()
+	creds := &config.Cluster.Security.Credentials
+	creds.Username = ui.Username()
+	creds.Password = pass
+}
+
+func updateConfig(values map[string][]string, config *hazelcast.Config) error {
 	for k, vs := range values {
 		switch strings.ToLower(k) {
 		case "cluster.name":

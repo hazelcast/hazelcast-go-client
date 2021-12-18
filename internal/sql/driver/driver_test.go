@@ -50,6 +50,30 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
+			DSN: "hz://",
+			Cluster: &cluster.Config{
+				Name: "dev",
+				Network: cluster.NetworkConfig{
+					Addresses:         []string{"127.0.0.1:5701"},
+					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
+					ConnectionTimeout: types.Duration(5 * time.Second),
+					SSL:               cluster.SSLConfig{Enabled: false},
+				},
+			},
+		},
+		{
+			DSN: "hz+tls://",
+			Cluster: &cluster.Config{
+				Name: "dev",
+				Network: cluster.NetworkConfig{
+					Addresses:         []string{"127.0.0.1:5701"},
+					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
+					ConnectionTimeout: types.Duration(5 * time.Second),
+					SSL:               cluster.SSLConfig{Enabled: true},
+				},
+			},
+		},
+		{
 			DSN: "hz://localhost",
 			Cluster: &cluster.Config{
 				Name: "dev",
@@ -106,6 +130,41 @@ func TestParseDSN(t *testing.T) {
 				Cloud: cluster.CloudConfig{
 					Token:   "clfofaakEuQyCH4tANv863eOaa4GAi0arGqJjlzK7WfR9J8HkI",
 					Enabled: true,
+				},
+			},
+		},
+		{
+			DSN: "hz://someuser:@",
+			Cluster: &cluster.Config{
+				Name: "dev",
+				Network: cluster.NetworkConfig{
+					Addresses:         []string{"127.0.0.1:5701"},
+					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
+					ConnectionTimeout: types.Duration(5 * time.Second),
+					SSL:               cluster.SSLConfig{Enabled: false},
+				},
+				Security: cluster.SecurityConfig{
+					Credentials: cluster.CredentialsConfig{
+						Username: "someuser",
+					},
+				},
+			},
+		},
+		{
+			DSN: "hz://someuser:somepass@foo.bar.com",
+			Cluster: &cluster.Config{
+				Name: "dev",
+				Network: cluster.NetworkConfig{
+					Addresses:         []string{"foo.bar.com"},
+					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
+					ConnectionTimeout: types.Duration(5 * time.Second),
+					SSL:               cluster.SSLConfig{Enabled: false},
+				},
+				Security: cluster.SecurityConfig{
+					Credentials: cluster.CredentialsConfig{
+						Username: "someuser",
+						Password: "somepass",
+					},
 				},
 			},
 		},
