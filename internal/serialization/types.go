@@ -24,27 +24,29 @@ import (
 
 // BigIntToJavaBytes returns a Java BigInteger compatible byte array.
 func BigIntToJavaBytes(b *big.Int) []byte {
-	i := b.BitLen()/8 + 1
-	buf := make([]byte, i)
+	m := b.Bits()
 	sign := b.Sign()
-	for _, d := range b.Bits() {
-		for j := 0; j < bits.UintSize/8; j++ {
-			i--
-			if i >= 0 {
-				if sign >= 0 {
-					buf[i] = byte(d)
-				} else if j == 0 {
-					buf[i] = byte(-d)
-				} else {
-					buf[i] = ^byte(d)
-				}
-			} else if byte(d) != 0 {
-				panic("serialization: big.Int buffer too small to fit value")
-			}
-			d >>= 8
-		}
+	bl := bitCount(m, sign)/8 + 1
+	if bl == 0 {
+		return []byte{0x0}
 	}
-	return buf
+	arr := make([]byte, bl)
+	i := bl - 1
+	copied := 4
+	nextInt := 0
+	intIndex := 0
+	for ; i >= 0; i-- {
+		if copied == 4 {
+			nextInt = getInt(intIndex, m, sign)
+			intIndex++
+			copied = 1
+		} else {
+			nextInt >>= 8
+			copied++
+		}
+		arr[i] = byte(nextInt)
+	}
+	return arr
 }
 
 func JavaBytesToBigInt(bs []byte) *big.Int {
@@ -131,4 +133,53 @@ func stripLeadingZeroBytes(a []byte) []big.Word {
 		}
 	}
 	return res
+}
+
+func bitCount(m []big.Word, signum int) int {
+	n := 0
+	l := len(m)
+	if l == 0 {
+		return n
+	}
+	magBitLen := ((l - 1) << 5) + bits.Len32(uint32(m[0]))
+	if signum >= 0 {
+		return magBitLen
+	}
+	pow2 := bits.OnesCount32(uint32(m[0])) == 1
+	for i := 1; i < l && pow2; i++ {
+		pow2 = m[i] == 0
+	}
+	n = magBitLen
+	if pow2 {
+		n--
+	}
+	return n
+}
+
+func getInt(n int, m []big.Word, signum int) int {
+	if n < 0 {
+		return 0
+	}
+	if n >= len(m) {
+		if signum < 0 {
+			return -1
+		}
+		return 0
+	}
+	magInt := int(m[len(m)-n-1])
+	if signum >= 0 {
+		return magInt
+	}
+	if n <= firstNonzeroIntNum(m) {
+		return -magInt
+	}
+	return ^magInt
+}
+
+func firstNonzeroIntNum(m []big.Word) int {
+	mlen := len(m)
+	i := mlen - 1
+	for ; i >= 0 && m[i] == 0; i-- {
+	}
+	return mlen - i - 1
 }

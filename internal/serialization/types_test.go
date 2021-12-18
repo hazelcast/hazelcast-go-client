@@ -34,7 +34,9 @@ func TestBigIntToJavaBytes(t *testing.T) {
 	for _, tc := range bigIntTestCases() {
 		t.Run(tc.BigInt.String(), func(t *testing.T) {
 			bs := serialization.BigIntToJavaBytes(tc.BigInt)
-			assert.Equal(t, tc.ByteArray, bs)
+			if !assert.Equal(t, tc.ByteArray, bs) {
+				t.FailNow()
+			}
 		})
 	}
 }
@@ -43,7 +45,9 @@ func TestJavaBytesToBigInt(t *testing.T) {
 	for _, tc := range bigIntTestCases() {
 		t.Run(tc.BigInt.String(), func(t *testing.T) {
 			b := serialization.JavaBytesToBigInt(tc.ByteArray)
-			assert.Equal(t, tc.BigInt.String(), b.String())
+			if !assert.Equal(t, tc.BigInt.String(), b.String()) {
+				t.FailNow()
+			}
 		})
 	}
 }
@@ -59,12 +63,28 @@ func bigIntTestCases() []BigIntTestCase {
 			ByteArray: []byte{0xff},
 		},
 		{
+			BigInt:    big.NewInt(-2),
+			ByteArray: []byte{0xfe},
+		},
+		{
 			BigInt:    big.NewInt(-10),
 			ByteArray: []byte{246},
 		},
 		{
 			BigInt:    big.NewInt(-100),
 			ByteArray: []byte{156},
+		},
+		{
+			BigInt:    big.NewInt(-128),
+			ByteArray: []byte{0x80},
+		},
+		{
+			BigInt:    big.NewInt(-129),
+			ByteArray: []byte{0xff, 0x7f},
+		},
+		{
+			BigInt:    big.NewInt(-256),
+			ByteArray: []byte{0xff, 0x0},
 		},
 		{
 			BigInt:    big.NewInt(-1000),
@@ -99,6 +119,18 @@ func bigIntTestCases() []BigIntTestCase {
 			ByteArray: []byte{100},
 		},
 		{
+			BigInt:    big.NewInt(128),
+			ByteArray: []byte{0x0, 0x80},
+		},
+		{
+			BigInt:    big.NewInt(129),
+			ByteArray: []byte{0x0, 0x81},
+		},
+		{
+			BigInt:    big.NewInt(256),
+			ByteArray: []byte{0x01, 0x0},
+		},
+		{
 			BigInt:    big.NewInt(1000),
 			ByteArray: []byte{0x03, 0xe8},
 		},
@@ -118,6 +150,19 @@ func bigIntTestCases() []BigIntTestCase {
 			BigInt:    big.NewInt(10_000_000),
 			ByteArray: []byte{0x00, 0x98, 0x96, 0x80},
 		},
+		{
+			BigInt:    mustBigString("10000000"),
+			ByteArray: []byte{0x00, 0x98, 0x96, 0x80},
+		},
 	}
 	return testCases
+}
+
+func mustBigString(s string) *big.Int {
+	b := new(big.Int)
+	_, ok := b.SetString(s, 10)
+	if !ok {
+		panic("cannot set string for big.Int")
+	}
+	return b
 }

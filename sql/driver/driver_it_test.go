@@ -41,19 +41,15 @@ const (
 )
 
 type Record struct {
-	TimestampWithTimeZoneValue time.Time
-	TimestampValue             time.Time
-	TimeValue                  time.Time
-	DateValue                  time.Time
-	NullValue                  interface{}
-	VarcharValue               string
-	DoubleValue                float64
-	BigIntValue                int64
-	RealValue                  float32
-	IntegerValue               int32
-	SmallIntValue              int16
-	TinyIntValue               int8
-	BoolValue                  bool
+	NullValue     interface{}
+	VarcharValue  string
+	DoubleValue   float64
+	BigIntValue   int64
+	RealValue     float32
+	IntegerValue  int32
+	SmallIntValue int16
+	TinyIntValue  int8
+	BoolValue     bool
 }
 
 func (r Record) Create(classID int32) serialization.Portable {
@@ -80,10 +76,6 @@ func (r Record) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteBool("boolvalue", r.BoolValue)
 	writer.WriteFloat32("realvalue", r.RealValue)
 	writer.WriteFloat64("doublevalue", r.DoubleValue)
-	//writer.WriteDate("datevalue", &r.DateValue)
-	//writer.WriteTime("timevalue", &r.TimeValue)
-	//writer.WriteTimestamp("timestampvalue", &r.TimestampValue)
-	//writer.WriteTimestampWithTimezone("timestampwithtimezone", &r.TimestampWithTimeZoneValue)
 }
 
 func (r *Record) ReadPortable(reader serialization.PortableReader) {
@@ -158,7 +150,6 @@ func TestSQLWithPortableData(t *testing.T) {
 				'valuePortableClassId' = '1'
 			)
 		`, mapName)))
-		//tt := time.Date(2021, 12, 6, 12, 33, 50, 876, time.FixedZone("Europe/Istanbul", 3*60*60))
 		rec := &Record{
 			VarcharValue:  "hello",
 			TinyIntValue:  -128,
@@ -168,10 +159,6 @@ func TestSQLWithPortableData(t *testing.T) {
 			BoolValue:     true,
 			RealValue:     -5.32,
 			DoubleValue:   12.789,
-			//DateValue:                  tt,
-			//TimeValue:                  tt,
-			//TimestampValue:             tt,
-			//TimestampWithTimeZoneValue: tt,
 		}
 		it.Must(m.Set(context.TODO(), 1, rec))
 		// select the value
@@ -188,7 +175,16 @@ func TestSQLWithPortableData(t *testing.T) {
 			}
 			vs = append(vs, v)
 		}
-		targetThis := []interface{}{rec}
+		targetThis := []interface{}{&Record{
+			VarcharValue:  "hello",
+			TinyIntValue:  -128,
+			SmallIntValue: 32767,
+			IntegerValue:  -27,
+			BigIntValue:   38,
+			BoolValue:     true,
+			RealValue:     -5.32,
+			DoubleValue:   12.789,
+		}}
 		assert.Equal(t, targetThis, vs)
 		// select individual fields
 		rows, err = db.Query(fmt.Sprintf(`
@@ -212,7 +208,9 @@ func TestSQLWithPortableData(t *testing.T) {
 			}
 			vs = append(vs, vVarchar, vTinyInt, vSmallInt, vInteger, vBigInt, vBool, vReal, vDouble)
 		}
-		target := []interface{}{"hello", int8(-128), int16(32767), int32(-27), int64(38), true, float32(-5.32), 12.789}
+		target := []interface{}{
+			"hello", int8(-128), int16(32767), int32(-27), int64(38), true, float32(-5.32), 12.789,
+		}
 		assert.Equal(t, target, vs)
 	})
 }
