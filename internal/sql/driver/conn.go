@@ -34,7 +34,7 @@ type Conn struct {
 }
 
 func newConn(name string) (*Conn, error) {
-	config, err := ParseDSN(name)
+	config, err := MakeConfigFromDSN(name)
 	if err != nil {
 		return nil, fmt.Errorf("configuring internal client: %w", err)
 	}

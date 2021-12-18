@@ -18,6 +18,7 @@ package driver_test
 
 import (
 	"context"
+	"errors"
 	"math"
 	"testing"
 	"time"
@@ -35,6 +36,7 @@ func TestParseDSN(t *testing.T) {
 	testCases := []struct {
 		Cluster *cluster.Config
 		DSN     string
+		Err     error
 	}{
 		{
 			DSN: "",
@@ -48,7 +50,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "localhost",
+			DSN: "hz://localhost",
 			Cluster: &cluster.Config{
 				Name: "dev",
 				Network: cluster.NetworkConfig{
@@ -59,7 +61,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "10.20.30.40:5000",
+			DSN: "hz://10.20.30.40:5000",
 			Cluster: &cluster.Config{
 				Name: "dev",
 				Network: cluster.NetworkConfig{
@@ -70,7 +72,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "10.20.30.40:5000,11.21.31.41:5001",
+			DSN: "hz://10.20.30.40:5000,11.21.31.41:5001",
 			Cluster: &cluster.Config{
 				Name: "dev",
 				Network: cluster.NetworkConfig{
@@ -81,7 +83,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "10.20.30.40:5000;Cluster.Name=my-cluster;Cluster.Unisocket=true",
+			DSN: "hz://10.20.30.40:5000?cluster.name=my-cluster&cluster.unisocket=true",
 			Cluster: &cluster.Config{
 				Name: "my-cluster",
 				Network: cluster.NetworkConfig{
@@ -93,7 +95,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "10.20.30.40:5000;Cluster.Name=my-cluster;Cloud.Token=clfofaakEuQyCH4tANv863eOaa4GAi0arGqJjlzK7WfR9J8HkI",
+			DSN: "hz://10.20.30.40:5000?cluster.name=my-cluster&cloud.token=clfofaakEuQyCH4tANv863eOaa4GAi0arGqJjlzK7WfR9J8HkI",
 			Cluster: &cluster.Config{
 				Name: "my-cluster",
 				Network: cluster.NetworkConfig{
@@ -107,15 +109,33 @@ func TestParseDSN(t *testing.T) {
 				},
 			},
 		},
+		{
+			DSN: "localhost",
+			Err: errors.New("parsing DSN: scheme is required"),
+		},
+		{
+			DSN: "tcp://localhost",
+			Err: errors.New("parsing DSN: unknown scheme: tcp"),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.DSN, func(t *testing.T) {
-			tc.Cluster.Validate()
-			c, err := driver.ParseDSN(tc.DSN)
-			if err != nil {
-				t.Fatal(err)
+			if tc.Cluster != nil {
+				if err := tc.Cluster.Validate(); err != nil {
+					t.Fatal(err)
+				}
 			}
-			assert.Equal(t, tc.Cluster, c.Cluster)
+			c, err := driver.MakeConfigFromDSN(tc.DSN)
+			if tc.Err != nil {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+				assert.Equal(t, tc.Err.Error(), err.Error())
+			} else if err != nil {
+				t.Fatal(err)
+			} else {
+				assert.Equal(t, tc.Cluster, c.Cluster)
+			}
 		})
 	}
 }

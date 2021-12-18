@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -37,6 +38,8 @@ type QueryTimeoutKey struct{}
 
 const (
 	driverName                    = "hazelcast"
+	protocolHz                    = "hz"
+	protocolHzViaTLS              = "hz+tls"
 	DefaultCursorBufferSize int32 = 4096
 	DefaultTimeoutMillis    int64 = -1
 )
@@ -76,40 +79,26 @@ func (d *Driver) Open(name string) (driver.Conn, error) {
 	return newConn(name)
 }
 
-func ParseDSN(dsn string) (*client.Config, error) {
+func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 	// TODO: remove hazelcast dependency
 	config := hazelcast.Config{}
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
-	segs := strings.Split(dsn, ";")
-	if len(segs) > 0 {
-		// if there are more than 1 segment, then the first one must be addresses
-		if segs[0] != "" {
-			addrs := strings.Split(segs[0], ",")
-			config.Cluster.Network.SetAddresses(addrs...)
+	if dsn != "" {
+		u, err := url.Parse(dsn)
+		if err != nil {
+			return nil, fmt.Errorf("parsing DSN: %w", err)
 		}
-		for _, seg := range segs[1:] {
-			kv := strings.SplitN(seg, "=", 2)
-			if len(kv) != 2 {
-				return nil, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid option: %s", seg), nil)
-			}
-			k, v := kv[0], kv[1]
-			switch strings.ToLower(k) {
-			case "cluster.name":
-				config.Cluster.Name = v
-			case "cluster.unisocket":
-				b, err := strconv.ParseBool(v)
-				if err != nil {
-					return nil, ihzerrors.NewIllegalArgumentError("invalid Cluster.Unisocket", err)
-				}
-				config.Cluster.Unisocket = b
-			case "logger.level":
-				config.Logger.Level = logger.Level(v)
-			case "cloud.token":
-				config.Cluster.Cloud.Enabled = true
-				config.Cluster.Cloud.Token = v
-			}
+		if u.Scheme == "" {
+			return nil, fmt.Errorf("parsing DSN: scheme is required")
+		}
+		if u.Scheme != protocolHz && u.Scheme != protocolHzViaTLS {
+			return nil, fmt.Errorf("parsing DSN: unknown scheme: %s", u.Scheme)
+		}
+		config.Cluster.Network.SetAddresses(strings.Split(u.Host, ",")...)
+		if err := parseDSNOptions(u.Query(), &config); err != nil {
+			return nil, fmt.Errorf("parsing DSN options: %w", err)
 		}
 	}
 	sc := SerializationConfig()
@@ -126,6 +115,34 @@ func ParseDSN(dsn string) (*client.Config, error) {
 		StatsEnabled:  config.Stats.Enabled,
 		StatsPeriod:   time.Duration(config.Stats.Period),
 	}, nil
+}
+
+func parseDSNOptions(values map[string][]string, config *hazelcast.Config) error {
+	for k, vs := range values {
+		switch strings.ToLower(k) {
+		case "cluster.name":
+			config.Cluster.Name = firstString(vs)
+		case "cluster.unisocket":
+			b, err := strconv.ParseBool(firstString(vs))
+			if err != nil {
+				return ihzerrors.NewIllegalArgumentError("invalid Cluster.Unisocket", err)
+			}
+			config.Cluster.Unisocket = b
+		case "logger.level":
+			config.Logger.Level = logger.Level(vs[0])
+		case "cloud.token":
+			config.Cluster.Cloud.Enabled = true
+			config.Cluster.Cloud.Token = vs[0]
+		}
+	}
+	return nil
+}
+
+func firstString(ss []string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+	return ss[0]
 }
 
 func init() {

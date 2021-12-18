@@ -25,7 +25,7 @@ import (
 
 func main() {
 	log.Println("Creating the database value.")
-	db, err := sql.Open("hazelcast", ";logger.level=info")
+	db, err := sql.Open("hazelcast", "hz://?logger.level=info")
 	if err != nil {
 		panic(err)
 	}
