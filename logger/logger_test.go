@@ -19,58 +19,24 @@ package logger
 import (
 	"testing"
 
-	publogger "github.com/hazelcast/hazelcast-go-client/logger"
-
 	"github.com/stretchr/testify/assert"
 )
-
-func TestIsValidLogLevel(t *testing.T) {
-	logLevels := []string{
-		"debug",
-		"error",
-		"info",
-		"trace",
-		"warn",
-	}
-	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(publogger.Level(logLevel))
-		assert.True(t, isValid)
-	}
-}
-
-func TestIsValidLogLevelCaseInsensitive(t *testing.T) {
-	logLevels := []string{
-		"deBUg",
-		"erRor",
-		"Info",
-		"traCe",
-		"WARN",
-	}
-	for _, logLevel := range logLevels {
-		isValid := isValidLogLevel(publogger.Level(logLevel))
-		assert.True(t, isValid)
-	}
-}
-
-func TestIsValidLogLevelInvalidLevel(t *testing.T) {
-	logLevel := "deb"
-	isValid := isValidLogLevel(publogger.Level(logLevel))
-	assert.False(t, isValid)
-}
 
 func TestGetLogLevel(t *testing.T) {
 	logLevels := []struct {
 		level    string
-		levelInt int
+		levelInt Weight
 	}{
-		{"error", errorLevel},
-		{"trace", traceLevel},
-		{"warn", warnLevel},
-		{"debug", debugLevel},
-		{"info", infoLevel},
+		{"error", WeightError},
+		{"trace", WeightTrace},
+		{"off", WeightOff},
+		{"fatal", WeightFatal},
+		{"warn", WeightWarn},
+		{"debug", WeightDebug},
+		{"info", WeightInfo},
 	}
 	for _, logLevel := range logLevels {
-		level, err := GetLogLevel(publogger.Level(logLevel.level))
+		level, err := GetLogLevel(Level(logLevel.level))
 		assert.NoError(t, err)
 		assert.Equal(t, level, logLevel.levelInt)
 	}
@@ -78,6 +44,6 @@ func TestGetLogLevel(t *testing.T) {
 
 func TestGetLogLevelError(t *testing.T) {
 	logLevel := "p"
-	_, err := GetLogLevel(publogger.Level(logLevel))
+	_, err := GetLogLevel(Level(logLevel))
 	assert.Error(t, err)
 }

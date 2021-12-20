@@ -54,7 +54,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 		wg.Done()
 	}
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 100, handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
@@ -67,7 +67,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 }
 
 func TestDispatchServiceUnsubscribe(t *testing.T) {
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	defer service.Stop(context.Background())
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
@@ -82,7 +82,7 @@ func TestDispatchServiceUnsubscribe(t *testing.T) {
 }
 
 func TestDispatchServiceStop(t *testing.T) {
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
@@ -98,8 +98,7 @@ func TestDispatchServiceStop(t *testing.T) {
 
 func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 	// the order of events should be guaranteed when using subscribe sync
-	lg := logger.New()
-	service := event.NewDispatchService(lg)
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	wg := &sync.WaitGroup{}
 	const targetCount = 1000
 	wg.Add(targetCount)
@@ -129,7 +128,7 @@ func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
 	}
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 100, handler)
 	go service.Stop(context.Background())
 	successfulPubCnt := int32(0)
@@ -150,7 +149,7 @@ func TestDispatchService_BlockingCallWillNotBlockUnrelatedSubscriptions(t *testi
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	defer wg.Done()
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 1, func(event event.Event) {
 		//Wait blocking until test finishes.
 		wg.Wait()
@@ -172,7 +171,7 @@ func TestDispatchService_BlockingCallWillNotBlockUnrelatedSubscriptions(t *testi
 }
 
 func TestDispatchServiceCloseRespectsContext(t *testing.T) {
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

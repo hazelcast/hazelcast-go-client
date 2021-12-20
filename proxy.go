@@ -30,7 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -74,7 +74,7 @@ type creationBundle struct {
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinder
 	Config               *Config
-	Logger               ilogger.Logger
+	Logger               logger.LogAdaptor
 }
 
 func (b creationBundle) Check() {
@@ -99,13 +99,13 @@ func (b creationBundle) Check() {
 	if b.Config == nil {
 		panic("Config is nil")
 	}
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
 	}
 }
 
 type proxy struct {
-	logger               ilogger.Logger
+	logger               logger.LogAdaptor
 	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
