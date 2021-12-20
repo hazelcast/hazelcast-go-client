@@ -14,20 +14,39 @@
  * limitations under the License.
  */
 
-/*
-This example demonstrates how to use the Hazelcast database/sql driver.
-*/
-
 package main
 
 import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"net/url"
 	"time"
 
 	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
+
+// Change the following values according to your Hazelcast Cloud configuration
+
+const clusterName = "PUT-YOUR-CLUSTER-NAME-HERE!"
+const cloudToken = "PUT-YOUR-TOKEN-HERE!"
+const caPath = "ca.pem"
+const certPath = "cert.pem"
+const keyPath = "key.pem"
+const keyPassword = "PUT-YOUR-KEY-PASSWORD-HERE!"
+
+func makeDSN() string {
+	vs := url.Values{}
+	vs.Set("cluster.name", clusterName)
+	vs.Set("cloud.token", cloudToken)
+	vs.Set("log", "warn")
+	vs.Set("stats.period", "1s")
+	vs.Set("ssl.ca.path", caPath)
+	vs.Set("ssl.cert.path", certPath)
+	vs.Set("ssl.key.path", keyPath)
+	vs.Set("ssl.key.password", keyPassword)
+	return fmt.Sprintf("hz://?%s", vs.Encode())
+}
 
 var names = []string{"Gorkem", "Ezgi", "Joe", "Jane", "Mike", "Mandy", "Tom", "Tina"}
 var surnames = []string{"Tekol", "Brown", "Taylor", "McGregor", "Bronson"}
@@ -117,7 +136,7 @@ func randomEmployees(count int) []Employee {
 func main() {
 	// Connect to the local Hazelcast server.
 	// Uses the unisocket option just for demonstration.
-	db, err := sql.Open("hazelcast", "hz://localhost:5701?unisocket=true")
+	db, err := sql.Open("hazelcast", makeDSN())
 	if err != nil {
 		panic(err)
 	}

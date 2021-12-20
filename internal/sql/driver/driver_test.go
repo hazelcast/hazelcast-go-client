@@ -28,6 +28,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	pubdriver "github.com/hazelcast/hazelcast-go-client/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -35,6 +36,7 @@ import (
 func TestParseDSN(t *testing.T) {
 	testCases := []struct {
 		Cluster *cluster.Config
+		Logger  *logger.Config
 		Err     error
 		DSN     string
 	}{
@@ -107,7 +109,7 @@ func TestParseDSN(t *testing.T) {
 			},
 		},
 		{
-			DSN: "hz://10.20.30.40:5000?cluster.name=my-cluster&cluster.unisocket=true",
+			DSN: "hz://10.20.30.40:5000?cluster.name=my-cluster&unisocket=true",
 			Cluster: &cluster.Config{
 				Name: "my-cluster",
 				Network: cluster.NetworkConfig{
@@ -132,6 +134,19 @@ func TestParseDSN(t *testing.T) {
 					Enabled: true,
 				},
 			},
+		},
+		{
+			DSN: "hz://?log=error&ssl=true",
+			Cluster: &cluster.Config{
+				Name: "dev",
+				Network: cluster.NetworkConfig{
+					Addresses:         []string{"127.0.0.1:5701"},
+					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
+					ConnectionTimeout: types.Duration(5 * time.Second),
+					SSL:               cluster.SSLConfig{Enabled: true},
+				},
+			},
+			Logger: &logger.Config{Level: logger.ErrorLevel},
 		},
 		{
 			DSN: "hz://someuser:@",
@@ -176,11 +191,44 @@ func TestParseDSN(t *testing.T) {
 			DSN: "tcp://localhost",
 			Err: errors.New("parsing DSN: unknown scheme: tcp"),
 		},
+		{
+			DSN: "hz://localhost/some-path",
+			Err: errors.New("parsing DSN: path is not allowed"),
+		},
+		{
+			DSN: "hz://localhost/",
+			Err: errors.New("parsing DSN: path is not allowed"),
+		},
+		{
+			DSN: "hz://?ssl=yeah",
+			Err: errors.New("parsing DSN options: invalid ssl option value: strconv.ParseBool: parsing \"yeah\": invalid syntax"),
+		},
+		{
+			DSN: "hz://?ssl.ca.path=ca.pem",
+			Err: errors.New("parsing DSN options: invalid ssl.cert.path value: illegal argument error"),
+		},
+		{
+			DSN: "hz://?ssl.cert.path=cert.pem",
+			Err: errors.New("parsing DSN options: invalid ssl.ca.path value: illegal argument error"),
+		},
+		{
+			DSN: "hz://?ssl.cert.path=cert.pem",
+			Err: errors.New("parsing DSN options: invalid ssl.ca.path value: illegal argument error"),
+		},
+		{
+			DSN: "hz://?ssl.ca.path=ca.pem&ssl.cert.path=cert.pem",
+			Err: errors.New("parsing DSN options: invalid ssl.key.path value: illegal argument error"),
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.DSN, func(t *testing.T) {
 			if tc.Cluster != nil {
 				if err := tc.Cluster.Validate(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tc.Logger != nil {
+				if err := tc.Logger.Validate(); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -190,10 +238,16 @@ func TestParseDSN(t *testing.T) {
 					t.Fatalf("expected error")
 				}
 				assert.Equal(t, tc.Err.Error(), err.Error())
-			} else if err != nil {
+				return
+			}
+			if err != nil {
 				t.Fatal(err)
-			} else {
+			}
+			if tc.Cluster != nil {
 				assert.Equal(t, tc.Cluster, c.Cluster)
+			}
+			if tc.Logger != nil {
+				assert.Equal(t, tc.Logger, c.Logger)
 			}
 		})
 	}

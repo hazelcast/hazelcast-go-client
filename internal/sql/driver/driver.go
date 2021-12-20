@@ -17,8 +17,10 @@
 package driver
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -31,6 +33,7 @@ import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type QueryCursorBufferSizeKey struct{}
@@ -42,6 +45,16 @@ const (
 	protocolHzViaTLS              = "hz+tls"
 	DefaultCursorBufferSize int32 = 4096
 	DefaultTimeoutMillis    int64 = -1
+	optClusterName                = "cluster.name"
+	optUnisocket                  = "unisocket"
+	optCloudToken                 = "cloud.token"
+	optLog                        = "log"
+	optStatsPeriod                = "stats.period"
+	optSSL                        = "ssl"
+	optSSLCAPath                  = "ssl.ca.path"
+	optSSLCertPath                = "ssl.cert.path"
+	optSSLKeyPath                 = "ssl.key.path"
+	optSSLKeyPassword             = "ssl.key.password"
 )
 
 var (
@@ -96,8 +109,12 @@ func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 		if u.Host != "" {
 			config.Cluster.Network.SetAddresses(strings.Split(u.Host, ",")...)
 		}
+		// path part of the DSN should be blank
+		if u.Path != "" {
+			return nil, errors.New("parsing DSN: path is not allowed")
+		}
 		updateCredentials(&config, u.User)
-		if err := updateConfig(u.Query(), &config); err != nil {
+		if err := updateConfig(&config, u.Query()); err != nil {
 			return nil, fmt.Errorf("parsing DSN options: %w", err)
 		}
 	}
@@ -138,22 +155,78 @@ func updateCredentials(config *hazelcast.Config, ui *url.Userinfo) {
 	creds.Password = pass
 }
 
-func updateConfig(values map[string][]string, config *hazelcast.Config) error {
+func updateConfig(config *hazelcast.Config, values map[string][]string) error {
 	for k, vs := range values {
-		switch strings.ToLower(k) {
-		case "cluster.name":
-			config.Cluster.Name = firstString(vs)
-		case "cluster.unisocket":
-			b, err := strconv.ParseBool(firstString(vs))
+		v := firstString(vs)
+		switch k {
+		case optClusterName:
+			config.Cluster.Name = v
+		case optUnisocket:
+			b, err := strconv.ParseBool(v)
 			if err != nil {
-				return ihzerrors.NewIllegalArgumentError("invalid Cluster.Unisocket", err)
+				return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid %s option value", optUnisocket), err)
 			}
 			config.Cluster.Unisocket = b
-		case "logger.level":
-			config.Logger.Level = logger.Level(vs[0])
-		case "cloud.token":
+		case optCloudToken:
 			config.Cluster.Cloud.Enabled = true
-			config.Cluster.Cloud.Token = vs[0]
+			config.Cluster.Cloud.Token = v
+		case optLog:
+			config.Logger.Level = logger.Level(v)
+		case optStatsPeriod:
+			config.Stats.Enabled = true
+			dur, err := time.ParseDuration(v)
+			if err != nil {
+				return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid %s option value", optStatsPeriod), err)
+			}
+			config.Stats.Period = types.Duration(dur)
+		}
+	}
+	return updateSSLConfig(config, values)
+}
+
+func updateSSLConfig(config *hazelcast.Config, values map[string][]string) error {
+	var caPath, certPath, keyPath, keyPass string
+	sslConfig := &config.Cluster.Network.SSL
+	if vs, ok := values[optSSL]; ok {
+		b, err := strconv.ParseBool(firstString(vs))
+		if err != nil {
+			return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid %s option value", optSSL), err)
+		}
+		sslConfig.Enabled = b
+	}
+	if vs, ok := values[optSSLCAPath]; ok {
+		caPath = firstString(vs)
+	}
+	if vs, ok := values[optSSLCertPath]; ok {
+		certPath = firstString(vs)
+	}
+	if vs, ok := values[optSSLKeyPath]; ok {
+		keyPath = firstString(vs)
+	}
+	if vs, ok := values[optSSLKeyPassword]; ok {
+		keyPass = firstString(vs)
+	}
+	if caPath != "" || certPath != "" || keyPath != "" {
+		config.Cluster.Network.SSL.Enabled = true
+		if caPath == "" {
+			return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid %s value", optSSLCAPath), nil)
+		}
+		if certPath == "" {
+			return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid %s value", optSSLCertPath), nil)
+		}
+		if keyPath == "" {
+			return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid %s value", optSSLKeyPath), nil)
+		}
+		sslConfig.SetTLSConfig(&tls.Config{ServerName: "hazelcast.cloud"})
+		if err := sslConfig.SetCAPath(caPath); err != nil {
+			return ihzerrors.NewIllegalArgumentError("setting CA path", err)
+		}
+		if keyPass != "" {
+			if err := sslConfig.AddClientCertAndEncryptedKeyPath(certPath, keyPath, keyPass); err != nil {
+				return ihzerrors.NewIllegalArgumentError("setting certificate and encrypted key path", err)
+			}
+		} else if err := sslConfig.AddClientCertAndKeyPath(certPath, keyPath); err != nil {
+			return ihzerrors.NewIllegalArgumentError("setting certificate and key path", err)
 		}
 	}
 	return nil
