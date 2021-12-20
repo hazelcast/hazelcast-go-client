@@ -107,7 +107,6 @@ func TestLiteMembersPartitionService(t *testing.T) {
 	ci := hz.NewClientInternal(client)
 	_, found := ci.PartitionService().GetPartitionOwner(0)
 	assert.False(t, found)
-	pCount := ci.PartitionService().PartitionCount()
 	tmap, err := client.GetMap(ctx, "test-map")
 	assert.Nil(t, err)
 	_, err = tmap.Put(ctx, "key", "value")
