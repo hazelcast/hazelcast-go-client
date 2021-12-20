@@ -92,7 +92,7 @@ func TestNotReceivedInvocation(t *testing.T) {
 
 func TestLiteMembersPartitionService(t *testing.T) {
 	conf := it.MemberXMLConf{
-		ClusterName: it.DefaultClusterName,
+		ClusterName: "lite-member-partition-test",
 		Port:        it.DefaultPort,
 		// enable lite members
 		LiteMember: true,
