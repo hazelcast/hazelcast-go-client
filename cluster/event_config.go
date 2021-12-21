@@ -1,7 +1,10 @@
 package cluster
 
 const (
-	defaultEventQueueCapacity = 1000000
+	// Default values differ from java impl. Also queue size is calculated differently.
+	// Java Client: queueSize per worker = defaultEventQueueCapacity / defaultEventWorkerCount
+	// Go Client: queueSize per worker = defaultEventQueueCapacity
+	defaultEventQueueCapacity = 20000
 	defaultEventWorkerCount   = 5
 )
 

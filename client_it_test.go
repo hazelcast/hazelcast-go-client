@@ -617,7 +617,6 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		config.Cluster.Unisocket = !smart
 		// TODO we should either decrease our default config values or find another way to process events more efficiently
 		// this will be temporary, fix this before PR merge
-		config.Cluster.Event.EventQueueCapacity = 100
 		ctx := context.Background()
 		var max uint64
 		var m runtime.MemStats
