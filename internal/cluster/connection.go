@@ -34,7 +34,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -60,7 +60,7 @@ type Connection struct {
 	socket                    net.Conn
 	bWriter                   *bufio.Writer
 	endpoint                  atomic.Value
-	logger                    ilogger.Logger
+	logger                    logger.LogAdaptor
 	lastRead                  atomic.Value
 	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService
@@ -142,13 +142,13 @@ func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeou
 	} else {
 		tcpConn := conn.(*net.TCPConn)
 		if err = tcpConn.SetNoDelay(false); err != nil {
-			c.logger.Warnf("error setting tcp no delay: %w", err)
+			c.logger.Warnf("error setting tcp no delay: %v", err)
 		}
 		if err = tcpConn.SetReadBuffer(socketBufferSize); err != nil {
-			c.logger.Warnf("error setting read buffer: %w", err)
+			c.logger.Warnf("error setting read buffer: %v", err)
 		}
 		if err = tcpConn.SetWriteBuffer(socketBufferSize); err != nil {
-			c.logger.Warnf("error setting write buffer: %w", err)
+			c.logger.Warnf("error setting write buffer: %v", err)
 		}
 		return tcpConn, nil
 	}

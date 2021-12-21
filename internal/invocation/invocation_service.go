@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -45,7 +45,6 @@ type Handler interface {
 
 type Service struct {
 	handler         Handler
-	logger          ilogger.Logger
 	requestCh       chan Invocation
 	responseCh      chan *proto.ClientMessage
 	doneCh          chan struct{}
@@ -56,13 +55,14 @@ type Service struct {
 	// removeCh carries correlationIDs to be removed
 	removeCh chan int64
 	executor stripeExecutor
-	state    int32
+	logger          logger.LogAdaptor
+	state           int32
 }
 
 func NewService(
 	handler Handler,
 	eventDispatcher *event.DispatchService,
-	logger ilogger.Logger,
+	logger logger.LogAdaptor,
 	config *cluster.EventConfig) *Service {
 	s := &Service{
 		requestCh:       make(chan Invocation),
