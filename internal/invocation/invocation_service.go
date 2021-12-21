@@ -22,6 +22,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -61,7 +62,8 @@ type Service struct {
 func NewService(
 	handler Handler,
 	eventDispatcher *event.DispatchService,
-	logger ilogger.Logger) *Service {
+	logger ilogger.Logger,
+	config *cluster.EventConfig) *Service {
 	s := &Service{
 		requestCh:       make(chan Invocation),
 		urgentRequestCh: make(chan Invocation),
@@ -74,7 +76,7 @@ func NewService(
 		eventDispatcher: eventDispatcher,
 		logger:          logger,
 		state:           ready,
-		executor:        newStripeExecutor(5, 100),
+		executor:        newStripeExecutor(config.EventWorkerCount, config.EventQueueCapacity),
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
 		go func() {

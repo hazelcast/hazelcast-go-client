@@ -37,6 +37,8 @@ type Config struct {
 	Cloud CloudConfig
 	// Network contains connection configuration.
 	Network NetworkConfig
+	// Event contains event related configuration.
+	Event EventConfig
 	// ConnectionStrategy contains cluster connection strategy configuration.
 	ConnectionStrategy ConnectionStrategyConfig
 	// InvocationTimeout is the maximum time to wait for the response of an invocation.
@@ -67,6 +69,7 @@ func (c *Config) Clone() Config {
 		Discovery:          c.Discovery.Clone(),
 		ConnectionStrategy: c.ConnectionStrategy.Clone(),
 		Network:            c.Network.Clone(),
+		Event:              c.Event.Clone(),
 	}
 }
 
@@ -102,6 +105,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.ConnectionStrategy.Validate(); err != nil {
+		return err
+	}
+	if err := c.Event.Validate(); err != nil {
 		return err
 	}
 	if c.ConnectionStrategy.Timeout == 0 {
