@@ -4,7 +4,7 @@ const (
 	// Default values differ from java impl. Also queue size is calculated differently.
 	// Java Client: queueSize per worker = defaultEventQueueCapacity / defaultEventWorkerCount
 	// Go Client: queueSize per worker = defaultEventQueueCapacity
-	defaultEventQueueCapacity = 20000
+	defaultEventQueueCapacity = 10000
 	defaultEventWorkerCount   = 5
 )
 
