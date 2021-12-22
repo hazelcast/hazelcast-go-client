@@ -1,3 +1,4 @@
+//go:build hazelcastinternal
 // +build hazelcastinternal
 
 /*

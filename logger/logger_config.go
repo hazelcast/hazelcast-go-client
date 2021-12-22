@@ -26,17 +26,19 @@ type Level string
 const (
 	// OffLevel disables logging.
 	OffLevel Level = "off"
-	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
+	// FatalLevel is used for errors that halts the client.
+	FatalLevel Level = "fatal"
+	// ErrorLevel is used for errors that should definitely be noted.
 	// Commonly used for hooks to send errors to an error tracking service.
 	ErrorLevel Level = "error"
-	// WarnLevel level. Non-critical entries that deserve eyes.
+	// WarnLevel is used for non-critical entries that deserve eyes.
 	WarnLevel Level = "warn"
-	// InfoLevel level. General operational entries about what's going on inside the
+	// InfoLevel is used for general operational entries about what's going on inside the
 	// application.
 	InfoLevel Level = "info"
-	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
+	// DebugLevel is used for very verbose logging. Usually only enabled when debugging.
 	DebugLevel Level = "debug"
-	// TraceLevel level. Designates finer-grained informational events than the Debug.
+	// TraceLevel is used for finer-grained informational events than the Debug.
 	TraceLevel Level = "trace"
 )
 
@@ -45,30 +47,21 @@ func (l Level) String() string {
 }
 
 type Config struct {
-	Level Level `json:",omitempty"`
+	CustomLogger Logger `json:"-"`
+	Level        Level  `json:",omitempty"`
 }
 
 func (c Config) Clone() Config {
-	return Config{Level: c.Level}
+	return Config{Level: c.Level, CustomLogger: c.CustomLogger}
 }
 
 func (c *Config) Validate() error {
 	if c.Level == "" {
 		c.Level = InfoLevel
 	}
-	switch string(c.Level) {
-	case "off":
-		fallthrough
-	case "error":
-		fallthrough
-	case "warn":
-		fallthrough
-	case "info":
-		fallthrough
-	case "debug":
-		fallthrough
-	case "trace":
-		return nil
+
+	if _, err := GetLogLevel(c.Level); err != nil {
+		return fmt.Errorf("invalid logger level: %s", c.Level)
 	}
-	return fmt.Errorf("invalid log level: %s", c.Level)
+	return nil
 }

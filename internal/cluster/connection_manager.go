@@ -34,7 +34,7 @@ import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
@@ -65,7 +65,7 @@ var connectionManagerSubID = event.NextSubscriptionID()
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address) (pubcluster.Address, error)
 
 type ConnectionManagerCreationBundle struct {
-	Logger               ilogger.Logger
+	Logger               logger.LogAdaptor
 	PartitionService     *PartitionService
 	InvocationFactory    *ConnectionInvocationFactory
 	ClusterConfig        *pubcluster.Config
@@ -80,8 +80,8 @@ type ConnectionManagerCreationBundle struct {
 }
 
 func (b ConnectionManagerCreationBundle) Check() {
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
 	}
 	if b.ClusterService == nil {
 		panic("ClusterService is nil")
@@ -117,7 +117,7 @@ func (b ConnectionManagerCreationBundle) Check() {
 
 type ConnectionManager struct {
 	nextConnID           int64 // This field should be at the top: https://pkg.go.dev/sync/atomic#pkg-note-BUG
-	logger               ilogger.Logger
+	logger               logger.LogAdaptor
 	isClientShutDown     func() bool
 	failoverConfig       *pubcluster.FailoverConfig
 	partitionService     *PartitionService

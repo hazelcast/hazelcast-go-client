@@ -21,12 +21,15 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
 const (
 	// logCallDepth is used for removing the last two method names from call trace when logging file names.
 	logCallDepth    = 3
-	defaultLogLevel = infoLevel
+	defaultLogLevel = logger.InfoLevel
 	tracePrefix     = "TRACE"
 	warnPrefix      = "WARN"
 	debugPrefix     = "DEBUG"
@@ -34,88 +37,59 @@ const (
 	infoPrefix      = "INFO"
 )
 
-// DefaultLogger has Go's built in log embedded in it. It adds level logging.
+// DefaultLogger has Go's built-in logger embedded in it. It adds level logging.
 // To set the logging level, one should use the LoggingLevel property. For example
 // to set it to debug level:
 //  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
 // If loggerConfig.SetLogger() method is called, the LoggingLevel property will not be used.
 type DefaultLogger struct {
 	*log.Logger
-	Level int
+	Weight logger.Weight
 }
 
 // New returns a Default Logger with defaultLogLevel.
 func New() *DefaultLogger {
+	l, _ := NewWithLevel(defaultLogLevel) // defaultLogLevel exists, no err
+	return l
+}
+
+func NewWithLevel(loggingLevel logger.Level) (*DefaultLogger, error) {
+	numericLevel, err := logger.GetLogLevel(loggingLevel)
+	if err != nil {
+		return nil, err
+	}
 	return &DefaultLogger{
 		Logger: log.New(os.Stderr, "", log.LstdFlags),
-		Level:  defaultLogLevel,
-	}
+		Weight: numericLevel,
+	}, nil
 }
 
-func NewWithLevel(loggingLevel int) *DefaultLogger {
-	return &DefaultLogger{
-		Logger: log.New(os.Stderr, "", log.LstdFlags),
-		Level:  loggingLevel,
+func (l *DefaultLogger) Log(wantedLevel logger.Weight, formatter func() string) {
+	if l.Weight < wantedLevel {
+		return
 	}
-}
-
-// Debug logs the given arguments at debug level if the level is greater than or equal to debug level.
-func (l *DefaultLogger) Debug(f func() string) {
-	if l.CanLogDebug() && f != nil {
-		s := fmt.Sprintf("DEBUG: %s", f())
-		l.Output(logCallDepth, s)
+	var logLevel logger.Level
+	switch wantedLevel {
+	case logger.WeightTrace:
+		logLevel = logger.TraceLevel
+	case logger.WeightDebug:
+		logLevel = logger.DebugLevel
+	case logger.WeightInfo:
+		logLevel = logger.InfoLevel
+	case logger.WeightWarn:
+		logLevel = logger.WarnLevel
+	case logger.WeightError:
+		logLevel = logger.ErrorLevel
+	case logger.WeightFatal:
+		logLevel = logger.FatalLevel
+	case logger.WeightOff:
+		logLevel = logger.OffLevel
+	default:
+		return // unknown level, do not log anything
 	}
-}
 
-func (l *DefaultLogger) Trace(f func() string) {
-	if l.canLogTrace() && f != nil {
-		s := fmt.Sprintf("TRACE: %s", f())
-		l.Output(logCallDepth, s)
-	}
-}
-
-// Info logs the given arguments at info level if the level is greater than or equal to info level.
-func (l *DefaultLogger) Info(args ...interface{}) {
-	if l.canLogInfo() {
-		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + infoPrefix + ": " + fmt.Sprint(args...)
-		l.Output(logCallDepth, s)
-	}
-}
-
-func (l *DefaultLogger) Infof(format string, values ...interface{}) {
-	if l.canLogInfo() {
-		s := fmt.Sprintf("INFO : %s", fmt.Sprintf(format, values...))
-		l.Output(logCallDepth, s)
-	}
-}
-
-// Warn logs the given arguments at warn level if the level is greater than or equal to warn level.
-func (l *DefaultLogger) Warn(args ...interface{}) {
-	if l.canLogWarn() {
-		callerName := l.findCallerFuncName()
-		s := callerName + "\n" + warnPrefix + ": " + fmt.Sprint(args...)
-		l.Output(logCallDepth, s)
-	}
-}
-
-func (l *DefaultLogger) Warnf(format string, values ...interface{}) {
-	if l.canLogWarn() {
-		s := fmt.Sprintf("WARN : %s", fmt.Sprintf(format, values...))
-		l.Output(logCallDepth, s)
-	}
-}
-
-// Error logs the given arguments at error level if the level is greater than or equal to error level.
-func (l *DefaultLogger) Error(err error) {
-	l.Errorf(err.Error())
-}
-
-func (l *DefaultLogger) Errorf(format string, values ...interface{}) {
-	if l.canLogError() {
-		s := fmt.Sprintf("ERROR: %s", fmt.Errorf(format, values...).Error())
-		l.Output(logCallDepth, s)
-	}
+	s := fmt.Sprintf("%-5s: %s", strings.ToUpper(logLevel.String()), formatter())
+	_ = l.Output(logCallDepth, s) // don't have retry mechanism in case writing to buffer fails
 }
 
 func (l *DefaultLogger) findCallerFuncName() string {
@@ -123,22 +97,38 @@ func (l *DefaultLogger) findCallerFuncName() string {
 	return runtime.FuncForPC(pc).Name()
 }
 
-func (l *DefaultLogger) canLogTrace() bool {
-	return l.Level >= traceLevel
+// LogAdaptor is used to convert logger implementations of public interface logger.LogAdaptor to internal logging interface LogAdaptor
+type LogAdaptor struct {
+	logger.Logger
 }
 
-func (l *DefaultLogger) canLogInfo() bool {
-	return l.Level >= infoLevel
+// Debug runs the given function to generate the logger string, if logger level is debug or finer.
+func (la LogAdaptor) Debug(f func() string) {
+	la.Log(logger.WeightDebug, f)
 }
 
-func (l *DefaultLogger) canLogWarn() bool {
-	return l.Level >= warnLevel
+// Trace runs the given function to generate the logger string, if logger level is trace or finer.
+func (la LogAdaptor) Trace(f func() string) {
+	la.Log(logger.WeightTrace, f)
 }
 
-func (l *DefaultLogger) canLogError() bool {
-	return l.Level >= errorLevel
+// Infof formats the given string with the given values, if logger level is info or finer.
+func (la LogAdaptor) Infof(format string, values ...interface{}) {
+	la.Log(logger.WeightInfo, func() string {
+		return fmt.Sprintf(format, values...)
+	})
 }
 
-func (l *DefaultLogger) CanLogDebug() bool {
-	return l.Level >= debugLevel
+// Warnf formats the given string with the given values, if logger level is warn or finer.
+func (la LogAdaptor) Warnf(format string, values ...interface{}) {
+	la.Log(logger.WeightWarn, func() string {
+		return fmt.Sprintf(format, values...)
+	})
+}
+
+// Errorf formats the given string with the given values, if logger level is error or finer.
+func (la LogAdaptor) Errorf(format string, values ...interface{}) {
+	la.Log(logger.WeightError, func() string {
+		return fmt.Errorf(format, values...).Error()
+	})
 }

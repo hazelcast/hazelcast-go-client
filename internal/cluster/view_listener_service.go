@@ -14,10 +14,10 @@ type ViewListenerService struct {
 	cs         *Service
 	cm         *ConnectionManager
 	dispatcher *event.DispatchService
-	logger     logger.Logger
+	logger     logger.LogAdaptor
 }
 
-func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *event.DispatchService, logger logger.Logger) *ViewListenerService {
+func NewViewListenerService(cs *Service, cm *ConnectionManager, dispatcher *event.DispatchService, logger logger.LogAdaptor) *ViewListenerService {
 	vs := &ViewListenerService{
 		cs:         cs,
 		cm:         cm,

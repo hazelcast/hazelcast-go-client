@@ -59,7 +59,7 @@ type Config struct {
 
 type Client struct {
 	InvocationHandler    invocation.Handler
-	Logger               ilogger.Logger
+	Logger               ilogger.LogAdaptor
 	ConnectionManager    *icluster.ConnectionManager
 	ClusterService       *icluster.Service
 	PartitionService     *icluster.PartitionService
@@ -81,11 +81,7 @@ func New(config *Config) (*Client, error) {
 	if name == "" {
 		name = fmt.Sprintf("hz.client_%d", id)
 	}
-	logLevel, err := ilogger.GetLogLevel(config.Logger.Level)
-	if err != nil {
-		return nil, err
-	}
-	clientLogger := ilogger.NewWithLevel(logLevel)
+	clientLogger, err := loggerFromConf(config.Logger)
 	serService, err := serialization.NewService(config.Serialization)
 	if err != nil {
 		return nil, err
@@ -255,7 +251,7 @@ func (c *Client) handleClusterEvent(event event.Event) {
 	}
 }
 
-func addrProviderTranslator(config *cluster.Config, logger ilogger.Logger) (icluster.AddressProvider, icluster.AddressTranslator) {
+func addrProviderTranslator(config *cluster.Config, logger ilogger.LogAdaptor) (icluster.AddressProvider, icluster.AddressTranslator) {
 	if config.Cloud.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)
@@ -265,4 +261,15 @@ func addrProviderTranslator(config *cluster.Config, logger ilogger.Logger) (iclu
 		return pr, icluster.NewDefaultPublicAddressTranslator()
 	}
 	return pr, icluster.NewDefaultAddressTranslator()
+}
+
+func loggerFromConf(config *logger.Config) (ilogger.LogAdaptor, error) {
+	if config.CustomLogger != nil {
+		return ilogger.LogAdaptor{Logger: config.CustomLogger}, nil
+	}
+	lg, err := ilogger.NewWithLevel(config.Level)
+	if err != nil {
+		return ilogger.LogAdaptor{}, err
+	}
+	return ilogger.LogAdaptor{Logger: lg}, nil
 }

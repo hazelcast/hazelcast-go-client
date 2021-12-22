@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 )
 
@@ -39,9 +39,9 @@ type CandidateCluster struct {
 	ClusterName        string
 }
 
-type addrFun func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator)
+type addrFun func(*pubcluster.Config, logger.LogAdaptor) (AddressProvider, AddressTranslator)
 
-func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun) *FailoverService {
+func NewFailoverService(logger logger.LogAdaptor, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun) *FailoverService {
 	candidates := []CandidateCluster{}
 	configs := []pubcluster.Config{}
 	if len(foConfigs) > 0 {

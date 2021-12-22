@@ -38,7 +38,7 @@ type listenerRegistration struct {
 }
 
 type ConnectionListenerBinder struct {
-	logger                logger.Logger
+	logger                logger.LogAdaptor
 	connectionManager     *ConnectionManager
 	invocationFactory     *ConnectionInvocationFactory
 	eventDispatcher       *event.DispatchService
@@ -57,7 +57,7 @@ func NewConnectionListenerBinder(
 	invocationService *invocation.Service,
 	invocationFactory *ConnectionInvocationFactory,
 	eventDispatcher *event.DispatchService,
-	logger logger.Logger,
+	logger logger.LogAdaptor,
 	smart bool) *ConnectionListenerBinder {
 	binder := &ConnectionListenerBinder{
 		connectionManager:     connManager,

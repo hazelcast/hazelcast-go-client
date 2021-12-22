@@ -17,11 +17,11 @@ type HeartbeatService struct {
 	invFactory *ConnectionInvocationFactory
 	invService *invocation.Service
 	doneCh     chan struct{}
-	logger     logger.Logger
+	logger     logger.LogAdaptor
 	state      int32
 }
 
-func NewHeartbeatService(cm *ConnectionManager, f *ConnectionInvocationFactory, invService *invocation.Service, logger logger.Logger) *HeartbeatService {
+func NewHeartbeatService(cm *ConnectionManager, f *ConnectionInvocationFactory, invService *invocation.Service, logger logger.LogAdaptor) *HeartbeatService {
 	return &HeartbeatService{
 		cm:         cm,
 		invFactory: f,

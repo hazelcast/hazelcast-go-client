@@ -60,8 +60,8 @@ type Client struct {
 	membershipListenerMapMu *sync.Mutex
 	proxyManager            *proxyManager
 	membershipListenerMap   map[types.UUID]int64
-	lifecyleListenerMap     map[types.UUID]int64
-	lifecyleListenerMapMu   *sync.Mutex
+	lifecycleListenerMap    map[types.UUID]int64
+	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 }
 
@@ -86,8 +86,8 @@ func newClient(config Config) (*Client, error) {
 	}
 	c := &Client{
 		ic:                      ic,
-		lifecyleListenerMap:     map[types.UUID]int64{},
-		lifecyleListenerMapMu:   &sync.Mutex{},
+		lifecycleListenerMap:    map[types.UUID]int64{},
+		lifecycleListenerMapMu:  &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
 	}
@@ -208,9 +208,9 @@ func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (type
 	uuid := types.NewUUID()
 	subscriptionID := event.NextSubscriptionID()
 	c.addLifecycleListener(subscriptionID, handler)
-	c.lifecyleListenerMapMu.Lock()
-	c.lifecyleListenerMap[uuid] = subscriptionID
-	c.lifecyleListenerMapMu.Unlock()
+	c.lifecycleListenerMapMu.Lock()
+	c.lifecycleListenerMap[uuid] = subscriptionID
+	c.lifecycleListenerMapMu.Unlock()
 	return uuid, nil
 }
 
@@ -219,12 +219,12 @@ func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 	if c.ic.State() >= client.Stopping {
 		return hzerrors.ErrClientNotActive
 	}
-	c.lifecyleListenerMapMu.Lock()
-	if intID, ok := c.lifecyleListenerMap[subscriptionID]; ok {
+	c.lifecycleListenerMapMu.Lock()
+	if intID, ok := c.lifecycleListenerMap[subscriptionID]; ok {
 		c.ic.EventDispatcher.Unsubscribe(eventLifecycleEventStateChanged, intID)
-		delete(c.lifecyleListenerMap, subscriptionID)
+		delete(c.lifecycleListenerMap, subscriptionID)
 	}
-	c.lifecyleListenerMapMu.Unlock()
+	c.lifecycleListenerMapMu.Unlock()
 	return nil
 }
 
@@ -332,7 +332,7 @@ func (c *Client) addConfigEvents(config *Config) {
 	for uuid, handler := range config.lifecycleListeners {
 		subscriptionID := event.NextSubscriptionID()
 		c.addLifecycleListener(subscriptionID, handler)
-		c.lifecyleListenerMap[uuid] = subscriptionID
+		c.lifecycleListenerMap[uuid] = subscriptionID
 	}
 	for uuid, handler := range config.membershipListeners {
 		subscriptionID := event.NextSubscriptionID()
