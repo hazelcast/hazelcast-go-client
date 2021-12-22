@@ -936,7 +936,8 @@ func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *isql.Error {
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil
 	}
-	return DecodeSqlError(it)
+	e := DecodeSqlError(it)
+	return &e
 }
 
 func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *isql.QueryID {

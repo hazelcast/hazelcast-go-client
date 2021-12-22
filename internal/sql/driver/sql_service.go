@@ -123,7 +123,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return nil, ihzerrors.NewIOError("no connection found", nil)
 	}
 	qid := isql.NewQueryIDFromUUID(conn.MemberUUID())
-	req := codec.EncodeSqlExecuteRequest(query, serParams, timeoutMillis, cursorBufferSize, "", resultType, qid)
+	req := codec.EncodeSqlExecuteRequest(query, serParams, timeoutMillis, cursorBufferSize, "", resultType, qid, false)
 	resp, err := s.invokeOnConnection(ctx, req, conn)
 	if err != nil {
 		return nil, err
