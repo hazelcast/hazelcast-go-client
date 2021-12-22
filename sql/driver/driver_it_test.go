@@ -21,6 +21,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
+	"strconv"
 	"testing"
 	"time"
 
@@ -317,5 +319,9 @@ func makeDSN(config *hz.Config) string {
 	if it.TraceLoggingEnabled() {
 		ll = logger.TraceLevel
 	}
-	return fmt.Sprintf("%s;cluster.name=%s;cluster.unisocket=%t;logger.level=%s", config.Cluster.Network.Addresses[0], config.Cluster.Name, config.Cluster.Unisocket, ll)
+	q := url.Values{}
+	q.Add("cluster.name", config.Cluster.Name)
+	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
+	q.Add("log", string(ll))
+	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
 }
