@@ -22,8 +22,7 @@ Its main purpose is to save the state of an object in order to be able to recrea
 The reverse process is called deserialization.
 
 Hazelcast serializes all your objects before sending them to the server.
-The uint8 (byte), bool, int16, uint16, int32, int64, float32, float64 and string types are serialized natively and you cannot override this behavior.
-The following table is the conversion of types for Java server side.
+The following table is the conversion of types for Java server side, which cannot be overriden by the user.
 
 	Go              Java
 	============    =========
@@ -38,6 +37,18 @@ The following table is the conversion of types for Java server side.
 	float64         Double
 	string          String
 	types.UUID      UUID
+	time.Time       (See the table below)
+	*big.Int		java.util.BigInteger
+	types.Decimal	java.util.BigDecimal
+
+Types of time.Time are converted to Java using the table below:
+
+	Go                                                   Java
+	============                                         =========
+	time.Time with year == 0                             java.time.LocalTime
+	time.Time with hours, minutes, secs, nanosecs == 0   java.time.localDate
+	time.Time with location == time.Local                java.time.LocalDateTime
+    time.Time, otherwise                                 java.time.OffsetDateTime
 
 Slices of the types above are serialized as arrays in the Hazelcast server side and the Hazelcast Java client.
 Reference types are not supported for builtin types, e.g., *int64.

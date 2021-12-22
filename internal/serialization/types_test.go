@@ -44,7 +44,10 @@ func TestBigIntToJavaBytes(t *testing.T) {
 func TestJavaBytesToBigInt(t *testing.T) {
 	for _, tc := range bigIntTestCases() {
 		t.Run(tc.BigInt.String(), func(t *testing.T) {
-			b := serialization.JavaBytesToBigInt(tc.ByteArray)
+			b, err := serialization.JavaBytesToBigInt(tc.ByteArray)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if !assert.Equal(t, tc.BigInt.String(), b.String()) {
 				t.FailNow()
 			}
@@ -99,12 +102,28 @@ func bigIntTestCases() []BigIntTestCase {
 			ByteArray: []byte{0xfe, 0x79, 0x60},
 		},
 		{
+			BigInt:    big.NewInt(-123_456),
+			ByteArray: []byte{254, 29, 192},
+		},
+		{
 			BigInt:    big.NewInt(-1_000_000),
 			ByteArray: []byte{0xf0, 0xbd, 0xc0},
 		},
 		{
 			BigInt:    big.NewInt(-10_000_000),
 			ByteArray: []byte{0xff, 0x67, 0x69, 0x80},
+		},
+		{
+			BigInt:    big.NewInt(-2_147_483_647),
+			ByteArray: []byte{0x80, 0x0, 0x0, 0x01},
+		},
+		{
+			BigInt:    big.NewInt(-2_147_483_648),
+			ByteArray: []byte{0x80, 0x0, 0x0, 0x0},
+		},
+		{
+			BigInt:    mustBigString("-9223372036854775808"),
+			ByteArray: []byte{0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		},
 		{
 			BigInt:    big.NewInt(1),
@@ -131,6 +150,10 @@ func bigIntTestCases() []BigIntTestCase {
 			ByteArray: []byte{0x01, 0x0},
 		},
 		{
+			BigInt:    big.NewInt(999),
+			ByteArray: []byte{3, 231},
+		},
+		{
 			BigInt:    big.NewInt(1000),
 			ByteArray: []byte{0x03, 0xe8},
 		},
@@ -153,6 +176,14 @@ func bigIntTestCases() []BigIntTestCase {
 		{
 			BigInt:    mustBigString("10000000"),
 			ByteArray: []byte{0x00, 0x98, 0x96, 0x80},
+		},
+		{
+			BigInt:    mustBigString("2147483647"),
+			ByteArray: []byte{127, 255, 255, 255},
+		},
+		{
+			BigInt:    mustBigString("23154266667777888899991234566543219999888877776666245132"),
+			ByteArray: []byte{0, 241, 189, 232, 38, 131, 251, 137, 60, 34, 23, 53, 163, 116, 208, 85, 14, 65, 40, 174, 120, 10, 56, 12},
 		},
 	}
 	return testCases

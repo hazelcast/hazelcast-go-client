@@ -1117,19 +1117,22 @@ func DecodeListMultiFrameContainsNullableData(it *proto.ForwardFrameIterator, ss
 func DecodeListMultiFrameContainsNullableDecimal(it *proto.ForwardFrameIterator) []driver.Value {
 	// the decoder below never returns an error, so ignoring the error
 	vs, _ := DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) (driver.Value, error) {
-		return DecodeDecimal(it), nil
+		return DecodeDecimal(it)
 	})
 	return vs
 }
 
-func DecodeDecimal(it *proto.ForwardFrameIterator) types.Decimal {
+func DecodeDecimal(it *proto.ForwardFrameIterator) (types.Decimal, error) {
 	frame := it.Next()
 	bl := int(FixSizedTypesCodec.DecodeInt(frame.Content, 0))
 	pos := proto.IntSizeInBytes
-	bint := iserialization.JavaBytesToBigInt(frame.Content[pos : pos+bl])
+	bint, err := iserialization.JavaBytesToBigInt(frame.Content[pos : pos+bl])
+	if err != nil {
+		return types.Decimal{}, err
+	}
 	pos += bl
 	scale := FixSizedTypesCodec.DecodeInt(frame.Content, int32(pos))
-	return types.NewDecimal(bint, scale)
+	return types.NewDecimal(bint, scale), nil
 }
 
 func decodeLocalDate(buffer []byte, offset int32) (y int, m time.Month, d int) {

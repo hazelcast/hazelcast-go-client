@@ -401,7 +401,11 @@ func (JavaBigIntegerSerializer) ID() int32 {
 func (JavaBigIntegerSerializer) Read(input serialization.DataInput) interface{} {
 	l := input.ReadInt32()
 	bs := make([]byte, l)
-	return JavaBytesToBigInt(bs)
+	b, err := JavaBytesToBigInt(bs)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func (JavaBigIntegerSerializer) Write(output serialization.DataOutput, i interface{}) {

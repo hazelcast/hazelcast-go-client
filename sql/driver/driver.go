@@ -23,10 +23,12 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -69,6 +71,20 @@ func WithQueryTimeout(parent context.Context, t time.Duration) context.Context {
 	return context.WithValue(parent, driver.QueryTimeoutKey{}, tm)
 }
 
+// SetSerializationConfig stores the serialization config.
+// It copies the configuration before storing.
 func SetSerializationConfig(config *serialization.Config) error {
 	return driver.SetSerializationConfig(config)
+}
+
+// SetLoggerConfig stores the logger config.
+// It copies the configuration before storing.
+func SetLoggerConfig(config *logger.Config) error {
+	return driver.SetLoggerConfig(config)
+}
+
+// SetSSLConfig stores the SSL config.
+// It copies the configuration before storing.
+func SetSSLConfig(config *cluster.SSLConfig) error {
+	return driver.SetSSLConfig(config)
 }

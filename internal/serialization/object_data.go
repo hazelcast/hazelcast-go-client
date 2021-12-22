@@ -770,7 +770,11 @@ func (i *ObjectDataInput) ReadTimestampWithTimezoneArray() []time.Time {
 }
 
 func (i *ObjectDataInput) ReadBigInt() *big.Int {
-	return JavaBytesToBigInt(i.ReadByteArray())
+	b, err := JavaBytesToBigInt(i.ReadByteArray())
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func (i *ObjectDataInput) ReadDecimal() types.Decimal {

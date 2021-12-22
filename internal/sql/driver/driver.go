@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -60,6 +61,8 @@ const (
 var (
 	_                   driver.Driver = (*Driver)(nil)
 	serializationConfig atomic.Value
+	loggerConfig        atomic.Value
+	sslConfig           atomic.Value
 )
 
 // SerializationConfig returns the current serialization config.
@@ -72,6 +75,8 @@ func SerializationConfig() *serialization.Config {
 	return sc.(*serialization.Config)
 }
 
+// SetSerializationConfig stores the serialization config.
+// It copies the configuration before storing.
 func SetSerializationConfig(c *serialization.Config) error {
 	if c == nil {
 		serializationConfig.Store(c)
@@ -82,6 +87,56 @@ func SetSerializationConfig(c *serialization.Config) error {
 		return err
 	}
 	serializationConfig.Store(&cc)
+	return nil
+}
+
+// LoggerConfig returns the current logger config.
+// Note that it doesn't return a copy.
+func LoggerConfig() *logger.Config {
+	lc := loggerConfig.Load()
+	if lc == nil {
+		return nil
+	}
+	return lc.(*logger.Config)
+}
+
+// SetLoggerConfig stores the logger config.
+// It copies the configuration before storing.
+func SetLoggerConfig(c *logger.Config) error {
+	if c == nil {
+		loggerConfig.Store(c)
+		return nil
+	}
+	cc := c.Clone()
+	if err := cc.Validate(); err != nil {
+		return err
+	}
+	loggerConfig.Store(&cc)
+	return nil
+}
+
+// SSLConfig returns the current SSL config.
+// Note that it doesn't return a copy.
+func SSLConfig() *cluster.SSLConfig {
+	sc := sslConfig.Load()
+	if sc == nil {
+		return nil
+	}
+	return sc.(*cluster.SSLConfig)
+}
+
+// SetSSLConfig stores the SSL config.
+// It copies the configuration before storing.
+func SetSSLConfig(c *cluster.SSLConfig) error {
+	if c == nil {
+		sslConfig.Store(c)
+		return nil
+	}
+	cc := c.Clone()
+	if err := cc.Validate(); err != nil {
+		return err
+	}
+	sslConfig.Store(&cc)
 	return nil
 }
 
@@ -97,6 +152,12 @@ func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 	config := hazelcast.Config{}
 	if err := config.Validate(); err != nil {
 		return nil, err
+	}
+	if lc := LoggerConfig(); lc != nil {
+		config.Logger = lc.Clone()
+	}
+	if sc := SSLConfig(); sc != nil {
+		config.Cluster.Network.SSL = sc.Clone()
 	}
 	if dsn != "" {
 		u, err := url.Parse(dsn)
