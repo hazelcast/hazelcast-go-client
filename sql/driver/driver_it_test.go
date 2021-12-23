@@ -279,13 +279,13 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		`, mapName)
 		t.Logf("Query: %s", q)
 		it.MustValue(db.Exec(q))
-		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("Europe/Istanbul", 3*60*60))
+		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
 		rec := NewRecordWithDateTime(&dt)
 		it.Must(m.Set(context.TODO(), 1, rec))
 		targetDate := time.Date(2021, 12, 22, 0, 0, 0, 0, time.Local)
 		targetTime := time.Date(0, 1, 1, 23, 40, 12, 3400, time.Local)
 		targetTimestamp := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.Local)
-		targetTimestampWithTimezone := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", 3*60*60))
+		targetTimestampWithTimezone := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", -5*60*60))
 		var k int64
 		// select the value itself
 		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
@@ -321,7 +321,7 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		if !targetTimestamp.Equal(vTimestamp) {
 			t.Fatalf("%s != %s", targetTimestamp, vTimestamp)
 		}
-		if !targetTimestampWithTimezone.Equal(vTimestamp) {
+		if !targetTimestampWithTimezone.Equal(vTimestampWithTimezone) {
 			t.Fatalf("%s != %s", targetTimestampWithTimezone, vTimestamp)
 		}
 	})
