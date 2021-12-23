@@ -82,6 +82,9 @@ func New(config *Config) (*Client, error) {
 		name = fmt.Sprintf("hz.client_%d", id)
 	}
 	clientLogger, err := loggerFromConf(config.Logger)
+	if err != nil {
+		return nil, err
+	}
 	serService, err := serialization.NewService(config.Serialization)
 	if err != nil {
 		return nil, err

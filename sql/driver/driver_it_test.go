@@ -46,6 +46,7 @@ const (
 )
 
 type Record struct {
+	DecimalValue  *types.Decimal
 	NullValue     interface{}
 	VarcharValue  string
 	DoubleValue   float64
@@ -55,7 +56,6 @@ type Record struct {
 	SmallIntValue int16
 	TinyIntValue  int8
 	BoolValue     bool
-	DecimalValue  *types.Decimal
 }
 
 func (r Record) FactoryID() int32 {
@@ -433,18 +433,4 @@ func makeDSN(config *hz.Config) string {
 	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
 	q.Add("log", string(ll))
 	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
-}
-
-func openWithConfig(config *hz.Config) *sql.DB {
-	dsn := makeDSN(config)
-	sc := &serialization.Config{}
-	sc.SetPortableFactories(&recordFactory{})
-	if err := driver.SetSerializationConfig(sc); err != nil {
-		panic(err)
-	}
-	db, err := sql.Open("hazelcast", dsn)
-	if err != nil {
-		panic(err)
-	}
-	return db
 }

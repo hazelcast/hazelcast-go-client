@@ -210,6 +210,7 @@ type fake struct {
 	date        time.Time
 	portable    serialization.Portable
 	nilDate     *time.Time
+	dec         types.Decimal
 	utf         string
 	utfArr      []string
 	i64Arr      []int64
@@ -221,7 +222,6 @@ type fake struct {
 	i32Arr      []int32
 	boolArr     []bool
 	portableArr []serialization.Portable
-	dec         types.Decimal
 	i64         int64
 	f64         float64
 	f32         float32
