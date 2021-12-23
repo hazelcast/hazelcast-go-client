@@ -830,6 +830,23 @@ func (m *Map) SetTTL(ctx context.Context, key interface{}, ttl time.Duration) er
 	}
 }
 
+// SetTTLEffected updates the TTL value of the entry specified by the given key with a new TTL value.
+// Given TTL (maximum time in seconds for this entry to stay in the map) is used.
+// Returns true if entry is affected.
+// Set ttl to 0 for infinite timeout.
+func (m *Map) SetTTLEffected(ctx context.Context, key interface{}, ttl time.Duration) (bool, error) {
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapSetTtlRequest(m.name, keyData, ttl.Milliseconds())
+	resp, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapSetTtlResponse(resp), nil
+}
+
 // SetWithTTL sets the value for the given key.
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.

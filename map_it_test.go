@@ -1047,13 +1047,47 @@ func TestMap_SetTTL(t *testing.T) {
 		ctx := context.Background()
 		targetValue := "value"
 		it.Must(m.Set(ctx, "key", targetValue))
-		if err := m.SetTTL(ctx, "key", 20*time.Second); err != nil {
+		if err := m.SetTTL(ctx, "key", 2*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(ctx, "key")) == nil
 		})
+	})
+}
+
+func TestMap_SetTTLEffected(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		testcases := []struct {
+			key        string
+			isEffected bool
+			expectErr  bool
+		}{
+			{
+				key:        "happy path",
+				isEffected: true,
+			},
+			{
+				key:        "setTTL on non-existing key",
+				isEffected: false,
+				expectErr:  false,
+			},
+			{
+				key:        "setTTL on already expired key",
+				isEffected: false,
+				expectErr:  false,
+			},
+		}
+		_ = it.MustValue(m.Put(ctx, "happy path", "someValue"))
+		_ = it.MustValue(m.PutWithTTL(ctx, "setTTL on already expired key", "someValue", time.Millisecond))
+		time.Sleep(time.Millisecond)
+		for _, test := range testcases {
+			effected, err := m.SetTTLEffected(ctx, test.key, time.Second)
+			assert.Equal(t, test.expectErr, err != nil)
+			assert.Equal(t, test.isEffected, effected)
+		}
 	})
 }
 
