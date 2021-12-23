@@ -830,11 +830,11 @@ func (m *Map) SetTTL(ctx context.Context, key interface{}, ttl time.Duration) er
 	}
 }
 
-// SetTTLEffected updates the TTL value of the entry specified by the given key with a new TTL value.
+// SetTTLAffected updates the TTL value of the entry specified by the given key with a new TTL value.
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Returns true if entry is affected.
 // Set ttl to 0 for infinite timeout.
-func (m *Map) SetTTLEffected(ctx context.Context, key interface{}, ttl time.Duration) (bool, error) {
+func (m *Map) SetTTLAffected(ctx context.Context, key interface{}, ttl time.Duration) (bool, error) {
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return false, err
