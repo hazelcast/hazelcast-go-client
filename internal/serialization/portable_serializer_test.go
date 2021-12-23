@@ -391,10 +391,13 @@ func TestPortableSerializer4(t *testing.T) {
 		&student{id: 10, age: 22, name: "Furkan Şenharputlu"},
 		&student{id: 2, age: 20, name: "Micheal Micheal"},
 	}
+	bint := new(big.Int)
+	bint.SetString("-12346578912345678912345674891234567891346798", 10)
 	expectedRet := &fake{
 		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
 		date: time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
+		dec:  types.NewDecimal(bint, 5),
 	}
 	data, err := service.ToData(expectedRet)
 	if err != nil {

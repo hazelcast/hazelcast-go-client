@@ -276,9 +276,13 @@ func int32ArrToWords64(a []int32) []big.Word {
 	l := len(a)
 	ws := make([]big.Word, l/2+l%2)
 	if l%2 == 1 {
-		a = append(a, 0)
+		// prepend the extra 0 to make the length even
+		a2 := make([]int32, l+1)
+		for i, x := range a {
+			a2[i+1] = x
+		}
+		a = a2
 		l = len(a)
-		a[0], a[l-1] = a[l-1], a[0]
 	}
 	x := l - 1
 	for i := 0; i < len(ws); i++ {
