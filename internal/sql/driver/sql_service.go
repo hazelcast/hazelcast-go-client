@@ -27,6 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -45,9 +46,10 @@ type SQLService struct {
 	invFactory           *cluster.ConnectionInvocationFactory
 	invService           *invocation.Service
 	cb                   *cb.CircuitBreaker
+	lg                   *logger.LogAdaptor
 }
 
-func newSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fac *cluster.ConnectionInvocationFactory, is *invocation.Service) *SQLService {
+func newSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fac *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor) *SQLService {
 	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.RetryPolicy(func(attempt int) time.Duration {
@@ -60,6 +62,7 @@ func newSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fa
 		invFactory:           fac,
 		invService:           is,
 		cb:                   cbr,
+		lg:                   lg,
 	}
 }
 
@@ -91,7 +94,7 @@ func (s *SQLService) QuerySQL(ctx context.Context, query string, params []driver
 	return resp.(*QueryResult), nil
 }
 
-func (s *SQLService) Fetch(qid isql.QueryID, conn *cluster.Connection, cbs int32) (*isql.Page, error) {
+func (s *SQLService) fetch(qid isql.QueryID, conn *cluster.Connection, cbs int32) (*isql.Page, error) {
 	req := codec.EncodeSqlFetchRequest(qid, cbs)
 	resp, err := s.invokeOnConnection(context.Background(), req, conn)
 	if err != nil {
@@ -104,10 +107,9 @@ func (s *SQLService) Fetch(qid isql.QueryID, conn *cluster.Connection, cbs int32
 	return page, nil
 }
 
-func (s *SQLService) CloseQuery(qid isql.QueryID, conn *cluster.Connection) error {
+func (s *SQLService) closeQuery(qid isql.QueryID, conn *cluster.Connection) error {
 	req := codec.EncodeSqlCloseRequest(qid)
-	_, err := s.invokeOnConnection(context.Background(), req, conn)
-	if err != nil {
+	if _, err := s.invokeOnConnection(context.Background(), req, conn); err != nil {
 		return fmt.Errorf("closing query: %w", err)
 	}
 	return nil
@@ -124,6 +126,9 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	}
 	qid := isql.NewQueryIDFromUUID(conn.MemberUUID())
 	req := codec.EncodeSqlExecuteRequest(query, serParams, timeoutMillis, cursorBufferSize, "", resultType, qid, false)
+	s.lg.Debug(func() string {
+		return fmt.Sprintf("SqlExecuteRequest: qid: %d, q: %s", qid, query)
+	})
 	resp, err := s.invokeOnConnection(ctx, req, conn)
 	if err != nil {
 		return nil, err

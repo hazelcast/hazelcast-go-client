@@ -358,10 +358,12 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	if m.failoverConfig.Enabled {
 		tryCount = m.failoverConfig.TryCount
 	}
+	var addr pubcluster.Address
+	var err error
 	for i := 1; i <= tryCount; i++ {
 		cluster := m.failoverService.Current()
 		m.logger.Infof("trying to connect to cluster: %s", cluster.ClusterName)
-		addr, err := m.tryConnectCandidateCluster(ctx, cluster, cluster.ConnectionStrategy)
+		addr, err = m.tryConnectCandidateCluster(ctx, cluster, cluster.ConnectionStrategy)
 		if err == nil {
 			m.logger.Infof("connected to cluster: %s", m.failoverService.Current().ClusterName)
 			return addr, nil
@@ -371,7 +373,7 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 		}
 		m.failoverService.Next()
 	}
-	return "", fmt.Errorf("cannot connect to any cluster: %w", hzerrors.ErrIllegalState)
+	return "", ihzerrors.NewIllegalStateError("cannot connect to any cluster", err)
 }
 
 func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {

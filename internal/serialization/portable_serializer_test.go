@@ -19,6 +19,7 @@ package serialization
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"reflect"
 	"testing"
 	"time"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type portableFactory1 struct {
@@ -219,6 +221,7 @@ type fake struct {
 	i32Arr      []int32
 	boolArr     []bool
 	portableArr []serialization.Portable
+	dec         types.Decimal
 	i64         int64
 	f64         float64
 	f32         float32
@@ -264,6 +267,7 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) {
 	writer.WritePortableArray("portableArr", f.portableArr)
 	writer.WriteDate("nilDate", f.nilDate)
 	writer.WriteDate("date", &f.date)
+	writer.WriteDecimal("decimal", &f.dec)
 }
 
 func (f *fake) ReadPortable(reader serialization.PortableReader) {
@@ -289,6 +293,7 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) {
 	f.portableArr = reader.ReadPortableArray("portableArr")
 	f.nilDate = reader.ReadDate("nilDate")
 	f.date = *reader.ReadDate("date")
+	f.dec = *reader.ReadDecimal("decimal")
 }
 
 func TestPortableSerializer2(t *testing.T) {
@@ -325,6 +330,7 @@ func TestPortableSerializer2(t *testing.T) {
 		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
 		date: time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
+		dec:  types.NewDecimal(big.NewInt(123_456_789), 100),
 	}
 	data, err := service.ToData(expectedRet)
 	if err != nil {

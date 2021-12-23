@@ -173,7 +173,7 @@ func (c StatsConfig) clone() StatsConfig {
 
 // Validate validates the stats configuration and replaces missing configuration with defaults.
 func (c *StatsConfig) Validate() error {
-	if err := check.NonNegativeDuration(&c.Period, 5*time.Second, "invalid period"); err != nil {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&c.Period), 5*time.Second, "invalid period"); err != nil {
 		return err
 	}
 	return nil
@@ -200,7 +200,7 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 	} else if err := check.WithinRangeInt32(f.PrefetchCount, 1, maxFlakeIDPrefetchCount); err != nil {
 		return err
 	}
-	if err := check.NonNegativeDuration(&f.PrefetchExpiry, time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&f.PrefetchExpiry), time.Duration(defaultFlakeIDPrefetchExpiry), "invalid duration"); err != nil {
 		return err
 	}
 	return nil

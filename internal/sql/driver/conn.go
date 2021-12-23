@@ -38,18 +38,18 @@ func newConn(name string) (*Conn, error) {
 	if err != nil {
 		return nil, fmt.Errorf("configuring internal client: %w", err)
 	}
-	return NewConnWithConfig(config)
+	return NewConnWithConfig(context.Background(), config)
 }
 
-func NewConnWithConfig(config *client.Config) (*Conn, error) {
+func NewConnWithConfig(ctx context.Context, config *client.Config) (*Conn, error) {
 	ic, err := client.New(config)
 	if err != nil {
 		return nil, fmt.Errorf("starting Hazelcast client: %w", err)
 	}
-	if err := ic.Start(context.Background()); err != nil {
+	if err := ic.Start(ctx); err != nil {
 		return nil, err
 	}
-	ss := newSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService)
+	ss := newSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService, &ic.Logger)
 	return &Conn{
 		ic: ic,
 		ss: ss,

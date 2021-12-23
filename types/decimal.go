@@ -17,7 +17,11 @@
 package types
 
 import (
+	"fmt"
+	"math"
 	"math/big"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 )
 
 // Decimal is a wrapper for Hazelcast Decimal.
@@ -27,10 +31,14 @@ type Decimal struct {
 }
 
 // NewDecimal creates and returns a Decimal value with the given big int and scale.
-func NewDecimal(unscaledValue *big.Int, scale int32) Decimal {
+// Scale must be nonnegative and must be less or equal to math.MaxInt32. otherwise NewDecimal panics.
+func NewDecimal(unscaledValue *big.Int, scale int) Decimal {
+	if err := check.WithinRangeInt32(int32(scale), 0, math.MaxInt32); err != nil {
+		panic(fmt.Errorf("creating decumal: %w", err))
+	}
 	return Decimal{
 		unscaledValue: unscaledValue,
-		scale:         scale,
+		scale:         int32(scale),
 	}
 }
 
@@ -40,6 +48,7 @@ func (d Decimal) UnscaledValue() *big.Int {
 }
 
 // Scale returns the scale of the decimal.
-func (d Decimal) Scale() int32 {
-	return d.scale
+// The returned value is nonnegative and less or equal to math.MaxInt32.
+func (d Decimal) Scale() int {
+	return int(d.scale)
 }

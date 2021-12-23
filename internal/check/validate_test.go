@@ -101,11 +101,11 @@ func TestIsWithinInclusiveRangeInt32(t *testing.T) {
 
 func TestNonNegativeDuration(t *testing.T) {
 	v := types.Duration(-1)
-	if err := check.NonNegativeDuration(&v, 5*time.Second, "invalid"); !errors.Is(err, hzerrors.ErrIllegalArgument) {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&v), 5*time.Second, "invalid"); !errors.Is(err, hzerrors.ErrIllegalArgument) {
 		t.Fatalf("unexpected error")
 	}
 	v = types.Duration(0)
-	if err := check.NonNegativeDuration(&v, 5*time.Second, "invalid"); err != nil {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&v), 5*time.Second, "invalid"); err != nil {
 		t.Fatalf("unexpected error")
 	}
 	assert.Equal(t, types.Duration(5*time.Second), v)

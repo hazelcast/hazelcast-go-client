@@ -1133,7 +1133,7 @@ func DecodeDecimal(it *proto.ForwardFrameIterator) (types.Decimal, error) {
 	}
 	pos += bl
 	scale := FixSizedTypesCodec.DecodeInt(frame.Content, int32(pos))
-	return types.NewDecimal(bint, scale), nil
+	return types.NewDecimal(bint, int(scale)), nil
 }
 
 func decodeLocalDate(buffer []byte, offset int32) (y int, m time.Month, d int) {

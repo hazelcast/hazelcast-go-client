@@ -89,7 +89,7 @@ func (c *NetworkConfig) Validate() error {
 			}
 		}
 	}
-	if err := check.NonNegativeDuration(&c.ConnectionTimeout, 5*time.Second, "invalid connection timeout"); err != nil {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&c.ConnectionTimeout), 5*time.Second, "invalid connection timeout"); err != nil {
 		return err
 	}
 	return nil

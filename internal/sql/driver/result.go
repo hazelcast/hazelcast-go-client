@@ -66,7 +66,7 @@ func (r *QueryResult) Columns() []string {
 
 func (r *QueryResult) Close() error {
 	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
-		err := r.ss.CloseQuery(r.queryID, r.conn)
+		err := r.ss.closeQuery(r.queryID, r.conn)
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 }
 
 func (r *QueryResult) fetchNextPage() error {
-	page, err := r.ss.Fetch(r.queryID, r.conn, r.cursorBufferSize)
+	page, err := r.ss.fetch(r.queryID, r.conn, r.cursorBufferSize)
 	if err != nil {
 		return fmt.Errorf("fetching the next page: %w", err)
 	}

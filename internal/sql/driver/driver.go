@@ -140,7 +140,14 @@ func SetSSLConfig(c *cluster.SSLConfig) error {
 	return nil
 }
 
-type Driver struct {
+type Driver struct{}
+
+func (d *Driver) OpenConnector(name string) (driver.Connector, error) {
+	config, err := MakeConfigFromDSN(name)
+	if err != nil {
+		return nil, err
+	}
+	return NewConnector(config), nil
 }
 
 func (d *Driver) Open(name string) (driver.Conn, error) {

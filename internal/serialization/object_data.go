@@ -281,7 +281,7 @@ func (o *ObjectDataOutput) WriteRawBytes(b []byte) {
 
 func (o *ObjectDataOutput) WriteDate(t time.Time) {
 	y, m, d := t.Date()
-	o.WriteInt32(int32(y))
+	o.WriteInt16(int16(y))
 	o.WriteByte(byte(m))
 	o.WriteByte(byte(d))
 }
@@ -306,9 +306,7 @@ func (o *ObjectDataOutput) WriteTimestampWithTimezone(t time.Time) {
 }
 
 func (o *ObjectDataOutput) WriteBigInt(b *big.Int) {
-	bs := BigIntToJavaBytes(b)
-	o.WriteInt32(int32(len(bs)))
-	o.WriteByteArray(bs)
+	o.WriteByteArray(BigIntToJavaBytes(b))
 }
 
 func (o *ObjectDataOutput) WriteBigIntArray(bs []*big.Int) {
@@ -324,7 +322,7 @@ func (o *ObjectDataOutput) WriteBigIntArray(bs []*big.Int) {
 
 func (o *ObjectDataOutput) WriteDecimal(d types.Decimal) {
 	o.WriteBigInt(d.UnscaledValue())
-	o.WriteInt32(d.Scale())
+	o.WriteInt32(int32(d.Scale()))
 }
 
 func (o *ObjectDataOutput) WriteDecimalArray(ds []types.Decimal) {
@@ -780,7 +778,7 @@ func (i *ObjectDataInput) ReadBigInt() *big.Int {
 func (i *ObjectDataInput) ReadDecimal() types.Decimal {
 	v := i.ReadBigInt()
 	scale := i.readInt32()
-	return types.NewDecimal(v, scale)
+	return types.NewDecimal(v, int(scale))
 }
 
 func (i *ObjectDataInput) ReadDecimalArray() []types.Decimal {
@@ -796,7 +794,7 @@ func (i *ObjectDataInput) ReadDecimalArray() []types.Decimal {
 }
 
 func (i *ObjectDataInput) readDate() (y int, m time.Month, d int) {
-	y = int(i.readInt32())
+	y = int(i.ReadInt16())
 	m = time.Month(i.readByte())
 	d = int(i.readByte())
 	return

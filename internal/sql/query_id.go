@@ -26,7 +26,7 @@ type QueryID struct {
 }
 
 func NewQueryIDFromUUID(uuid types.UUID) QueryID {
-	local := types.UUID{}
+	local := types.NewUUID()
 	return QueryID{
 		MemberIDHigh: int64(uuid.MostSignificantBits()),
 		MemberIDLow:  int64(uuid.LeastSignificantBits()),

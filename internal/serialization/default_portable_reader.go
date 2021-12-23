@@ -90,6 +90,26 @@ func TypeByID(fieldType serialization.FieldDefinitionType) string {
 		return "[]float64"
 	case serialization.TypeStringArray:
 		return "[]string"
+	case serialization.TypeDecimal:
+		return "types.Decimal"
+	case serialization.TypeDecimalArray:
+		return "[]types.Decimal"
+	case serialization.TypeTime:
+		return "time.Time (time)"
+	case serialization.TypeTimeArray:
+		return "[]time.Time (time)"
+	case serialization.TypeDate:
+		return "time.Time (date)"
+	case serialization.TypeDateArray:
+		return "[]time.Time (date)"
+	case serialization.TypeTimestamp:
+		return "time.Time (timestamp)"
+	case serialization.TypeTimestampArray:
+		return "[]time.Time (timestamp)"
+	case serialization.TypeTimestampWithTimezone:
+		return "time.Time (timestamp with timezone)"
+	case serialization.TypeTimestampWithTimezoneArray:
+		return "[]time.Time (timestamp with timezone)"
 	}
 	return "UNKNOWN"
 }

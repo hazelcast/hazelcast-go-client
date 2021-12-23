@@ -18,7 +18,7 @@ package driver
 
 import (
 	"context"
-	dsdriver "database/sql/driver"
+	"database/sql"
 	"math"
 	"time"
 
@@ -32,7 +32,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func Open(config hazelcast.Config) (dsdriver.Conn, error) {
+func Open(config hazelcast.Config) *sql.DB {
+	config = config.Clone()
+	// ignoring the error below, since the default configuration does not contain errors
+	_ = config.Validate()
 	icc := &client.Config{
 		Name:          config.ClientName,
 		Cluster:       &config.Cluster,
@@ -43,7 +46,7 @@ func Open(config hazelcast.Config) (dsdriver.Conn, error) {
 		StatsEnabled:  config.Stats.Enabled,
 		StatsPeriod:   time.Duration(config.Stats.Period),
 	}
-	return driver.NewConnWithConfig(icc)
+	return sql.OpenDB(driver.NewConnector(icc))
 }
 
 // WithCursorBufferSize returns a copy of parent in which has the given query cursor buffer size.

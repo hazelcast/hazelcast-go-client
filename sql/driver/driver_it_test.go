@@ -21,6 +21,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/big"
 	"net/url"
 	"strconv"
 	"testing"
@@ -39,8 +40,9 @@ import (
 )
 
 const (
-	recordFactoryID = 100
-	recordClassID   = 1
+	factoryID                 = 100
+	recordClassID             = 1
+	recordWithDateTimeClassID = 2
 )
 
 type Record struct {
@@ -53,43 +55,94 @@ type Record struct {
 	SmallIntValue int16
 	TinyIntValue  int8
 	BoolValue     bool
-}
-
-func (r Record) Create(classID int32) serialization.Portable {
-	if classID == recordClassID {
-		return &Record{}
-	}
-	panic(fmt.Sprintf("unknown class ID: %d", classID))
+	DecimalValue  *types.Decimal
 }
 
 func (r Record) FactoryID() int32 {
-	return recordFactoryID
+	return factoryID
 }
 
 func (r Record) ClassID() int32 {
 	return recordClassID
 }
 
-func (r Record) WritePortable(writer serialization.PortableWriter) {
-	writer.WriteString("varcharvalue", r.VarcharValue)
-	writer.WriteByte("tinyintvalue", byte(r.TinyIntValue))
-	writer.WriteInt16("smallintvalue", r.SmallIntValue)
-	writer.WriteInt32("integervalue", r.IntegerValue)
-	writer.WriteInt64("bigintvalue", r.BigIntValue)
-	writer.WriteBool("boolvalue", r.BoolValue)
-	writer.WriteFloat32("realvalue", r.RealValue)
-	writer.WriteFloat64("doublevalue", r.DoubleValue)
+func (r Record) WritePortable(wr serialization.PortableWriter) {
+	wr.WriteString("varcharvalue", r.VarcharValue)
+	wr.WriteByte("tinyintvalue", byte(r.TinyIntValue))
+	wr.WriteInt16("smallintvalue", r.SmallIntValue)
+	wr.WriteInt32("integervalue", r.IntegerValue)
+	wr.WriteInt64("bigintvalue", r.BigIntValue)
+	wr.WriteBool("boolvalue", r.BoolValue)
+	wr.WriteFloat32("realvalue", r.RealValue)
+	wr.WriteFloat64("doublevalue", r.DoubleValue)
+	wr.WriteDecimal("decimalvalue", r.DecimalValue)
 }
 
-func (r *Record) ReadPortable(reader serialization.PortableReader) {
-	r.VarcharValue = reader.ReadString("varcharvalue")
-	r.TinyIntValue = int8(reader.ReadByte("tinyintvalue"))
-	r.SmallIntValue = reader.ReadInt16("smallintvalue")
-	r.IntegerValue = reader.ReadInt32("integervalue")
-	r.BigIntValue = reader.ReadInt64("bigintvalue")
-	r.BoolValue = reader.ReadBool("boolvalue")
-	r.RealValue = reader.ReadFloat32("realvalue")
-	r.DoubleValue = reader.ReadFloat64("doublevalue")
+func (r *Record) ReadPortable(rd serialization.PortableReader) {
+	r.VarcharValue = rd.ReadString("varcharvalue")
+	r.TinyIntValue = int8(rd.ReadByte("tinyintvalue"))
+	r.SmallIntValue = rd.ReadInt16("smallintvalue")
+	r.IntegerValue = rd.ReadInt32("integervalue")
+	r.BigIntValue = rd.ReadInt64("bigintvalue")
+	r.BoolValue = rd.ReadBool("boolvalue")
+	r.RealValue = rd.ReadFloat32("realvalue")
+	r.DoubleValue = rd.ReadFloat64("doublevalue")
+	r.DecimalValue = rd.ReadDecimal("decimalvalue")
+}
+
+type RecordWithDateTime struct {
+	DateValue                  *time.Time
+	TimeValue                  *time.Time
+	TimestampValue             *time.Time
+	TimestampWithTimezoneValue *time.Time
+}
+
+func NewRecordWithDateTime(t *time.Time) *RecordWithDateTime {
+	return &RecordWithDateTime{
+		DateValue:                  t,
+		TimeValue:                  t,
+		TimestampValue:             t,
+		TimestampWithTimezoneValue: t,
+	}
+}
+
+func (r RecordWithDateTime) FactoryID() int32 {
+	return factoryID
+}
+
+func (r RecordWithDateTime) ClassID() int32 {
+	return recordWithDateTimeClassID
+}
+
+func (r RecordWithDateTime) WritePortable(wr serialization.PortableWriter) {
+	wr.WriteDate("datevalue", r.DateValue)
+	wr.WriteTime("timevalue", r.TimeValue)
+	wr.WriteTimestamp("timestampvalue", r.TimestampValue)
+	wr.WriteTimestampWithTimezone("timestampwithtimezonevalue", r.TimestampWithTimezoneValue)
+
+}
+
+func (r *RecordWithDateTime) ReadPortable(rd serialization.PortableReader) {
+	r.DateValue = rd.ReadDate("datevalue")
+	r.TimeValue = rd.ReadTime("timevalue")
+	r.TimestampValue = rd.ReadTimestamp("timestampvalue")
+	r.TimestampWithTimezoneValue = rd.ReadTimestampWithTimezone("timestampwithtimezonevalue")
+}
+
+type recordFactory struct{}
+
+func (f recordFactory) Create(classID int32) serialization.Portable {
+	switch classID {
+	case recordClassID:
+		return &Record{}
+	case recordWithDateTimeClassID:
+		return &RecordWithDateTime{}
+	}
+	panic(fmt.Sprintf("unknown class ID: %d", classID))
+}
+
+func (f recordFactory) FactoryID() int32 {
+	return factoryID
 }
 
 func TestSQLQuery(t *testing.T) {
@@ -118,20 +171,10 @@ func TestSQLQuery(t *testing.T) {
 
 func TestSQLWithPortableData(t *testing.T) {
 	cb := func(c *hz.Config) {
-		c.Serialization.SetPortableFactories(&Record{})
+		c.Serialization.SetPortableFactories(&recordFactory{})
 	}
 	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		dsn := makeDSN(config)
-		sc := &serialization.Config{}
-		sc.SetPortableFactories(&Record{})
-		if err := driver.SetSerializationConfig(sc); err != nil {
-			t.Fatal(err)
-		}
-		defer driver.SetSerializationConfig(nil)
-		db, err := sql.Open("hazelcast", dsn)
-		if err != nil {
-			t.Fatal(err)
-		}
+		db := driver.Open(*config)
 		defer db.Close()
 		it.MustValue(db.Exec(fmt.Sprintf(`
 			CREATE MAPPING "%s" (
@@ -153,6 +196,7 @@ func TestSQLWithPortableData(t *testing.T) {
 				'valuePortableClassId' = '1'
 			)
 		`, mapName)))
+		dec := types.NewDecimal(big.NewInt(123_456_789), 100)
 		rec := &Record{
 			VarcharValue:  "hello",
 			TinyIntValue:  -128,
@@ -162,22 +206,18 @@ func TestSQLWithPortableData(t *testing.T) {
 			BoolValue:     true,
 			RealValue:     -5.32,
 			DoubleValue:   12.789,
+			DecimalValue:  &dec,
 		}
-		it.Must(m.Set(context.TODO(), 1, rec))
-		// select the value
-		rows, err := db.Query(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
-		if err != nil {
-			t.Fatal(err)
-		}
+		it.Must(m.Set(context.Background(), 1, rec))
+		// select the value itself
+		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
 		var vs []interface{}
 		var k int64
 		var v interface{}
-		for rows.Next() {
-			if err := rows.Scan(&k, &v); err != nil {
-				t.Fatal(err)
-			}
-			vs = append(vs, v)
+		if err := row.Scan(&k, &v); err != nil {
+			t.Fatal(err)
 		}
+		vs = append(vs, v)
 		targetThis := []interface{}{&Record{
 			VarcharValue:  "hello",
 			TinyIntValue:  -128,
@@ -187,15 +227,13 @@ func TestSQLWithPortableData(t *testing.T) {
 			BoolValue:     true,
 			RealValue:     -5.32,
 			DoubleValue:   12.789,
+			DecimalValue:  &dec,
 		}}
 		assert.Equal(t, targetThis, vs)
 		// select individual fields
-		rows, err = db.Query(fmt.Sprintf(`
+		row = db.QueryRow(fmt.Sprintf(`
 			SELECT __key, varcharvalue, tinyintvalue, smallintvalue, integervalue,	
 			bigintvalue, boolvalue, realvalue, doublevalue from "%s"`, mapName))
-		if err != nil {
-			t.Fatal(err)
-		}
 		vs = nil
 		var vVarchar string
 		var vTinyInt int8
@@ -205,16 +243,87 @@ func TestSQLWithPortableData(t *testing.T) {
 		var vBool bool
 		var vReal float32
 		var vDouble float64
-		for rows.Next() {
-			if err := rows.Scan(&k, &vVarchar, &vTinyInt, &vSmallInt, &vInteger, &vBigInt, &vBool, &vReal, &vDouble); err != nil {
-				t.Fatal(err)
-			}
-			vs = append(vs, vVarchar, vTinyInt, vSmallInt, vInteger, vBigInt, vBool, vReal, vDouble)
+		if err := row.Scan(&k, &vVarchar, &vTinyInt, &vSmallInt, &vInteger, &vBigInt, &vBool, &vReal, &vDouble); err != nil {
+			t.Fatal(err)
 		}
+		vs = append(vs, vVarchar, vTinyInt, vSmallInt, vInteger, vBigInt, vBool, vReal, vDouble)
 		target := []interface{}{
 			"hello", int8(-128), int16(32767), int32(-27), int64(38), true, float32(-5.32), 12.789,
 		}
 		assert.Equal(t, target, vs)
+	})
+}
+
+func TestSQLWithPortableDateTime(t *testing.T) {
+	cb := func(c *hz.Config) {
+		c.Serialization.SetPortableFactories(&recordFactory{})
+	}
+	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		db := driver.Open(*config)
+		defer db.Close()
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s" (
+				__key BIGINT,
+				datevalue DATE,
+				timevalue TIME,
+				timestampvalue TIMESTAMP,
+				timestampwithtimezonevalue TIMESTAMP WITH TIME ZONE
+			)
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'portable',
+				'valuePortableFactoryId' = '100',
+				'valuePortableClassId' = '2'
+			)
+		`, mapName)
+		t.Logf("Query: %s", q)
+		it.MustValue(db.Exec(q))
+		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("Europe/Istanbul", 3*60*60))
+		rec := NewRecordWithDateTime(&dt)
+		it.Must(m.Set(context.TODO(), 1, rec))
+		targetDate := time.Date(2021, 12, 22, 0, 0, 0, 0, time.Local)
+		targetTime := time.Date(0, 1, 1, 23, 40, 12, 3400, time.Local)
+		targetTimestamp := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.Local)
+		targetTimestampWithTimezone := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", 3*60*60))
+		var k int64
+		// select the value itself
+		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
+		var v interface{}
+		var vs []interface{}
+		if err := row.Scan(&k, &v); err != nil {
+			t.Fatal(err)
+		}
+		vs = append(vs, v)
+		targetThis := []interface{}{&RecordWithDateTime{
+			DateValue:                  &targetDate,
+			TimeValue:                  &targetTime,
+			TimestampValue:             &targetTimestamp,
+			TimestampWithTimezoneValue: &targetTimestampWithTimezone,
+		}}
+		assert.Equal(t, targetThis, vs)
+		// select individual fields
+		row = db.QueryRow(fmt.Sprintf(`
+						SELECT
+							__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue
+						FROM "%s" LIMIT 1
+				`, mapName))
+		var vDate, vTime, vTimestamp, vTimestampWithTimezone time.Time
+		if err := row.Scan(&k, &vDate, &vTime, &vTimestamp, &vTimestampWithTimezone); err != nil {
+			t.Fatal(err)
+		}
+		if !targetDate.Equal(vDate) {
+			t.Fatalf("%s != %s", targetDate, vDate)
+		}
+		if !targetTime.Equal(vTime) {
+			t.Fatalf("%s != %s", targetTime, vTime)
+		}
+		if !targetTimestamp.Equal(vTimestamp) {
+			t.Fatalf("%s != %s", targetTimestamp, vTimestamp)
+		}
+		if !targetTimestampWithTimezone.Equal(vTimestamp) {
+			t.Fatalf("%s != %s", targetTimestampWithTimezone, vTimestamp)
+		}
 	})
 }
 
@@ -324,4 +433,18 @@ func makeDSN(config *hz.Config) string {
 	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
 	q.Add("log", string(ll))
 	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
+}
+
+func openWithConfig(config *hz.Config) *sql.DB {
+	dsn := makeDSN(config)
+	sc := &serialization.Config{}
+	sc.SetPortableFactories(&recordFactory{})
+	if err := driver.SetSerializationConfig(sc); err != nil {
+		panic(err)
+	}
+	db, err := sql.Open("hazelcast", dsn)
+	if err != nil {
+		panic(err)
+	}
+	return db
 }
