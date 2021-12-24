@@ -2,47 +2,62 @@ package invocation
 
 import (
 	"math/rand"
+	"runtime"
 	"sync"
 )
 
-// stripeExecutor executes given "tasks" preserving the order among the ones
-// that are given with the same key
+var (
+	// Default values differ from java impl. Also queue size is calculated differently.
+	// Java Client: queueSize per worker = defaultEventQueueCapacity / defaultEventWorkerCount
+	// Go Client: queueSize per worker = defaultEventQueueCapacity
+	defaultEventQueueCapacity = 10000
+	defaultEventWorkerCount   = uint32(runtime.NumCPU())
+)
+
+// executor represents the function that will run on workers of stripeExecutor.
+type executor func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)
+
+// stripeExecutor executes given "tasks" preserving the order among the ones that are given with the same key.
 type stripeExecutor struct {
-	quit            chan struct{}
-	wg              *sync.WaitGroup
-	executeFunction func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)
-	tasks           []chan func()
-	queueCount      uint32
+	quit       chan struct{}
+	wg         *sync.WaitGroup
+	execFn     executor
+	taskQueues []chan func()
+	queueCount uint32
 }
 
-// newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize
-func newStripeExecutor(queueCount, queueSize uint32) stripeExecutor {
+// newStripeExecutor returns a new stripeExecutor with default configuration.
+func newStripeExecutor() stripeExecutor {
+	return newStripeExecutorWithConf(defaultEventWorkerCount, defaultEventWorkerCount)
+}
+
+// newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize.
+func newStripeExecutorWithConf(queueCount, queueSize uint32) stripeExecutor {
 	se := stripeExecutor{
-		tasks:      make([]chan func(), queueCount),
+		taskQueues: make([]chan func(), queueCount),
 		queueCount: queueCount,
 	}
-	for ind := range se.tasks {
-		se.tasks[ind] = make(chan func(), queueSize)
+	for ind := range se.taskQueues {
+		se.taskQueues[ind] = make(chan func(), queueSize)
 	}
 	se.quit = make(chan struct{})
 	se.wg = &sync.WaitGroup{}
-	se.executeFunction = defaultExecuteFnc
+	se.execFn = defaultExecFn
 	return se
 }
 
-// start fires up the workers for each queue
+// start fires up the workers for each queue.
 func (se stripeExecutor) start() {
 	se.wg.Add(int(se.queueCount))
-	for ind := range se.tasks {
+	for ind := range se.taskQueues {
 		ind := ind
-		go se.executeFunction(se.tasks[ind], se.quit, se.wg)
+		go se.execFn(se.taskQueues[ind], se.quit, se.wg)
 	}
 }
 
-// dispatch sends the handler "task" to the appropriate queue, "tasks"
-// with the same key end up on the same queue
-func (se stripeExecutor) dispatch(key uint32, handler func()) {
-	se.tasks[key%se.queueCount] <- handler
+// dispatch sends the handler "task" to one of the appropriate taskQueues, "tasks" with the same key end up on the same queue.
+func (se stripeExecutor) dispatch(key uint32, task func()) {
+	se.taskQueues[key%se.queueCount] <- task
 }
 
 func (se stripeExecutor) dispatchRandom(handler func()) {
@@ -56,11 +71,11 @@ func (se stripeExecutor) stop() {
 	se.wg.Wait()
 }
 
-func (se stripeExecutor) setExecutorFnc(custom func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)) {
-	se.executeFunction = custom
+func (se stripeExecutor) setExecutorFnc(f executor) {
+	se.execFn = f
 }
 
-func defaultExecuteFnc(queue chan func(), quit chan struct{}, wg *sync.WaitGroup) {
+func defaultExecFn(queue chan func(), quit chan struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for {
 		select {
