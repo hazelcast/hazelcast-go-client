@@ -22,7 +22,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -55,15 +54,15 @@ type Service struct {
 	// removeCh carries correlationIDs to be removed
 	removeCh chan int64
 	executor stripeExecutor
-	logger          logger.LogAdaptor
-	state           int32
+	logger   logger.LogAdaptor
+	state    int32
 }
 
 func NewService(
 	handler Handler,
 	eventDispatcher *event.DispatchService,
 	logger logger.LogAdaptor,
-	config *cluster.EventConfig) *Service {
+) *Service {
 	s := &Service{
 		requestCh:       make(chan Invocation),
 		urgentRequestCh: make(chan Invocation),
@@ -76,7 +75,7 @@ func NewService(
 		eventDispatcher: eventDispatcher,
 		logger:          logger,
 		state:           ready,
-		executor:        newStripeExecutor(config.EventWorkerCount, config.EventQueueCapacity),
+		executor:        newStripeExecutor(),
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
 		go func() {
