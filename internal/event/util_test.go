@@ -16,7 +16,12 @@
 
 package event
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestMakeSubscriptionID(t *testing.T) {
 	subscriptionID := MakeSubscriptionID(func() {})
@@ -32,4 +37,16 @@ func TestMakeSubscriptionIDFails(t *testing.T) {
 		}
 	}()
 	MakeSubscriptionID(42)
+}
+
+func TestParseAndFormatSubscriptionID(t *testing.T) {
+	var testID int64 = 123456
+	formatted := FormatSubscriptionID(testID)
+	sid, err := ParseSubscriptionID(formatted)
+	assert.Nil(t, err)
+	assert.Equal(t, testID, sid)
+	// error on parse
+	sid, err = ParseSubscriptionID("unparsable id")
+	assert.IsType(t, &strconv.NumError{}, err)
+	assert.Equal(t, int64(0), sid)
 }
