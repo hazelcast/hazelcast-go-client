@@ -37,8 +37,8 @@ func newStripeExecutorWithConf(queueCount, queueSize uint32) stripeExecutor {
 		taskQueues: make([]chan func(), queueCount),
 		queueCount: queueCount,
 	}
-	for ind := range se.taskQueues {
-		se.taskQueues[ind] = make(chan func(), queueSize)
+	for i := range se.taskQueues {
+		se.taskQueues[i] = make(chan func(), queueSize)
 	}
 	se.quit = make(chan struct{})
 	se.wg = &sync.WaitGroup{}
@@ -49,9 +49,10 @@ func newStripeExecutorWithConf(queueCount, queueSize uint32) stripeExecutor {
 // start fires up the workers for each queue.
 func (se stripeExecutor) start() {
 	se.wg.Add(int(se.queueCount))
-	for ind := range se.taskQueues {
-		ind := ind
-		go se.execFn(se.taskQueues[ind], se.quit, se.wg)
+	for i := range se.taskQueues {
+		// copy to temp var
+		index := i
+		go se.execFn(se.taskQueues[index], se.quit, se.wg)
 	}
 }
 
