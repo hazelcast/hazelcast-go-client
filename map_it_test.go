@@ -1047,7 +1047,7 @@ func TestMap_SetTTL(t *testing.T) {
 		ctx := context.Background()
 		targetValue := "value"
 		it.Must(m.Set(ctx, "key", targetValue))
-		if err := m.SetTTL(ctx, "key", 2*time.Second); err != nil {
+		if err := m.SetTTL(ctx, "key", 20*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
@@ -1061,23 +1061,23 @@ func TestMap_SetTTLAffected(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		testCases := []struct {
-			key        string
-			isEffected bool
-			expectErr  bool
+			key           string
+			isEffected    bool
+			errorExpected bool
 		}{
 			{
 				key:        "happy path",
 				isEffected: true,
 			},
 			{
-				key:        "setTTL on non-existing key",
-				isEffected: false,
-				expectErr:  false,
+				key:           "setTTL on non-existing key",
+				isEffected:    false,
+				errorExpected: false,
 			},
 			{
-				key:        "setTTL on already expired key",
-				isEffected: false,
-				expectErr:  false,
+				key:           "setTTL on already expired key",
+				isEffected:    false,
+				errorExpected: false,
 			},
 		}
 		_ = it.MustValue(m.Put(ctx, "happy path", "someValue"))
@@ -1085,7 +1085,7 @@ func TestMap_SetTTLAffected(t *testing.T) {
 		time.Sleep(time.Millisecond)
 		for _, tc := range testCases {
 			affected, err := m.SetTTLAffected(ctx, tc.key, time.Second)
-			assert.Equal(t, tc.expectErr, err != nil)
+			assert.Equal(t, tc.errorExpected, err != nil)
 			assert.Equal(t, tc.isEffected, affected)
 		}
 	})
