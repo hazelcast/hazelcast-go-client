@@ -1065,23 +1065,26 @@ func TestMap_SetTTLAffected(t *testing.T) {
 			isEffected    bool
 			errorExpected bool
 		}{
+			// happy path
 			{
-				key:        "happy path",
+				key:        "k1",
 				isEffected: true,
 			},
+			// setTTL on non-existing key
 			{
-				key:           "setTTL on non-existing key",
+				key:           "k2",
 				isEffected:    false,
 				errorExpected: false,
 			},
+			// setTTL on already expired key
 			{
-				key:           "setTTL on already expired key",
+				key:           "k3",
 				isEffected:    false,
 				errorExpected: false,
 			},
 		}
-		_ = it.MustValue(m.Put(ctx, "happy path", "someValue"))
-		_ = it.MustValue(m.PutWithTTL(ctx, "setTTL on already expired key", "someValue", time.Millisecond))
+		_ = it.MustValue(m.Put(ctx, "k1", "someValue"))
+		_ = it.MustValue(m.PutWithTTL(ctx, "k3", "someValue", time.Millisecond))
 		time.Sleep(time.Millisecond)
 		for _, tc := range testCases {
 			affected, err := m.SetTTLAffected(ctx, tc.key, time.Second)
