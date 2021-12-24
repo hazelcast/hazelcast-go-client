@@ -54,7 +54,7 @@ func New() *DefaultLogger {
 }
 
 func NewWithLevel(loggingLevel logger.Level) (*DefaultLogger, error) {
-	numericLevel, err := logger.GetLogLevel(loggingLevel)
+	numericLevel, err := logger.WeightForLogLevel(loggingLevel)
 	if err != nil {
 		return nil, err
 	}
