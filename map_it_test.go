@@ -1060,7 +1060,7 @@ func TestMap_SetTTL(t *testing.T) {
 func TestMap_SetTTLAffected(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
-		testcases := []struct {
+		testCases := []struct {
 			key        string
 			isEffected bool
 			expectErr  bool
@@ -1083,10 +1083,10 @@ func TestMap_SetTTLAffected(t *testing.T) {
 		_ = it.MustValue(m.Put(ctx, "happy path", "someValue"))
 		_ = it.MustValue(m.PutWithTTL(ctx, "setTTL on already expired key", "someValue", time.Millisecond))
 		time.Sleep(time.Millisecond)
-		for _, test := range testcases {
-			effected, err := m.SetTTLAffected(ctx, test.key, time.Second)
-			assert.Equal(t, test.expectErr, err != nil)
-			assert.Equal(t, test.isEffected, effected)
+		for _, tc := range testCases {
+			affected, err := m.SetTTLAffected(ctx, tc.key, time.Second)
+			assert.Equal(t, tc.expectErr, err != nil)
+			assert.Equal(t, tc.isEffected, affected)
 		}
 	})
 }
