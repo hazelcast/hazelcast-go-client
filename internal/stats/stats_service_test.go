@@ -44,7 +44,7 @@ func TestNewService(t *testing.T) {
 	okCh := make(chan struct{}, 1)
 	handler := Handler{okCh: okCh}
 	config := hazelcast.Config{}
-	invService := invocation.NewService(handler, ed, lg, &config.Cluster.Event)
+	invService := invocation.NewService(handler, ed, lg)
 	invFac := cluster.NewConnectionInvocationFactory(&config.Cluster)
 	srv := stats.NewService(invService, invFac, ed, lg, 100*time.Millisecond, "hz1")
 	srv.Start()
