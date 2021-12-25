@@ -56,8 +56,9 @@ const (
 )
 
 const (
-	serializationVersion  = 1
-	initialMembersTimeout = 120 * time.Second
+	serializationVersion        = 1
+	initialMembersTimeout       = 120 * time.Second
+	sqlConnectionRandomAttempts = 10
 )
 
 var connectionManagerSubID = event.NextSubscriptionID()
@@ -304,6 +305,43 @@ func (m *ConnectionManager) ActiveConnections() []*Connection {
 
 func (m *ConnectionManager) RandomConnection() *Connection {
 	return m.connMap.RandomConn()
+}
+
+func (m *ConnectionManager) SQLConnection() *Connection {
+	if m.smartRouting {
+		// Note from the reference implementation:
+		// There might be a race.
+		// The chosen member might be just connected or disconnected
+		// Try a couple of times, the memberOfLargerSameVersionGroup returns a random connection.
+		for i := 0; i < sqlConnectionRandomAttempts; i++ {
+			member := m.clusterService.SQLMember()
+			if member == nil {
+				break
+			}
+			if conn := m.GetConnectionForUUID(member.UUID); conn != nil {
+				return conn
+			}
+		}
+	}
+	// Otherwise iterate over connections and return the first one that's not to a lite member
+	if conn := m.someNonLiteConnection(); conn != nil {
+		return conn
+	}
+	// All else failed, return a random connection, even if it is a lite member
+	return m.connMap.RandomConn()
+}
+
+func (m *ConnectionManager) someNonLiteConnection() *Connection {
+	members := m.clusterService.OrderedMembers()
+	for _, mem := range members {
+		if mem.LiteMember {
+			continue
+		}
+		if conn := m.connMap.GetConnectionForUUID(mem.UUID); conn != nil {
+			return conn
+		}
+	}
+	return nil
 }
 
 func (m *ConnectionManager) reset() {

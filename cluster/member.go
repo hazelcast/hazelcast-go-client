@@ -54,6 +54,14 @@ type MemberVersion struct {
 	Patch byte
 }
 
+func (m MemberVersion) MajorMinor() uint16 {
+	return (uint16(m.Major) << 8) | uint16(m.Minor)
+}
+
+func (m MemberVersion) String() string {
+	return fmt.Sprintf("%d.%d.%d", m.Major, m.Minor, m.Patch)
+}
+
 type EndpointQualifier struct {
 	Identifier string
 	Type       EndpointQualifierType

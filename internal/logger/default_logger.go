@@ -106,6 +106,11 @@ func (la LogAdaptor) Trace(f func() string) {
 	la.Log(logger.WeightTrace, f)
 }
 
+// Info runs the given function to generate the logger string, if logger level is trace or finer.
+func (la LogAdaptor) Info(f func() string) {
+	la.Log(logger.WeightInfo, f)
+}
+
 // Infof formats the given string with the given values, if logger level is info or finer.
 func (la LogAdaptor) Infof(format string, values ...interface{}) {
 	la.Log(logger.WeightInfo, func() string {

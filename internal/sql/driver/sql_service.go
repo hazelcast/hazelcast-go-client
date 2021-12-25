@@ -120,7 +120,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	if err != nil {
 		return nil, err
 	}
-	conn := s.connectionManager.RandomConnection()
+	conn := s.connectionManager.SQLConnection()
 	if conn == nil {
 		return nil, ihzerrors.NewIOError("no connection found", nil)
 	}
