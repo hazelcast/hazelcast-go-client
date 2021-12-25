@@ -17,7 +17,6 @@
 package serialization
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -167,42 +166,6 @@ type DataOutput interface {
 
 	// WriteZeroBytes writes zero bytes as given length.
 	WriteZeroBytes(count int)
-
-	// WriteDate writes the given date.
-	WriteDate(t time.Time)
-
-	// WriteTime writes the given time.
-	WriteTime(t time.Time)
-
-	// WriteTimestamp writes the given timestamp without timezone.
-	WriteTimestamp(t time.Time)
-
-	// WriteTimestampWithTimezone writes the given timestamp with timezone.
-	WriteTimestampWithTimezone(t time.Time)
-
-	// WriteDateArray writes the given dates.
-	WriteDateArray(ts []time.Time)
-
-	// WriteTimeArray writes the given times.
-	WriteTimeArray(ts []time.Time)
-
-	// WriteTimestampArray writes the given timestamps.
-	WriteTimestampArray(ts []time.Time)
-
-	// WriteTimestampWithTimezoneArray writes the given timestamps with timezones.
-	WriteTimestampWithTimezoneArray(ts []time.Time)
-
-	// WriteBigInt writes the given big int.
-	WriteBigInt(b *big.Int)
-
-	// WriteBigIntArray writes the given big int array.
-	WriteBigIntArray(bs []*big.Int)
-
-	// WriteDecimal writes the given decimal.
-	WriteDecimal(d types.Decimal)
-
-	// WriteDecimalArray writes the given decimal array.
-	WriteDecimalArray(ds []types.Decimal)
 }
 
 // DataInput provides deserialization methods.
@@ -273,28 +236,6 @@ type DataInput interface {
 	// ReadStringArray returns []string read.
 	// It returns nil if an error is set previously.
 	ReadStringArray() []string
-	// ReadDate reads and returns a date.
-	ReadDate() time.Time
-	// ReadTime reads and returns a time.
-	ReadTime() time.Time
-	// ReadTimestamp reads and returns a time stamp.
-	ReadTimestamp() time.Time
-	// ReadTimestampWithTimezone reads and returns a time stamp with timezone.
-	ReadTimestampWithTimezone() time.Time
-	// ReadDateArray reads and returns a date array.
-	ReadDateArray() []time.Time
-	// ReadTimeArray reads and returns a time array.
-	ReadTimeArray() []time.Time
-	// ReadTimestampArray reads and returns a time stamp array.
-	ReadTimestampArray() []time.Time
-	// ReadTimestampWithTimezoneArray reads and returns a time stamp with time zone array.
-	ReadTimestampWithTimezoneArray() []time.Time
-	// ReadBigInt reads and returns a big int.
-	ReadBigInt() *big.Int
-	// ReadDecimal reads and returns a decimal.
-	ReadDecimal() types.Decimal
-	// ReadDecimalArray reads and returns a decimal array.
-	ReadDecimalArray() []types.Decimal
 }
 
 // PortableWriter provides a mean of writing portable fields to a binary in form of go primitives

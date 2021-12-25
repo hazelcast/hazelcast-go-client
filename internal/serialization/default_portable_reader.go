@@ -348,7 +348,7 @@ func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
 
 func (pr *DefaultPortableReader) ReadDate(fieldName string) (t *time.Time) {
 	pr.readNullable(fieldName, serialization.TypeDate, func() {
-		v := pr.input.ReadDate()
+		v := ReadDate(pr.input)
 		t = &v
 	})
 	return
@@ -356,7 +356,7 @@ func (pr *DefaultPortableReader) ReadDate(fieldName string) (t *time.Time) {
 
 func (pr *DefaultPortableReader) ReadTime(fieldName string) (t *time.Time) {
 	pr.readNullable(fieldName, serialization.TypeTime, func() {
-		v := pr.input.ReadTime()
+		v := ReadTime(pr.input)
 		t = &v
 	})
 	return
@@ -364,7 +364,7 @@ func (pr *DefaultPortableReader) ReadTime(fieldName string) (t *time.Time) {
 
 func (pr *DefaultPortableReader) ReadTimestamp(fieldName string) (t *time.Time) {
 	pr.readNullable(fieldName, serialization.TypeTimestamp, func() {
-		v := pr.input.ReadTimestamp()
+		v := ReadTimestamp(pr.input)
 		t = &v
 	})
 	return
@@ -372,7 +372,7 @@ func (pr *DefaultPortableReader) ReadTimestamp(fieldName string) (t *time.Time) 
 
 func (pr *DefaultPortableReader) ReadTimestampWithTimezone(fieldName string) (t *time.Time) {
 	pr.readNullable(fieldName, serialization.TypeTimestampWithTimezone, func() {
-		v := pr.input.ReadTimestampWithTimezone()
+		v := ReadTimestampWithTimezone(pr.input)
 		t = &v
 	})
 	return
@@ -381,7 +381,7 @@ func (pr *DefaultPortableReader) ReadTimestampWithTimezone(fieldName string) (t 
 func (pr *DefaultPortableReader) ReadDateArray(fieldName string) (t []time.Time) {
 	pos := pr.positionByField(fieldName, serialization.TypeDateArray)
 	pr.runAtPosition(pos, func() {
-		t = pr.input.ReadDateArray()
+		t = ReadDateArray(pr.input)
 	})
 	return
 }
@@ -389,7 +389,7 @@ func (pr *DefaultPortableReader) ReadDateArray(fieldName string) (t []time.Time)
 func (pr *DefaultPortableReader) ReadTimeArray(fieldName string) (t []time.Time) {
 	pos := pr.positionByField(fieldName, serialization.TypeTimeArray)
 	pr.runAtPosition(pos, func() {
-		t = pr.input.ReadTimeArray()
+		t = ReadTimeArray(pr.input)
 	})
 	return
 }
@@ -397,7 +397,7 @@ func (pr *DefaultPortableReader) ReadTimeArray(fieldName string) (t []time.Time)
 func (pr *DefaultPortableReader) ReadTimestampArray(fieldName string) (t []time.Time) {
 	pos := pr.positionByField(fieldName, serialization.TypeTimestampArray)
 	pr.runAtPosition(pos, func() {
-		t = pr.input.ReadTimestampArray()
+		t = ReadTimestampArray(pr.input)
 	})
 	return
 }
@@ -405,14 +405,14 @@ func (pr *DefaultPortableReader) ReadTimestampArray(fieldName string) (t []time.
 func (pr *DefaultPortableReader) ReadTimestampWithTimezoneArray(fieldName string) (t []time.Time) {
 	pos := pr.positionByField(fieldName, serialization.TypeTimestampWithTimezoneArray)
 	pr.runAtPosition(pos, func() {
-		t = pr.input.ReadTimestampWithTimezoneArray()
+		t = ReadTimestampWithTimezoneArray(pr.input)
 	})
 	return
 }
 
 func (pr *DefaultPortableReader) ReadDecimal(fieldName string) (d *types.Decimal) {
 	pr.readNullable(fieldName, serialization.TypeDecimal, func() {
-		v := pr.input.ReadDecimal()
+		v := ReadDecimal(pr.input)
 		d = &v
 	})
 	return
@@ -421,7 +421,7 @@ func (pr *DefaultPortableReader) ReadDecimal(fieldName string) (d *types.Decimal
 func (pr *DefaultPortableReader) ReadDecimalArray(fieldName string) (ds []types.Decimal) {
 	pos := pr.positionByField(fieldName, serialization.TypeDecimalArray)
 	pr.runAtPosition(pos, func() {
-		ds = pr.input.ReadDecimalArray()
+		ds = ReadDecimalArray(pr.input)
 	})
 	return
 }

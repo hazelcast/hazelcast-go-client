@@ -101,7 +101,7 @@ func New(config *Config) (*Client, error) {
 	return c, nil
 }
 
-// Name returns client's name
+// Name returns client's name.
 // Use config.Name to set the client name.
 // If not set manually, an automatically generated name is used.
 func (c *Client) Name() string {
