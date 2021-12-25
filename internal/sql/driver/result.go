@@ -31,6 +31,9 @@ const (
 	closed int32 = 1
 )
 
+// QueryResult contains the result of a query.
+// Rows are loaded in batches on demand.
+// QueryResult is not concurrency-safe, except for closing it.
 type QueryResult struct {
 	err              error
 	page             *sql.Page
@@ -43,6 +46,7 @@ type QueryResult struct {
 	state            int32
 }
 
+// NewQueryResult creates a new QueryResult.
 func NewQueryResult(qid sql.QueryID, md sql.RowMetadata, page *sql.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
 	qr := &QueryResult{
 		queryID:          qid,
@@ -56,6 +60,8 @@ func NewQueryResult(qid sql.QueryID, md sql.RowMetadata, page *sql.Page, ss *SQL
 	return qr, nil
 }
 
+// Columns returns the column names for the rows in the query result.
+// It implements database/sql/Rows interface.
 func (r *QueryResult) Columns() []string {
 	names := make([]string, len(r.metadata.Columns))
 	for i := 0; i < len(names); i++ {
@@ -64,24 +70,29 @@ func (r *QueryResult) Columns() []string {
 	return names
 }
 
+// Close notifies the member to release resources for the corresponding query.
+// It can be safely called more than once and it is concurrency-safe.
+// It implements database/sql/Rows interface.
 func (r *QueryResult) Close() error {
 	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
-		err := r.ss.closeQuery(r.queryID, r.conn)
-		if err != nil {
+		if err := r.ss.closeQuery(r.queryID, r.conn); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
+// Next requests the next batch of rows from the member.
+// If there are no rows left, it returns io.EOF
+// This method is not concurrency-safe.
+// It implements database/sql/Rows interface.
 func (r *QueryResult) Next(dest []driver.Value) error {
 	cols := r.page.Columns
 	if len(cols) == 0 {
 		return io.EOF
 	}
 	rowCount := int32(len(cols[0]))
-	index := atomic.LoadInt32(&r.index)
-	if index >= rowCount {
+	if r.index >= rowCount {
 		if r.page.Last {
 			atomic.StoreInt32(&r.state, closed)
 			return io.EOF
@@ -110,14 +121,19 @@ func (r *QueryResult) fetchNextPage() error {
 	return nil
 }
 
+// ExecResult contains the result of an SQL query which doesn't return any rows.
 type ExecResult struct {
 	UpdateCount int64
 }
 
+// LastInsertId always returns -1.
+// It implements database/sql/Driver interface.
 func (r ExecResult) LastInsertId() (int64, error) {
 	return -1, nil
 }
 
+// RowsAffected returned the number of affected rows.
+// It implements database/sql/Driver interface.
 func (r ExecResult) RowsAffected() (int64, error) {
 	return r.UpdateCount, nil
 }
