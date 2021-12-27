@@ -428,8 +428,16 @@ func TestPortableSerializer4(t *testing.T) {
 	expectedRet := &fake{
 		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
-		date: time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
-		dec:  types.NewDecimal(bint, 5),
+		date:                     time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
+		time:                     time.Date(0, 1, 1, 12, 23, 45, 500, time.Local),
+		timestamp:                time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local),
+		timestampWithTimeZone:    time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)),
+		dec:                      types.NewDecimal(big.NewInt(123_456_789), 100),
+		dateArr:                  []time.Time{time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local), time.Date(2022, 10, 16, 0, 0, 0, 0, time.Local)},
+		timeArr:                  []time.Time{time.Date(0, 1, 1, 12, 23, 45, 500, time.Local), time.Date(0, 1, 1, 18, 3, 15, 1500, time.Local)},
+		timestampArr:             []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local), time.Date(2022, 11, 5, 14, 13, 41, 200, time.Local)},
+		timestampWithTimeZoneArr: []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)), time.Date(2021, 2, 7, 18, 21, 5, 5500, time.FixedZone("", -2000))},
+		decArr:                   []types.Decimal{types.NewDecimal(big.NewInt(123_456_789), 100), types.NewDecimal(big.NewInt(-123_456_789_123), 100_000)},
 	}
 	data, err := service.ToData(expectedRet)
 	if err != nil {

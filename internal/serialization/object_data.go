@@ -801,22 +801,6 @@ func WriteDecimalArray(o serialization.DataOutput, ds []types.Decimal) {
 	}
 }
 
-func WriteDateArray(o serialization.DataOutput, ts []time.Time) {
-	writeArrayOfTime(o, ts, WriteDate)
-}
-
-func WriteTimeArray(o serialization.DataOutput, ts []time.Time) {
-	writeArrayOfTime(o, ts, WriteTime)
-}
-
-func WriteTimestampArray(o serialization.DataOutput, ts []time.Time) {
-	writeArrayOfTime(o, ts, WriteTimestamp)
-}
-
-func WriteTimestampWithTimezoneArray(o serialization.DataOutput, ts []time.Time) {
-	writeArrayOfTime(o, ts, WriteTimestampWithTimezone)
-}
-
 func writeArrayOfTime(o serialization.DataOutput, ts []time.Time, f func(o serialization.DataOutput, t time.Time)) {
 	if len(ts) == 0 {
 		o.WriteInt32(nilArrayLength)
@@ -849,22 +833,6 @@ func ReadTimestampWithTimezone(i serialization.DataInput) time.Time {
 	h, mn, s, nanos := readTime(i)
 	offset := i.ReadInt32()
 	return time.Date(y, m, d, h, mn, s, nanos, time.FixedZone("", int(offset)))
-}
-
-func ReadDateArray(i serialization.DataInput) []time.Time {
-	return readArrayOfTime(i, ReadDate)
-}
-
-func ReadTimeArray(i serialization.DataInput) []time.Time {
-	return readArrayOfTime(i, ReadTime)
-}
-
-func ReadTimestampArray(i serialization.DataInput) []time.Time {
-	return readArrayOfTime(i, ReadTimestamp)
-}
-
-func ReadTimestampWithTimezoneArray(i serialization.DataInput) []time.Time {
-	return readArrayOfTime(i, ReadTimestampWithTimezone)
 }
 
 func ReadBigInt(i serialization.DataInput) *big.Int {

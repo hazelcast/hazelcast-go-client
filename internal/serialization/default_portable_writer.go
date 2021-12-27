@@ -186,46 +186,46 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 
 func (pw *DefaultPortableWriter) WriteDate(fieldName string, t *time.Time) {
 	pw.writeNullableField(fieldName, serialization.TypeDate, t == nil, func() {
-		WriteDate(pw.output.ObjectDataOutput, *t)
+		WritePortableDate(pw.output.ObjectDataOutput, *t)
 	})
 }
 
 func (pw *DefaultPortableWriter) WriteTime(fieldName string, t *time.Time) {
 	pw.writeNullableField(fieldName, serialization.TypeTime, t == nil, func() {
-		WriteTime(pw.output.ObjectDataOutput, *t)
+		WritePortableTime(pw.output.ObjectDataOutput, *t)
 	})
 }
 
 func (pw *DefaultPortableWriter) WriteTimestamp(fieldName string, t *time.Time) {
 	pw.writeNullableField(fieldName, serialization.TypeTimestamp, t == nil, func() {
-		WriteTimestamp(pw.output.ObjectDataOutput, *t)
+		WritePortableTimestamp(pw.output.ObjectDataOutput, *t)
 	})
 }
 
 func (pw *DefaultPortableWriter) WriteTimestampWithTimezone(fieldName string, t *time.Time) {
 	pw.writeNullableField(fieldName, serialization.TypeTimestampWithTimezone, t == nil, func() {
-		WriteTimestampWithTimezone(pw.output.ObjectDataOutput, *t)
+		WritePortableTimestampWithTimezone(pw.output.ObjectDataOutput, *t)
 	})
 }
 
 func (pw *DefaultPortableWriter) WriteDateArray(fieldName string, ts []time.Time) {
 	pw.setPosition(fieldName, int32(serialization.TypeDateArray))
-	WriteDateArray(pw.output.ObjectDataOutput, ts)
+	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableDate)
 }
 
 func (pw *DefaultPortableWriter) WriteTimeArray(fieldName string, ts []time.Time) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimeArray))
-	WriteTimeArray(pw.output.ObjectDataOutput, ts)
+	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableTime)
 }
 
 func (pw *DefaultPortableWriter) WriteTimestampArray(fieldName string, ts []time.Time) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimestampArray))
-	WriteTimestampArray(pw.output.ObjectDataOutput, ts)
+	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableTimestamp)
 }
 
 func (pw *DefaultPortableWriter) WriteTimestampWithTimezoneArray(fieldName string, ts []time.Time) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimestampWithTimezoneArray))
-	WriteTimestampWithTimezoneArray(pw.output.ObjectDataOutput, ts)
+	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableTimestampWithTimezone)
 }
 
 func (pw *DefaultPortableWriter) WriteDecimal(fieldName string, d *types.Decimal) {
@@ -276,4 +276,31 @@ func (pw *DefaultPortableWriter) writeNullableField(fieldName string, fieldType 
 	if !isNil {
 		f()
 	}
+}
+
+func WritePortableDate(o serialization.DataOutput, t time.Time) {
+	y, m, d := t.Date()
+	o.WriteInt16(int16(y))
+	o.WriteByte(byte(m))
+	o.WriteByte(byte(d))
+
+}
+
+func WritePortableTime(o serialization.DataOutput, t time.Time) {
+	h, m, s := t.Clock()
+	o.WriteByte(byte(h))
+	o.WriteByte(byte(m))
+	o.WriteByte(byte(s))
+	o.WriteInt32(int32(t.Nanosecond()))
+}
+
+func WritePortableTimestamp(o serialization.DataOutput, t time.Time) {
+	WritePortableDate(o, t)
+	WritePortableTime(o, t)
+}
+
+func WritePortableTimestampWithTimezone(o serialization.DataOutput, t time.Time) {
+	WritePortableTimestamp(o, t)
+	_, off := t.Zone()
+	o.WriteInt32(int32(off))
 }
