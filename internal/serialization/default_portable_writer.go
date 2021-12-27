@@ -215,7 +215,7 @@ func (pw *DefaultPortableWriter) WriteDateArray(fieldName string, ts []time.Time
 
 func (pw *DefaultPortableWriter) WriteTimeArray(fieldName string, ts []time.Time) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimeArray))
-	WriteDateArray(pw.output.ObjectDataOutput, ts)
+	WriteTimeArray(pw.output.ObjectDataOutput, ts)
 }
 
 func (pw *DefaultPortableWriter) WriteTimestampArray(fieldName string, ts []time.Time) {

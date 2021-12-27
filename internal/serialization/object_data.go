@@ -887,6 +887,7 @@ func ReadDecimalArray(i serialization.DataInput) []types.Decimal {
 	if l == nilArrayLength {
 		return ds
 	}
+	ds = make([]types.Decimal, l)
 	for j := 0; j < int(l); j++ {
 		ds[j] = ReadDecimal(i)
 	}

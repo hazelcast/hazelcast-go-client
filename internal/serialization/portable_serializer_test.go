@@ -207,29 +207,37 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 }
 
 type fake struct {
-	date        time.Time
-	portable    serialization.Portable
-	nilDate     *time.Time
-	dec         types.Decimal
-	utf         string
-	utfArr      []string
-	i64Arr      []int64
-	i16Arr      []int16
-	ui16Arr     []uint16
-	f64Arr      []float64
-	f32Arr      []float32
-	bytArr      []byte
-	i32Arr      []int32
-	boolArr     []bool
-	portableArr []serialization.Portable
-	i64         int64
-	f64         float64
-	f32         float32
-	i32         int32
-	i16         int16
-	ui16        uint16
-	boo         bool
-	byt         byte
+	date                     time.Time
+	time                     time.Time
+	timestamp                time.Time
+	timestampWithTimeZone    time.Time
+	portable                 serialization.Portable
+	nilDate                  *time.Time
+	dec                      types.Decimal
+	utf                      string
+	utfArr                   []string
+	i64Arr                   []int64
+	i16Arr                   []int16
+	ui16Arr                  []uint16
+	f64Arr                   []float64
+	f32Arr                   []float32
+	bytArr                   []byte
+	i32Arr                   []int32
+	boolArr                  []bool
+	portableArr              []serialization.Portable
+	dateArr                  []time.Time
+	timeArr                  []time.Time
+	timestampArr             []time.Time
+	timestampWithTimeZoneArr []time.Time
+	decArr                   []types.Decimal
+	i64                      int64
+	f64                      float64
+	f32                      float32
+	i32                      int32
+	i16                      int16
+	ui16                     uint16
+	boo                      bool
+	byt                      byte
 }
 
 func (*fake) FactoryID() int32 {
@@ -265,9 +273,17 @@ func (f *fake) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteFloat64Array("f64Arr", f.f64Arr)
 	writer.WriteStringArray("utfArr", f.utfArr)
 	writer.WritePortableArray("portableArr", f.portableArr)
+	writer.WriteDecimal("decimal", &f.dec)
 	writer.WriteDate("nilDate", f.nilDate)
 	writer.WriteDate("date", &f.date)
-	writer.WriteDecimal("decimal", &f.dec)
+	writer.WriteTime("time", &f.time)
+	writer.WriteTimestamp("timestamp", &f.timestamp)
+	writer.WriteTimestampWithTimezone("timestampWithTimeZone", &f.timestampWithTimeZone)
+	writer.WriteDateArray("dateArr", f.dateArr)
+	writer.WriteTimeArray("timeArr", f.timeArr)
+	writer.WriteTimestampArray("timestampArr", f.timestampArr)
+	writer.WriteTimestampWithTimezoneArray("timestampWithTimeZoneArr", f.timestampWithTimeZoneArr)
+	writer.WriteDecimalArray("decimalArr", f.decArr)
 }
 
 func (f *fake) ReadPortable(reader serialization.PortableReader) {
@@ -291,9 +307,17 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) {
 	f.f64Arr = reader.ReadFloat64Array("f64Arr")
 	f.utfArr = reader.ReadStringArray("utfArr")
 	f.portableArr = reader.ReadPortableArray("portableArr")
+	f.dec = *reader.ReadDecimal("decimal")
 	f.nilDate = reader.ReadDate("nilDate")
 	f.date = *reader.ReadDate("date")
-	f.dec = *reader.ReadDecimal("decimal")
+	f.time = *reader.ReadTime("time")
+	f.timestamp = *reader.ReadTimestamp("timestamp")
+	f.timestampWithTimeZone = *reader.ReadTimestampWithTimezone("timestampWithTimeZone")
+	f.dateArr = reader.ReadDateArray("dateArr")
+	f.timeArr = reader.ReadTimeArray("timeArr")
+	f.timestampArr = reader.ReadTimestampArray("timestampArr")
+	f.timestampWithTimeZoneArr = reader.ReadTimestampWithTimezoneArray("timestampWithTimeZoneArr")
+	f.decArr = reader.ReadDecimalArray("decimalArr")
 }
 
 func TestPortableSerializer2(t *testing.T) {
@@ -329,8 +353,16 @@ func TestPortableSerializer2(t *testing.T) {
 	expectedRet := &fake{
 		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
-		date: time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
-		dec:  types.NewDecimal(big.NewInt(123_456_789), 100),
+		date:                     time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
+		time:                     time.Date(0, 1, 1, 12, 23, 45, 500, time.Local),
+		timestamp:                time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local),
+		timestampWithTimeZone:    time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)),
+		dec:                      types.NewDecimal(big.NewInt(123_456_789), 100),
+		dateArr:                  []time.Time{time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local), time.Date(2022, 10, 16, 0, 0, 0, 0, time.Local)},
+		timeArr:                  []time.Time{time.Date(0, 1, 1, 12, 23, 45, 500, time.Local), time.Date(0, 1, 1, 18, 3, 15, 1500, time.Local)},
+		timestampArr:             []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local), time.Date(2022, 11, 5, 14, 13, 41, 200, time.Local)},
+		timestampWithTimeZoneArr: []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)), time.Date(2021, 2, 7, 18, 21, 5, 5500, time.FixedZone("", -2000))},
+		decArr:                   []types.Decimal{types.NewDecimal(big.NewInt(123_456_789), 100), types.NewDecimal(big.NewInt(-123_456_789_123), 100_000)},
 	}
 	data, err := service.ToData(expectedRet)
 	if err != nil {
