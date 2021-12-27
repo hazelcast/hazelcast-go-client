@@ -25,10 +25,14 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func SQLTester(t *testing.T, f func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string)) {
-	SQLTesterWithConfigBuilder(t, nil, f)
+	cfn := func(c *hz.Config) {
+		c.Serialization.SetGlobalSerializer(&PanicingGlobalSerializer{})
+	}
+	SQLTesterWithConfigBuilder(t, cfn, f)
 }
 
 func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), f func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string)) {
@@ -100,4 +104,18 @@ func sqlXMLConfig(clusterName, publicAddr string, port int) string {
 			<jet enabled="true" />
         </hazelcast>
 	`, clusterName, publicAddr, port)
+}
+
+type PanicingGlobalSerializer struct{}
+
+func (p PanicingGlobalSerializer) ID() (id int32) {
+	return 1000
+}
+
+func (p PanicingGlobalSerializer) Read(input serialization.DataInput) interface{} {
+	panic("panicing global serializer: read")
+}
+
+func (p PanicingGlobalSerializer) Write(output serialization.DataOutput, object interface{}) {
+	panic("panicing global serializer: write")
 }

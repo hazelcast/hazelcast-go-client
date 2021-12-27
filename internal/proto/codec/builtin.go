@@ -1078,7 +1078,7 @@ func DecodeListCNDate(it *proto.ForwardFrameIterator) []driver.Value {
 }
 
 func DecodeListCNTime(it *proto.ForwardFrameIterator) []driver.Value {
-	return DecodeListCNFixedSize(it, proto.LocalDateSizeInBytes, func(buf []byte, offset int32) driver.Value {
+	return DecodeListCNFixedSize(it, proto.LocalTimeSizeInBytes, func(buf []byte, offset int32) driver.Value {
 		return FixSizedTypesCodec.DecodeLocalTime(buf, offset)
 	})
 }

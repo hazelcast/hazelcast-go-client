@@ -128,13 +128,13 @@ func (s *Service) ReadObject(input pubserialization.DataInput) interface{} {
 }
 
 func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serializer, error) {
-	if serializer := s.LookUpDefaultSerializer(obj); serializer != nil {
+	if serializer := s.LookUpDefaultSerializer(obj); serializer != (pubserialization.Serializer)(nil) {
 		return serializer, nil
 	}
-	if serializer := s.lookUpCustomSerializer(obj); serializer != nil {
+	if serializer := s.lookUpCustomSerializer(obj); serializer != (pubserialization.Serializer)(nil) {
 		return serializer, nil
 	}
-	if serializer := s.lookUpGlobalSerializer(); serializer != nil {
+	if serializer := s.lookUpGlobalSerializer(); serializer != (pubserialization.Serializer)(nil) {
 		return serializer, nil
 	}
 	// keeping the error in the result for future behavior change
@@ -143,7 +143,7 @@ func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serialize
 
 func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
 	serializer := s.lookupBuiltinSerializer(obj)
-	if serializer != nil {
+	if serializer != (pubserialization.Serializer)(nil) {
 		return serializer
 	}
 	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
@@ -306,6 +306,8 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return uint16Serializer
 	case int:
 		return intSerializer
+	case int8:
+		return int8Serializer
 	case int16:
 		return int16Serializer
 	case int32:
@@ -342,6 +344,8 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return dateTimeSerializer(o)
 	case *big.Int:
 		return javaBigIntegerSerializer
+	case types.Decimal:
+		return javaDecimalSerializer
 	case pubserialization.JSON:
 		return jsonSerializer
 	}
@@ -378,6 +382,7 @@ var nilSerializer = &NilSerializer{}
 var boolSerializer = &BoolSerializer{}
 var stringSerializer = &StringSerializer{}
 var uint8Serializer = &ByteSerializer{}
+var int8Serializer = &Int8Serializer{}
 var uint16Serializer = &UInt16Serializer{}
 var intSerializer = &IntSerializer{}
 var int16Serializer = &Int16Serializer{}
@@ -398,6 +403,7 @@ var uuidSerializer = &UUIDSerializer{}
 var jsonSerializer = &JSONValueSerializer{}
 var javaDateSerializer = &JavaDateSerializer{}
 var javaBigIntegerSerializer = &JavaBigIntegerSerializer{}
+var javaDecimalSerializer = &JavaDecimalSerializer{}
 var javaArrayListSerializer = &JavaArrayListSerializer{}
 var javaLocalDateSerializer = &JavaLocalDateSerializer{}
 var javaLocalTimeSerializer = &JavaLocalTimeSerializer{}

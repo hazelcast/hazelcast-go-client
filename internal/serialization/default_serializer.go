@@ -99,6 +99,20 @@ func (ByteSerializer) Write(output serialization.DataOutput, i interface{}) {
 	output.WriteByte(i.(byte))
 }
 
+type Int8Serializer struct{}
+
+func (Int8Serializer) ID() int32 {
+	return TypeByte
+}
+
+func (Int8Serializer) Read(input serialization.DataInput) interface{} {
+	return int8(input.ReadByte())
+}
+
+func (Int8Serializer) Write(output serialization.DataOutput, i interface{}) {
+	output.WriteByte(byte(i.(int8)))
+}
+
 type BoolSerializer struct{}
 
 func (BoolSerializer) ID() int32 {
@@ -399,20 +413,25 @@ func (JavaBigIntegerSerializer) ID() int32 {
 }
 
 func (JavaBigIntegerSerializer) Read(input serialization.DataInput) interface{} {
-	l := input.ReadInt32()
-	bs := make([]byte, l)
-	b, err := JavaBytesToBigInt(bs)
-	if err != nil {
-		panic(err)
-	}
-	return b
+	return ReadBigInt(input)
 }
 
 func (JavaBigIntegerSerializer) Write(output serialization.DataOutput, i interface{}) {
-	b := i.(*big.Int)
-	bs := BigIntToJavaBytes(b)
-	output.WriteInt32(int32(len(bs)))
-	output.WriteByteArray(bs)
+	WriteBigInt(output, i.(*big.Int))
+}
+
+type JavaDecimalSerializer struct{}
+
+func (JavaDecimalSerializer) ID() int32 {
+	return TypeJavaDecimal
+}
+
+func (JavaDecimalSerializer) Read(input serialization.DataInput) interface{} {
+	return ReadDecimal(input)
+}
+
+func (JavaDecimalSerializer) Write(output serialization.DataOutput, i interface{}) {
+	WriteDecimal(output, i.(types.Decimal))
 }
 
 type JavaClassSerializer struct{}

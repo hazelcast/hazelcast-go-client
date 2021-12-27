@@ -151,14 +151,69 @@ func TestSQLQuery(t *testing.T) {
 		keyFmt, valueFmt string
 	}{
 		{
-			keyFmt: "int", valueFmt: "int",
+			keyFmt: "int", valueFmt: "varchar",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return fmt.Sprintf("val-%d", i*100) },
+		},
+		{
+			keyFmt: "int", valueFmt: "tinyint",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return int8(i) },
+		},
+		{
+			keyFmt: "int", valueFmt: "smallint",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return int16(i * 100) },
+		},
+		{
+			keyFmt: "int", valueFmt: "integer",
 			keyFn:   func(i int) interface{} { return int32(i) },
 			valueFn: func(i int) interface{} { return int32(i * 100) },
 		},
 		{
-			keyFmt: "int", valueFmt: "varchar",
+			keyFmt: "int", valueFmt: "bigint",
 			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return fmt.Sprintf("val-%d", i*100) },
+			valueFn: func(i int) interface{} { return int64(i * 100) },
+		},
+		{
+			keyFmt: "int", valueFmt: "boolean",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return i%2 == 0 },
+		},
+		{
+			keyFmt: "int", valueFmt: "real",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return float32(i) * 1.5 },
+		},
+		{
+			keyFmt: "int", valueFmt: "double",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return float64(i) * 1.5 },
+		},
+		{
+			keyFmt: "int", valueFmt: "decimal",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return types.NewDecimal(big.NewInt(int64(i)), 5) },
+		},
+		{
+			keyFmt: "int", valueFmt: "date",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return time.Date(2021, 12, 21, 0, 0, 0, 0, time.Local) },
+		},
+		{
+			keyFmt: "int", valueFmt: "time",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return time.Date(0, 1, 1, 14, 15, 16, 200, time.Local) },
+		},
+		{
+			keyFmt: "int", valueFmt: "timestamp",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return time.Date(2021, 12, 23, 14, 15, 16, 200, time.Local) },
+		},
+		{
+			keyFmt: "int", valueFmt: "timestamp with time zone",
+			keyFn:   func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} { return time.Date(2021, 12, 23, 14, 15, 16, 200, time.FixedZone("", -6000)) },
 		},
 	}
 	for _, tc := range testCases {
@@ -365,15 +420,21 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			t.Fatal(err)
 		}
 		dsn := makeDSN(config)
+		sc := &serialization.Config{}
+		sc.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
+		if err := driver.SetSerializationConfig(sc); err != nil {
+			t.Fatal(err)
+		}
+		defer driver.SetSerializationConfig(nil)
 		db, err := sql.Open("hazelcast", dsn)
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer db.Close()
 		ms := createMappingStr(mapName, keyFmt, valueFmt)
 		if err := createMapping(t, db, ms); err != nil {
 			t.Fatal(err)
 		}
-		defer db.Close()
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
 		rows, err := db.QueryContext(ctx, query)
 		if err != nil {
@@ -388,7 +449,22 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			}
 			i++
 		}
-		assert.Equal(t, target, entries)
+		if valueFmt == "decimal" {
+			// assert.Equal does not seem to work for *big.Int values.
+			// Since types.Decimal includes a *big.Int, it doesn't work for it either.
+			// Hence the special treatment for decimal.
+			assert.Equal(t, len(target), len(entries))
+			for i := 0; i < len(target); i++ {
+				t.Run(fmt.Sprintf("decimal-%d", i), func(t *testing.T) {
+					bt := target[i].Value.(types.Decimal)
+					be := entries[i].Value.(types.Decimal)
+					assert.Equal(t, bt.Scale(), be.Scale())
+					assert.Equal(t, bt.UnscaledValue().String(), be.UnscaledValue().String())
+				})
+			}
+		} else {
+			assert.Equal(t, target, entries)
+		}
 	})
 }
 

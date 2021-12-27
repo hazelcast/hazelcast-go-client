@@ -328,7 +328,6 @@ func LargerGroupMajorMinorVersion(members []pubcluster.MemberInfo) (uint16, erro
 	// synchronized in Update
 	// The members should have at most 2 different version (ignoring the patch version).
 	var vs [2]uint16
-	//var v0, v1 uint16
 	var vv [2]pubcluster.MemberVersion
 	var count [2]int
 	var next int

@@ -746,7 +746,7 @@ func (e *EmptyObjectDataOutput) WriteZeroBytes(int) {}
 
 func WriteDate(o serialization.DataOutput, t time.Time) {
 	y, m, d := t.Date()
-	o.WriteInt16(int16(y))
+	o.WriteInt32(int32(y))
 	o.WriteByte(byte(m))
 	o.WriteByte(byte(d))
 }
@@ -894,7 +894,7 @@ func ReadDecimalArray(i serialization.DataInput) []types.Decimal {
 }
 
 func readDate(i serialization.DataInput) (y int, m time.Month, d int) {
-	y = int(i.ReadInt16())
+	y = int(i.ReadInt32())
 	m = time.Month(i.ReadByte())
 	d = int(i.ReadByte())
 	return
