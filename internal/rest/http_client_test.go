@@ -25,15 +25,15 @@ func setTransport(fn roundTripFunc, client *HTTPClient) {
 
 func TestHTTPClient_Get(t *testing.T) {
 	type args struct {
+		serverHandler roundTripFunc
 		url           string
 		headers       []HTTPHeader
-		serverHandler roundTripFunc
 	}
 	tests := []struct {
-		name string
-		args args
-		want []byte
 		err  *Error
+		args args
+		name string
+		want []byte
 	}{
 		{
 			name: "happy path, return success and response",
@@ -109,10 +109,10 @@ func TestHTTPClient_GetJSONObject(t *testing.T) {
 	tmpMap["name"] = "Joe"
 	tmpMap["job"] = "accountant"
 	tests := []struct {
-		name          string
-		serverHandler roundTripFunc
 		want          interface{}
 		err           error
+		serverHandler roundTripFunc
+		name          string
 	}{
 		{
 			name: "happy path, return success and response",
