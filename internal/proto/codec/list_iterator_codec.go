@@ -1,3 +1,6 @@
+//go:build !cover
+// +build !cover
+
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
