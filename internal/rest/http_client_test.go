@@ -40,10 +40,7 @@ func TestHTTPClient_Get(t *testing.T) {
 			args: args{
 				url: "localhost:8080/some/path",
 				headers: []HTTPHeader{
-					{
-						Name:  "Some-Header",
-						Value: "value",
-					},
+					NewHTTPHeader("Some-Header", "value"),
 				},
 				serverHandler: func(req *http.Request) *http.Response {
 					header := req.Header.Get("Some-Header")
@@ -60,7 +57,7 @@ func TestHTTPClient_Get(t *testing.T) {
 			},
 		},
 		{
-			name: "return error from server",
+			name: "return error from server, status code <= 500",
 			args: args{
 				serverHandler: func(req *http.Request) *http.Response {
 					return &http.Response{
@@ -89,6 +86,46 @@ func TestHTTPClient_Get(t *testing.T) {
 			assert.Equal(t, "OK", string(resp))
 		})
 	}
+}
+
+func TestHttpClient_Retry(t *testing.T) {
+	c := NewHTTPClient()
+	ctx := context.Background()
+	retry := 1
+	setTransport(func(req *http.Request) *http.Response {
+		resp := &http.Response{
+			StatusCode: 200,
+			// Send response to be tested
+			Body: ioutil.NopCloser(bytes.NewBufferString("OK")),
+			// Must be set to non-nil value or it panics
+			Header: make(http.Header),
+		}
+		if retry < 3 {
+			// retry range
+			resp.StatusCode = 500
+			retry++
+		}
+		return resp
+	}, c)
+	resp, err := c.Get(ctx, "somehost:8080")
+	assert.Nil(t, err)
+	assert.Equal(t, "OK", string(resp))
+	assert.Equal(t, 3, retry)
+	// test non-retryable status code
+	retry = 0
+	setTransport(func(req *http.Request) *http.Response {
+		resp := &http.Response{
+			StatusCode: 400,
+			Body:       ioutil.NopCloser(bytes.NewBufferString("OK")),
+			Header:     make(http.Header),
+		}
+		retry++
+		return resp
+	}, c)
+	resp, err = c.Get(ctx, "somehost:8080")
+	assert.NotNil(t, err)
+	assert.Nil(t, resp)
+	assert.Equal(t, 1, retry)
 }
 
 // type for json tests
