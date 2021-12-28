@@ -14,6 +14,93 @@
  * limitations under the License.
  */
 
+/*
+Package driver provides an SQL driver compatible with the standard database/sql package.
+
+This driver supports Hazelcast 5.0 and up. Checkout the Hazelcast SQL documentation here: https://docs.hazelcast.com/hazelcast/5.0/sql/sql-overview
+
+Enabling Hazelcast SQL
+
+The SQL support should be enabled in Hazelcast configuration:
+
+	<hazelcast>
+		<jet enabled="true" />
+	</hazelcast>
+
+Creating a Driver Instance Using sql.Open
+
+This driver provides two ways to create an instance.
+
+The first one is via the standard sql.Open function.
+That function takes two parameters, the driver name and the DSN (Data Source Name).
+Here's a sample:
+
+	db, err := sql.Open("hazelcast", "hz://@localhost:5701?cluster.name=dev")
+
+Use hazelcast as the driver name.
+The DSN may be blank. In that case, the default configuration is used.
+Otherwise, the DSN must start with the scheme (hz://) and have the following optional parts:
+
+	- Username and password for the cluster, separated by a column: dave:s3cr3t
+	- Hazelcast member addresses, separated by commas: server1:port1,server2:port2
+	- Options as key=value pairs, separated by ampersond (&). Both the key and value must be URL encoded: cluster.name=dev&ssl=true
+
+Username/password part is separated from the address by the at sign (@).
+There should be a question mark (?) between the address(es) and options.
+Here is a full DSN:
+
+	hz://dave:s3cr3t@my-server1.company.com:5000,my-server2.company.com:6000?cluster.name=prod&ssl=true&log=warn
+
+The following are the available options:
+
+	- unisocket: A boolean. Enables/disables the unisocket mode. Default: false. Example: unisocket=true
+	- log: One of the following: off, fatal, error, warn, info, debug, trace. Default: info. Example: log=debug
+	- cluster.name: A string. Specifies the cluster name.Default: dev. Example: cluster.name=hzc1
+	- cloud.token: A string. Sets the Hazelcast Cloud token. Example: cloud.token=1234567abcde
+	- stats.period: Duration, which can be parsed by time.Parse.
+	  Use one of the following suffixes: s (seconds), m (minutes), h (hours). Example: 10s
+	- ssl: A boolean. Enables/disables SSL connections. Defaults: false. Example: ssl=true
+	- ssl.ca.path: The path to the PEM file for the certificate authority. Implies ssl=true. Example: ssl.ca.path=/etc/ssl/ca.pem
+	- ssl.cert.path: The path to the TLS certificate. Implies ssl=true. Example: ssl.cert.path=/etc/ssl/cert.pem
+	- ssl.key.path: The path to the certificate key. Implies ssl=true. Example: ssl.key.path=/etc/ssl/key.pem
+	- ssl.key.password: The optional certificate password. Example: ssl.key.password=m0us3
+
+Some items in the client configuration cannot be set in the DSN, such as serialization factories and SSL configuration.
+You can use the following functions to set those configuration items globally:
+
+	- SetSerializationConfig(...)
+	- SetLoggerConfig(...)
+	- SetSSLConfig(...)
+
+Note that, these functions changes affect only the subsequent sql.Open calls, not the previous ones.
+
+Here's an example:
+
+	sc1 := &serialization.Config{}
+	sc2 := &serialization.Config{}
+	// no serialization configuration is used for the call below
+	db1, err := sql.Open("hazelcast", "")
+	// the following two sql.Open calls use sc1
+	err = driver.SetSerializationConfig(sc1)
+	db2, err := sql.Open("hazelcast", "")
+	db3, err := sql.Open("hazelcast", "")
+	// the following sql.Open call uses sc2
+	err = driver.SetSerializationConfig(sc2)
+	db4, err := sql.Open("hazelcast", "")
+
+Creating a Driver Instance Using driver.Open
+
+It is possible to create a driver instance using an existing Hazelcast client configuration using the driver.Open function.
+All client configuration items, except listeners are supported.
+
+	cfg := hazelcast.Config{}
+	cfg.Cluster.Name = "prod"
+	cfg.Serialization.SetPortableFactories(&MyPortableFactory{})
+	db := driver.Open(cfg)
+
+
+
+*/
 package driver
 
 import (

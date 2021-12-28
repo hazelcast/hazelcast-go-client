@@ -27,7 +27,7 @@ jobs:
       - name: Test
         run: |
           ./rc.sh start
-          make test-cover
+          env MEMBER_COUNT=3 make test-cover
         
       - name: Publish to Codecov
         uses: codecov/codecov-action@v2
