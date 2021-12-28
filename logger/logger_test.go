@@ -17,9 +17,12 @@
 package logger
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 func TestGetLogLevel(t *testing.T) {
@@ -36,7 +39,7 @@ func TestGetLogLevel(t *testing.T) {
 		{"info", WeightInfo},
 	}
 	for _, logLevel := range logLevels {
-		level, err := GetLogLevel(Level(logLevel.level))
+		level, err := WeightForLogLevel(Level(logLevel.level))
 		assert.NoError(t, err)
 		assert.Equal(t, level, logLevel.levelInt)
 	}
@@ -44,6 +47,19 @@ func TestGetLogLevel(t *testing.T) {
 
 func TestGetLogLevelError(t *testing.T) {
 	logLevel := "p"
-	_, err := GetLogLevel(Level(logLevel))
+	_, err := WeightForLogLevel(Level(logLevel))
 	assert.Error(t, err)
 }
+
+func TestLogLevelWithCustomLoggerFails(t *testing.T) {
+	cfg := Config{}
+	cfg.Level = InfoLevel
+	cfg.CustomLogger = &customLogger{}
+	err := cfg.Validate()
+	assert.NotNil(t, err)
+	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
+}
+
+type customLogger struct{}
+
+func (c customLogger) Log(weight Weight, f func() string) {}
