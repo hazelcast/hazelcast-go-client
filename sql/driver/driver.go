@@ -32,6 +32,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+// Open creates the driver with the given client configuration.
+// This function is provided as a convenience to set configuration items which cannot be set using a DSN.
+// Note that, attached listeners are ignored.
 func Open(config hazelcast.Config) *sql.DB {
 	config = config.Clone()
 	// ignoring the error below, since the default configuration does not contain errors
@@ -49,7 +52,7 @@ func Open(config hazelcast.Config) *sql.DB {
 	return sql.OpenDB(driver.NewConnector(icc))
 }
 
-// WithCursorBufferSize returns a copy of parent in which has the given query cursor buffer size.
+// WithCursorBufferSize returns a copy of parent context which includes the given query cursor buffer size.
 // Panics if parent context is nil, or given buffer size is not in the positive int32 range.
 func WithCursorBufferSize(parent context.Context, cbs int) context.Context {
 	if parent == nil {
@@ -61,7 +64,7 @@ func WithCursorBufferSize(parent context.Context, cbs int) context.Context {
 	return context.WithValue(parent, driver.QueryCursorBufferSizeKey{}, int32(cbs))
 }
 
-// WithQueryTimeout returns a copy of parent in which has the given query timeout.
+// WithQueryTimeout returns a copy of parent context which has the given query timeout.
 // Panics if parent context is nil.
 func WithQueryTimeout(parent context.Context, t time.Duration) context.Context {
 	if parent == nil {
@@ -74,19 +77,22 @@ func WithQueryTimeout(parent context.Context, t time.Duration) context.Context {
 	return context.WithValue(parent, driver.QueryTimeoutKey{}, tm)
 }
 
-// SetSerializationConfig stores the serialization config.
+// SetSerializationConfig stores the global serialization config.
+// Subsequent sql.Open calls will use the given serialization configuration.
 // It copies the configuration before storing.
 func SetSerializationConfig(config *serialization.Config) error {
 	return driver.SetSerializationConfig(config)
 }
 
 // SetLoggerConfig stores the logger config.
+// Subsequent sql.Open calls will use the given logger configuration.
 // It copies the configuration before storing.
 func SetLoggerConfig(config *logger.Config) error {
 	return driver.SetLoggerConfig(config)
 }
 
 // SetSSLConfig stores the SSL config.
+// Subsequent sql.Open calls will use the given SSL configuration.
 // It copies the configuration before storing.
 func SetSSLConfig(config *cluster.SSLConfig) error {
 	return driver.SetSSLConfig(config)
