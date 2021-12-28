@@ -30,7 +30,7 @@ const logMessage = "dummy"
 func createWithLevelAndLog(level logger.Level) (string, error) {
 	var err error
 	dl := New()
-	dl.Weight, err = logger.GetLogLevel(level)
+	dl.Weight, err = logger.WeightForLogLevel(level)
 	if err != nil {
 		return "", err
 	}

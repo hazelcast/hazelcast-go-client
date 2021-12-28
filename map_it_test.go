@@ -1057,6 +1057,43 @@ func TestMap_SetTTL(t *testing.T) {
 	})
 }
 
+func TestMap_SetTTLAffected(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		testCases := []struct {
+			key           string
+			isEffected    bool
+			errorExpected bool
+		}{
+			// happy path
+			{
+				key:        "k1",
+				isEffected: true,
+			},
+			// setTTL on non-existing key
+			{
+				key:           "k2",
+				isEffected:    false,
+				errorExpected: false,
+			},
+			// setTTL on already expired key
+			{
+				key:           "k3",
+				isEffected:    false,
+				errorExpected: false,
+			},
+		}
+		_ = it.MustValue(m.Put(ctx, "k1", "someValue"))
+		_ = it.MustValue(m.PutWithTTL(ctx, "k3", "someValue", time.Millisecond))
+		time.Sleep(time.Millisecond)
+		for _, tc := range testCases {
+			affected, err := m.SetTTLAffected(ctx, tc.key, time.Second)
+			assert.Equal(t, tc.errorExpected, err != nil)
+			assert.Equal(t, tc.isEffected, affected)
+		}
+	})
+}
+
 func TestMap_ExecuteOnEntries(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&SimpleEntryProcessorFactory{})
