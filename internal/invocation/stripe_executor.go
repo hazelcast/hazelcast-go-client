@@ -84,10 +84,6 @@ func (se stripeExecutor) stop() {
 	se.wg.Wait()
 }
 
-func (se stripeExecutor) setExecutorFnc(f executor) {
-	se.execFn = f
-}
-
 func defaultExecFn(queue chan func(), quit chan struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for {
