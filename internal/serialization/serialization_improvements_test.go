@@ -19,14 +19,16 @@ package serialization_test
 import (
 	"encoding/binary"
 	"math"
+	"math/big"
 	"testing"
 	"time"
 	"unicode/utf8"
 
+	"github.com/stretchr/testify/assert"
+
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	"github.com/stretchr/testify/assert"
 )
 
 // See: https://hazelcast.atlassian.net/wiki/spaces/IMDG/pages/1650294837/Hazelcast+Serialization+Improvements
@@ -88,7 +90,71 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, target, value)
+}
 
+func TestSerializationImprovements(t *testing.T) {
+	serializationImprovementsTester(func(ss *iserialization.Service) {
+		testCases := []struct {
+			input  interface{}
+			target interface{}
+			name   string
+		}{
+			{
+				input:  time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
+				name:   "JavaLocalDate",
+				target: time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
+			},
+			{
+				input:  time.Date(0, 2, 10, 1, 2, 3, 50, time.Local),
+				name:   "JavaLocalTime",
+				target: time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
+			},
+			{
+				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
+				name:   "JavaLocalDateTime",
+				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
+			},
+			{
+				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
+				name:   "JavaOffsetDateTime",
+				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
+			},
+			{
+				input:  big.NewInt(-10_000_000),
+				name:   "JavaBigInteger",
+				target: big.NewInt(-10_000_000),
+			},
+		}
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				data, err := ss.ToData(tc.input)
+				if err != nil {
+					t.Fatal(err)
+				}
+				value, err := ss.ToObject(data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if tt, ok := tc.target.(time.Time); ok {
+					ii := value.(time.Time)
+					if !tt.Equal(ii) {
+						t.Fatalf("%s != %s", tt.String(), ii.String())
+					}
+				} else {
+					assert.Equal(t, tc.target, tc.input)
+				}
+
+			})
+		}
+
+	})
+}
+
+func serializationImprovementsTester(f func(ss *iserialization.Service)) {
+	config := &serialization.Config{}
+	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
+	ss := mustSerializationService(iserialization.NewService(config))
+	f(ss)
 }
 
 func mustSerializationService(ss *iserialization.Service, err error) *iserialization.Service {

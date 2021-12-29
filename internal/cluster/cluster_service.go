@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -94,6 +95,10 @@ func (s *Service) GetMemberByUUID(uuid types.UUID) *pubcluster.MemberInfo {
 
 func (s *Service) OrderedMembers() []pubcluster.MemberInfo {
 	return s.membersMap.OrderedMembers()
+}
+
+func (s *Service) SQLMember() *pubcluster.MemberInfo {
+	return s.membersMap.SQLMember()
 }
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
@@ -175,13 +180,14 @@ func (a AddrSet) Addrs() []pubcluster.Address {
 }
 
 type membersMap struct {
-	logger           logger.LogAdaptor
-	failoverService  *FailoverService
-	members          map[types.UUID]*pubcluster.MemberInfo
-	addrToMemberUUID map[pubcluster.Address]types.UUID
-	membersMu        *sync.RWMutex
-	orderedMembers   []pubcluster.MemberInfo
-	version          int32
+	logger             logger.LogAdaptor
+	failoverService    *FailoverService
+	members            map[types.UUID]*pubcluster.MemberInfo
+	addrToMemberUUID   map[pubcluster.Address]types.UUID
+	membersMu          *sync.RWMutex
+	orderedMembers     atomic.Value
+	majorityMajorMinor uint16
+	version            int32
 }
 
 func newMembersMap(failoverService *FailoverService, lg logger.LogAdaptor) membersMap {
@@ -199,7 +205,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 	defer m.membersMu.Unlock()
 	if version > m.version {
 		m.version = version
-		m.orderedMembers = members
+		m.orderedMembers.Store(members)
 		newUUIDs := map[types.UUID]struct{}{}
 		added = []pubcluster.MemberInfo{}
 		for _, member := range members {
@@ -223,6 +229,14 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 			return fmt.Sprintf("cluster.Service.Update removed: %v", removed)
 		})
 		m.logMembers(version, members)
+		if len(added) > 0 || len(removed) > 0 {
+			// there is a change in the cluster
+			v, err := LargerGroupMajorMinorVersion(members)
+			if err != nil {
+				m.logger.Warnf(err.Error())
+			}
+			m.majorityMajorMinor = v
+		}
 	}
 	return
 }
@@ -235,11 +249,25 @@ func (m *membersMap) Find(uuid types.UUID) *pubcluster.MemberInfo {
 }
 
 func (m *membersMap) OrderedMembers() []pubcluster.MemberInfo {
-	m.membersMu.Lock()
-	members := make([]pubcluster.MemberInfo, len(m.orderedMembers))
-	copy(members, m.orderedMembers)
-	m.membersMu.Unlock()
-	return members
+	return m.orderedMembers.Load().([]pubcluster.MemberInfo)
+}
+
+func (m *membersMap) SQLMember() *pubcluster.MemberInfo {
+	m.membersMu.RLock()
+	defer m.membersMu.RUnlock()
+	if m.majorityMajorMinor == 0 {
+		return nil
+	}
+	for _, mem := range m.members {
+		if mem.LiteMember {
+			continue
+		}
+		if mem.Version.MajorMinor() == m.majorityMajorMinor {
+			// since maps in Go is randomized, this will return a random member
+			return mem
+		}
+	}
+	return nil
 }
 
 // addMember adds the given memberinfo if it doesn't already exist and returns true in that case.
@@ -284,11 +312,56 @@ func (m *membersMap) reset() {
 
 func (m *membersMap) logMembers(version int32, members []pubcluster.MemberInfo) {
 	// synchronized in Update
-	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("\n\nMembers {size:%d, ver:%d} [\n", len(m.members), version))
+	m.logger.Info(func() string {
+		sb := strings.Builder{}
+		sb.WriteString(fmt.Sprintf("\n\nMembers {size:%d, ver:%d} [\n", len(m.members), version))
+		for _, mem := range members {
+			sb.WriteString(fmt.Sprintf("\tMember %s - %s\n", mem.Address, mem.UUID))
+		}
+		sb.WriteString("]\n\n")
+		return sb.String()
+	})
+}
+
+// LargerGroupMajorMinorVersion finds the version of the most numerous member group by version.
+func LargerGroupMajorMinorVersion(members []pubcluster.MemberInfo) (uint16, error) {
+	// synchronized in Update
+	// The members should have at most 2 different version (ignoring the patch version).
+	var vs [2]uint16
+	var vv [2]pubcluster.MemberVersion
+	var count [2]int
+	var next int
 	for _, mem := range members {
-		sb.WriteString(fmt.Sprintf("\tMember %s - %s\n", mem.Address, mem.UUID))
+		if mem.LiteMember {
+			continue
+		}
+		v := mem.Version.MajorMinor()
+		if v == vs[0] {
+			count[0]++
+		} else if v == vs[1] {
+			count[1]++
+		} else if next < 2 {
+			vs[next] = v
+			vv[next] = mem.Version
+			count[next]++
+			next++
+		} else {
+			return 0, fmt.Errorf("more than 2 distinct member versions found: %s, %s, %s", vv[0], vv[1], mem.Version)
+		}
 	}
-	sb.WriteString("]\n\n")
-	m.logger.Infof(sb.String())
+	if count[0] == 0 {
+		// there are no data members
+		return 0, nil
+	}
+	if count[0] > count[1] {
+		return vs[0], nil
+	} else if count[0] < count[1] {
+		return vs[1], nil
+	} else {
+		// if the counts are equal, return the newer one
+		if vs[0] > vs[1] {
+			return vs[0], nil
+		}
+		return vs[1], nil
+	}
 }

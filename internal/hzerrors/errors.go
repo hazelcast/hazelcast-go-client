@@ -140,6 +140,10 @@ func NewInstanceNotActiveError(msg string) *ClientError {
 	return NewClientError(msg, nil, hzerrors.ErrHazelcastInstanceNotActive)
 }
 
+func NewIllegalStateError(msg string, err error) *ClientError {
+	return NewClientError(msg, err, hzerrors.ErrIllegalState)
+}
+
 func IsRetryable(err error) bool {
 	// check whether the error is retryable
 	if _, ok := err.(*hzerrors.RetryableError); ok {

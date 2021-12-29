@@ -59,7 +59,7 @@ type newConfigValidateScenario struct {
 var validateAddressScenarios = []newConfigValidateScenario{
 	{
 		inputAddr:         "192.168.1.2",
-		outputAddr:        "192.168.1.2:0",
+		outputAddr:        "192.168.1.2",
 		errEmpty:          true,
 		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
 	},
@@ -89,13 +89,13 @@ var validateAddressScenarios = []newConfigValidateScenario{
 	},
 	{
 		inputAddr:         "192.168.1.2",
-		outputAddr:        "192.168.1.2:0",
+		outputAddr:        "192.168.1.2",
 		errEmpty:          true,
 		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5703},
 	},
 	{
 		inputAddr:         "192.168.1.2",
-		outputAddr:        "192.168.1.2:0",
+		outputAddr:        "192.168.1.2",
 		errEmpty:          true,
 		inputPortRange:    &cluster.PortRange{Min: 5701, Max: 5705},
 		expectedPortRange: cluster.PortRange{Min: 5701, Max: 5705},

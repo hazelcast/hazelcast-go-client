@@ -18,9 +18,11 @@ package serialization
 
 import (
 	"fmt"
+	"time"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type DefaultPortableReader struct {
@@ -88,6 +90,26 @@ func TypeByID(fieldType serialization.FieldDefinitionType) string {
 		return "[]float64"
 	case serialization.TypeStringArray:
 		return "[]string"
+	case serialization.TypeDecimal:
+		return "types.Decimal"
+	case serialization.TypeDecimalArray:
+		return "[]types.Decimal"
+	case serialization.TypeTime:
+		return "time.Time (time)"
+	case serialization.TypeTimeArray:
+		return "[]time.Time (time)"
+	case serialization.TypeDate:
+		return "time.Time (date)"
+	case serialization.TypeDateArray:
+		return "[]time.Time (date)"
+	case serialization.TypeTimestamp:
+		return "time.Time (timestamp)"
+	case serialization.TypeTimestampArray:
+		return "[]time.Time (timestamp)"
+	case serialization.TypeTimestampWithTimezone:
+		return "time.Time (timestamp with timezone)"
+	case serialization.TypeTimestampWithTimezoneArray:
+		return "[]time.Time (timestamp with timezone)"
 	}
 	return "UNKNOWN"
 }
@@ -315,7 +337,7 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) []serializa
 
 func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
 	if !pr.raw {
-		off := pr.offset + pr.classDefinition.FieldCount()*Int32SizeInBytes
+		off := pr.offset + int32(len(pr.classDefinition.Fields))*Int32SizeInBytes
 		pr.input.SetPosition(off)
 		pos := pr.input.ReadInt32()
 		pr.input.SetPosition(pos)
@@ -324,6 +346,143 @@ func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
 	return pr.input
 }
 
+func (pr *DefaultPortableReader) ReadDate(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeDate, func() {
+		v := ReadPortableDate(pr.input)
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTime(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTime, func() {
+		v := ReadPortableTime(pr.input)
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestamp(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTimestamp, func() {
+		v := ReadPortableTimestamp(pr.input)
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestampWithTimezone(fieldName string) (t *time.Time) {
+	pr.readNullable(fieldName, serialization.TypeTimestampWithTimezone, func() {
+		v := ReadPortableTimestampWithTimezone(pr.input)
+		t = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadDateArray(fieldName string) (t []time.Time) {
+	pos := pr.positionByField(fieldName, serialization.TypeDateArray)
+	pr.runAtPosition(pos, func() {
+		t = readArrayOfTime(pr.input, ReadPortableDate)
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimeArray(fieldName string) (t []time.Time) {
+	pos := pr.positionByField(fieldName, serialization.TypeTimeArray)
+	pr.runAtPosition(pos, func() {
+		t = readArrayOfTime(pr.input, ReadPortableTime)
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestampArray(fieldName string) (t []time.Time) {
+	pos := pr.positionByField(fieldName, serialization.TypeTimestampArray)
+	pr.runAtPosition(pos, func() {
+		t = readArrayOfTime(pr.input, ReadPortableTimestamp)
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadTimestampWithTimezoneArray(fieldName string) (t []time.Time) {
+	pos := pr.positionByField(fieldName, serialization.TypeTimestampWithTimezoneArray)
+	pr.runAtPosition(pos, func() {
+		t = readArrayOfTime(pr.input, ReadPortableTimestampWithTimezone)
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadDecimal(fieldName string) (d *types.Decimal) {
+	pr.readNullable(fieldName, serialization.TypeDecimal, func() {
+		v := ReadDecimal(pr.input)
+		d = &v
+	})
+	return
+}
+
+func (pr *DefaultPortableReader) ReadDecimalArray(fieldName string) (ds []types.Decimal) {
+	pos := pr.positionByField(fieldName, serialization.TypeDecimalArray)
+	pr.runAtPosition(pos, func() {
+		ds = ReadDecimalArray(pr.input)
+	})
+	return
+}
+
 func (pr *DefaultPortableReader) End() {
 	pr.input.SetPosition(pr.finalPos)
+}
+
+func (pr *DefaultPortableReader) readNullable(fieldName string, fieldType serialization.FieldDefinitionType, f func()) {
+	pos := pr.positionByField(fieldName, fieldType)
+	pr.runAtPosition(pos, func() {
+		isNil := pr.input.ReadBool()
+		if isNil {
+			return
+		}
+		f()
+	})
+}
+
+// runAtPosition runs the given function without advancing the current input position.
+func (pr *DefaultPortableReader) runAtPosition(pos int32, f func()) {
+	backup := pr.input.Position()
+	pr.input.SetPosition(pos)
+	f()
+	pr.input.SetPosition(backup)
+}
+
+func ReadPortableDate(i serialization.DataInput) time.Time {
+	y, m, d := readPortableDate(i)
+	return time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+}
+
+func ReadPortableTime(i serialization.DataInput) time.Time {
+	h, m, s, nanos := readPortableTime(i)
+	return time.Date(0, 1, 1, h, m, s, nanos, time.Local)
+}
+
+func ReadPortableTimestamp(i serialization.DataInput) time.Time {
+	y, m, d := readPortableDate(i)
+	h, mn, s, nanos := readPortableTime(i)
+	return time.Date(y, m, d, h, mn, s, nanos, time.Local)
+}
+
+func ReadPortableTimestampWithTimezone(i serialization.DataInput) time.Time {
+	y, m, d := readPortableDate(i)
+	h, mn, s, nanos := readPortableTime(i)
+	offset := i.ReadInt32()
+	return time.Date(y, m, d, h, mn, s, nanos, time.FixedZone("", int(offset)))
+}
+
+func readPortableDate(i serialization.DataInput) (y int, m time.Month, d int) {
+	y = int(i.ReadInt16())
+	m = time.Month(i.ReadByte())
+	d = int(i.ReadByte())
+	return
+}
+
+func readPortableTime(i serialization.DataInput) (h, m, s, nanos int) {
+	h = int(i.ReadByte())
+	m = int(i.ReadByte())
+	s = int(i.ReadByte())
+	nanos = int(i.ReadInt32())
+	return
 }

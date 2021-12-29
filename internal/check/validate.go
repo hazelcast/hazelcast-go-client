@@ -23,7 +23,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func NonNegativeInt32(n int) (int32, error) {
@@ -36,12 +35,12 @@ func NonNegativeInt32(n int) (int32, error) {
 	return int32(n), nil
 }
 
-func NonNegativeDuration(v *types.Duration, d time.Duration, msg string) error {
+func EnsureNonNegativeDuration(v *time.Duration, d time.Duration, msg string) error {
 	if *v < 0 {
 		return fmt.Errorf("%s: %w", msg, hzerrors.ErrIllegalArgument)
 	}
 	if *v == 0 {
-		*v = types.Duration(d)
+		*v = d
 	}
 	return nil
 }

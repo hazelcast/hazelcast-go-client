@@ -18,7 +18,6 @@ package event
 
 import (
 	"reflect"
-	"strconv"
 )
 
 // MakeSubscriptionID creates subscription ID from a function
@@ -28,12 +27,4 @@ func MakeSubscriptionID(fun interface{}) int64 {
 		panic("not a func")
 	}
 	return int64(value.Pointer())
-}
-
-func ParseSubscriptionID(id string) (int64, error) {
-	return strconv.ParseInt(id, 10, 64)
-}
-
-func FormatSubscriptionID(id int64) string {
-	return strconv.FormatInt(id, 10)
 }

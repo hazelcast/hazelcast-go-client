@@ -77,7 +77,7 @@ func TestTranslateAddrs(t *testing.T) {
 		},
 		{
 			CA: []Address{{Public: "30.40.50.60"}},
-			E:  "parsing address: address 30.40.50.60: missing port in address",
+			A:  []pubcluster.Address{"30.40.50.60:0"},
 		},
 	}
 	for i, tc := range testCases {

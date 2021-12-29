@@ -306,6 +306,35 @@ func (m *ConnectionManager) RandomConnection() *Connection {
 	return m.connMap.RandomConn()
 }
 
+func (m *ConnectionManager) SQLConnection() *Connection {
+	if m.smartRouting {
+		if member := m.clusterService.SQLMember(); member != nil {
+			if conn := m.GetConnectionForUUID(member.UUID); conn != nil {
+				return conn
+			}
+		}
+	}
+	// Return the first member that's not to a lite member.
+	if conn := m.someNonLiteConnection(); conn != nil {
+		return conn
+	}
+	// All else failed, return a random connection, even if it is a lite member.
+	return m.connMap.RandomConn()
+}
+
+func (m *ConnectionManager) someNonLiteConnection() *Connection {
+	members := m.clusterService.OrderedMembers()
+	for _, mem := range members {
+		if mem.LiteMember {
+			continue
+		}
+		if conn := m.connMap.GetConnectionForUUID(mem.UUID); conn != nil {
+			return conn
+		}
+	}
+	return nil
+}
+
 func (m *ConnectionManager) reset() {
 	m.doneCh = make(chan struct{})
 	m.clusterIDMu.Lock()
@@ -358,10 +387,12 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	if m.failoverConfig.Enabled {
 		tryCount = m.failoverConfig.TryCount
 	}
+	var addr pubcluster.Address
+	var err error
 	for i := 1; i <= tryCount; i++ {
 		cluster := m.failoverService.Current()
 		m.logger.Infof("trying to connect to cluster: %s", cluster.ClusterName)
-		addr, err := m.tryConnectCandidateCluster(ctx, cluster, cluster.ConnectionStrategy)
+		addr, err = m.tryConnectCandidateCluster(ctx, cluster, cluster.ConnectionStrategy)
 		if err == nil {
 			m.logger.Infof("connected to cluster: %s", m.failoverService.Current().ClusterName)
 			return addr, nil
@@ -371,7 +402,7 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 		}
 		m.failoverService.Next()
 	}
-	return "", fmt.Errorf("cannot connect to any cluster: %w", hzerrors.ErrIllegalState)
+	return "", ihzerrors.NewIllegalStateError("cannot connect to any cluster", err)
 }
 
 func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {
@@ -411,7 +442,7 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 	for _, addr := range seedAddrs {
 		initialAddr, err = m.tryConnectAddress(ctx, addr, connectMember)
 		if err != nil {
-			return "", err
+			continue
 		}
 	}
 	if initialAddr == "" {
@@ -481,7 +512,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 	switch status {
 	case authenticated:
 		conn.setConnectedServerVersion(serverHazelcastVersion)
-		conn.memberUUID = uuid
+		conn.setMemberUUID(uuid)
 		if err := m.partitionService.checkAndSetPartitionCount(partitionCount); err != nil {
 			return nil, err
 		}
@@ -512,7 +543,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		m.clusterIDMu.Unlock()
 		if oldConn, ok := m.connMap.GetOrAddConnection(conn, *address); !ok {
 			// there is already a connection to this member
-			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.memberUUID)
+			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.MemberUUID())
 			conn.close(nil)
 			return oldConn, nil
 		}
@@ -654,10 +685,10 @@ func (m *connectionMap) GetOrAddConnection(conn *Connection, addr pubcluster.Add
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	// if the connection was already added, skip it
-	if old, ok := m.uuidToConn[conn.memberUUID]; ok {
+	if old, ok := m.uuidToConn[conn.MemberUUID()]; ok {
 		return old, false
 	}
-	m.uuidToConn[conn.memberUUID] = conn
+	m.uuidToConn[conn.MemberUUID()] = conn
 	m.addrToConn[addr] = conn
 	m.addrs = append(m.addrs, addr)
 	return conn, true
@@ -670,7 +701,7 @@ func (m *connectionMap) RemoveConnection(removedConn *Connection) int {
 	for addr, conn := range m.addrToConn {
 		if conn.connectionID == removedConn.connectionID {
 			delete(m.addrToConn, addr)
-			delete(m.uuidToConn, conn.memberUUID)
+			delete(m.uuidToConn, conn.MemberUUID())
 			m.removeAddr(addr)
 			break
 		}

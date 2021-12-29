@@ -134,14 +134,17 @@ func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
 	successfulPubCnt := int32(0)
 	for i := 0; i < goroutineCount; i++ {
 		if service.Publish(sampleEvent{}) {
-			successfulPubCnt++
+			atomic.AddInt32(&successfulPubCnt, 1)
 		}
 	}
 	it.Eventually(t, func() bool {
-		return successfulPubCnt == atomic.LoadInt32(&dispatchCount)
+		success := atomic.LoadInt32(&successfulPubCnt)
+		dispatch := atomic.LoadInt32(&dispatchCount)
+		t.Logf("pub cnt: dispatched: %d, success: %d", dispatch, success)
+		return success == dispatch
 	})
 	it.Never(t, func() bool {
-		return successfulPubCnt != atomic.LoadInt32(&dispatchCount)
+		return atomic.LoadInt32(&successfulPubCnt) != atomic.LoadInt32(&dispatchCount)
 	})
 }
 

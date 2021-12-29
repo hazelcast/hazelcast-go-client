@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -92,11 +91,6 @@ func (l *DefaultLogger) Log(wantedLevel logger.Weight, formatter func() string) 
 	_ = l.Output(logCallDepth, s) // don't have retry mechanism in case writing to buffer fails
 }
 
-func (l *DefaultLogger) findCallerFuncName() string {
-	pc, _, _, _ := runtime.Caller(logCallDepth)
-	return runtime.FuncForPC(pc).Name()
-}
-
 // LogAdaptor is used to convert logger implementations of public interface logger.LogAdaptor to internal logging interface LogAdaptor
 type LogAdaptor struct {
 	logger.Logger
@@ -110,6 +104,11 @@ func (la LogAdaptor) Debug(f func() string) {
 // Trace runs the given function to generate the logger string, if logger level is trace or finer.
 func (la LogAdaptor) Trace(f func() string) {
 	la.Log(logger.WeightTrace, f)
+}
+
+// Info runs the given function to generate the logger string, if logger level is trace or finer.
+func (la LogAdaptor) Info(f func() string) {
+	la.Log(logger.WeightInfo, f)
 }
 
 // Infof formats the given string with the given values, if logger level is info or finer.

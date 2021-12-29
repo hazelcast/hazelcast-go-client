@@ -81,6 +81,13 @@ downloadHazelcast () {
   classpath="$classpath:$jar_path"
 }
 
+downloadSQL () {
+  local jar_path="hazelcast-sql-${HZ_VERSION}.jar"
+  local artifact="com.hazelcast:hazelcast-sql:${HZ_VERSION}"
+  download "${repo}" "$jar_path" "$artifact"
+  classpath="$classpath:$jar_path"
+}
+
 downloadHazelcastEnterprise () {
   local jar_path="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}"
@@ -117,6 +124,7 @@ startRC () {
   # Download Hazelcast Community jars
   downloadTests
   downloadHazelcast
+  downloadSQL
 
   if [ "x${HAZELCAST_ENTERPRISE_KEY:-}" != "x" ]; then
       # Download Hazelcast Enterprise jars
@@ -150,7 +158,7 @@ help () {
 
 TIMESTAMP_FMT="+%Y-%m-%d %H:%M:%S"
 PID_FILE="test.pid"
-HZ_VERSION="${HZ_VERSION:-4.2}"
+HZ_VERSION="${HZ_VERSION:-5.0}"
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
 HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
 HAZELCAST_RC_VERSION="0.8-SNAPSHOT"

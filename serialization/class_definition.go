@@ -85,11 +85,11 @@ func (cd *ClassDefinition) AddPortableField(fieldName string, def *ClassDefiniti
 	if def.ClassID == 0 {
 		return ihzerrors.NewIllegalArgumentError("portable class ID cannot be zero", nil)
 	}
-	return cd.AddField(newFieldDefinition(cd.FieldCount(), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
+	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortable, def.FactoryID, def.ClassID, cd.Version))
 }
 
 func (cd *ClassDefinition) addNewFieldDefinition(fieldName string, fieldType FieldDefinitionType) error {
-	return cd.AddField(newFieldDefinition(cd.FieldCount(), fieldName, fieldType, 0, 0, cd.Version))
+	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, fieldType, 0, 0, cd.Version))
 }
 
 func (cd *ClassDefinition) AddByteArrayField(fieldName string) error {
@@ -128,40 +128,86 @@ func (cd *ClassDefinition) AddPortableArrayField(fieldName string, def *ClassDef
 	if def.ClassID == 0 {
 		return ihzerrors.NewIllegalArgumentError("portable class ID cannot be zero", nil)
 	}
-	return cd.AddField(newFieldDefinition(cd.FieldCount(), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
+	return cd.AddField(newFieldDefinition(int32(len(cd.Fields)), fieldName, TypePortableArray, def.FactoryID, def.ClassID, cd.Version))
 }
 
 func (cd *ClassDefinition) AddStringArrayField(fieldName string) error {
 	return cd.addNewFieldDefinition(fieldName, TypeStringArray)
 }
 
-func (cd *ClassDefinition) FieldCount() int32 {
-	return int32(len(cd.Fields))
+func (cd *ClassDefinition) AddDateField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeDate)
+}
+
+func (cd *ClassDefinition) AddTimeField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeTime)
+}
+
+func (cd *ClassDefinition) AddTimestampField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeTimestamp)
+}
+
+func (cd *ClassDefinition) AddTimestampWithTimezoneField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeTimestampWithTimezone)
+}
+
+func (cd *ClassDefinition) AddDateArrayField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeDateArray)
+}
+
+func (cd *ClassDefinition) AddTimeArrayField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeTimeArray)
+}
+
+func (cd *ClassDefinition) AddTimestampArrayField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeTimestampArray)
+}
+
+func (cd *ClassDefinition) AddTimestampWithTimezoneArrayField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeTimestampWithTimezoneArray)
+}
+
+func (cd *ClassDefinition) AddDecimalField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeDecimal)
+}
+
+func (cd *ClassDefinition) AddDecimalArrayField(fieldName string) error {
+	return cd.addNewFieldDefinition(fieldName, TypeDecimalArray)
 }
 
 type FieldDefinitionType int32
 
 const (
-	TypePortable FieldDefinitionType = iota
-	TypeByte
-	TypeBool
-	TypeUint16
-	TypeInt16
-	TypeInt32
-	TypeInt64
-	TypeFloat32
-	TypeFloat64
-	TypeString
-	TypePortableArray
-	TypeByteArray
-	TypeBoolArray
-	TypeUInt16Array
-	TypeInt16Array
-	TypeInt32Array
-	TypeInt64Array
-	TypeFloat32Array
-	TypeFloat64Array
-	TypeStringArray
+	TypePortable                   FieldDefinitionType = 0
+	TypeByte                       FieldDefinitionType = 1
+	TypeBool                       FieldDefinitionType = 2
+	TypeUint16                     FieldDefinitionType = 3
+	TypeInt16                      FieldDefinitionType = 4
+	TypeInt32                      FieldDefinitionType = 5
+	TypeInt64                      FieldDefinitionType = 6
+	TypeFloat32                    FieldDefinitionType = 7
+	TypeFloat64                    FieldDefinitionType = 8
+	TypeString                     FieldDefinitionType = 9
+	TypePortableArray              FieldDefinitionType = 10
+	TypeByteArray                  FieldDefinitionType = 11
+	TypeBoolArray                  FieldDefinitionType = 12
+	TypeUInt16Array                FieldDefinitionType = 13
+	TypeInt16Array                 FieldDefinitionType = 14
+	TypeInt32Array                 FieldDefinitionType = 15
+	TypeInt64Array                 FieldDefinitionType = 16
+	TypeFloat32Array               FieldDefinitionType = 17
+	TypeFloat64Array               FieldDefinitionType = 18
+	TypeStringArray                FieldDefinitionType = 19
+	TypeDecimal                    FieldDefinitionType = 20
+	TypeDecimalArray               FieldDefinitionType = 21
+	TypeTime                       FieldDefinitionType = 22
+	TypeTimeArray                  FieldDefinitionType = 23
+	TypeDate                       FieldDefinitionType = 24
+	TypeDateArray                  FieldDefinitionType = 25
+	TypeTimestamp                  FieldDefinitionType = 26
+	TypeTimestampArray             FieldDefinitionType = 27
+	TypeTimestampWithTimezone      FieldDefinitionType = 28
+	TypeTimestampWithTimezoneArray FieldDefinitionType = 29
 )
 
 // FieldDefinition defines name, type, index of a field.

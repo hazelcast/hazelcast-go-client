@@ -110,7 +110,7 @@ func (m *MultiMap) NewLockContext(ctx context.Context) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	return context.WithValue(ctx, lockIDKey, lockID(m.refIDGen.NextID()))
+	return context.WithValue(ctx, lockIDKey{}, lockID(m.refIDGen.NextID()))
 }
 
 // AddEntryListener adds a continuous entry listener to this multi-map.
