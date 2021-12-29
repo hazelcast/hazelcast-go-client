@@ -35,7 +35,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -140,39 +142,59 @@ func TestClientMemberEvents(t *testing.T) {
 	})
 }
 
+func calcPartitionID(ss *serialization.Service, key interface{}) (int32, error) {
+	kd, err := ss.ToData(key)
+	if err != nil {
+		return 0, err
+	}
+	return murmur.HashToIndex(kd.PartitionHash(), 271), nil
+}
+
 func TestClientEventHandlingOrder(t *testing.T) {
+	// If not explicitly provided, use 3 members
 	memberCount := 3
 	if it.MemberCount() > 1 {
 		memberCount = it.MemberCount()
 	}
+	// Create custom cluster, and client from it
 	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, memberCount)
 	defer cls.Shutdown()
 	clientConf := cls.DefaultConfig()
 	ctx := context.Background()
-	c, err := hz.StartNewClientWithConfig(ctx, clientConf)
-	if err != nil {
-		t.Fatal(err)
-	}
+	c := it.MustValue(hz.StartNewClientWithConfig(ctx, clientConf)).(*hz.Client)
 	defer c.Shutdown(ctx)
+	ss := it.MustValue(serialization.NewService(&clientConf.Serialization)).(*serialization.Service)
+	// Create test map
 	m := it.MustValue(c.GetMap(ctx, "TestClientEventHandlingOrder")).(*hz.Map)
 	var config hz.MapEntryListenerConfig
 	config.NotifyEntryAdded(true)
 	var (
-		memberToEvent = make(map[string]int64)
-		mut           sync.Mutex
-		wg            sync.WaitGroup
+		// have 271 partitions by default, starting from 1
+		partitionToEvent = make([]int64, 272)
+		// wait for all events to be processed
+		wg sync.WaitGroup
+		// access it with atomic package
+		count int32
+		// accumulate errors from handlers
+		handlerErr []error
 	)
 	wg.Add(1)
 	it.MustValue(m.AddEntryListener(ctx, config, func(event *hz.EntryNotified) {
-		mut.Lock()
-		defer mut.Unlock()
-		lastProcessed := memberToEvent[event.Member.UUID.String()]
+		atomic.AddInt32(&count, 1)
 		key := event.Key.(int64)
-		if key <= lastProcessed {
-			t.Fatalf("order of the events is not preserved, lastProcessed: %d  got: %d", lastProcessed, key)
+		fmt.Println(key)
+		pid, err := calcPartitionID(ss, key)
+		if err != nil {
+			handlerErr = append(handlerErr, err)
+			return
 		}
-		memberToEvent[event.Member.UUID.String()] = key
-		if key == 1000 {
+		lastProcessed := partitionToEvent[pid]
+		if key <= lastProcessed {
+			handlerErr = append(handlerErr, fmt.Errorf("order of the events is not preserved, lastProcessed: %d  got: %d", lastProcessed, key))
+			return
+		}
+		partitionToEvent[pid] = key
+		if count == 1000 {
 			// last event processed
 			wg.Done()
 		}
@@ -181,7 +203,9 @@ func TestClientEventHandlingOrder(t *testing.T) {
 		it.MustValue(m.Put(ctx, int64(i), "test"))
 	}
 	wg.Wait()
-	fmt.Println("bla")
+	if handlerErr != nil {
+		t.Fatal(handlerErr)
+	}
 }
 
 func TestClientHeartbeat(t *testing.T) {
