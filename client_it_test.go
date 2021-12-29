@@ -23,6 +23,7 @@ import (
 	"log"
 	"reflect"
 	"runtime"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -151,60 +152,52 @@ func calcPartitionID(ss *serialization.Service, key interface{}) (int32, error) 
 }
 
 func TestClientEventHandlingOrder(t *testing.T) {
-	// If not explicitly provided, use 3 members
-	memberCount := 3
-	if it.MemberCount() > 1 {
-		memberCount = it.MemberCount()
-	}
 	// Create custom cluster, and client from it
-	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, memberCount)
+	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, it.MemberCount())
 	defer cls.Shutdown()
-	clientConf := cls.DefaultConfig()
+	conf := cls.DefaultConfig()
 	ctx := context.Background()
-	c := it.MustValue(hz.StartNewClientWithConfig(ctx, clientConf)).(*hz.Client)
+	c := it.MustValue(hz.StartNewClientWithConfig(ctx, conf)).(*hz.Client)
 	defer c.Shutdown(ctx)
-	ss := it.MustValue(serialization.NewService(&clientConf.Serialization)).(*serialization.Service)
+	ss := it.MustValue(serialization.NewService(&conf.Serialization)).(*serialization.Service)
 	// Create test map
 	m := it.MustValue(c.GetMap(ctx, "TestClientEventHandlingOrder")).(*hz.Map)
-	var config hz.MapEntryListenerConfig
-	config.NotifyEntryAdded(true)
+	var lc hz.MapEntryListenerConfig
+	lc.NotifyEntryAdded(true)
 	var (
 		// have 271 partitions by default, starting from 1
-		partitionToEvent = make([]int64, 272)
+		partitionToEvent = make([][]int, 272)
 		// wait for all events to be processed
 		wg sync.WaitGroup
 		// access it with atomic package
 		count int32
-		// accumulate errors from handlers
-		handlerErr []error
 	)
+	for i := range partitionToEvent {
+		partitionToEvent[i] = make([]int, 10)
+	}
 	wg.Add(1)
-	it.MustValue(m.AddEntryListener(ctx, config, func(event *hz.EntryNotified) {
+	it.MustValue(m.AddEntryListener(ctx, lc, func(event *hz.EntryNotified) {
 		atomic.AddInt32(&count, 1)
-		key := event.Key.(int64)
-		fmt.Println(key)
+		// it is okay to use conversion, since greatest key is 1000
+		key := int(event.Key.(int64))
 		pid, err := calcPartitionID(ss, key)
 		if err != nil {
-			handlerErr = append(handlerErr, err)
-			return
+			panic(err)
 		}
-		lastProcessed := partitionToEvent[pid]
-		if key <= lastProcessed {
-			handlerErr = append(handlerErr, fmt.Errorf("order of the events is not preserved, lastProcessed: %d  got: %d", lastProcessed, key))
-			return
-		}
-		partitionToEvent[pid] = key
+		partitionToEvent[pid] = append(partitionToEvent[pid], key)
 		if count == 1000 {
 			// last event processed
 			wg.Done()
 		}
 	}))
 	for i := 1; i <= 1000; i++ {
-		it.MustValue(m.Put(ctx, int64(i), "test"))
+		it.MustValue(m.Put(ctx, i, "test"))
 	}
 	wg.Wait()
-	if handlerErr != nil {
-		t.Fatal(handlerErr)
+	for _, keys := range partitionToEvent[1:] {
+		if !sort.IntsAreSorted(keys) {
+			t.Fatalf("events are not processed in order, event keys:\n%v\n", keys)
+		}
 	}
 }
 
@@ -686,7 +679,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		ctx := context.Background()
 		var max uint64
 		var m runtime.MemStats
-		const limit = 16 * 1024 * 1024 // 16 MB
+		const limit = 8 * 1024 * 1024 // 16 MB
 		runtime.GC()
 		runtime.ReadMemStats(&m)
 		base := m.Alloc
