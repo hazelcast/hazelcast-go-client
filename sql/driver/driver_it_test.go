@@ -146,6 +146,7 @@ func (f recordFactory) FactoryID() int32 {
 }
 
 func TestSQLQuery(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
 	testCases := []struct {
 		keyFn, valueFn   func(i int) interface{}
 		keyFmt, valueFmt string
@@ -225,6 +226,7 @@ func TestSQLQuery(t *testing.T) {
 }
 
 func TestSQLWithPortableData(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
 	}
@@ -310,6 +312,7 @@ func TestSQLWithPortableData(t *testing.T) {
 }
 
 func TestSQLWithPortableDateTime(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
 	}
@@ -383,12 +386,14 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 }
 
 func TestSQLQueryWithCursorBufferSize(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
 	ctx := driver.WithCursorBufferSize(context.Background(), 10)
 	testSQLQuery(t, ctx, "int", "int", fn, fn)
 }
 
 func TestSQLQueryWithQueryTimeout(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
 	ctx := driver.WithQueryTimeout(context.Background(), 5*time.Second)
 	testSQLQuery(t, ctx, "int", "int", fn, fn)
