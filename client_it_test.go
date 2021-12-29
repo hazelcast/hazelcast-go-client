@@ -662,7 +662,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		ctx := context.Background()
 		var max uint64
 		var m runtime.MemStats
-		const limit = 8 * 1024 * 1024 // 8 MB
+		const limit = 16 * 1024 * 1024 // 16 MB
 		runtime.GC()
 		runtime.ReadMemStats(&m)
 		base := m.Alloc
