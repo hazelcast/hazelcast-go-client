@@ -140,6 +140,50 @@ func TestClientMemberEvents(t *testing.T) {
 	})
 }
 
+func TestClientEventHandlingOrder(t *testing.T) {
+	memberCount := 3
+	if it.MemberCount() > 1 {
+		memberCount = it.MemberCount()
+	}
+	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, memberCount)
+	defer cls.Shutdown()
+	clientConf := cls.DefaultConfig()
+	ctx := context.Background()
+	c, err := hz.StartNewClientWithConfig(ctx, clientConf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Shutdown(ctx)
+	m := it.MustValue(c.GetMap(ctx, "TestClientEventHandlingOrder")).(*hz.Map)
+	var config hz.MapEntryListenerConfig
+	config.NotifyEntryAdded(true)
+	var (
+		memberToEvent = make(map[string]int64)
+		mut           sync.Mutex
+		wg            sync.WaitGroup
+	)
+	wg.Add(1)
+	it.MustValue(m.AddEntryListener(ctx, config, func(event *hz.EntryNotified) {
+		mut.Lock()
+		defer mut.Unlock()
+		lastProcessed := memberToEvent[event.Member.UUID.String()]
+		key := event.Key.(int64)
+		if key <= lastProcessed {
+			t.Fatalf("order of the events is not preserved, lastProcessed: %d  got: %d", lastProcessed, key)
+		}
+		memberToEvent[event.Member.UUID.String()] = key
+		if key == 1000 {
+			// last event processed
+			wg.Done()
+		}
+	}))
+	for i := 1; i <= 1000; i++ {
+		it.MustValue(m.Put(ctx, int64(i), "test"))
+	}
+	wg.Wait()
+	fmt.Println("bla")
+}
+
 func TestClientHeartbeat(t *testing.T) {
 	// Slow test.
 	t.SkipNow()
