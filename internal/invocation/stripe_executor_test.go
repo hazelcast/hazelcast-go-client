@@ -101,6 +101,17 @@ func Test_serialExecutor_dispatch(t *testing.T) {
 	}
 }
 
+func Test_serialExecutor_dispatchQueueFull(t *testing.T) {
+	se, err := newStripeExecutorWithConfig(1, 1)
+	assert.Nil(t, err)
+	// executor not running, make the queue full
+	qFull := se.dispatch(1, func() {})
+	assert.False(t, qFull)
+	// expect unsuccessful dispatch
+	qFull = se.dispatch(1, func() {})
+	assert.True(t, qFull)
+}
+
 func Test_serialExecutor_start(t *testing.T) {
 	t.Logf("enabled leak check")
 	defer goleak.VerifyNone(t)

@@ -193,7 +193,10 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			}
 			partitionID := inv.PartitionID()
 			// no specific partition (-1) are dispatched randomly in dispatch func.
-			s.executor.dispatch(int(partitionID), handler)
+			qFull := s.executor.dispatch(int(partitionID), handler)
+			if qFull {
+				s.logger.Warnf("event could not be processed, corresponding queue is full. PartitionID: %d, CorrelationID: %d", partitionID, correlationID)
+			}
 		}
 		return
 	}

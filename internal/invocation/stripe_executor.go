@@ -63,13 +63,19 @@ func (se stripeExecutor) start() {
 	}
 }
 
-// dispatch sends the handler "task" to one of the appropriate taskQueues, "tasks" with the same key end up on the same queue.
-func (se stripeExecutor) dispatch(key int, task func()) {
+// dispatch sends the handler "task" to one of the appropriate taskQueues, "tasks" with the same key end up on the same queue. Returns true if queue is full and could not dispatch
+func (se stripeExecutor) dispatch(key int, task func()) (queueFull bool) {
 	if key < 0 {
 		// dispatch random
 		key = rand.Intn(se.queueCount)
 	}
-	se.taskQueues[key%se.queueCount] <- task
+	select {
+	case se.taskQueues[key%se.queueCount] <- task:
+	default:
+		// do not block if queue is full
+		return true
+	}
+	return false
 }
 
 // stop blocks until all workers are stopped.
