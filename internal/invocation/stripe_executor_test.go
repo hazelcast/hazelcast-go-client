@@ -49,13 +49,13 @@ func Test_defaultExecFn(t *testing.T) {
 	}()
 	assert.Eventually(t, func() bool {
 		return oc.previousCallArg == 10
-	}, time.Second, time.Millisecond*200, "execute function did not notify about its finish")
+	}, time.Second, 200*time.Millisecond, "execute function did not notify about its finish")
 }
 
 func Test_serialExecutor_dispatch(t *testing.T) {
 	tests := []struct {
-		queueCount    uint32
-		key           uint32
+		queueCount    int32
+		key           int32
 		expectedIndex int32
 	}{
 		{
@@ -86,7 +86,8 @@ func Test_serialExecutor_dispatch(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("QueueCount: %d, Key: %d", tt.queueCount, tt.key), func(t *testing.T) {
-			se := newStripeExecutorWithConf(tt.queueCount, 10_000)
+			se, err := newStripeExecutorWithConf(tt.queueCount, 10_000)
+			assert.Nil(t, err)
 			tmpHandler := func() {
 				panic(i)
 			}
@@ -106,7 +107,7 @@ func Test_serialExecutor_start(t *testing.T) {
 	var orderCheckers []*orderChecker
 	type pair struct {
 		handler func()
-		key     uint32
+		key     int32
 	}
 	// create orderCheckers, index corresponding to key
 	for i := 1; i <= 100; i++ {
@@ -121,7 +122,7 @@ func Test_serialExecutor_start(t *testing.T) {
 		tmp := i
 		for _, perm := range rand.Perm(100) {
 			key := perm
-			tasks = append(tasks, pair{key: uint32(key), handler: func() {
+			tasks = append(tasks, pair{key: int32(key), handler: func() {
 				orderCheckers[key].call(tmp)
 			}})
 		}

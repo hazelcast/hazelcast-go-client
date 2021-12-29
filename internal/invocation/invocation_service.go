@@ -34,8 +34,6 @@ const (
 	stopped = 1
 )
 
-const noSpecificPartition = -1
-
 var serviceSubID = event.NextSubscriptionID()
 
 type Handler interface {
@@ -193,12 +191,8 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			handler := func() {
 				inv.EventHandler()(msg)
 			}
-			if inv.PartitionID() == noSpecificPartition {
-				// Execute on a random worker
-				s.executor.dispatchRandom(handler)
-				return
-			}
-			partitionID := uint32(inv.PartitionID())
+			partitionID := inv.PartitionID()
+			// no specific partition (-1) are dispatched randomly in dispatch func.
 			s.executor.dispatch(partitionID, handler)
 		}
 		return
