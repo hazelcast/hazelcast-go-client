@@ -17,7 +17,6 @@
 package serialization
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -40,7 +39,7 @@ func TestDefaultSerializer(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%s", reflect.TypeOf(tc.Value)), func(t *testing.T) {
+		t.Run(reflect.TypeOf(tc.Value).String(), func(t *testing.T) {
 			data, err := service.ToData(tc.Value)
 			if err != nil {
 				t.Fatal(err)
