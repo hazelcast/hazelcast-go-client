@@ -193,7 +193,7 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			}
 			partitionID := inv.PartitionID()
 			// no specific partition (-1) are dispatched randomly in dispatch func.
-			s.executor.dispatch(partitionID, handler)
+			s.executor.dispatch(int(partitionID), handler)
 		}
 		return
 	}

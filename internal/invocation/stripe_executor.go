@@ -11,8 +11,8 @@ var (
 	// Default values differ from java impl. Also queue size is calculated differently.
 	// Java Client: queueSize per worker = defaultEventQueueCapacity / defaultEventWorkerCount
 	// Go Client: queueSize per worker = defaultEventQueueCapacity
-	defaultEventQueueCapacity = int32(10000)
-	defaultEventWorkerCount   = int32(runtime.NumCPU())
+	defaultEventQueueCapacity = 10000
+	defaultEventWorkerCount   = runtime.NumCPU()
 )
 
 // executor represents the function that will run on workers of stripeExecutor.
@@ -24,18 +24,18 @@ type stripeExecutor struct {
 	wg         *sync.WaitGroup
 	execFn     executor
 	taskQueues []chan func()
-	queueCount int32
+	queueCount int
 }
 
 // newStripeExecutor returns a new stripeExecutor with default configuration.
 func newStripeExecutor() stripeExecutor {
 	// ignore error, default values do not raise error.
-	ex, _ := newStripeExecutorWithConf(defaultEventWorkerCount, defaultEventQueueCapacity)
+	ex, _ := newStripeExecutorWithConfig(defaultEventWorkerCount, defaultEventQueueCapacity)
 	return ex
 }
 
 // newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize.
-func newStripeExecutorWithConf(queueCount, queueSize int32) (stripeExecutor, error) {
+func newStripeExecutorWithConfig(queueCount, queueSize int) (stripeExecutor, error) {
 	if queueCount <= 0 {
 		return stripeExecutor{}, fmt.Errorf("queueCount must be greater than 0")
 	}
@@ -64,10 +64,10 @@ func (se stripeExecutor) start() {
 }
 
 // dispatch sends the handler "task" to one of the appropriate taskQueues, "tasks" with the same key end up on the same queue.
-func (se stripeExecutor) dispatch(key int32, task func()) {
+func (se stripeExecutor) dispatch(key int, task func()) {
 	if key < 0 {
 		// dispatch random
-		key = rand.Int31n(se.queueCount)
+		key = rand.Intn(se.queueCount)
 	}
 	se.taskQueues[key%se.queueCount] <- task
 }

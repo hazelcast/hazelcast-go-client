@@ -54,9 +54,9 @@ func Test_defaultExecFn(t *testing.T) {
 
 func Test_serialExecutor_dispatch(t *testing.T) {
 	tests := []struct {
-		queueCount    int32
-		key           int32
-		expectedIndex int32
+		queueCount    int
+		key           int
+		expectedIndex int
 	}{
 		{
 			queueCount:    4,
@@ -86,7 +86,7 @@ func Test_serialExecutor_dispatch(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("QueueCount: %d, Key: %d", tt.queueCount, tt.key), func(t *testing.T) {
-			se, err := newStripeExecutorWithConf(tt.queueCount, 10_000)
+			se, err := newStripeExecutorWithConfig(tt.queueCount, 10_000)
 			assert.Nil(t, err)
 			tmpHandler := func() {
 				panic(i)
@@ -107,7 +107,7 @@ func Test_serialExecutor_start(t *testing.T) {
 	var orderCheckers []*orderChecker
 	type pair struct {
 		handler func()
-		key     int32
+		key     int
 	}
 	// create orderCheckers, index corresponding to key
 	for i := 1; i <= 100; i++ {
@@ -122,7 +122,7 @@ func Test_serialExecutor_start(t *testing.T) {
 		tmp := i
 		for _, perm := range rand.Perm(100) {
 			key := perm
-			tasks = append(tasks, pair{key: int32(key), handler: func() {
+			tasks = append(tasks, pair{key: key, handler: func() {
 				orderCheckers[key].call(tmp)
 			}})
 		}
