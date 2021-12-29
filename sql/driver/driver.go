@@ -15,9 +15,11 @@
  */
 
 /*
-Package driver provides an SQL driver compatible with the standard database/sql package.
+Package driver provides a standard database/sql compatible SQL driver for Hazelcast.
 
-This driver supports Hazelcast 5.0 and up. Checkout the Hazelcast SQL documentation here: https://docs.hazelcast.com/hazelcast/5.0/sql/sql-overview
+This driver supports Hazelcast 5.0 and up. Check out the Hazelcast SQL documentation here: https://docs.hazelcast.com/hazelcast/5.0/sql/sql-overview
+
+The documentation for the database/sql package is here: https://pkg.go.dev/database/sql
 
 Enabling Hazelcast SQL
 
@@ -98,6 +100,123 @@ All client configuration items, except listeners are supported.
 	cfg.Serialization.SetPortableFactories(&MyPortableFactory{})
 	db := driver.Open(cfg)
 
+Executing Queries
+
+database/sql package supports two kinds of queries: The ones returning rows (select statements and a few others) and the rest (insert, update, etc.).
+The former kinds of queries are executed with QueryXXX methods and the latter ones are executed with ExecXXX methods of the sql.DB instance returned from sql.Open or driver.Open
+
+Use the question mark (?) for placeholders.
+
+Here is an Exec example:
+
+	q := `INSERT INTO person(__key, age, name) VALUES (?, ?, ?)`
+	result, err := db.Exec(q, 1001, 35, "Jane Doe")
+	// handle the error
+	cnt, err := result.AffectedRows()
+	// handle the error
+	fmt.Printf("Affected rows: %d\n", cnt)
+
+Note that LastInsertId is not supported and at the moment AffectedRows always returns 0.
+
+An example Query call:
+
+	q :=`SELECT name, age FROM person WHERE age >= ?`
+	rows, err := db.Query(q, 30)
+	// handle the error
+	defer rows.Close()
+	var name string
+	var age int
+	for rows.Next() {
+		err := rows.Scan(&name, &age)
+		// handle the error
+		fmt.Println(name, age)
+	}
+
+Context variants of Query and Exec, such as QueryContext and ExecContext are fully supported.
+Context variants are used to pass Hazelcast specific parameters.
+
+Passing Hazelcast-Specific Parameters
+
+This driver supports the following extra query parameters that Hazelcast supports:
+
+	- Cursor buffer size: Size of the server-side buffer for rows.
+	- Timeout: Maximum time a query is allowed to execute.
+
+Checkout the documentation below for details.
+
+The extra query parameters are passed in a context augmented using WithCursorBufferSize and WithQueryTimeout functions. Here is an example:
+
+	// set the cursor buffer size to 10_000
+	ctx := driver.WithCursorBufferSize(context.Background(), 10_000)
+	// set the query timeout to 2 minutes
+	ctx = driver.WithQueryTimeout(ctx, 2*time.Minute)
+	// use the parameters above with any methods that uses that context
+	rows, err := db.QueryContext(ctx, "select * from people")
+
+Creating a Mapping
+
+To connect to a data source and query it as if it is a table, a mappings should be created.
+Currently, mappings for Map, Kafka and file data sources are supported.
+
+You can read the details about mappings here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview#mappings
+
+Using Raw Values
+
+Creating a mapping:
+
+        CREATE MAPPING person
+        TYPE IMAP
+        OPTIONS (
+            'keyFormat' = 'int',
+            'valueFormat' = 'varchar'
+        )
+
+Inserting rows:
+
+	INSERT INTO person VALUES(100, 'Jane Doe')
+
+Querying rows:
+
+	SELECT __key, this from person
+
+Using JSON
+
+Creating a mapping:
+
+        CREATE MAPPING person (
+			__key BIGINT,
+			age BIGINT,
+			name VARCHAR
+		)
+        TYPE IMAP
+        OPTIONS (
+            'keyFormat' = 'bigint',
+            'valueFormat' = 'json-flat'
+        )
+
+Inserting rows:
+
+	INSERT INTO person VALUES(100, 35, 'Jane Doe')
+
+Querying rowS:
+
+Using Portable
+
+Portable example:
+
+			CREATE MAPPING person (
+				__key BIGINT,
+				age TINYINT,
+				name VARCHAR
+			)
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'portable',
+				'valuePortableFactoryId' = '100',
+				'valuePortableClassId' = '1'
+			)
+
 
 
 */
@@ -139,8 +258,16 @@ func Open(config hazelcast.Config) *sql.DB {
 	return sql.OpenDB(driver.NewConnector(icc))
 }
 
-// WithCursorBufferSize returns a copy of parent context which includes the given query cursor buffer size.
-// Panics if parent context is nil, or given buffer size is not in the positive int32 range.
+/*
+WithCursorBufferSize returns a copy of parent context which includes the given query cursor buffer size.
+When rows are ready to be consumed, they are put into an internal buffer of the cursor.
+This parameter defines the maximum number of rows in that buffer.
+When the threshold is reached, the backpressure mechanism will slow down the execution, possibly to a complete halt, to prevent out-of-memory.
+The default value is expected to work well for most workloads.
+A bigger buffer size may give you a slight performance boost for queries with large result sets at the cost of increased memory consumption.
+Defaults to 4096.
+Panics if parent context is nil, or given buffer size is not in the positive int32 range.
+*/
 func WithCursorBufferSize(parent context.Context, cbs int) context.Context {
 	if parent == nil {
 		panic(ihzerrors.NewIllegalArgumentError("parent context is nil", nil))
@@ -151,8 +278,14 @@ func WithCursorBufferSize(parent context.Context, cbs int) context.Context {
 	return context.WithValue(parent, driver.QueryCursorBufferSizeKey{}, int32(cbs))
 }
 
-// WithQueryTimeout returns a copy of parent context which has the given query timeout.
-// Panics if parent context is nil.
+/*
+WithQueryTimeout returns a copy of parent context which has the given query execution timeout.
+If the timeout is reached for a running statement, it will be cancelled forcefully.
+Zero value means no timeout.
+Negative values mean that the value from the server-side config will be used.
+Defaults to -1
+Panics if parent context is nil.
+*/
 func WithQueryTimeout(parent context.Context, t time.Duration) context.Context {
 	if parent == nil {
 		panic(ihzerrors.NewIllegalArgumentError("parent context is nil", nil))
