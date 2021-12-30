@@ -105,6 +105,7 @@ func TestStripeExecutor_dispatch(t *testing.T) {
 func TestStripeExecutor_dispatchZeroAndNegative(t *testing.T) {
 	se := newStripeExecutorWithConfig(3, 10_000)
 	se.start()
+	defer se.stop()
 	for i := 0; i <= 3; i++ {
 		var job sync.WaitGroup
 		job.Add(1)
