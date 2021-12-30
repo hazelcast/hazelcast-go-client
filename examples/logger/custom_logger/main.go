@@ -27,8 +27,8 @@ import (
 )
 
 type CustomLogger struct {
-	weight  logger.Weight
 	loggers []*log.Logger
+	weight  logger.Weight
 }
 
 func NewCustomLogger(level logger.Level) CustomLogger {

@@ -331,8 +331,7 @@ func LargerGroupMajorMinorVersion(members []pubcluster.MemberInfo) (uint16, erro
 	var vv [2]pubcluster.MemberVersion
 	var count [2]int
 	var next int
-	majority := len(members) / 2
-	for i, mem := range members {
+	for _, mem := range members {
 		if mem.LiteMember {
 			continue
 		}
@@ -349,17 +348,20 @@ func LargerGroupMajorMinorVersion(members []pubcluster.MemberInfo) (uint16, erro
 		} else {
 			return 0, fmt.Errorf("more than 2 distinct member versions found: %s, %s, %s", vv[0], vv[1], mem.Version)
 		}
-		if i > majority {
-			break
-		}
 	}
 	if count[0] == 0 {
 		// there are no data members
 		return 0, nil
 	}
-	if count[0] >= count[1] {
+	if count[0] > count[1] {
 		return vs[0], nil
+	} else if count[0] < count[1] {
+		return vs[1], nil
 	} else {
+		// if the counts are equal, return the newer one
+		if vs[0] > vs[1] {
+			return vs[0], nil
+		}
 		return vs[1], nil
 	}
 }
