@@ -196,7 +196,7 @@ func TestClientEventOrder(t *testing.T) {
 	})
 }
 
-func calcPartitionID(ss *serialization.Service, key interface{}) (int32, error) {
+func calculatePartitionID(ss *serialization.Service, key interface{}) (int32, error) {
 	kd, err := ss.ToData(key)
 	if err != nil {
 		return 0, err
@@ -230,7 +230,7 @@ func TestClientEventHandlingOrder(t *testing.T) {
 		atomic.AddInt32(&count, 1)
 		// it is okay to use conversion, since greatest key is 1000
 		key := int(event.Key.(int64))
-		pid, err := calcPartitionID(ss, key)
+		pid, err := calculatePartitionID(ss, key)
 		if err != nil {
 			panic(err)
 		}
