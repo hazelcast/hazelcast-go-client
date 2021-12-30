@@ -17,7 +17,7 @@
 /*
 Package driver provides a standard database/sql compatible SQL driver for Hazelcast.
 
-This driver supports Hazelcast 5.0 and up. Check out the Hazelcast SQL documentation here: https://docs.hazelcast.com/hazelcast/5.0/sql/sql-overview
+This driver supports Hazelcast 5.0 and up. Check out the Hazelcast SQL documentation here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview
 
 The documentation for the database/sql package is here: https://pkg.go.dev/database/sql
 
@@ -45,7 +45,7 @@ Otherwise, the DSN must start with the scheme (hz://) and have the following opt
 
 	- Username and password for the cluster, separated by a column: dave:s3cr3t
 	- Hazelcast member addresses, separated by commas: server1:port1,server2:port2
-	- Options as key=value pairs, separated by ampersond (&). Both the key and value must be URL encoded: cluster.name=dev&ssl=true
+	- Options as key=value pairs, separated by ampersand (&). Both the key and value must be URL encoded: cluster.name=dev&ssl=true
 
 Username/password part is separated from the address by the at sign (@).
 There should be a question mark (?) between the address(es) and options.
@@ -57,9 +57,9 @@ The following are the available options:
 
 	- unisocket: A boolean. Enables/disables the unisocket mode. Default: false. Example: unisocket=true
 	- log: One of the following: off, fatal, error, warn, info, debug, trace. Default: info. Example: log=debug
-	- cluster.name: A string. Specifies the cluster name.Default: dev. Example: cluster.name=hzc1
+	- cluster.name: A string. Specifies the cluster name. Default: dev. Example: cluster.name=hzc1
 	- cloud.token: A string. Sets the Hazelcast Cloud token. Example: cloud.token=1234567abcde
-	- stats.period: Duration, which can be parsed by time.Parse.
+	- stats.period: Duration between sending statistics, which can be parsed by time.Parse.
 	  Use one of the following suffixes: s (seconds), m (minutes), h (hours). Example: 10s
 	- ssl: A boolean. Enables/disables SSL connections. Defaults: false. Example: ssl=true
 	- ssl.ca.path: The path to the PEM file for the certificate authority. Implies ssl=true. Example: ssl.ca.path=/etc/ssl/ca.pem
@@ -103,7 +103,7 @@ All client configuration items, except listeners are supported.
 Executing Queries
 
 database/sql package supports two kinds of queries: The ones returning rows (select statements and a few others) and the rest (insert, update, etc.).
-The former kinds of queries are executed with QueryXXX methods and the latter ones are executed with ExecXXX methods of the sql.DB instance returned from sql.Open or driver.Open
+The former kinds of queries are executed with QueryXXX methods and the latter ones are executed with ExecXXX methods of the sql.DB instance returned from sql.Open or driver.Open.
 
 Use the question mark (?) for placeholders.
 
@@ -133,7 +133,7 @@ An example Query call:
 	}
 
 Context variants of Query and Exec, such as QueryContext and ExecContext are fully supported.
-Context variants are used to pass Hazelcast specific parameters.
+They can be used to pass Hazelcast specific parameters, such as the cursor buffer size.
 
 Passing Hazelcast-Specific Parameters
 
@@ -155,14 +155,15 @@ The extra query parameters are passed in a context augmented using WithCursorBuf
 
 Creating a Mapping
 
-To connect to a data source and query it as if it is a table, a mappings should be created.
+To connect to a data source and query it as if it is a table, a mapping should be created.
 Currently, mappings for Map, Kafka and file data sources are supported.
 
 You can read the details about mappings here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview#mappings
 
 Supported Data Types
 
-The following data types are supported, as both builtin values and in types supporting the portable interface when inserting/updating:
+The following data types are supported when inserting/updating.
+The names in parantheses correspond to SQL types:
 
 	- string (varchar)
 	- int8 (tinyint)
@@ -174,8 +175,9 @@ The following data types are supported, as both builtin values and in types supp
 	- float64 (double)
 	- types.Decimal (decimal)
 	- time.Time (date) Detected by checking: hour == minute == second == nanoseconds = 0
-	- time.Time (timestamp) Detected by checking: year == 0, month == day == 1, timezone == time.Local
-	- time.Time (timestamp with time zone) Detected by checking: year == 0, month == day == 1, timezone != time.Local
+	- time.Time (time) Detected by checking: year == 0, month == day == 1
+	- time.Time (timestamp) Detected by checking: hour == minute == second == nanoseconds = 0, timezone == time.Local
+	- time.Time (timestamp with time zone) Detected by checking: hour == minute == second == nanoseconds = 0, timezone != time.Local
 
 Using Raw Values
 
@@ -183,12 +185,12 @@ You can directly use one of the supported data types.
 
 Creating a mapping:
 
-        CREATE MAPPING person
-        TYPE IMAP
-        OPTIONS (
-            'keyFormat' = 'int',
-            'valueFormat' = 'varchar'
-        )
+	CREATE MAPPING person
+	TYPE IMAP
+	OPTIONS (
+		'keyFormat' = 'int',
+		'valueFormat' = 'varchar'
+	)
 
 Inserting rows:
 
@@ -213,16 +215,16 @@ Some or all fields of the JSON value may be mapped and used.
 
 Creating a mapping:
 
-        CREATE MAPPING person (
-			__key BIGINT,
-			age BIGINT,
-			name VARCHAR
-		)
-        TYPE IMAP
-        OPTIONS (
-            'keyFormat' = 'bigint',
-            'valueFormat' = 'json-flat'
-        )
+	CREATE MAPPING person (
+		__key BIGINT,
+		age BIGINT,
+		name VARCHAR
+	)
+	TYPE IMAP
+	OPTIONS (
+		'keyFormat' = 'bigint',
+		'valueFormat' = 'json-flat'
+	)
 
 Inserting rows:
 
@@ -263,18 +265,18 @@ Assuming the following portable type:
 
 Creating a mapping:
 
-			CREATE MAPPING person (
-				__key BIGINT,
-				age TINYINT,
-				name VARCHAR
-			)
-			TYPE IMAP
-			OPTIONS (
-				'keyFormat' = 'bigint',
-				'valueFormat' = 'portable',
-				'valuePortableFactoryId' = '100',
-				'valuePortableClassId' = '1'
-			)
+	CREATE MAPPING person (
+		__key BIGINT,
+		age TINYINT,
+		name VARCHAR
+	)
+	TYPE IMAP
+	OPTIONS (
+		'keyFormat' = 'bigint',
+		'valueFormat' = 'portable',
+		'valuePortableFactoryId' = '100',
+		'valuePortableClassId' = '1'
+	)
 
 Querying rows:
 
