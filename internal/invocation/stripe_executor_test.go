@@ -91,7 +91,9 @@ func Test_serialExecutor_dispatch(t *testing.T) {
 			tmpHandler := func() {
 				panic(i)
 			}
-			go se.dispatch(tt.key, tmpHandler)
+			if ok := se.dispatch(tt.key, tmpHandler); !ok {
+				t.Fatal("could not dispatch handler")
+			}
 			select {
 			case <-se.taskQueues[tt.expectedIndex]:
 			case <-time.After(time.Second):
@@ -105,11 +107,11 @@ func Test_serialExecutor_dispatchQueueFull(t *testing.T) {
 	se, err := newStripeExecutorWithConfig(1, 1)
 	assert.Nil(t, err)
 	// executor not running, make the queue full
-	qFull := se.dispatch(1, func() {})
-	assert.False(t, qFull)
+	ok := se.dispatch(1, func() {})
+	assert.True(t, ok)
 	// expect unsuccessful dispatch
-	qFull = se.dispatch(1, func() {})
-	assert.True(t, qFull)
+	ok = se.dispatch(1, func() {})
+	assert.False(t, ok)
 }
 
 func Test_serialExecutor_start(t *testing.T) {
@@ -143,7 +145,9 @@ func Test_serialExecutor_start(t *testing.T) {
 	se.start()
 	go func() {
 		for _, task := range tasks {
-			se.dispatch(task.key, task.handler)
+			if ok := se.dispatch(task.key, task.handler); !ok {
+				panic("could not dispatch event handler")
+			}
 		}
 	}()
 	time.Sleep(time.Second * 1)
