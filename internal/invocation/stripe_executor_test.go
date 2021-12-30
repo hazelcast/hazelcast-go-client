@@ -52,7 +52,7 @@ func Test_defaultExecFn(t *testing.T) {
 	}, time.Second, 200*time.Millisecond, "execute function did not complete")
 }
 
-func Test_serialExecutor_dispatch(t *testing.T) {
+func TestStripeExecutor_dispatch(t *testing.T) {
 	tests := []struct {
 		queueCount    int
 		key           int
@@ -103,7 +103,28 @@ func Test_serialExecutor_dispatch(t *testing.T) {
 	}
 }
 
-func Test_serialExecutor_dispatchQueueFull(t *testing.T) {
+func TestStripeExecutor_dispatchZeroAndNegative(t *testing.T) {
+	se, err := newStripeExecutorWithConfig(3, 10_000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	se.start()
+	for i := 0; i <= 3; i++ {
+		var job sync.WaitGroup
+		job.Add(1)
+		task := func() {
+			job.Done()
+		}
+		// dispatch negative keys, assert job is done
+		if ok := se.dispatch(-i, task); !ok {
+			t.Fatal("could not dispatch handler")
+		}
+		// if job is not completed, test will fail with timeout
+		job.Wait()
+	}
+}
+
+func TestStripeExecutor_dispatchQueueFull(t *testing.T) {
 	se, err := newStripeExecutorWithConfig(1, 1)
 	assert.Nil(t, err)
 	// executor not running, make the queue full
@@ -114,7 +135,7 @@ func Test_serialExecutor_dispatchQueueFull(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func Test_serialExecutor_start(t *testing.T) {
+func TestStripeExecutor_start(t *testing.T) {
 	t.Logf("enabled leak check")
 	defer goleak.VerifyNone(t)
 	var orderCheckers []*orderChecker
