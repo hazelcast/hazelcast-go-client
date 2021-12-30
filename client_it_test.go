@@ -165,16 +165,13 @@ func TestClientEventHandlingOrder(t *testing.T) {
 	var lc hz.MapEntryListenerConfig
 	lc.NotifyEntryAdded(true)
 	var (
-		// have 271 partitions by default, starting from 1
-		partitionToEvent = make([][]int, 272)
+		// have 271 partitions by default
+		partitionToEvent = make([][]int, 271)
 		// wait for all events to be processed
 		wg sync.WaitGroup
 		// access it with atomic package
 		count int32
 	)
-	for i := range partitionToEvent {
-		partitionToEvent[i] = make([]int, 10)
-	}
 	wg.Add(1)
 	it.MustValue(m.AddEntryListener(ctx, lc, func(event *hz.EntryNotified) {
 		atomic.AddInt32(&count, 1)
@@ -194,7 +191,7 @@ func TestClientEventHandlingOrder(t *testing.T) {
 		it.MustValue(m.Put(ctx, i, "test"))
 	}
 	wg.Wait()
-	for _, keys := range partitionToEvent[1:] {
+	for _, keys := range partitionToEvent {
 		if !sort.IntsAreSorted(keys) {
 			t.Fatalf("events are not processed in order, event keys:\n%v\n", keys)
 		}
