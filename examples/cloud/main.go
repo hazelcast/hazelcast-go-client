@@ -38,7 +38,7 @@ func makeKeyValue(i int) (key string, value string) {
 }
 
 func getClient(ctx context.Context) *hazelcast.Client {
-	config := hazelcast.NewConfig()
+	config := hazelcast.Config{}
 	config.Logger.Level = loggingLevel
 	config.Cluster.Name = clusterName
 	cc := &config.Cluster.Cloud
