@@ -40,7 +40,7 @@ func Test_defaultExecFn(t *testing.T) {
 	go defaultExecFn(tasks, quit, &wg)
 	assert.Eventually(t, func() bool {
 		return oc.previousCallArg == 3
-	}, time.Second, time.Millisecond*200, "execute function could not finish the tasks")
+	}, time.Second, 200*time.Millisecond, "execute function did not complete")
 	close(quit)
 	go func() {
 		wg.Wait()
@@ -49,7 +49,7 @@ func Test_defaultExecFn(t *testing.T) {
 	}()
 	assert.Eventually(t, func() bool {
 		return oc.previousCallArg == 10
-	}, time.Second, 200*time.Millisecond, "execute function did not notify about its finish")
+	}, time.Second, 200*time.Millisecond, "execute function did not complete")
 }
 
 func Test_serialExecutor_dispatch(t *testing.T) {
@@ -88,15 +88,15 @@ func Test_serialExecutor_dispatch(t *testing.T) {
 		t.Run(fmt.Sprintf("QueueCount: %d, Key: %d", tt.queueCount, tt.key), func(t *testing.T) {
 			se, err := newStripeExecutorWithConfig(tt.queueCount, 10_000)
 			assert.Nil(t, err)
-			tmpHandler := func() {
+			task := func() {
 				panic(i)
 			}
-			if ok := se.dispatch(tt.key, tmpHandler); !ok {
+			if ok := se.dispatch(tt.key, task); !ok {
 				t.Fatal("could not dispatch handler")
 			}
 			select {
 			case <-se.taskQueues[tt.expectedIndex]:
-			case <-time.After(time.Second):
+			case <-time.After(1 * time.Second):
 				assert.FailNow(t, "dispatcher did not dispatch to correct queue")
 			}
 		})
@@ -150,7 +150,7 @@ func Test_serialExecutor_start(t *testing.T) {
 			}
 		}
 	}()
-	time.Sleep(time.Second * 1)
+	time.Sleep(1 * time.Second)
 	for _, oc := range orderCheckers {
 		assert.Equal(t, 3, oc.previousCallArg, "task did not complete")
 	}

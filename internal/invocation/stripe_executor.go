@@ -57,7 +57,7 @@ func newStripeExecutorWithConfig(queueCount, queueSize int) (stripeExecutor, err
 
 // start fires up the workers for each queue.
 func (se stripeExecutor) start() {
-	se.wg.Add(int(se.queueCount))
+	se.wg.Add(se.queueCount)
 	for i := range se.taskQueues {
 		go se.execFn(se.taskQueues[i], se.quit, se.wg)
 	}

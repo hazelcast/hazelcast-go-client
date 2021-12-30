@@ -173,7 +173,7 @@ func TestClientEventHandlingOrder(t *testing.T) {
 		count int32
 	)
 	wg.Add(1)
-	it.MustValue(m.AddEntryListener(ctx, lc, func(event *hz.EntryNotified) {
+	handler := func(event *hz.EntryNotified) {
 		atomic.AddInt32(&count, 1)
 		// it is okay to use conversion, since greatest key is 1000
 		key := int(event.Key.(int64))
@@ -186,7 +186,8 @@ func TestClientEventHandlingOrder(t *testing.T) {
 			// last event processed
 			wg.Done()
 		}
-	}))
+	}
+	it.MustValue(m.AddEntryListener(ctx, lc, handler))
 	for i := 1; i <= 1000; i++ {
 		it.MustValue(m.Put(ctx, i, "test"))
 	}
