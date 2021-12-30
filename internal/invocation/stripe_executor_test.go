@@ -86,8 +86,7 @@ func TestStripeExecutor_dispatch(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("QueueCount: %d, Key: %d", tt.queueCount, tt.key), func(t *testing.T) {
-			se, err := newStripeExecutorWithConfig(tt.queueCount, 10_000)
-			assert.Nil(t, err)
+			se := newStripeExecutorWithConfig(tt.queueCount, 10_000)
 			task := func() {
 				panic(i)
 			}
@@ -104,10 +103,7 @@ func TestStripeExecutor_dispatch(t *testing.T) {
 }
 
 func TestStripeExecutor_dispatchZeroAndNegative(t *testing.T) {
-	se, err := newStripeExecutorWithConfig(3, 10_000)
-	if err != nil {
-		t.Fatal(err)
-	}
+	se := newStripeExecutorWithConfig(3, 10_000)
 	se.start()
 	for i := 0; i <= 3; i++ {
 		var job sync.WaitGroup
@@ -125,8 +121,7 @@ func TestStripeExecutor_dispatchZeroAndNegative(t *testing.T) {
 }
 
 func TestStripeExecutor_dispatchQueueFull(t *testing.T) {
-	se, err := newStripeExecutorWithConfig(1, 1)
-	assert.Nil(t, err)
+	se := newStripeExecutorWithConfig(1, 1)
 	// executor not running, make the queue full
 	ok := se.dispatch(1, func() {})
 	assert.True(t, ok)

@@ -1,7 +1,6 @@
 package invocation
 
 import (
-	"fmt"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -29,18 +28,16 @@ type stripeExecutor struct {
 
 // newStripeExecutor returns a new stripeExecutor with default configuration.
 func newStripeExecutor() stripeExecutor {
-	// ignore error, default values do not raise error.
-	ex, _ := newStripeExecutorWithConfig(defaultEventWorkerCount, defaultEventQueueCapacity)
-	return ex
+	return newStripeExecutorWithConfig(defaultEventWorkerCount, defaultEventQueueCapacity)
 }
 
-// newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize.
-func newStripeExecutorWithConfig(queueCount, queueSize int) (stripeExecutor, error) {
+// newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize. If parameters are not greater than zero, it panics.
+func newStripeExecutorWithConfig(queueCount, queueSize int) stripeExecutor {
 	if queueCount <= 0 {
-		return stripeExecutor{}, fmt.Errorf("queueCount must be greater than 0")
+		panic("queueCount must be greater than 0")
 	}
 	if queueSize <= 0 {
-		return stripeExecutor{}, fmt.Errorf("queueSize must be greater than 0")
+		panic("queueSize must be greater than 0")
 	}
 	se := stripeExecutor{
 		taskQueues: make([]chan func(), queueCount),
@@ -52,7 +49,7 @@ func newStripeExecutorWithConfig(queueCount, queueSize int) (stripeExecutor, err
 	se.quit = make(chan struct{})
 	se.wg = &sync.WaitGroup{}
 	se.execFn = defaultExecFn
-	return se, nil
+	return se
 }
 
 // start fires up the workers for each queue.
