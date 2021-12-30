@@ -190,7 +190,7 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 			handler := func() {
 				inv.EventHandler()(msg)
 			}
-			partitionID := inv.PartitionID()
+			partitionID := msg.PartitionID()
 			// no specific partition (-1) are dispatched randomly in dispatch func.
 			ok := s.executor.dispatch(int(partitionID), handler)
 			if !ok {
