@@ -143,6 +143,59 @@ func TestClientMemberEvents(t *testing.T) {
 	})
 }
 
+func TestClientEventOrder(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		// events should be processed in this order
+		const (
+			noPrevEvent = 0
+			addEvent    = 1
+			removeEvent = 2
+		)
+		// populate event order checkers
+		var checkers []*int32
+		for i := 0; i < 20; i++ {
+			var state int32
+			checkers = append(checkers, &state)
+		}
+		// init listener conf
+		var c hz.MapEntryListenerConfig
+		c.NotifyEntryAdded(true)
+		c.NotifyEntryRemoved(true)
+		var tasks sync.WaitGroup
+		// add and remove are separate tasks
+		tasks.Add(len(checkers) * 2)
+		it.MustValue(m.AddEntryListener(ctx, c, func(e *hz.EntryNotified) {
+			state := checkers[e.Key.(int64)]
+			switch e.EventType {
+			case hz.EntryAdded:
+				if !atomic.CompareAndSwapInt32(state, noPrevEvent, noPrevEvent) {
+					panic("order is not preserved")
+				}
+				// keep the executor busy, make sure remove event is not processed before this
+				time.Sleep(500 * time.Millisecond)
+				if !atomic.CompareAndSwapInt32(state, noPrevEvent, addEvent) {
+					panic("order is not preserved")
+				}
+				tasks.Done()
+			case hz.EntryRemoved:
+				if !atomic.CompareAndSwapInt32(state, addEvent, removeEvent) {
+					panic("order is not preserved")
+				}
+				tasks.Done()
+			}
+		}))
+		for i := range checkers {
+			tmp := i
+			go func(index int) {
+				it.MustValue(m.Put(ctx, index, "test"))
+				it.MustValue(m.Remove(ctx, index))
+			}(tmp)
+		}
+		tasks.Wait()
+	})
+}
+
 func calcPartitionID(ss *serialization.Service, key interface{}) (int32, error) {
 	kd, err := ss.ToData(key)
 	if err != nil {
