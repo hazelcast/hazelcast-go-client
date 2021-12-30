@@ -146,6 +146,8 @@ func TestStripeExecutor_start(t *testing.T) {
 	// populate task queues
 	// assume we have orderCheckers a,b,c, we will have
 	// a1,b1,c1,b2,c2,a2,a3,c3,b3
+	var jobs sync.WaitGroup
+	jobs.Add(300)
 	var tasks []pair
 	for i := 1; i <= 3; i++ {
 		tmp := i
@@ -153,12 +155,14 @@ func TestStripeExecutor_start(t *testing.T) {
 			key := perm
 			tasks = append(tasks, pair{key: key, handler: func() {
 				orderCheckers[key].call(tmp)
+				jobs.Done()
 			}})
 		}
 	}
 
 	se := newStripeExecutor()
 	se.start()
+	defer se.stop()
 	go func() {
 		for _, task := range tasks {
 			if ok := se.dispatch(task.key, task.handler); !ok {
@@ -166,9 +170,8 @@ func TestStripeExecutor_start(t *testing.T) {
 			}
 		}
 	}()
-	time.Sleep(1 * time.Second)
+	jobs.Wait()
 	for _, oc := range orderCheckers {
 		assert.Equal(t, 3, oc.previousCallArg, "task did not complete")
 	}
-	se.stop()
 }
