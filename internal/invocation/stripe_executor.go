@@ -20,19 +20,19 @@ type executor func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)
 // stripeExecutor executes given "tasks" preserving the order among the ones that are given with the same key.
 type stripeExecutor struct {
 	quit       chan struct{}
-	wg         *sync.WaitGroup
+	wg         sync.WaitGroup
 	execFn     executor
 	taskQueues []chan func()
 	queueCount int
 }
 
 // newStripeExecutor returns a new stripeExecutor with default configuration.
-func newStripeExecutor() stripeExecutor {
+func newStripeExecutor() *stripeExecutor {
 	return newStripeExecutorWithConfig(defaultEventWorkerCount, defaultEventQueueCapacity)
 }
 
 // newStripeExecutor returns a new stripeExecutor with configured queueCount and queueSize. If parameters are not greater than zero, it panics.
-func newStripeExecutorWithConfig(queueCount, queueSize int) stripeExecutor {
+func newStripeExecutorWithConfig(queueCount, queueSize int) *stripeExecutor {
 	if queueCount <= 0 {
 		panic("queueCount must be greater than 0")
 	}
@@ -47,21 +47,20 @@ func newStripeExecutorWithConfig(queueCount, queueSize int) stripeExecutor {
 		se.taskQueues[i] = make(chan func(), queueSize)
 	}
 	se.quit = make(chan struct{})
-	se.wg = &sync.WaitGroup{}
 	se.execFn = defaultExecFn
-	return se
+	return &se
 }
 
 // start fires up the workers for each queue.
-func (se stripeExecutor) start() {
+func (se *stripeExecutor) start() {
 	se.wg.Add(se.queueCount)
 	for i := range se.taskQueues {
-		go se.execFn(se.taskQueues[i], se.quit, se.wg)
+		go se.execFn(se.taskQueues[i], se.quit, &se.wg)
 	}
 }
 
 // dispatch sends the handler "task" to one of the appropriate taskQueues, "tasks" with the same key end up on the same queue. Returns false if queue is full and could not dispatch.
-func (se stripeExecutor) dispatch(key int, task func()) bool {
+func (se *stripeExecutor) dispatch(key int, task func()) bool {
 	if key < 0 {
 		// dispatch random.
 		key = rand.Intn(se.queueCount)
@@ -76,7 +75,7 @@ func (se stripeExecutor) dispatch(key int, task func()) bool {
 }
 
 // stop blocks until all workers are stopped.
-func (se stripeExecutor) stop() {
+func (se *stripeExecutor) stop() {
 	close(se.quit)
 	se.wg.Wait()
 }

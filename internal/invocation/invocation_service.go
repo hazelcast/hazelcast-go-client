@@ -51,7 +51,7 @@ type Service struct {
 	eventDispatcher *event.DispatchService
 	// removeCh carries correlationIDs to be removed
 	removeCh chan int64
-	executor stripeExecutor
+	executor *stripeExecutor
 	logger   logger.LogAdaptor
 	state    int32
 }
