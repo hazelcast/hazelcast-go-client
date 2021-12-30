@@ -74,7 +74,7 @@ You can use the following functions to set those configuration items globally:
 	- SetLoggerConfig(...)
 	- SetSSLConfig(...)
 
-Note that, these functions changes affect only the subsequent sql.Open calls, not the previous ones.
+Note that, these functions affect only the subsequent sql.Open calls, not the previous ones.
 
 Here's an example:
 
@@ -160,7 +160,26 @@ Currently, mappings for Map, Kafka and file data sources are supported.
 
 You can read the details about mappings here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview#mappings
 
+Supported Data Types
+
+The following data types are supported, as both builtin values and in types supporting the portable interface when inserting/updating:
+
+	- string (varchar)
+	- int8 (tinyint)
+	- int16 (smallint)
+	- int32 (integer)
+	- int64 (bigint)
+	- bool (boolean)
+	- float32 (real)
+	- float64 (double)
+	- types.Decimal (decimal)
+	- time.Time (date) Detected by checking: hour == minute == second == nanoseconds = 0
+	- time.Time (timestamp) Detected by checking: year == 0, month == day == 1, timezone == time.Local
+	- time.Time (timestamp with time zone) Detected by checking: year == 0, month == day == 1, timezone != time.Local
+
 Using Raw Values
+
+You can directly use one of the supported data types.
 
 Creating a mapping:
 
@@ -181,6 +200,17 @@ Querying rows:
 
 Using JSON
 
+Non-nested JSON values are supported.
+
+Assuming the following JSON value:
+
+	{
+		"age": 35,
+		"name": "Jane Doe"
+	}
+
+Some or all fields of the JSON value may be mapped and used.
+
 Creating a mapping:
 
         CREATE MAPPING person (
@@ -198,11 +228,40 @@ Inserting rows:
 
 	INSERT INTO person VALUES(100, 35, 'Jane Doe')
 
-Querying rowS:
+Querying rows:
+
+	SELECT __key, name FROM person WHERE age > 30
 
 Using Portable
 
 Portable example:
+
+Assuming the following portable type:
+
+	type Person struct {
+		Name string
+		Age int16
+	}
+
+	func (r Person) FactoryID() int32 {
+		return 100
+	}
+
+	func (r Person) ClassID() int32 {
+		return 1
+	}
+
+	func (r Person) WritePortable(wr serialization.PortableWriter) {
+		wr.WriteString("name", r.Name)
+		wr.WriteInt16("age", r.Age)
+	}
+
+	func (r *Person) ReadPortable(rd serialization.PortableReader) {
+		r.Name = rd.ReadString("name")
+		r.Age = rd.ReadInt16("age")
+	}
+
+Creating a mapping:
 
 			CREATE MAPPING person (
 				__key BIGINT,
@@ -217,7 +276,9 @@ Portable example:
 				'valuePortableClassId' = '1'
 			)
 
+Querying rows:
 
+	SELECT __key, name FROM person WHERE age > 30
 
 */
 package driver
