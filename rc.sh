@@ -49,13 +49,24 @@ download () {
   local repo=$1
   local jar_path=$2
   local artifact=$3
+  # Set this to anything in the caller to ignore the download error
+  local ignore_err=${4:-}
+  local err
+  local output
   if [ -f "$jar_path" ]; then
       log_info "$jar_path already exists, skipping download."
   else
       log_info "Downloading: $jar_path ($artifact) from: $repo"
-      mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Ddest="$jar_path"
-      if [ $? -ne 0 ]; then
-          log_fatal "Failed downloading $jar_path ($artifact) from: $repo"
+      set +e
+      output=$(mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Ddest="$jar_path" 2>&1)
+      err=$?
+      set -e
+      if [ $err -ne 0 ]; then
+        if [ "x$ignore_err" == "x" ]; then
+            log_fatal "Failed downloading $jar_path ($artifact) from: $repo\nOutput:\n$output"
+        else
+          log_info "Ignoring the download error for $jar_path ($artifact) from: $repo"
+        fi
       fi
   fi
 }
@@ -84,7 +95,7 @@ downloadHazelcast () {
 downloadSQL () {
   local jar_path="hazelcast-sql-${HZ_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast-sql:${HZ_VERSION}"
-  download "${repo}" "$jar_path" "$artifact"
+  download "${repo}" "$jar_path" "$artifact" ignore
   classpath="$classpath:$jar_path"
 }
 
@@ -124,6 +135,7 @@ startRC () {
   # Download Hazelcast Community jars
   downloadTests
   downloadHazelcast
+  # Download the SQL jar
   downloadSQL
 
   if [ "x${HAZELCAST_ENTERPRISE_KEY:-}" != "x" ]; then
