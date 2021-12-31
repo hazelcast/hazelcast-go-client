@@ -1058,6 +1058,7 @@ func TestMap_SetTTL(t *testing.T) {
 }
 
 func TestMap_SetTTLAffected(t *testing.T) {
+	it.SkipIf(t, "hz < 4.2")
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		testCases := []struct {
