@@ -20,10 +20,10 @@ type executor func(queue chan func(), quit chan struct{}, wg *sync.WaitGroup)
 // stripeExecutor executes given "tasks" preserving the order among the ones that are given with the same key.
 type stripeExecutor struct {
 	quit       chan struct{}
-	wg         sync.WaitGroup
 	execFn     executor
 	taskQueues []chan func()
 	queueCount int
+	wg         sync.WaitGroup
 }
 
 // newStripeExecutor returns a new stripeExecutor with default configuration.
