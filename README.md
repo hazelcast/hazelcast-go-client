@@ -118,7 +118,7 @@ client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 
 ## Documentation
 
-Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.1.1).
+Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client).
 
 You can view the documentation locally by using godoc:
 ```  
