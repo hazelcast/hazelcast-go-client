@@ -23,7 +23,7 @@ The documentation for the database/sql package is here: https://pkg.go.dev/datab
 
 Enabling Hazelcast SQL
 
-The SQL support should be enabled in Hazelcast configuration:
+The SQL support should be enabled in Hazelcast server configuration:
 
 	<hazelcast>
 		<jet enabled="true" />
@@ -60,7 +60,7 @@ The following are the available options:
 	- cluster.name: A string. Specifies the cluster name. Default: dev. Example: cluster.name=hzc1
 	- cloud.token: A string. Sets the Hazelcast Cloud token. Example: cloud.token=1234567abcde
 	- stats.period: Duration between sending statistics, which can be parsed by time.Parse.
-	  Use one of the following suffixes: s (seconds), m (minutes), h (hours). Example: 10s
+	  Use one of the following suffixes: s (seconds), m (minutes), h (hours). Example: stats.period=10s
 	- ssl: A boolean. Enables/disables SSL connections. Defaults: false. Example: ssl=true
 	- ssl.ca.path: The path to the PEM file for the certificate authority. Implies ssl=true. Example: ssl.ca.path=/etc/ssl/ca.pem
 	- ssl.cert.path: The path to the TLS certificate. Implies ssl=true. Example: ssl.cert.path=/etc/ssl/cert.pem
