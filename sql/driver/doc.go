@@ -134,6 +134,7 @@ An example Query call:
 
 Context variants of Query and Exec, such as QueryContext and ExecContext are fully supported.
 They can be used to pass Hazelcast specific parameters, such as the cursor buffer size.
+See the Passing Hazelcast Specific Parameters section below.
 
 Passing Hazelcast-Specific Parameters
 
