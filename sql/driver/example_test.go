@@ -25,7 +25,7 @@ import (
 )
 
 func Example() {
-	db, err := sql.Open("hazelcast", "localhost;Cluster.Unisocket=true")
+	db, err := sql.Open("hazelcast", "hz://localhost:5701?cluster.name=pr-1234&cloud.token=123456789Aabcdef")
 	if err != nil {
 		panic(err)
 	}

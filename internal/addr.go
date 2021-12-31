@@ -26,7 +26,7 @@ import (
 const defaultHost = "127.0.0.1"
 
 func ParseAddr(addr string) (string, int, error) {
-	// TODO: refactor this function
+	// TODO: refactor this function, it can be written in a better way.
 	if addr == "" || strings.TrimSpace(addr) == "" {
 		return defaultHost, 0, nil
 	}
