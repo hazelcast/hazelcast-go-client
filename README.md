@@ -80,7 +80,7 @@ Check out our [Get Started](https://hazelcast.com/get-started/) page for options
 ### Starting the Client with Hazelcast Cloud
 
 You only need the cluster name and Hazelcast cloud token to start the client.
-If you haven't already, you can [http://cloud.hazelcast.com/sign-up](sign up) for a free Hazelcast Cloud account.
+If you haven't already, you can [sign up](http://cloud.hazelcast.com/sign-up) for a free Hazelcast Cloud account.
 
 ```go
 config := hazelcast.Config{}
