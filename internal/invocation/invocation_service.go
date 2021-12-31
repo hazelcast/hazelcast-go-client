@@ -41,23 +41,24 @@ type Handler interface {
 }
 
 type Service struct {
+	handler         Handler
 	requestCh       chan Invocation
-	urgentRequestCh chan Invocation
 	responseCh      chan *proto.ClientMessage
-	// removeCh carries correlationIDs to be removed
-	removeCh        chan int64
 	doneCh          chan struct{}
 	groupLostCh     chan *GroupLostEvent
 	invocations     map[int64]Invocation
-	handler         Handler
+	urgentRequestCh chan Invocation
 	eventDispatcher *event.DispatchService
-	logger          logger.LogAdaptor
-	state           int32
+	// removeCh carries correlationIDs to be removed
+	removeCh chan int64
+	executor *stripeExecutor
+	logger   logger.LogAdaptor
+	state    int32
 }
 
 func NewService(
 	handler Handler,
-	eventDispacher *event.DispatchService,
+	eventDispatcher *event.DispatchService,
 	logger logger.LogAdaptor) *Service {
 	s := &Service{
 		requestCh:       make(chan Invocation),
@@ -68,15 +69,17 @@ func NewService(
 		groupLostCh:     make(chan *GroupLostEvent),
 		invocations:     map[int64]Invocation{},
 		handler:         handler,
-		eventDispatcher: eventDispacher,
+		eventDispatcher: eventDispatcher,
 		logger:          logger,
 		state:           ready,
+		executor:        newStripeExecutor(),
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
 		go func() {
 			s.groupLostCh <- event.(*GroupLostEvent)
 		}()
 	})
+	s.executor.start()
 	go s.processIncoming()
 	return s
 }
@@ -85,6 +88,7 @@ func (s *Service) Stop() {
 	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
 		return
 	}
+	s.executor.stop()
 	close(s.doneCh)
 }
 
@@ -183,7 +187,15 @@ func (s *Service) handleClientMessage(msg *proto.ClientMessage) {
 				return fmt.Sprintf("invocation with unknown correlation ID: %d", correlationID)
 			})
 		} else if inv.EventHandler() != nil {
-			go inv.EventHandler()(msg)
+			handler := func() {
+				inv.EventHandler()(msg)
+			}
+			partitionID := msg.PartitionID()
+			// no specific partition (-1) are dispatched randomly in dispatch func.
+			ok := s.executor.dispatch(int(partitionID), handler)
+			if !ok {
+				s.logger.Warnf("event could not be processed, corresponding queue is full. PartitionID: %d, CorrelationID: %d", partitionID, correlationID)
+			}
 		}
 		return
 	}
