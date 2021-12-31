@@ -23,6 +23,7 @@ import (
 	"log"
 	"reflect"
 	"runtime"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -35,7 +36,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -138,6 +141,115 @@ func TestClientMemberEvents(t *testing.T) {
 		}()
 		wg.Wait()
 	})
+}
+
+func TestClientEventOrder(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		// events should be processed in this order
+		const (
+			noPrevEvent = 0
+			addEvent    = 1
+			removeEvent = 2
+		)
+		// populate event order checkers
+		var checkers []*int32
+		for i := 0; i < 20; i++ {
+			var state int32
+			checkers = append(checkers, &state)
+		}
+		// init listener conf
+		var c hz.MapEntryListenerConfig
+		c.NotifyEntryAdded(true)
+		c.NotifyEntryRemoved(true)
+		var tasks sync.WaitGroup
+		// add and remove are separate tasks
+		tasks.Add(len(checkers) * 2)
+		it.MustValue(m.AddEntryListener(ctx, c, func(e *hz.EntryNotified) {
+			state := checkers[e.Key.(int64)]
+			switch e.EventType {
+			case hz.EntryAdded:
+				if !atomic.CompareAndSwapInt32(state, noPrevEvent, noPrevEvent) {
+					panic("order is not preserved")
+				}
+				// keep the executor busy, make sure remove event is not processed before this
+				time.Sleep(500 * time.Millisecond)
+				if !atomic.CompareAndSwapInt32(state, noPrevEvent, addEvent) {
+					panic("order is not preserved")
+				}
+				tasks.Done()
+			case hz.EntryRemoved:
+				if !atomic.CompareAndSwapInt32(state, addEvent, removeEvent) {
+					panic("order is not preserved")
+				}
+				tasks.Done()
+			}
+		}))
+		for i := range checkers {
+			tmp := i
+			go func(index int) {
+				it.MustValue(m.Put(ctx, index, "test"))
+				it.MustValue(m.Remove(ctx, index))
+			}(tmp)
+		}
+		tasks.Wait()
+	})
+}
+
+func calculatePartitionID(ss *serialization.Service, key interface{}) (int32, error) {
+	kd, err := ss.ToData(key)
+	if err != nil {
+		return 0, err
+	}
+	return murmur.HashToIndex(kd.PartitionHash(), 271), nil
+}
+
+func TestClientEventHandlingOrder(t *testing.T) {
+	// Create custom cluster, and client from it
+	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, it.MemberCount())
+	defer cls.Shutdown()
+	conf := cls.DefaultConfig()
+	ctx := context.Background()
+	c := it.MustValue(hz.StartNewClientWithConfig(ctx, conf)).(*hz.Client)
+	defer c.Shutdown(ctx)
+	ss := it.MustValue(serialization.NewService(&conf.Serialization)).(*serialization.Service)
+	// Create test map
+	m := it.MustValue(c.GetMap(ctx, "TestClientEventHandlingOrder")).(*hz.Map)
+	var lc hz.MapEntryListenerConfig
+	lc.NotifyEntryAdded(true)
+	var (
+		// have 271 partitions by default
+		partitionToEvent = make([][]int, 271)
+		// wait for all events to be processed
+		wg sync.WaitGroup
+		// access it with atomic package
+		count int32
+	)
+	wg.Add(1)
+	handler := func(event *hz.EntryNotified) {
+		atomic.AddInt32(&count, 1)
+		// it is okay to use conversion, since greatest key is 1000
+		key := int(event.Key.(int64))
+		pid, err := calculatePartitionID(ss, key)
+		if err != nil {
+			panic(err)
+		}
+		partitionToEvent[pid] = append(partitionToEvent[pid], key)
+		if count == 1000 {
+			// last event processed
+			wg.Done()
+		}
+	}
+	it.MustValue(m.AddEntryListener(ctx, lc, handler))
+	for i := 1; i <= 1000; i++ {
+		it.MustValue(m.Put(ctx, i, "test"))
+	}
+	wg.Wait()
+	for _, keys := range partitionToEvent {
+		if !sort.IntsAreSorted(keys) {
+			t.Fatalf("events are not processed in order, event keys:\n%v\n", keys)
+		}
+	}
 }
 
 func TestClientHeartbeat(t *testing.T) {
@@ -617,7 +729,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		ctx := context.Background()
 		var max uint64
 		var m runtime.MemStats
-		const limit = 8 * 1024 * 1024 // 8 MB
+		const limit = 8 * 1024 * 1024 // 16 MB
 		runtime.GC()
 		runtime.ReadMemStats(&m)
 		base := m.Alloc
@@ -633,8 +745,6 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 			t.Logf("memory allocation: %d at iteration: %d", m.Alloc, i)
 			if m.Alloc > base && m.Alloc-base > limit {
 				max = m.Alloc - base
-			}
-			if max > limit {
 				t.Fatalf("memory allocation: %d > %d (base: %d) at iteration: %d", max, limit, base, i)
 			}
 		}
