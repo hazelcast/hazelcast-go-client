@@ -112,7 +112,7 @@ Here is an Exec example:
 	q := `INSERT INTO person(__key, age, name) VALUES (?, ?, ?)`
 	result, err := db.Exec(q, 1001, 35, "Jane Doe")
 	// handle the error
-	cnt, err := result.AffectedRows()
+	cnt, err := result.RowsAffected()
 	// handle the error
 	fmt.Printf("Affected rows: %d\n", cnt)
 
