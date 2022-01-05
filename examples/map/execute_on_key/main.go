@@ -34,25 +34,25 @@ func main() {
 	}
 	fmt.Println("previous value:", prevVal)
 	// Observe value corresponding to "key1" changed, "key2" remains unchanged.
-	checkValue(ctx, m, "key1")
-	checkValue(ctx, m, "key2")
+	checkValue(m, "key1")
+	checkValue(m, "key2")
 	// Change both entries.
-	updatedTo, err := m.ExecuteOnKeys(ctx, &IdentifiedEntryProcessor{value: "testOnKeys"}, "key1", "key2")
+	newValues, err := m.ExecuteOnKeys(ctx, &IdentifiedEntryProcessor{value: "testOnKeys"}, "key1", "key2")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// ExecuteOnKeys returns updated results.
-	fmt.Println(updatedTo)
+	fmt.Println(newValues)
 	// check the values
-	checkValue(ctx, m, "key1")
-	checkValue(ctx, m, "key2")
+	checkValue(m, "key1")
+	checkValue(m, "key2")
 	// Shutdown client
 	client.Shutdown(ctx)
 }
 
 // Retrieve and print value corresponding to "key" from map "m"
-func checkValue(ctx context.Context, m *hazelcast.Map, key string) {
-	value, err := m.Get(ctx, key)
+func checkValue(m *hazelcast.Map, key string) {
+	value, err := m.Get(context.TODO(), key)
 	if err != nil {
 		log.Fatal(err)
 	}
