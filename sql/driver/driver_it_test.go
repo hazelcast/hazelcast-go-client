@@ -24,6 +24,7 @@ import (
 	"math/big"
 	"net/url"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -243,7 +244,8 @@ func TestSQLWithPortableData(t *testing.T) {
 				bigintvalue BIGINT,
 				boolvalue BOOLEAN,
 				realvalue REAL,
-				doublevalue DOUBLE
+				doublevalue DOUBLE,
+				decimalvalue DECIMAL
 			)
 			TYPE IMAP
 			OPTIONS (
@@ -290,7 +292,7 @@ func TestSQLWithPortableData(t *testing.T) {
 		// select individual fields
 		row = db.QueryRow(fmt.Sprintf(`
 			SELECT __key, varcharvalue, tinyintvalue, smallintvalue, integervalue,	
-			bigintvalue, boolvalue, realvalue, doublevalue from "%s"`, mapName))
+			bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue from "%s"`, mapName))
 		vs = nil
 		var vVarchar string
 		var vTinyInt int8
@@ -300,12 +302,13 @@ func TestSQLWithPortableData(t *testing.T) {
 		var vBool bool
 		var vReal float32
 		var vDouble float64
-		if err := row.Scan(&k, &vVarchar, &vTinyInt, &vSmallInt, &vInteger, &vBigInt, &vBool, &vReal, &vDouble); err != nil {
+		var vDecimal types.Decimal
+		if err := row.Scan(&k, &vVarchar, &vTinyInt, &vSmallInt, &vInteger, &vBigInt, &vBool, &vReal, &vDouble, &vDecimal); err != nil {
 			t.Fatal(err)
 		}
-		vs = append(vs, vVarchar, vTinyInt, vSmallInt, vInteger, vBigInt, vBool, vReal, vDouble)
+		vs = append(vs, vVarchar, vTinyInt, vSmallInt, vInteger, vBigInt, vBool, vReal, vDouble, vDecimal)
 		target := []interface{}{
-			"hello", int8(-128), int16(32767), int32(-27), int64(38), true, float32(-5.32), 12.789,
+			"hello", int8(-128), int16(32767), int32(-27), int64(38), true, float32(-5.32), 12.789, types.NewDecimal(big.NewInt(123_456_789), 100),
 		}
 		assert.Equal(t, target, vs)
 	})
@@ -415,6 +418,40 @@ func TestSetSSLConfig(t *testing.T) {
 	if err := driver.SetSSLConfig(nil); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestConcurrentQueries(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		db := driver.Open(*config)
+		defer db.Close()
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s"
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'varchar'
+			)
+		`, mapName)
+		t.Logf("Query: %s", q)
+		it.MustValue(db.Exec(q))
+		it.Must(m.Set(context.TODO(), 1, "foo"))
+		const cnt = 1000
+		wg := &sync.WaitGroup{}
+		wg.Add(cnt)
+		for i := 0; i < cnt; i++ {
+			go func(wg *sync.WaitGroup) {
+				var k int64
+				var v string
+				res := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s" LIMIT 1`, mapName))
+				if err := res.Scan(&k, &v); err != nil {
+					panic(err)
+				}
+				wg.Done()
+			}(wg)
+		}
+		wg.Wait()
+	})
 }
 
 func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {

@@ -52,6 +52,15 @@ func (c *Connector) Connect(ctx context.Context) (driver.Conn, error) {
 	return c.conn, nil
 }
 
+func (c *Connector) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.conn != nil {
+		return c.conn.ic.Shutdown(context.Background())
+	}
+	return nil
+}
+
 func (c Connector) Driver() driver.Driver {
 	return c.drv
 }
