@@ -34,6 +34,7 @@ const (
 	ColumnTypeTimestampWithTimeZone ColumnType = 12
 	ColumnTypeObject                ColumnType = 13
 	ColumnTypeNull                  ColumnType = 14
+	ColumnTypeJSON                  ColumnType = 15
 )
 
 type ColumnMetadata struct {
