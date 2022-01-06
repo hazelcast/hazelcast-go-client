@@ -24,9 +24,9 @@ func main() {
 	myHandler := func(event *hz.EntryNotified) {
 		switch event.EventType {
 		case hz.EntryAdded:
-			log.Printf("Added: (key: %v, value: %v).\n", event.Key, event.Value)
+			log.Printf("Multimap: %s, (key: %v, value: %v) was added.\n", event.MapName, event.Key, event.Value)
 		case hz.EntryRemoved:
-			log.Printf("Removed: (key: %v, value: %v).\n", event.Key, event.OldValue)
+			log.Printf("Multimap: %s, (key: %v, value: %v) was removed.\n", event.MapName, event.Key, event.OldValue)
 		case hz.EntryAllCleared:
 			log.Printf("Multimap: %s was cleared.\n", event.MapName)
 		}
