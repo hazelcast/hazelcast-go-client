@@ -28,7 +28,7 @@ func main() {
 		case hz.EntryRemoved:
 			log.Printf("Removed: (key: %v, value: %v).\n", event.Key, event.OldValue)
 		case hz.EntryAllCleared:
-			log.Printf("Multimap was cleared.\n")
+			log.Printf("Multimap: %s was cleared.\n", event.MapName)
 		}
 	}
 
