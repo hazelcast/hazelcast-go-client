@@ -26,7 +26,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
-// Get a random map.
+// Get a random map name.
 var mapName = fmt.Sprintf("sample-%d", rand.Int())
 
 const key = "syncKey"
@@ -79,7 +79,7 @@ func main() {
 	signal <- struct{}{}
 	// Wait for "locker" to acquire the lock.
 	time.Sleep(time.Second * 3)
-	// Let's close the "locker" while holding the lock.
+	// Let's close the "locker" while it is holding the lock.
 	close(signal)
 	// Key is locked and the owner terminated. We cannot unlock it with "Unlock" if we are not the owner of the lock.
 	// ForceUnlock it.
