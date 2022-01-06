@@ -102,7 +102,7 @@ func main() {
 	}
 	fmt.Printf("Departments: %s \n", strings.Join(deps, ", "))
 	// Delete "Engineering" department including both employees in it.
-	// Check the size after the operation to observe the decrease.
+	// Observe the decrease in department count.
 	if _, err = m.Remove(ctx, "Engineering"); err != nil {
 		log.Fatal(err)
 	}
@@ -111,7 +111,6 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Department count: ", departmentCount)
-
 	// Clear all departments and observe there are no entries left.
 	if err = m.Clear(ctx); err != nil {
 		log.Fatal(err)
@@ -120,5 +119,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Number of remaining entries ", len(entries))
+	for _, e := range entries {
+		fmt.Printf("Department:%s, Employees: %s\n", e.Key, e.Value.(employee).Name)
+	}
 }
