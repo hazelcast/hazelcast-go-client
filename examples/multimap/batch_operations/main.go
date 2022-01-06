@@ -26,7 +26,6 @@ import (
 )
 
 type employee struct {
-	ID         int
 	Name       string
 	Department string
 }
