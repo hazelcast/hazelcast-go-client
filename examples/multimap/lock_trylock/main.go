@@ -30,7 +30,6 @@ import (
 func main() {
 	ctx := context.TODO()
 	m := createClientAndMultiMap()
-	defer m.Destroy(ctx)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	const key = "foo"
@@ -38,7 +37,7 @@ func main() {
 	// "key" will be locked by other process for two seconds.
 	go func() {
 		ctx := m.NewLockContext(ctx)
-		handleErr(m.LockWithLease(ctx, key, 2*time.Second))
+		must(m.LockWithLease(ctx, key, 2*time.Second))
 		fmt.Println("[other process] has the lock")
 		wg.Done()
 	}()
@@ -46,48 +45,48 @@ func main() {
 	lockCtx := m.NewLockContext(ctx)
 	// Try to acquire the lock. It fails, key is locked.
 	ok, err := m.TryLock(lockCtx, key)
-	handleErr(err)
+	must(err)
 	fmt.Printf("operation: TryLockWith, succeed: %t\n", ok)
 	// Try to acquire the lock again for 3 seconds. This time it will out run the other process and acquire it.
 	ok, err = m.TryLockWithTimeout(lockCtx, key, 3*time.Second)
-	handleErr(err)
+	must(err)
 	fmt.Printf("operation: TryLockWithTimeout, succeed: %t\n", ok)
 	// Do an operation holding the lock, ignore the previous value.
 	_, err = m.Put(lockCtx, key, "test")
-	handleErr(err)
+	must(err)
 	// Another process may try to acquire lock.
 	wg.Add(1)
 	go func() {
 		ctx := m.NewLockContext(ctx)
 		// Try to acquire lock for a second to hold it for 2 seconds. It fails, we have the lock.
 		ok, err := m.TryLockWithLeaseAndTimeout(ctx, key, 2*time.Second, time.Millisecond)
-		handleErr(err)
+		must(err)
 		fmt.Printf("[other process] operation: TryLockWithLeaseAndTimeout, succeed: %t\n", ok)
 		wg.Done()
 	}()
 	wg.Wait()
 	// Release the lock
 	err = m.Unlock(lockCtx, key)
-	handleErr(err)
+	must(err)
 }
 
 func createClientAndMultiMap() *hazelcast.MultiMap {
 	ctx := context.TODO()
 	// Init client and create a map.
-	c1, err := hazelcast.StartNewClient(ctx)
+	c, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Get a random map name.
 	mapName := fmt.Sprintf("sample-%d", rand.Int())
-	m, err := c1.GetMultiMap(ctx, mapName)
+	m, err := c.GetMultiMap(ctx, mapName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return m
 }
 
-func handleErr(err error) {
+func must(err error) {
 	if err != nil {
 		panic(err)
 	}
