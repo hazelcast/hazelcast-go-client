@@ -159,6 +159,25 @@ func (m *MultiMap) ContainsValue(ctx context.Context, value interface{}) (bool, 
 	}
 }
 
+// ContainsEntry returns true if the map contains an entry with the given key and value.
+func (m *MultiMap) ContainsEntry(ctx context.Context, key interface{}, value interface{}) (bool, error) {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return false, err
+	}
+	valueData, err := m.validateAndSerialize(value)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMultiMapContainsEntryRequest(m.name, keyData, valueData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMultiMapContainsKeyResponse(response), nil
+}
+
 // Delete removes the mapping for a key from this multi-map if it is present.
 // Unlike remove(object), this operation does not return the removed value, which avoids the serialization cost of
 // the returned value. If the removed value will not be used, a delete operation is preferred over a remove
@@ -308,7 +327,7 @@ func (m *MultiMap) PutAll(ctx context.Context, key interface{}, values ...interf
 	return nil
 }
 
-// Remove deletes the value for the given key and returns it.
+// Remove deletes all the values  corresponding to the given key and returns it.
 func (m *MultiMap) Remove(ctx context.Context, key interface{}) ([]interface{}, error) {
 	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
@@ -321,6 +340,25 @@ func (m *MultiMap) Remove(ctx context.Context, key interface{}) ([]interface{}, 
 			return m.convertToObjects(codec.DecodeMultiMapRemoveResponse(response))
 		}
 	}
+}
+
+// RemoveEntry removes the specified value for the given key and returns true if call had an effect
+func (m *MultiMap) RemoveEntry(ctx context.Context, key interface{}, value interface{}) (bool, error) {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return false, err
+	}
+	valueData, err := m.validateAndSerialize(value)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMultiMapRemoveEntryRequest(m.name, keyData, valueData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMultiMapRemoveEntryResponse(response), nil
 }
 
 // RemoveEntryListener removes the specified entry listener.

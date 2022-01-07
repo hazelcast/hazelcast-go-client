@@ -24,7 +24,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	// Populate the map.
 	success, err := m.Put(ctx, "key", "value1")
 	if err != nil {
@@ -40,14 +39,18 @@ func main() {
 	if !success {
 		log.Fatal("multi-map put operation failed")
 	}
-
 	// Get both values under the same key.
 	values, err := m.Get(ctx, "key")
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	// An interface slice contains the values.
 	// []interface {}{"value2", "value1"}
 	fmt.Printf("%#v", values)
+	// Check existence of an entry
+	ok, err := m.ContainsEntry(ctx, "key", "value1")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("entry found:%t", ok)
 }

@@ -124,6 +124,31 @@ func TestMultiMap_Remove(t *testing.T) {
 	})
 }
 
+func TestMultiMap_RemoveEntry(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		ctx := context.Background()
+		targetValue := "value"
+		otherValue := "other value"
+		it.Must(m.PutAll(ctx, "key", targetValue, otherValue))
+		value := it.MustValue(m.Get(ctx, "key"))
+		assert.ElementsMatch(t, value, []interface{}{targetValue, otherValue})
+		// Remove only one of the values that corresponds to the key
+		ok, err := m.RemoveEntry(ctx, "key", targetValue)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, ok)
+		remaining := it.MustValue(m.Get(ctx, "key"))
+		assert.Equal(t, []interface{}{otherValue}, remaining)
+		// Call should have no effect, expect "false" return value
+		ok, err = m.RemoveEntry(ctx, "key", targetValue)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, ok)
+	})
+}
+
 func TestMultiMap_GetKeySet(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
@@ -485,6 +510,32 @@ func TestMultiMap_ContainsValue(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.True(t, exists)
+	})
+}
+
+func TestMultiMap_ContainsEntry(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		targetKey, targetVal := "key", "value"
+		ctx := context.Background()
+		assert.True(t, it.MustBool(m.Put(ctx, targetKey, "some_value")))
+		exists, err := m.ContainsEntry(ctx, targetKey, targetVal)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, exists)
+		assert.True(t, it.MustBool(m.Put(ctx, targetKey, targetVal)))
+		exists, err = m.ContainsEntry(ctx, targetKey, targetVal)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, exists)
+		it.Must(m.Delete(ctx, targetKey))
+		assert.True(t, it.MustBool(m.Put(ctx, "some_key", targetVal)))
+		exists, err = m.ContainsEntry(ctx, targetKey, targetVal)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, exists)
 	})
 }
 
