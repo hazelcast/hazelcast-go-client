@@ -28,7 +28,8 @@ import (
 
 func main() {
 	ctx := context.TODO()
-	m := createClientAndMultiMap()
+	c, m := createClientAndMultiMap()
+	defer c.Shutdown(ctx)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	const key = "foo"
@@ -56,7 +57,7 @@ func main() {
 	fmt.Printf("key isLocked:%t", locked)
 }
 
-func createClientAndMultiMap() *hazelcast.MultiMap {
+func createClientAndMultiMap() (*hazelcast.Client, *hazelcast.MultiMap) {
 	ctx := context.TODO()
 	// Init client and create a map.
 	c, err := hazelcast.StartNewClient(ctx)
@@ -69,5 +70,5 @@ func createClientAndMultiMap() *hazelcast.MultiMap {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return m
+	return c, m
 }

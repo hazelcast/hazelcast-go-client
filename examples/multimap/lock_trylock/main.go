@@ -29,7 +29,8 @@ import (
 
 func main() {
 	ctx := context.TODO()
-	m := createClientAndMultiMap()
+	c, m := createClientAndMultiMap()
+	defer c.Shutdown(ctx)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	const key = "foo"
@@ -66,7 +67,7 @@ func main() {
 	must(m.Unlock(lockCtx, key))
 }
 
-func createClientAndMultiMap() *hazelcast.MultiMap {
+func createClientAndMultiMap() (*hazelcast.Client, *hazelcast.MultiMap) {
 	ctx := context.TODO()
 	// Init client and create a map.
 	c, err := hazelcast.StartNewClient(ctx)
@@ -77,7 +78,7 @@ func createClientAndMultiMap() *hazelcast.MultiMap {
 	mapName := fmt.Sprintf("sample-%d", rand.Int())
 	m, err := c.GetMultiMap(ctx, mapName)
 	must(err)
-	return m
+	return c, m
 }
 
 func must(err error) {
