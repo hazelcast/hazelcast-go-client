@@ -44,30 +44,26 @@ func main() {
 	wg.Wait()
 	lockCtx := m.NewLockContext(ctx)
 	// Try to acquire the lock. It fails, key is locked.
-	ok, err := m.TryLock(lockCtx, key)
-	must(err)
+	ok := mustBool(m.TryLock(lockCtx, key))
 	fmt.Printf("operation: TryLockWith, succeed: %t\n", ok)
 	// Try to acquire the lock again for 3 seconds. This time it will out run the other process and acquire it.
-	ok, err = m.TryLockWithTimeout(lockCtx, key, 3*time.Second)
-	must(err)
+	ok = mustBool(m.TryLockWithTimeout(lockCtx, key, 3*time.Second))
 	fmt.Printf("operation: TryLockWithTimeout, succeed: %t\n", ok)
 	// Do an operation holding the lock, ignore the previous value.
-	_, err = m.Put(lockCtx, key, "test")
+	_, err := m.Put(lockCtx, key, "test")
 	must(err)
 	// Another process may try to acquire lock.
 	wg.Add(1)
 	go func() {
 		ctx := m.NewLockContext(ctx)
 		// Try to acquire lock for a second to hold it for 2 seconds. It fails, we have the lock.
-		ok, err := m.TryLockWithLeaseAndTimeout(ctx, key, 2*time.Second, time.Millisecond)
-		must(err)
+		ok := mustBool(m.TryLockWithLeaseAndTimeout(ctx, key, 2*time.Second, time.Millisecond))
 		fmt.Printf("[other process] operation: TryLockWithLeaseAndTimeout, succeed: %t\n", ok)
 		wg.Done()
 	}()
 	wg.Wait()
 	// Release the lock
-	err = m.Unlock(lockCtx, key)
-	must(err)
+	must(m.Unlock(lockCtx, key))
 }
 
 func createClientAndMultiMap() *hazelcast.MultiMap {
@@ -80,9 +76,7 @@ func createClientAndMultiMap() *hazelcast.MultiMap {
 	// Get a random map name.
 	mapName := fmt.Sprintf("sample-%d", rand.Int())
 	m, err := c.GetMultiMap(ctx, mapName)
-	if err != nil {
-		log.Fatal(err)
-	}
+	must(err)
 	return m
 }
 
@@ -90,4 +84,9 @@ func must(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func mustBool(value bool, err error) bool {
+	must(err)
+	return value
 }
