@@ -32,7 +32,6 @@ func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHand
 	listenerConfig := hz.MultiMapEntryListenerConfig{IncludeValue: true}
 	listenerConfig.NotifyEntryAdded(true)
 	listenerConfig.NotifyEntryRemoved(true)
-
 	// Add our continuous entry listener to the given MultiMap.
 	subscriptionID, err := m.AddEntryListener(ctx, listenerConfig, myHandler)
 	if err != nil {
