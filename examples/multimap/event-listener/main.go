@@ -98,7 +98,7 @@ func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*h
 			panic(err)
 		}
 	}
-	// To observe `clear` event, lets clear our map as well.
+	// Trigger a clear event on given MultiMap as well.
 	if err := m.Clear(ctx); err != nil {
 		panic(err)
 	}
