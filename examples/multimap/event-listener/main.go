@@ -25,7 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHandler func(*hz.EntryNotified)) error {
+func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHandler func(*hz.EntryNotified)) {
 	fmt.Println("--ObserveListenerIncludeValueOnly: start")
 	// In this observation, we will observe EntryAdded, EntryRemoved actions included their value.
 	// For this observation, it is needed to register our listener to given MultiMap.
@@ -49,14 +49,14 @@ func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHand
 	for _, entry := range myEntries {
 		_, err := m.Put(ctx, entry.Key, entry.Value)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
 	// Then, remove same entries to observe EntryAdded and EntryRemoved actions.
 	for _, entry := range myEntries {
 		_, err := m.Remove(ctx, entry.Key)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
 
@@ -68,10 +68,9 @@ func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHand
 		panic(err)
 	}
 	fmt.Println("--ObserveListenerIncludeValueOnly: end")
-	return nil
 }
 
-func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*hz.EntryNotified)) error {
+func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*hz.EntryNotified)) {
 	fmt.Println("--ObserveListenerOnKey: start")
 	// The key that we will listen on later.
 	myAwesomeKey := "my-awesome-key"
@@ -97,12 +96,12 @@ func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*h
 	for _, entry := range myEntries {
 		_, err := m.Put(ctx, entry.Key, entry.Value)
 		if err != nil {
-			return err
+			panic(err)
 		}
 	}
 	// To observe `clear` event, lets clear our map as well.
 	if err := m.Clear(ctx); err != nil {
-		return err
+		panic(err)
 	}
 
 	// If you observe the output, you can clearly see that we only handled myAwesomeKey related events then listener ignores "my-dummy-key" related event.
@@ -113,7 +112,6 @@ func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*h
 		panic(err)
 	}
 	fmt.Println("--ObserveListenerOnKey: end")
-	return nil
 }
 
 func main() {
@@ -142,13 +140,7 @@ func main() {
 		}
 	}
 	// Observation on configuration setting with IncludeValue.
-	err = ObserveListenerIncludeValueOnly(ctx, m, myHandler)
-	if err != nil {
-		log.Fatal(err)
-	}
+	ObserveListenerIncludeValueOnly(ctx, m, myHandler)
 	// Observation on configuration setting on a specific Key with IncludeValue.
-	err = ObserveListenerOnKey(ctx, m, myHandler)
-	if err != nil {
-		log.Fatal(err)
-	}
+	ObserveListenerOnKey(ctx, m, myHandler)
 }
