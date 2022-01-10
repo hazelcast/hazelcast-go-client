@@ -18,22 +18,22 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func EncodeHazelcastJsonValue(clientMessage *proto.ClientMessage, hazelcastJsonValue isql.HazelcastJSON) {
+func EncodeHazelcastJsonValue(clientMessage *proto.ClientMessage, jsonValue serialization.JSON) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 
-	EncodeString(clientMessage, hazelcastJsonValue)
+	EncodeString(clientMessage, jsonValue)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeHazelcastJsonValue(frameIterator *proto.ForwardFrameIterator) *isql.HazelcastJSON {
+func DecodeHazelcastJsonValue(frameIterator *proto.ForwardFrameIterator) *serialization.JSON {
 	// begin frame
 	frameIterator.Next()
 
-	value := isql.HazelcastJSON(DecodeString(frameIterator))
+	value := serialization.JSON(DecodeString(frameIterator))
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
 	return &value
