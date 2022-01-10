@@ -20,30 +20,41 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Populate map
+	// Populate map.
 	if _, err = m.Put(ctx, "key1", "value"); err != nil {
 		log.Fatal(err)
 	}
 	if _, err = m.Put(ctx, "key2", "value"); err != nil {
 		log.Fatal(err)
 	}
-	// only change value corresponding to key1
-	finalVal, err := m.ExecuteOnKey(ctx, &IdentifiedEntryProcessor{value: "test"}, "key1")
+	// Only change value corresponding to "key1".
+	prevVal, err := m.ExecuteOnKey(ctx, &IdentifiedEntryProcessor{value: "testOnKey"}, "key1")
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("previous value:", finalVal)
+	fmt.Println("previous value:", prevVal)
+	// Observe value corresponding to "key1" changed, "key2" remains unchanged.
+	checkValue(m, "key1")
+	checkValue(m, "key2")
+	// Change both entries.
+	newValues, err := m.ExecuteOnKeys(ctx, &IdentifiedEntryProcessor{value: "testOnKeys"}, "key1", "key2")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// ExecuteOnKeys returns updated results.
+	fmt.Println(newValues)
 	// check the values
-	value, err := m.Get(ctx, "key1")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("key1:", value)
-	value, err = m.Get(ctx, "key2")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("key2:", value)
+	checkValue(m, "key1")
+	checkValue(m, "key2")
 	// Shutdown client
 	client.Shutdown(ctx)
+}
+
+// Retrieve and print value corresponding to "key" from map "m"
+func checkValue(m *hazelcast.Map, key string) {
+	value, err := m.Get(context.TODO(), key)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s: %s\n", key, value)
 }
