@@ -26,32 +26,33 @@ import (
 )
 
 func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHandler func(*hz.EntryNotified)) error {
+	fmt.Println("--ObserveListenerIncludeValueOnly: start")
 	// In this observation, we will observe EntryAdded, EntryRemoved actions included their value.
-
-	// Let's create a config for our listeners
+	// For this observation, it is needed to register our listener to given MultiMap.
 	listenerConfig := hz.MultiMapEntryListenerConfig{IncludeValue: true}
-	// Add desired notification through config
 	listenerConfig.NotifyEntryAdded(true)
 	listenerConfig.NotifyEntryRemoved(true)
-	// Add our continuous entry listener to the MultiMap that we requested in main
+
+	// Add our continuous entry listener to the given MultiMap.
 	subscriptionID, err := m.AddEntryListener(ctx, listenerConfig, myHandler)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	// Define our entries to observe MultiMap
+	// Initialize entries to put to the given MultiMap.
 	myEntries := []types.Entry{
 		{Key: "my-key", Value: "my-value1"},
 		{Key: "my-key", Value: "my-value2"},
 		{Key: "my-key", Value: "my-value3"},
+		{Key: "my-another-key", Value: "my-another-value1"},
+		{Key: "my-another-key", Value: "my-another-value2"},
 	}
-	// Add those entries to our MultiMap.
 	for _, entry := range myEntries {
 		_, err := m.Put(ctx, entry.Key, entry.Value)
 		if err != nil {
 			return err
 		}
 	}
-	// Then, remove same entries to observe EntryAdded and EntryRemoved actions
+	// Then, remove same entries to observe EntryAdded and EntryRemoved actions.
 	for _, entry := range myEntries {
 		_, err := m.Remove(ctx, entry.Key)
 		if err != nil {
@@ -62,27 +63,27 @@ func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHand
 	// If you observe the output, you can clearly see that our handler works fine and notify us for each "my-key" put and remove operation.
 	// Also, notice that notification order is not guaranteed to be complied with the order of operation.
 
-	// Remove our entry listener from our MultiMap
+	// Remove entry listener from the given MultiMap.
 	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
-		return err
+		panic(err)
 	}
+	fmt.Println("--ObserveListenerIncludeValueOnly: end")
 	return nil
 }
 
 func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*hz.EntryNotified)) error {
-	// In this observation, we will observe EntryAllCleared action and also EntryAdded, EntryRemoved actions for on a certain key.
-
+	fmt.Println("--ObserveListenerOnKey: start")
 	// The key that we will listen on later.
 	myAwesomeKey := "my-awesome-key"
-	// Let's create a config for our listeners with our key
+	// In this observation, we will observe EntryAllCleared action and also EntryAdded, EntryRemoved actions for on a certain key.
+	// For this observation, it is needed to register our listener to the given MultiMap.
 	listenerConfig := hz.MultiMapEntryListenerConfig{IncludeValue: true, Key: myAwesomeKey}
-	// Add desired notification through config
 	listenerConfig.NotifyEntryAllCleared(true)
 	listenerConfig.NotifyEntryAdded(true)
-	// Add our continuous entry listener to the MultiMap that we requested in main
+	// Add our continuous entry listener to the given MultiMap.
 	subscriptionID, err := m.AddEntryListener(ctx, listenerConfig, myHandler)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	// These are the entries to observe that we only interested in the key which we defined above.
 	// Events related to dummy key should not be notified and handled.
@@ -92,7 +93,7 @@ func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*h
 		{Key: myAwesomeKey, Value: "my-awesome-value3"},
 		{Key: "my-dummy-key", Value: "my-dummy-value"},
 	}
-	// Put my observation entries to the MultiMap
+	// Put my observation entries to the given MultiMap.
 	for _, entry := range myEntries {
 		_, err := m.Put(ctx, entry.Key, entry.Value)
 		if err != nil {
@@ -104,14 +105,14 @@ func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*h
 		return err
 	}
 
-	// If you observe the output, you can clearly see that we only handled myAwesomeKey related events then listener ignores
-	// "my-dummy-key" related event.
+	// If you observe the output, you can clearly see that we only handled myAwesomeKey related events then listener ignores "my-dummy-key" related event.
 	// Also, notice that notification order is not guaranteed to be complied with the order of operation.
 
-	// Remove our entry listener from our MultiMap
+	// Remove entry listener from the given MultiMap.
 	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
-		return err
+		panic(err)
 	}
+	fmt.Println("--ObserveListenerOnKey: end")
 	return nil
 }
 
@@ -124,8 +125,8 @@ func main() {
 	}
 	// Disconnect client from the cluster.
 	defer client.Shutdown(ctx)
-	// Request an instance of MultiMap
-	m, err := client.GetMultiMap(ctx, "my-multimap")
+	// Request an instance of a MultiMap.
+	m, err := client.GetMultiMap(ctx, "my-MultiMap")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,19 +134,19 @@ func main() {
 	myHandler := func(event *hz.EntryNotified) {
 		switch event.EventType {
 		case hz.EntryAdded:
-			fmt.Printf("Multimap: %s, (key: %v, value: %v) was added.\n", event.MapName, event.Key, event.Value)
+			fmt.Printf("MultiMap: %s, (key: %v, value: %v) was added.\n", event.MapName, event.Key, event.Value)
 		case hz.EntryRemoved:
-			fmt.Printf("Multimap: %s, (key: %v, value: %v) was removed.\n", event.MapName, event.Key, event.OldValue)
+			fmt.Printf("MultiMap: %s, (key: %v, value: %v) was removed.\n", event.MapName, event.Key, event.OldValue)
 		case hz.EntryAllCleared:
-			fmt.Printf("Multimap: %s was cleared.\n", event.MapName)
+			fmt.Printf("MultiMap: %s was cleared.\n", event.MapName)
 		}
 	}
-	// Observation on configuration setting with IncludeValue
+	// Observation on configuration setting with IncludeValue.
 	err = ObserveListenerIncludeValueOnly(ctx, m, myHandler)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Observation on configuration setting with IncludeValue and Key.
+	// Observation on configuration setting on a specific Key with IncludeValue.
 	err = ObserveListenerOnKey(ctx, m, myHandler)
 	if err != nil {
 		log.Fatal(err)
