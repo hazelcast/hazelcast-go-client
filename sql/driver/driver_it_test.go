@@ -23,6 +23,7 @@ import (
 	"log"
 	"math/big"
 	"net/url"
+	"reflect"
 	"strconv"
 	"sync"
 	"testing"
@@ -227,6 +228,13 @@ func TestSQLQuery(t *testing.T) {
 			testSQLQuery(t, context.Background(), tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn)
 		})
 	}
+}
+
+func TestSQLQueryWithJSONValue(t *testing.T) {
+	it.SkipIf(t, "hz < 5.1")
+	keyFn := func(i int) interface{} { return int32(i) }
+	valueFn := func(i int) interface{} { return serialization.JSON(fmt.Sprintf(`{"id": %d, "type": "jsonValue"}`, i)) }
+	testSQLQuery(t, context.Background(), "int", "json", keyFn, valueFn)
 }
 
 func TestSQLWithPortableData(t *testing.T) {
@@ -515,6 +523,14 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 					assert.Equal(t, bt.UnscaledValue().String(), be.UnscaledValue().String())
 				})
 			}
+		} else if valueFmt == "json" {
+			// Default way scans *serialization.JSON to *interface{}.
+			// Asserting it against serialization.JSON fails, since one of them is of pointer type.
+			// Hence, provide custom assertion.
+			for i := range entries {
+				entries[i].Value = reflect.ValueOf(entries[i].Value).Elem().Interface()
+			}
+			assert.Equal(t, target, entries)
 		} else {
 			assert.Equal(t, target, entries)
 		}
