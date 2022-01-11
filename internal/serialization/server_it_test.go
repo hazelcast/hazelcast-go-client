@@ -44,6 +44,11 @@ func TestServer(t *testing.T) {
 			target: []interface{}{"foo", int32(38)},
 		},
 		{
+			name:   "linked-list-empty",
+			input:  `new java.util.LinkedList()`,
+			target: []interface{}{},
+		},
+		{
 			name:   "class",
 			input:  `java.lang.String.class`,
 			target: "java.lang.String",

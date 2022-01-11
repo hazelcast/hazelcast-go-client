@@ -126,6 +126,11 @@ func TestSerializationImprovements(t *testing.T) {
 				target: []interface{}{"foo", int64(22)},
 			},
 			{
+				input:  []interface{}{},
+				name:   "JavaArrayList-empty",
+				target: []interface{}{},
+			},
+			{
 				input:  big.NewInt(-10_000_000),
 				name:   "JavaBigInteger",
 				target: big.NewInt(-10_000_000),
