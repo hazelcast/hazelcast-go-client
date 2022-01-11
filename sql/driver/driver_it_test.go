@@ -20,7 +20,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"math/big"
 	"net/url"
 	"reflect"
@@ -499,14 +498,14 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
 		rows, err := db.QueryContext(ctx, query)
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		defer rows.Close()
 		entries := make([]types.Entry, len(target))
 		var i int
 		for rows.Next() {
 			if err := rows.Scan(&entries[i].Key, &entries[i].Value); err != nil {
-				log.Fatal(err)
+				t.Fatal(err)
 			}
 			i++
 		}
@@ -545,7 +544,7 @@ func createMapping(t *testing.T, db *sql.DB, mapping string) error {
 
 func createMappingStr(mapName, keyFmt, valueFmt string) string {
 	return fmt.Sprintf(`
-        CREATE MAPPING "%s"
+        CREATE OR REPLACE MAPPING "%s"
         TYPE IMAP 
         OPTIONS (
             'keyFormat' = '%s',
