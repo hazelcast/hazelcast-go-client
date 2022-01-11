@@ -132,7 +132,7 @@ func TestMultiMap_RemoveEntry(t *testing.T) {
 		it.Must(m.PutAll(ctx, "key", targetValue, otherValue))
 		value := it.MustValue(m.Get(ctx, "key"))
 		assert.ElementsMatch(t, value, []interface{}{targetValue, otherValue})
-		// Remove only one of the values that corresponds to the key
+		// Remove only one of the values that corresponds to the key.
 		ok, err := m.RemoveEntry(ctx, "key", targetValue)
 		if err != nil {
 			t.Fatal(err)
@@ -140,7 +140,7 @@ func TestMultiMap_RemoveEntry(t *testing.T) {
 		assert.True(t, ok)
 		remaining := it.MustValue(m.Get(ctx, "key"))
 		assert.Equal(t, []interface{}{otherValue}, remaining)
-		// Call should have no effect, expect "false" return value
+		// Call should have no effect, expect it to return "false".
 		ok, err = m.RemoveEntry(ctx, "key", targetValue)
 		if err != nil {
 			t.Fatal(err)
