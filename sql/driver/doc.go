@@ -164,7 +164,7 @@ You can read the details about mappings here: https://docs.hazelcast.com/hazelca
 Supported Data Types
 
 The following data types are supported when inserting/updating.
-The names in parantheses correspond to SQL types:
+The names in parentheses correspond to SQL types:
 
 	- string (varchar)
 	- int8 (tinyint)
@@ -179,6 +179,7 @@ The names in parantheses correspond to SQL types:
 	- time.Time (time) Detected by checking: year == 0, month == day == 1
 	- time.Time (timestamp) Detected by checking: hour == minute == second == nanoseconds = 0, timezone == time.Local
 	- time.Time (timestamp with time zone) Detected by checking: hour == minute == second == nanoseconds = 0, timezone != time.Local
+	- serialization.JSON (json)
 
 Using Raw Values
 
@@ -203,7 +204,9 @@ Querying rows:
 
 Using JSON
 
-Non-nested JSON values are supported.
+Two different json types are supported, namely "json-flat" and "json"
+
+1) "json-flat" value format treats top level fields of the json object as separate columns. It does not support nested JSON values.
 
 Assuming the following JSON value:
 
@@ -234,6 +237,45 @@ Inserting rows:
 Querying rows:
 
 	SELECT __key, name FROM person WHERE age > 30
+
+2) "json" is a first-class SQL type with IMap and Kafka Connector support.
+
+Creating a mapping:
+
+	CREATE MAPPING person (
+		__key BIGINT,
+		this  JSON
+	)
+	TYPE IMAP
+	OPTIONS (
+		'keyFormat' = 'bigint',
+		'valueFormat' = 'json'
+	)
+
+Inserting rows:
+
+	// Use serialization.JSON type to specify a JSON value.
+	INSERT INTO person VALUES(100, serialization.JSON(fmt.Sprintf(`{"age":%d, "name":%s}`, 35, 'Jane Doe')))
+
+Querying rows:
+
+	// Use serialization.JSON type to scan JSON string.
+	q := fmt.Sprintf(`SELECT this FROM "%s" WHERE CAST(JSON_VALUE(this, '$.age') AS DOUBLE) > ?`, mapName)
+	rows, err := db.Query(q, minAge)
+	for rows.Next() {
+		var js serialization.JSON
+		rows.Scan(&js)
+	}
+
+Supported JSON related operations:
+
+1. `JSON_QUERY(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... <extended syntax> ): returns JSON`: returns a json-object/array by
+the given JSON path.
+
+2. `JSON_VALUE(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... ): returns VARCHAR`: returns a primitive value as varchar by the
+given JSON path.
+
+3. `CAST(x AS JSON)` support for VARCHAR, columns/literals and dynamic params are supported.
 
 Using Portable
 
