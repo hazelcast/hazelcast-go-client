@@ -99,10 +99,13 @@ type RecordWithDateTime struct {
 }
 
 func NewRecordWithDateTime(t *time.Time) *RecordWithDateTime {
+	dv := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	tv := time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
+	tsv := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
 	return &RecordWithDateTime{
-		DateValue:                  t,
-		TimeValue:                  t,
-		TimestampValue:             t,
+		DateValue:                  &dv,
+		TimeValue:                  &tv,
+		TimestampValue:             &tsv,
 		TimestampWithTimezoneValue: t,
 	}
 }
@@ -267,7 +270,11 @@ func TestSQLWithPortableData(t *testing.T) {
 			DoubleValue:   12.789,
 			DecimalValue:  &dec,
 		}
-		it.Must(m.Set(context.Background(), 1, rec))
+		_, err := db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, varcharvalue, tinyintvalue, smallintvalue, integervalue, bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, mapName),
+			1, rec.VarcharValue, rec.TinyIntValue, rec.SmallIntValue, rec.IntegerValue, rec.BigIntValue, rec.BoolValue, rec.RealValue, rec.DoubleValue, *rec.DecimalValue)
+		if err != nil {
+			t.Fatal(err)
+		}
 		// select the value itself
 		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
 		var vs []interface{}
@@ -342,7 +349,11 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		it.MustValue(db.Exec(q))
 		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
 		rec := NewRecordWithDateTime(&dt)
-		it.Must(m.Set(context.TODO(), 1, rec))
+		_, err := db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
+			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
+		if err != nil {
+			t.Fatal(err)
+		}
 		targetDate := time.Date(2021, 12, 22, 0, 0, 0, 0, time.Local)
 		targetTime := time.Date(0, 1, 1, 23, 40, 12, 3400, time.Local)
 		targetTimestamp := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.Local)

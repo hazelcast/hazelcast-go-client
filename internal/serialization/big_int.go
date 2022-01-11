@@ -43,6 +43,9 @@ func NewBigInt(b *big.Int) BigInt {
 // GoBigInt returns a big.Int from this BigInt
 func (b BigInt) GoBigInt() *big.Int {
 	bb := new(big.Int)
+	if len(b.mag) == 0 {
+		return bb
+	}
 	bb.SetBits(int32ArrToWords(b.mag))
 	if b.signum < 0 {
 		bb.Neg(bb)
