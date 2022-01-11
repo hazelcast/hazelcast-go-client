@@ -59,7 +59,7 @@ func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHand
 		}
 	}
 
-	// If you observe the output, you can clearly see that our handler works fine and notify us for each "my-key" put and remove operation.
+	// If you observe the output, you can clearly see that given myHandler works fine and notifies for each "my-key" put and remove operations.
 	// Also, notice that notification order is not guaranteed to be complied with the order of operation.
 
 	// Remove entry listener from the given MultiMap.
@@ -103,7 +103,7 @@ func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*h
 		panic(err)
 	}
 
-	// If you observe the output, you can clearly see that we only handled myAwesomeKey related events then listener ignores "my-dummy-key" related event.
+	// If you observe the output, you can clearly see that myHandler only handled myAwesomeKey related events then listener ignores "my-dummy-key" related event.
 	// Also, notice that notification order is not guaranteed to be complied with the order of operation.
 
 	// Remove entry listener from the given MultiMap.
@@ -138,7 +138,7 @@ func main() {
 			fmt.Printf("MultiMap: %s was cleared.\n", event.MapName)
 		}
 	}
-	// Observation on configuration setting with IncludeValue.
+	// Observation on configuration setting with IncludeValue only.
 	ObserveListenerIncludeValueOnly(ctx, m, myHandler)
 	// Observation on configuration setting on a specific Key with IncludeValue.
 	ObserveListenerOnKey(ctx, m, myHandler)
