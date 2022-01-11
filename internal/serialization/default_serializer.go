@@ -503,11 +503,11 @@ func (JavaArrayListSerializer) Read(input serialization.DataInput) interface{} {
 
 func (JavaArrayListSerializer) Write(o serialization.DataOutput, i interface{}) {
 	v := i.([]interface{})
-	length := len(v)
-	if length == 0 {
+	if v == nil {
 		o.WriteInt32(nilArrayLength)
 		return
 	}
+	length := len(v)
 	o.WriteInt32(int32(length))
 	for j := 0; j < length; j++ {
 		o.WriteObject(v[j])
