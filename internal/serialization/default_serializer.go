@@ -467,6 +467,25 @@ func (JavaLinkedListSerializer) Write(output serialization.DataOutput, i interfa
 	// no-op
 }
 
+type JavaArraySerializer struct{}
+
+func (JavaArraySerializer) ID() int32 {
+	return TypeJavaArray
+}
+
+func (JavaArraySerializer) Read(input serialization.DataInput) interface{} {
+	count := int(input.ReadInt32())
+	res := make([]interface{}, count)
+	for i := 0; i < count; i++ {
+		res[i] = input.ReadObject()
+	}
+	return res
+}
+
+func (JavaArraySerializer) Write(output serialization.DataOutput, i interface{}) {
+	// no-op
+}
+
 type JavaArrayListSerializer struct{}
 
 func (JavaArrayListSerializer) ID() int32 {
@@ -482,8 +501,17 @@ func (JavaArrayListSerializer) Read(input serialization.DataInput) interface{} {
 	return res
 }
 
-func (JavaArrayListSerializer) Write(output serialization.DataOutput, i interface{}) {
-	// no-op
+func (JavaArrayListSerializer) Write(o serialization.DataOutput, i interface{}) {
+	v := i.([]interface{})
+	length := len(v)
+	if length == 0 {
+		o.WriteInt32(nilArrayLength)
+		return
+	}
+	o.WriteInt32(int32(length))
+	for j := 0; j < length; j++ {
+		o.WriteObject(v[j])
+	}
 }
 
 type JavaLocalDateSerializer struct{}
@@ -514,32 +542,32 @@ func (JavaLocalTimeSerializer) Write(output serialization.DataOutput, i interfac
 	WriteTime(output, i.(time.Time))
 }
 
-type TypeJavaLocalDateTimeSerializer struct{}
+type JavaLocalDateTimeSerializer struct{}
 
-func (TypeJavaLocalDateTimeSerializer) ID() int32 {
+func (JavaLocalDateTimeSerializer) ID() int32 {
 	return TypeJavaLocalDateTime
 }
 
-func (TypeJavaLocalDateTimeSerializer) Read(input serialization.DataInput) interface{} {
+func (JavaLocalDateTimeSerializer) Read(input serialization.DataInput) interface{} {
 	return ReadTimestamp(input)
 }
 
-func (TypeJavaLocalDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+func (JavaLocalDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
 	t := i.(time.Time)
 	WriteTimestamp(output, t)
 }
 
-type TypeJavaOffsetDateTimeSerializer struct{}
+type JavaOffsetDateTimeSerializer struct{}
 
-func (TypeJavaOffsetDateTimeSerializer) ID() int32 {
+func (JavaOffsetDateTimeSerializer) ID() int32 {
 	return TypeJavaOffsetDateTime
 }
 
-func (TypeJavaOffsetDateTimeSerializer) Read(input serialization.DataInput) interface{} {
+func (JavaOffsetDateTimeSerializer) Read(input serialization.DataInput) interface{} {
 	return ReadTimestampWithTimezone(input)
 }
 
-func (TypeJavaOffsetDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+func (JavaOffsetDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
 	t := i.(time.Time)
 	WriteTimestampWithTimezone(output, t)
 }
