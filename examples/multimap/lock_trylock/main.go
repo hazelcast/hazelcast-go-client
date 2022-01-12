@@ -65,6 +65,7 @@ func main() {
 	wg.Wait()
 	// Release the lock
 	must(m.Unlock(lockCtx, key))
+	must(m.Delete(lockCtx, key))
 }
 
 func createClientAndMultiMap() (*hazelcast.Client, *hazelcast.MultiMap) {
