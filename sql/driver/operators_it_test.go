@@ -32,9 +32,9 @@ import (
 )
 
 type employee struct {
-	ID            int `json:"id"`
 	PersonnelInfo `json:"personnel_info"`
 	CompanyInfo   `json:"company_info"`
+	ID            int `json:"id"`
 }
 type PersonnelInfo struct {
 	Name string `json:"name"`
@@ -50,26 +50,19 @@ func TestNestedJSONQuery(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		defer driver.SetSerializationConfig(nil)
 		const rowCount = 50
-		db, err := initDB(t, config)
-		assert.Nil(t, err)
+		db := initDB(t, config)
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
 		// Insert random employee entries.
 		employees, err := populateMapWithEmployees(m, rowCount)
-		assert.Nil(t, err)
+		it.Must(err)
 		// Test query on nested json
 		complexQuery := fmt.Sprintf(`SELECT JSON_VALUE(this, '$.personnel_info.name') FROM "%s" WHERE CAST(JSON_VALUE(this, '$.id') AS TINYINT)=0`, mapName)
-		rows, err := db.QueryContext(context.Background(), complexQuery)
-		assert.Nil(t, err)
-		defer rows.Close()
-		var count int
-		for ; rows.Next(); count++ {
-			var name string
-			it.Must(rows.Scan(&name))
-			assert.Equal(t, employees[0].PersonnelInfo.Name, name)
-		}
-		assert.Equal(t, 1, count)
+		row := db.QueryRowContext(context.Background(), complexQuery)
+		var name string
+		it.Must(row.Scan(&name))
+		assert.Equal(t, employees[0].PersonnelInfo.Name, name)
 	})
 }
 
@@ -78,8 +71,7 @@ func TestJSONOperators(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		const rowCount = 50
 		defer driver.SetSerializationConfig(nil)
-		db, err := initDB(t, config)
-		assert.Nil(t, err)
+		db := initDB(t, config)
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
@@ -88,18 +80,21 @@ func TestJSONOperators(t *testing.T) {
 		it.MustValue(db.Exec(createViewQuery))
 		// Insert random employee entries.
 		employees, err := populateMapWithEmployees(m, rowCount)
-		assert.Nil(t, err)
+		it.Must(err)
 		ctx := context.Background()
 		rows, err := db.QueryContext(ctx, `SELECT pid, info FROM "Personnel" ORDER BY pid ASC`)
-		assert.Nil(t, err)
+		it.Must(err)
 		defer rows.Close()
 		for i := 0; rows.Next(); i++ {
 			var pid int
 			var data serialization.JSON
 			it.Must(rows.Scan(&pid, &data))
 			assert.Equal(t, employees[i].ID, pid)
-			infoStr := it.MustValue(json.Marshal(employees[i].PersonnelInfo))
-			assert.Equal(t, serialization.JSON(infoStr.([]byte)), data)
+			info, ok := it.MustValue(json.Marshal(employees[i].PersonnelInfo)).([]byte)
+			if !ok {
+				t.Fatal("scanned value is not of the expected type")
+			}
+			assert.Equal(t, serialization.JSON(info), data)
 		}
 		// Clean up for next test (smart, non-smart)
 		it.MustValue(db.Exec(`DROP VIEW Personnel`))
@@ -107,16 +102,14 @@ func TestJSONOperators(t *testing.T) {
 	})
 }
 
-func initDB(t *testing.T, config *hz.Config) (*sql.DB, error) {
+func initDB(t *testing.T, config *hz.Config) *sql.DB {
 	dsn := makeDSN(config)
 	sc := &serialization.Config{}
 	sc.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
 	it.Must(driver.SetSerializationConfig(sc))
 	db, err := sql.Open("hazelcast", dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return db, err
+	it.Must(err)
+	return db
 }
 
 func populateMapWithEmployees(m *hz.Map, rowCount int) ([]employee, error) {
@@ -140,7 +133,7 @@ func populateMapWithEmployees(m *hz.Map, rowCount int) ([]employee, error) {
 		}
 		b, err := json.Marshal(e)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("error encountered on json.Marshall: %w", err)
 		}
 		employees = append(employees, e)
 		return serialization.JSON(b)

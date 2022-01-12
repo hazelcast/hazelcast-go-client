@@ -951,6 +951,7 @@ func DecodeNullableForSQLHazelcastJSON(it *proto.ForwardFrameIterator) []driver.
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil
 	}
+	// the decoder below never returns an error, so ignoring the error
 	vs, _ := DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) (driver.Value, error) {
 		return DecodeHazelcastJsonValue(it), nil
 	})

@@ -54,6 +54,7 @@ func (j *JSON) UnmarshalJSON(data []byte) error {
 func (j *JSON) Scan(src interface{}) error {
 	switch v := src.(type) {
 	case *[]byte:
+		*j = append((*j)[0:0], *v...)
 	case *JSON:
 		*j = append((*j)[0:0], []byte(*v)...)
 	default:

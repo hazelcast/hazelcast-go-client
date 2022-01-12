@@ -15,7 +15,8 @@
  */
 
 /*
-This example demonstrates how to use the Hazelcast database/sql driver.
+This example demonstrates how to use the Hazelcast database/sql driver with JSON values.
+You need to have Hazelcast version 5.1 or later to access JSON features.
 */
 
 package main
