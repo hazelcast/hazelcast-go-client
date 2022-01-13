@@ -17,8 +17,6 @@
 package serialization
 
 import (
-	"errors"
-
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
@@ -47,18 +45,5 @@ func (j *JSON) UnmarshalJSON(data []byte) error {
 		return ihzerrors.NewIllegalArgumentError("serialization.JSON: UnmarshalJSON on nil pointer", nil)
 	}
 	*j = append((*j)[0:0], data...)
-	return nil
-}
-
-// Scan is implemented to satisfy sql.Scanner interface, to scan values.
-func (j *JSON) Scan(src interface{}) error {
-	switch v := src.(type) {
-	case *[]byte:
-		*j = append((*j)[0:0], *v...)
-	case *JSON:
-		*j = append((*j)[0:0], []byte(*v)...)
-	default:
-		return errors.New("scan value is not []byte or serialization.JSON")
-	}
 	return nil
 }

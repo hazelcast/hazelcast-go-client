@@ -29,12 +29,12 @@ func EncodeHazelcastJsonValue(clientMessage *proto.ClientMessage, jsonValue seri
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeHazelcastJsonValue(frameIterator *proto.ForwardFrameIterator) *serialization.JSON {
+func DecodeHazelcastJsonValue(frameIterator *proto.ForwardFrameIterator) serialization.JSON {
 	// begin frame
 	frameIterator.Next()
 
 	value := serialization.JSON(DecodeString(frameIterator))
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return &value
+	return value
 }

@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/url"
-	"reflect"
 	"strconv"
 	"sync"
 	"testing"
@@ -234,6 +233,33 @@ func TestSQLQueryWithJSONValue(t *testing.T) {
 	keyFn := func(i int) interface{} { return int32(i) }
 	valueFn := func(i int) interface{} { return serialization.JSON(fmt.Sprintf(`{"id": %d, "type": "jsonValue"}`, i)) }
 	testSQLQuery(t, context.Background(), "int", "json", keyFn, valueFn)
+}
+
+func TestSQLScanJSON(t *testing.T) {
+	it.SkipIf(t, "hz < 5.1")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		testJSON := serialization.JSON(`{"test":"value"}`)
+		ctx := context.Background()
+		it.MustValue(m.Put(ctx, 1, testJSON))
+		dsn := makeDSN(config)
+		db, err := sql.Open("hazelcast", dsn)
+		it.Must(err)
+		defer db.Close()
+		ms := createMappingStr(mapName, "bigint", "json")
+		it.Must(createMapping(t, db, ms))
+		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
+		row := db.QueryRowContext(ctx, query)
+		it.Must(err)
+		var (
+			key   int
+			value serialization.JSON
+		)
+		if err = row.Scan(&key, &value); err != nil {
+			t.Fatalf("could not scan serialization.JSON: %v", err)
+		}
+		assert.Equal(t, 1, key)
+		assert.Equal(t, testJSON, value)
+	})
 }
 
 func TestSQLWithPortableData(t *testing.T) {
@@ -522,14 +548,6 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 					assert.Equal(t, bt.UnscaledValue().String(), be.UnscaledValue().String())
 				})
 			}
-		} else if valueFmt == "json" {
-			// Default way scans *serialization.JSON to *interface{}.
-			// Asserting it against serialization.JSON fails, since one of them is of pointer type.
-			// Hence, provide custom assertion.
-			for i := range entries {
-				entries[i].Value = reflect.ValueOf(entries[i].Value).Elem().Interface()
-			}
-			assert.Equal(t, target, entries)
 		} else {
 			assert.Equal(t, target, entries)
 		}
