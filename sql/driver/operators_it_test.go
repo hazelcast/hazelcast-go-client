@@ -113,7 +113,7 @@ func initDB(t *testing.T, config *hz.Config) *sql.DB {
 }
 
 func populateMapWithEmployees(m *hz.Map, rowCount int) ([]employee, error) {
-	keyFm := func(i int) interface{} {
+	keyFn := func(i int) interface{} {
 		return i
 	}
 	titles := []string{"SWE", "PM", "Manager"}
@@ -138,6 +138,6 @@ func populateMapWithEmployees(m *hz.Map, rowCount int) ([]employee, error) {
 		employees = append(employees, e)
 		return serialization.JSON(b)
 	}
-	_, err := populateMap(m, rowCount, keyFm, valueFn)
+	_, err := populateMap(m, rowCount, keyFn, valueFn)
 	return employees, err
 }

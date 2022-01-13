@@ -240,22 +240,19 @@ func TestSQLScanJSON(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		testJSON := serialization.JSON(`{"test":"value"}`)
 		ctx := context.Background()
-		it.MustValue(m.Put(ctx, 1, testJSON))
-		dsn := makeDSN(config)
-		db, err := sql.Open("hazelcast", dsn)
+		db, err := sql.Open("hazelcast", makeDSN(config))
 		it.Must(err)
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
+		it.MustValue(db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, this) VALUES(?, ?)`, mapName), 1, testJSON))
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
 		row := db.QueryRowContext(ctx, query)
 		it.Must(err)
-		var (
-			key   int
-			value serialization.JSON
-		)
+		var key int
+		var value serialization.JSON
 		if err = row.Scan(&key, &value); err != nil {
-			t.Fatalf("could not scan serialization.JSON: %v", err)
+			t.Fatal(fmt.Errorf("scanning serialization.JSON: %w", err))
 		}
 		assert.Equal(t, 1, key)
 		assert.Equal(t, testJSON, value)

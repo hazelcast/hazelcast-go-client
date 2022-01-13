@@ -204,7 +204,7 @@ Querying rows:
 
 Using JSON
 
-Two different json types are supported, namely "json-flat" and "json"
+Two different JSON types are supported, namely "json-flat" and "json"
 
 1) "json-flat" value format treats top level fields of the json object as separate columns. It does not support nested JSON values.
 
@@ -258,10 +258,11 @@ Inserting rows:
 	INSERT INTO person VALUES(100, serialization.JSON(fmt.Sprintf(`{"age":%d, "name":%s}`, 35, 'Jane Doe')))
 
 Querying rows:
-
+Error handling is omitted for to keep the example short.
 	// Use serialization.JSON type to scan JSON string.
 	q := fmt.Sprintf(`SELECT this FROM "%s" WHERE CAST(JSON_VALUE(this, '$.age') AS DOUBLE) > ?`, mapName)
 	rows, err := db.Query(q, minAge)
+	defer rows.Close()
 	for rows.Next() {
 		var js serialization.JSON
 		rows.Scan(&js)
@@ -269,13 +270,14 @@ Querying rows:
 
 Supported JSON related operations:
 
-1. `JSON_QUERY(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... <extended syntax> ): returns JSON`: returns a json-object/array by
-the given JSON path.
+1. JSON_QUERY returns a json-object/array by the given JSON path.
+    JSON_QUERY(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... <extended syntax>)
 
-2. `JSON_VALUE(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... ): returns VARCHAR`: returns a primitive value as varchar by the
-given JSON path.
+2. JSON_VALUE returns a primitive value as varchar by the given JSON path.
+	JSON_VALUE(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... )
 
-3. `CAST(x AS JSON)` support for VARCHAR, columns/literals and dynamic params are supported.
+3. CAST can cast VARCHAR, columns/literals and dynamic params to JSON.
+	CAST(x AS JSON)
 
 Using Portable
 
