@@ -53,20 +53,17 @@ func ObserveListenerIncludeValueOnly(ctx context.Context, m *hz.MultiMap, myHand
 	}
 	// Then, remove same entries to observe EntryAdded and EntryRemoved actions.
 	for _, entry := range myEntries {
-		_, err := m.Remove(ctx, entry.Key)
+		_, err := m.RemoveEntry(ctx, entry.Key, entry.Value)
 		if err != nil {
 			panic(err)
 		}
 	}
-
-	// If you observe the output, you can clearly see that given myHandler works fine and notifies for each "my-key" put and remove operations.
-	// Also, notice that notification order is not guaranteed to be complied with the order of operation.
-
 	// Remove entry listener from the given MultiMap.
 	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
 		panic(err)
 	}
 	fmt.Println("--ObserveListenerIncludeValueOnly: end")
+	// If you observe the output, you can clearly see that given myHandler works fine and notifies for each of "my-key" put and remove operations.
 }
 
 func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*hz.EntryNotified)) {
@@ -102,15 +99,13 @@ func ObserveListenerOnKey(ctx context.Context, m *hz.MultiMap, myHandler func(*h
 	if err := m.Clear(ctx); err != nil {
 		panic(err)
 	}
-
-	// If you observe the output, you can clearly see that myHandler only handled myAwesomeKey related events then listener ignores "my-dummy-key" related event.
-	// Also, notice that notification order is not guaranteed to be complied with the order of operation.
-
 	// Remove entry listener from the given MultiMap.
 	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
 		panic(err)
 	}
 	fmt.Println("--ObserveListenerOnKey: end")
+	// If you observe the output, you can clearly see that myHandler only handled myAwesomeKey related events
+	// then listener ignores "my-dummy-key" related event.
 }
 
 func main() {
