@@ -18,8 +18,10 @@ package driver_test
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"math"
+	"math/big"
 	"testing"
 	"time"
 
@@ -27,7 +29,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	pubdriver "github.com/hazelcast/hazelcast-go-client/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -232,7 +234,7 @@ func TestParseDSN(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			c, err := driver.MakeConfigFromDSN(tc.DSN)
+			c, err := idriver.MakeConfigFromDSN(tc.DSN)
 			if tc.Err != nil {
 				if err == nil {
 					t.Fatalf("expected error")
@@ -265,7 +267,7 @@ func TestExtractCursorBufferSize(t *testing.T) {
 		{
 			Name:   "default",
 			CtxFn:  func() context.Context { return context.Background() },
-			Target: driver.DefaultCursorBufferSize,
+			Target: idriver.DefaultCursorBufferSize,
 		},
 		{
 			Name:   "positive int32 size",
@@ -308,7 +310,7 @@ func TestExtractCursorBufferSize(t *testing.T) {
 				return
 			}
 			ctx := tc.CtxFn()
-			assert.Equal(t, tc.Target, driver.ExtractCursorBufferSize(ctx))
+			assert.Equal(t, tc.Target, idriver.ExtractCursorBufferSize(ctx))
 		})
 	}
 }
@@ -323,7 +325,7 @@ func TestExtractTimeoutMillis(t *testing.T) {
 		{
 			Name:   "default",
 			CtxFn:  func() context.Context { return context.Background() },
-			Target: driver.DefaultTimeoutMillis,
+			Target: idriver.DefaultTimeoutMillis,
 		},
 		{
 			Name:   "positive duration",
@@ -348,7 +350,20 @@ func TestExtractTimeoutMillis(t *testing.T) {
 				return
 			}
 			ctx := tc.CtxFn()
-			assert.Equal(t, tc.Target, driver.ExtractTimeoutMillis(ctx))
+			assert.Equal(t, tc.Target, idriver.ExtractTimeoutMillis(ctx))
 		})
 	}
+}
+
+func TestArgNotNil(t *testing.T) {
+	var b *big.Int
+	nv := &driver.NamedValue{
+		Name:    "",
+		Ordinal: 0,
+		Value:   b,
+	}
+	conn := idriver.Conn{}
+	err := conn.CheckNamedValue(nv)
+	assert.Error(t, err)
+	assert.Equal(t, "nil arg is not allowed: illegal argument error", err.Error())
 }

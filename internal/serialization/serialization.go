@@ -205,10 +205,16 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return javaDateSerializer
 	case TypeJavaBigInteger:
 		return javaBigIntegerSerializer
+	case TypeJavaDecimal:
+		return javaDecimalSerializer
 	case TypeJSONSerialization:
 		return jsonSerializer
+	case TypeJavaArray:
+		return javaArraySerializer
 	case TypeJavaArrayList:
 		return javaArrayListSerializer
+	case TypeJavaLinkedList:
+		return javaLinkedListSerializer
 	case TypeJavaLocalDate:
 		return javaLocalDateSerializer
 	case TypeJavaLocalTime:
@@ -217,6 +223,8 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return javaLocalDateTimeSerializer
 	case TypeJavaOffsetDateTime:
 		return javaOffsetDateTimeSerializer
+	case TypeJavaClass:
+		return javaClassSerializer
 	case TypeGobSerialization:
 		return gobSerializer
 	}
@@ -338,6 +346,8 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return float32ArraySerializer
 	case []float64:
 		return float64ArraySerializer
+	case []interface{}:
+		return javaArrayListSerializer
 	case types.UUID:
 		return uuidSerializer
 	case time.Time:
@@ -404,9 +414,12 @@ var jsonSerializer = &JSONValueSerializer{}
 var javaDateSerializer = &JavaDateSerializer{}
 var javaBigIntegerSerializer = &JavaBigIntegerSerializer{}
 var javaDecimalSerializer = &JavaDecimalSerializer{}
+var javaClassSerializer = &JavaClassSerializer{}
+var javaArraySerializer = &JavaArraySerializer{}
 var javaArrayListSerializer = &JavaArrayListSerializer{}
+var javaLinkedListSerializer = &JavaLinkedListSerializer{}
 var javaLocalDateSerializer = &JavaLocalDateSerializer{}
 var javaLocalTimeSerializer = &JavaLocalTimeSerializer{}
-var javaLocalDateTimeSerializer = &TypeJavaLocalDateTimeSerializer{}
-var javaOffsetDateTimeSerializer = &TypeJavaOffsetDateTimeSerializer{}
+var javaLocalDateTimeSerializer = &JavaLocalDateTimeSerializer{}
+var javaOffsetDateTimeSerializer = &JavaOffsetDateTimeSerializer{}
 var gobSerializer = &GobSerializer{}

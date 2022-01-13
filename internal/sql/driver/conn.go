@@ -21,7 +21,9 @@ import (
 	"database/sql/driver"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 var (
@@ -31,6 +33,13 @@ var (
 type Conn struct {
 	ic *client.Client
 	ss *SQLService
+}
+
+func (c *Conn) CheckNamedValue(v *driver.NamedValue) error {
+	if check.Nil(v.Value) {
+		return ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
+	}
+	return nil
 }
 
 func newConn(name string) (*Conn, error) {

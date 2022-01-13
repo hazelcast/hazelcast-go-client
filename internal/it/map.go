@@ -18,6 +18,7 @@ package it
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.uber.org/goleak"
@@ -87,4 +88,16 @@ func GetClientMapWithConfig(mapName string, config *hz.Config) (*hz.Client, *hz.
 	} else {
 		return client, m
 	}
+}
+
+func MapSetOnServer(clusterID string, mapName string, key, value string) *Response {
+	script := fmt.Sprintf(`
+		var map = instance_0.getMap("%s");
+        map.set(%s, %s);
+	`, mapName, key, value)
+	resp, err := rc.ExecuteOnController(context.Background(), clusterID, script, Lang_JAVASCRIPT)
+	if err != nil {
+		panic(fmt.Errorf("executing on controller: %w", err))
+	}
+	return resp
 }

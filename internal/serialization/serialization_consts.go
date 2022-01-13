@@ -43,6 +43,7 @@ const (
 	TypeJavaDate           = -25
 	TypeJavaBigInteger     = -26
 	TypeJavaDecimal        = -27
+	TypeJavaArray          = -28
 	TypeJavaArrayList      = -29
 	TypeJavaLinkedList     = -30
 	TypeJavaLocalDate      = -51
