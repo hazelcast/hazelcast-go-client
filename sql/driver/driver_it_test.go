@@ -240,18 +240,16 @@ func TestSQLScanJSON(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		testJSON := serialization.JSON(`{"test":"value"}`)
 		ctx := context.Background()
-		db, err := sql.Open("hazelcast", makeDSN(config))
-		it.Must(err)
+		db := mustDB(sql.Open("hazelcast", makeDSN(config)))
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
 		it.MustValue(db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, this) VALUES(?, ?)`, mapName), 1, testJSON))
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
 		row := db.QueryRowContext(ctx, query)
-		it.Must(err)
 		var key int
 		var value serialization.JSON
-		if err = row.Scan(&key, &value); err != nil {
+		if err := row.Scan(&key, &value); err != nil {
 			t.Fatal(fmt.Errorf("scanning serialization.JSON: %w", err))
 		}
 		assert.Equal(t, 1, key)
@@ -509,7 +507,7 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			t.Fatal(err)
 		}
 		defer driver.SetSerializationConfig(nil)
-		db, err := sql.Open("hazelcast", dsn)
+		db := mustDB(sql.Open("hazelcast", dsn))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -519,10 +517,7 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			t.Fatal(err)
 		}
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
-		rows, err := db.QueryContext(ctx, query)
-		if err != nil {
-			t.Fatal(err)
-		}
+		rows := mustRows(db.QueryContext(ctx, query))
 		defer rows.Close()
 		entries := make([]types.Entry, len(target))
 		var i int
@@ -592,4 +587,14 @@ func makeDSN(config *hz.Config) string {
 	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
 	q.Add("log", string(ll))
 	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
+}
+
+func mustDB(db *sql.DB, err error) *sql.DB {
+	it.Must(err)
+	return db
+}
+
+func mustRows(rows *sql.Rows, err error) *sql.Rows {
+	it.Must(err)
+	return rows
 }

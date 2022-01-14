@@ -82,8 +82,7 @@ func TestJSONOperators(t *testing.T) {
 		employees, err := populateMapWithEmployees(m, rowCount)
 		it.Must(err)
 		ctx := context.Background()
-		rows, err := db.QueryContext(ctx, `SELECT pid, info FROM "Personnel" ORDER BY pid ASC`)
-		it.Must(err)
+		rows := mustRows(db.QueryContext(ctx, `SELECT pid, info FROM "Personnel" ORDER BY pid ASC`))
 		defer rows.Close()
 		for i := 0; rows.Next(); i++ {
 			var pid int
@@ -107,8 +106,7 @@ func initDB(t *testing.T, config *hz.Config) *sql.DB {
 	sc := &serialization.Config{}
 	sc.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
 	it.Must(driver.SetSerializationConfig(sc))
-	db, err := sql.Open("hazelcast", dsn)
-	it.Must(err)
+	db := mustDB(sql.Open("hazelcast", dsn))
 	return db
 }
 
