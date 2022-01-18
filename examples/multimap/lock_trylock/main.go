@@ -60,6 +60,9 @@ func main() {
 		// Try to acquire lock for a second to hold it for 2 seconds. It fails, we have the lock.
 		ok := mustBool(m.TryLockWithLeaseAndTimeout(ctx, key, 2*time.Second, time.Millisecond))
 		fmt.Printf("[other process] operation: TryLockWithLeaseAndTimeout, succeed: %t\n", ok)
+		// There is also "TryLockWithLease" variant which returns immediately if lock is acquired. It should also fail.
+		ok = mustBool(m.TryLockWithLease(ctx, key, 2*time.Second))
+		fmt.Printf("[other process] operation: TryLockWithLease, succeed: %t\n", ok)
 		wg.Done()
 	}()
 	wg.Wait()
