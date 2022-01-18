@@ -46,7 +46,7 @@ func main() {
 	lockCtx := m.NewLockContext(ctx)
 	// Try to acquire the lock. It fails, key is locked.
 	ok := mustBool(m.TryLock(lockCtx, key))
-	fmt.Printf("operation: TryLockWith, succeed: %t\n", ok)
+	fmt.Printf("operation: TryLock, succeed: %t\n", ok)
 	// Try to acquire the lock again for 3 seconds. This time it will out run the other process and acquire it.
 	ok = mustBool(m.TryLockWithTimeout(lockCtx, key, 3*time.Second))
 	fmt.Printf("operation: TryLockWithTimeout, succeed: %t\n", ok)
