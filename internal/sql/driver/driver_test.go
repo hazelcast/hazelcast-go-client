@@ -280,11 +280,6 @@ func TestExtractCursorBufferSize(t *testing.T) {
 			Target: math.MaxInt32,
 		},
 		{
-			Name:   "zero size",
-			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), 0) },
-			Panics: true,
-		},
-		{
 			Name:   "negative size",
 			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), -1) },
 			Panics: true,
