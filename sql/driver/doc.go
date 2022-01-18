@@ -206,6 +206,8 @@ Using JSON
 
 Two different JSON types are supported, namely "json-flat" and "json"
 
+Checkout https://docs.hazelcast.com/hazelcast/5.1-beta-1/sql/working-with-json for more details.
+
 1) "json-flat" value format treats top level fields of the json object as separate columns. It does not support nested JSON values.
 
 Assuming the following JSON value:
@@ -258,7 +260,7 @@ Inserting rows:
 	INSERT INTO person VALUES(100, serialization.JSON(fmt.Sprintf(`{"age":%d, "name":%s}`, 35, 'Jane Doe')))
 
 Querying rows:
-Error handling is omitted for to keep the example short.
+Error handling is omitted to keep the example short.
 	// Use serialization.JSON type to scan JSON string.
 	q := fmt.Sprintf(`SELECT this FROM "%s" WHERE CAST(JSON_VALUE(this, '$.age') AS DOUBLE) > ?`, mapName)
 	rows, err := db.Query(q, minAge)
