@@ -642,7 +642,7 @@ func TestClientFixConnection(t *testing.T) {
 	port := 20701 + id*10
 	cls := it.StartNewClusterWithOptions(clusterName, int(port), memberCount)
 	defer cls.Shutdown()
-	config := hz.Config{}
+	config := cls.DefaultConfig()
 	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port+1))
 	config.Cluster.Name = clusterName
 	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {

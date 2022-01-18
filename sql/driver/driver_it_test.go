@@ -18,6 +18,7 @@ package driver_test
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"math/big"
@@ -507,6 +508,14 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			t.Fatal(err)
 		}
 		defer driver.SetSerializationConfig(nil)
+		if it.SSLEnabled() {
+			sslc := &cluster.SSLConfig{Enabled: true}
+			sslc.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+			if err := driver.SetSSLConfig(sslc); err != nil {
+				t.Fatal(err)
+			}
+			defer driver.SetSSLConfig(nil)
+		}
 		db := mustDB(sql.Open("hazelcast", dsn))
 		if err != nil {
 			t.Fatal(err)
