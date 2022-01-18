@@ -49,7 +49,7 @@ type SQLService struct {
 	lg                   *logger.LogAdaptor
 }
 
-func newSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fac *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor) *SQLService {
+func NewSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fac *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor) *SQLService {
 	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.RetryPolicy(func(attempt int) time.Duration {

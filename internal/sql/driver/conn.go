@@ -58,11 +58,15 @@ func NewConnWithConfig(ctx context.Context, config *client.Config) (*Conn, error
 	if err := ic.Start(ctx); err != nil {
 		return nil, err
 	}
-	ss := newSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService, &ic.Logger)
+	return NewConnWithClient(ic), nil
+}
+
+func NewConnWithClient(ic *client.Client) *Conn {
+	ss := NewSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService, &ic.Logger)
 	return &Conn{
 		ic: ic,
 		ss: ss,
-	}, nil
+	}
 }
 
 func (c *Conn) Prepare(query string) (driver.Stmt, error) {

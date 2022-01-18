@@ -19,7 +19,6 @@ package driver
 import (
 	"context"
 	"database/sql"
-	"math"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -66,10 +65,11 @@ func WithCursorBufferSize(parent context.Context, cbs int) context.Context {
 	if parent == nil {
 		panic(ihzerrors.NewIllegalArgumentError("parent context is nil", nil))
 	}
-	if err := check.WithinRangeInt32(int32(cbs), 1, math.MaxInt32); err != nil {
+	v, err := check.NonNegativeInt32(cbs)
+	if err != nil {
 		panic(err)
 	}
-	return context.WithValue(parent, driver.QueryCursorBufferSizeKey{}, int32(cbs))
+	return context.WithValue(parent, driver.QueryCursorBufferSizeKey{}, v)
 }
 
 /*

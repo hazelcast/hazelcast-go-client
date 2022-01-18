@@ -25,10 +25,11 @@ import (
 )
 
 type Connector struct {
-	config *client.Config
-	conn   *Conn
-	drv    *Driver
-	mu     *sync.Mutex
+	config     *client.Config
+	conn       *Conn
+	drv        *Driver
+	mu         *sync.Mutex
+	keepClient bool
 }
 
 func NewConnector(config *client.Config) *Connector {
@@ -36,6 +37,15 @@ func NewConnector(config *client.Config) *Connector {
 		config: config,
 		drv:    &Driver{},
 		mu:     &sync.Mutex{},
+	}
+}
+
+func NewConnectorWithClient(ic *client.Client, keepClient bool) *Connector {
+	return &Connector{
+		conn:       NewConnWithClient(ic),
+		drv:        &Driver{},
+		mu:         &sync.Mutex{},
+		keepClient: keepClient,
 	}
 }
 
@@ -55,7 +65,7 @@ func (c *Connector) Connect(ctx context.Context) (driver.Conn, error) {
 func (c *Connector) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.conn != nil {
+	if c.conn != nil && !c.keepClient {
 		return c.conn.ic.Shutdown(context.Background())
 	}
 	return nil
