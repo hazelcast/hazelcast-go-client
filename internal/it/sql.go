@@ -18,6 +18,7 @@ package it
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"testing"
 
@@ -38,6 +39,9 @@ func SQLTester(t *testing.T, f func(t *testing.T, client *hz.Client, config *hz.
 func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), f func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string)) {
 	port := 60001
 	memberConfig := sqlXMLConfig(t.Name(), "localhost", port)
+	if SSLEnabled() {
+		memberConfig = sqlXMLSSLConfig(t.Name(), "localhost", port)
+	}
 	tc := StartNewClusterWithConfig(MemberCount(), memberConfig, port)
 	defer tc.Shutdown()
 	runner := func(t *testing.T, smart bool) {
@@ -48,6 +52,10 @@ func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), 
 		config := tc.DefaultConfig()
 		if configFn != nil {
 			configFn(&config)
+		}
+		if SSLEnabled() {
+			config.Cluster.Network.SSL.Enabled = true
+			config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 		}
 		logLevel := logger.WarnLevel
 		if TraceLoggingEnabled() {
@@ -94,6 +102,39 @@ func sqlXMLConfig(clusterName, publicAddr string, port int) string {
             <network>
 				<public-address>%s</public-address>
 				<port>%d</port>
+            </network>
+			<serialization>
+				<portable-factories>
+					<portable-factory factory-id="666">com.hazelcast.client.test.PortableFactory
+					</portable-factory>
+				</portable-factories>
+			</serialization>
+			<jet enabled="true" />
+        </hazelcast>
+	`, clusterName, publicAddr, port)
+}
+
+func sqlXMLSSLConfig(clusterName, publicAddr string, port int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+				<public-address>%s</public-address>
+				<port>%d</port>
+				<ssl enabled="true">
+					<factory-class-name>
+						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
+					</factory-class-name>
+					<properties>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="keyManagerAlgorithm">SunX509</property>
+						<property name="protocol">TLSv1.2</property>
+					</properties>
+				</ssl>
             </network>
 			<serialization>
 				<portable-factories>
