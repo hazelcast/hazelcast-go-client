@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func Test_makeString(t *testing.T) {
-	tests := []struct {
+func TestMakeString(t *testing.T) {
+	tcs := []struct {
 		name     string
 		attrPath string
 		want     string
@@ -22,7 +22,7 @@ func Test_makeString(t *testing.T) {
 			want:     "()",
 		},
 	}
-	for ind, tt := range tests {
+	for ind, tt := range tcs {
 		t.Run(fmt.Sprintf("makeString case: %d", ind), func(t *testing.T) {
 			if got := makeString(tt.name, tt.attrPath); got != tt.want {
 				t.Errorf("makeString() = %v, want %v", got, tt.want)
@@ -31,74 +31,54 @@ func Test_makeString(t *testing.T) {
 	}
 }
 
-func Test_aggStringer(t *testing.T) {
-	tests := []struct {
+func TestAggStringer(t *testing.T) {
+	tcs := []struct {
 		aggInstance fmt.Stringer
 		want        string
 	}{
 		{
-			aggInstance: aggCount{
-				attrPath: "attribute",
-			},
-			want: "Count(attribute)",
+			aggInstance: Count("attribute"),
+			want:        "Count(attribute)",
 		},
 		{
-			aggInstance: aggDistinct{
-				attrPath: "attribute",
-			},
-			want: "DistinctValues(attribute)",
+			aggInstance: DistinctValues("attribute"),
+			want:        "DistinctValues(attribute)",
 		},
 		{
-			aggInstance: aggDoubleSum{
-				attrPath: "attribute",
-			},
-			want: "DoubleSum(attribute)",
+			aggInstance: DoubleSum("attribute"),
+			want:        "DoubleSum(attribute)",
 		},
 		{
-			aggInstance: aggDoubleAverage{
-				attrPath: "attribute",
-			},
-			want: "DoubleAverage(attribute)",
+			aggInstance: DoubleAverage("attribute"),
+			want:        "DoubleAverage(attribute)",
 		},
 		{
-			aggInstance: aggIntSum{
-				attrPath: "attribute",
-			},
-			want: "IntSum(attribute)",
+			aggInstance: IntSum("attribute"),
+			want:        "IntSum(attribute)",
 		},
 		{
-			aggInstance: aggIntAverage{
-				attrPath: "attribute",
-			},
-			want: "IntAverage(attribute)",
+			aggInstance: IntAverage("attribute"),
+			want:        "IntAverage(attribute)",
 		},
 		{
-			aggInstance: aggLongSum{
-				attrPath: "attribute",
-			},
-			want: "LongSum(attribute)",
+			aggInstance: LongSum("attribute"),
+			want:        "LongSum(attribute)",
 		},
 		{
-			aggInstance: aggLongAverage{
-				attrPath: "attribute",
-			},
-			want: "LongAverage(attribute)",
+			aggInstance: LongAverage("attribute"),
+			want:        "LongAverage(attribute)",
 		},
 		{
-			aggInstance: aggMax{
-				attrPath: "attribute",
-			},
-			want: "Max(attribute)",
+			aggInstance: Max("attribute"),
+			want:        "Max(attribute)",
 		},
 
 		{
-			aggInstance: aggMin{
-				attrPath: "attribute",
-			},
-			want: "Min(attribute)",
+			aggInstance: Min("attribute"),
+			want:        "Min(attribute)",
 		},
 	}
-	for ind, tt := range tests {
+	for ind, tt := range tcs {
 		t.Run(fmt.Sprintf("makeString case: %d", ind), func(t *testing.T) {
 			if got := tt.aggInstance.String(); got != tt.want {
 				t.Errorf("String() = %v, want %v", got, tt.want)

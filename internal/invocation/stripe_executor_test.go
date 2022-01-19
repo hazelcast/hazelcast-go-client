@@ -53,7 +53,7 @@ func Test_defaultExecFn(t *testing.T) {
 }
 
 func TestStripeExecutor_dispatch(t *testing.T) {
-	tests := []struct {
+	tcs := []struct {
 		queueCount    int
 		key           int
 		expectedIndex int
@@ -84,7 +84,7 @@ func TestStripeExecutor_dispatch(t *testing.T) {
 			expectedIndex: 0,
 		},
 	}
-	for i, tt := range tests {
+	for i, tt := range tcs {
 		t.Run(fmt.Sprintf("QueueCount: %d, Key: %d", tt.queueCount, tt.key), func(t *testing.T) {
 			se := newStripeExecutorWithConfig(tt.queueCount, 10_000)
 			task := func() {

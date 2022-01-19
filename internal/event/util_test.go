@@ -16,9 +16,7 @@
 
 package event
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestMakeSubscriptionID(t *testing.T) {
 	subscriptionID := MakeSubscriptionID(func() {})
