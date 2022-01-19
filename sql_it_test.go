@@ -405,7 +405,7 @@ func TestSQLQueryWithCursorBufferSize(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
 	opts := hz.SQLOptions{}
-	opts.SetCursorBufferSize(10)
+	it.Must(opts.SetCursorBufferSize(10))
 	testSQLQuery(t, "int", "int", fn, fn, &opts)
 }
 

@@ -28,8 +28,8 @@ import (
 )
 
 type cursorBufferSizeTestCase struct {
-	V      int
-	Panics bool
+	V         int
+	ErrString string
 }
 
 func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
@@ -37,24 +37,27 @@ func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
 		{V: 0},
 		{V: 1},
 		{V: 4096},
-		{V: -1, Panics: true},
+		{V: -1, ErrString: "setting cursor buffer size: non-negative integer number expected: -1: illegal argument error"},
 	}
 	if !runtime.Is32BitArch() {
 		v := math.MaxInt32
 		testCases = append(testCases, cursorBufferSizeTestCase{
-			V:      v + 1,
-			Panics: true,
+			V:         v + 1,
+			ErrString: "setting cursor buffer size: signed 32-bit integer number expected: 2147483648: illegal argument error",
 		})
 	}
 
 	for _, tc := range testCases {
 		t.Run(strconv.Itoa(tc.V), func(t *testing.T) {
 			opts := SQLOptions{}
-			if tc.Panics {
-				assert.Panics(t, func() { opts.SetCursorBufferSize(tc.V) })
+			err := opts.SetCursorBufferSize(tc.V)
+			if tc.ErrString != "" {
+				assert.Equal(t, tc.ErrString, err.Error())
 				return
 			}
-			opts.SetCursorBufferSize(tc.V)
+			if err != nil {
+				t.Fatal(err)
+			}
 			assert.Equal(t, int32(tc.V), opts.cursorBufferSize)
 		})
 	}

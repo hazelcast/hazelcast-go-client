@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
@@ -494,12 +495,13 @@ A bigger buffer size may give you a slight performance boost for queries with la
 Defaults to 4096.
 Panics if the given buffer size is not in the non-negative int32 range.
 */
-func (s *SQLOptions) SetCursorBufferSize(cbs int) {
+func (s *SQLOptions) SetCursorBufferSize(cbs int) error {
 	v, err := check.NonNegativeInt32(cbs)
 	if err != nil {
-		panic(err)
+		return ihzerrors.NewIllegalArgumentError("setting cursor buffer size", err)
 	}
 	s.cursorBufferSize = v
+	return nil
 }
 
 /*
@@ -522,7 +524,7 @@ func (s *SQLOptions) SetTimeout(t time.Duration) {
 	s.timeout = &tm
 }
 
-func (s *SQLOptions) validate() error {
+func (s *SQLOptions) validate() {
 	if s.cursorBufferSize == 0 {
 		s.cursorBufferSize = idriver.DefaultCursorBufferSize
 	}
@@ -530,13 +532,10 @@ func (s *SQLOptions) validate() error {
 		v := idriver.DefaultTimeoutMillis
 		s.timeout = &v
 	}
-	return nil
 }
 
 func updateContextWithOptions(ctx context.Context, opts SQLOptions) (context.Context, error) {
-	if err := opts.validate(); err != nil {
-		return nil, err
-	}
+	opts.validate()
 	if ctx == nil {
 		ctx = context.Background()
 	}
