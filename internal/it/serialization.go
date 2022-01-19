@@ -25,8 +25,5 @@ import (
 func SerializationTester(t *testing.T, f func(t *testing.T, config hazelcast.Config, clusterID, mapName string)) {
 	ensureRemoteController(true)
 	mapName := NewUniqueObjectName("map")
-	config := defaultTestCluster.DefaultConfig()
-	// SSL is never used with serialization tests.
-	config.Cluster.Network.SSL.Enabled = false
 	f(t, defaultTestCluster.DefaultConfig(), defaultTestCluster.ClusterID, mapName)
 }
