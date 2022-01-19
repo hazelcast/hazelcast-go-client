@@ -22,8 +22,8 @@ func TestMakeString(t *testing.T) {
 			want:     "()",
 		},
 	}
-	for ind, tt := range tcs {
-		t.Run(fmt.Sprintf("makeString case: %d", ind), func(t *testing.T) {
+	for i, tt := range tcs {
+		t.Run(fmt.Sprintf("makeString case: %d", i), func(t *testing.T) {
 			if got := makeString(tt.name, tt.attrPath); got != tt.want {
 				t.Errorf("makeString() = %v, want %v", got, tt.want)
 			}
@@ -78,8 +78,8 @@ func TestAggStringer(t *testing.T) {
 			want:        "Min(attribute)",
 		},
 	}
-	for ind, tt := range tcs {
-		t.Run(fmt.Sprintf("makeString case: %d", ind), func(t *testing.T) {
+	for i, tt := range tcs {
+		t.Run(fmt.Sprintf("makeString case: %d", i), func(t *testing.T) {
 			if got := tt.aggInstance.String(); got != tt.want {
 				t.Errorf("String() = %v, want %v", got, tt.want)
 			}
