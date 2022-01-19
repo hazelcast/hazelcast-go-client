@@ -483,6 +483,7 @@ func (c *Client) createComponents(config *Config) {
 type SQLOptions struct {
 	cursorBufferSize int32
 	timeout          *int64
+	err              error
 }
 
 /*
@@ -493,15 +494,15 @@ When the threshold is reached, the backpressure mechanism will slow down the exe
 The default value is expected to work well for most workloads.
 A bigger buffer size may give you a slight performance boost for queries with large result sets at the cost of increased memory consumption.
 Defaults to 4096.
-Panics if the given buffer size is not in the non-negative int32 range.
+The given buffer size must be in the non-negative int32 range.
 */
-func (s *SQLOptions) SetCursorBufferSize(cbs int) error {
+func (s *SQLOptions) SetCursorBufferSize(cbs int) {
 	v, err := check.NonNegativeInt32(cbs)
 	if err != nil {
-		return ihzerrors.NewIllegalArgumentError("setting cursor buffer size", err)
+		s.err = ihzerrors.NewIllegalArgumentError("setting cursor buffer size", err)
+		return
 	}
 	s.cursorBufferSize = v
-	return nil
 }
 
 /*
@@ -524,7 +525,10 @@ func (s *SQLOptions) SetTimeout(t time.Duration) {
 	s.timeout = &tm
 }
 
-func (s *SQLOptions) validate() {
+func (s *SQLOptions) validate() error {
+	if s.err != nil {
+		return s.err
+	}
 	if s.cursorBufferSize == 0 {
 		s.cursorBufferSize = idriver.DefaultCursorBufferSize
 	}
@@ -532,10 +536,13 @@ func (s *SQLOptions) validate() {
 		v := idriver.DefaultTimeoutMillis
 		s.timeout = &v
 	}
+	return nil
 }
 
 func updateContextWithOptions(ctx context.Context, opts SQLOptions) (context.Context, error) {
-	opts.validate()
+	if err := opts.validate(); err != nil {
+		return nil, err
+	}
 	if ctx == nil {
 		ctx = context.Background()
 	}
