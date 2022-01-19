@@ -31,16 +31,20 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	pubdriver "github.com/hazelcast/hazelcast-go-client/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestParseDSN(t *testing.T) {
 	testCases := []struct {
-		Cluster *cluster.Config
-		Logger  *logger.Config
-		Err     error
-		DSN     string
+		Cluster       *cluster.Config
+		Logger        *logger.Config
+		Serialization *serialization.Config
+		Err           error
+		DSN           string
+		Pre           func()
+		Post          func()
 	}{
 		{
 			DSN: "",
@@ -51,6 +55,16 @@ func TestParseDSN(t *testing.T) {
 					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
 					ConnectionTimeout: types.Duration(5 * time.Second),
 				},
+			},
+		},
+		{
+			DSN:           "",
+			Serialization: &serialization.Config{PortableVersion: 2},
+			Pre: func() {
+				idriver.SetSerializationConfig(&serialization.Config{PortableVersion: 2})
+			},
+			Post: func() {
+				idriver.SetSerializationConfig(nil)
 			},
 		},
 		{
@@ -224,6 +238,9 @@ func TestParseDSN(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.DSN, func(t *testing.T) {
+			if tc.Pre != nil {
+				tc.Pre()
+			}
 			if tc.Cluster != nil {
 				if err := tc.Cluster.Validate(); err != nil {
 					t.Fatal(err)
@@ -231,6 +248,11 @@ func TestParseDSN(t *testing.T) {
 			}
 			if tc.Logger != nil {
 				if err := tc.Logger.Validate(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tc.Serialization != nil {
+				if err := tc.Serialization.Validate(); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -250,6 +272,12 @@ func TestParseDSN(t *testing.T) {
 			}
 			if tc.Logger != nil {
 				assert.Equal(t, tc.Logger, c.Logger)
+			}
+			if tc.Serialization != nil {
+				assert.Equal(t, tc.Serialization, c.Serialization)
+			}
+			if tc.Post != nil {
+				tc.Post()
 			}
 		})
 	}

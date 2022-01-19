@@ -181,9 +181,8 @@ func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 			return nil, fmt.Errorf("parsing DSN options: %w", err)
 		}
 	}
-	sc := SerializationConfig()
-	if sc == nil {
-		sc = config.Serialization
+	if sc := SerializationConfig(); sc != nil {
+		config.Serialization = sc
 	}
 	if err := config.Validate(); err != nil {
 		return nil, err

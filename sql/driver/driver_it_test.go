@@ -31,7 +31,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -411,24 +410,6 @@ func TestSQLQueryWithQueryTimeout(t *testing.T) {
 	fn := func(i int) interface{} { return int32(i) }
 	ctx := driver.WithQueryTimeout(context.Background(), 5*time.Second)
 	testSQLQuery(t, ctx, "int", "int", fn, fn)
-}
-
-func TestSetLoggerConfig(t *testing.T) {
-	if err := driver.SetLoggerConfig(&logger.Config{Level: logger.ErrorLevel}); err != nil {
-		t.Fatal(err)
-	}
-	if err := driver.SetLoggerConfig(nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestSetSSLConfig(t *testing.T) {
-	if err := driver.SetSSLConfig(&cluster.SSLConfig{Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	if err := driver.SetSSLConfig(nil); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestConcurrentQueries(t *testing.T) {

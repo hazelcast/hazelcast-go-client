@@ -38,15 +38,30 @@ type Config struct {
 
 func (c *Config) Clone() Config {
 	c.ensureCustomSerializers()
-	idFactories := make([]IdentifiedDataSerializableFactory, len(c.identifiedDataSerializableFactories))
-	copy(idFactories, c.identifiedDataSerializableFactories)
-	pFactories := make([]PortableFactory, len(c.portableFactories))
-	copy(pFactories, c.portableFactories)
-	defs := make([]*ClassDefinition, len(c.classDefinitions))
-	copy(defs, c.classDefinitions)
-	serializers := map[reflect.Type]Serializer{}
-	for k, v := range c.customSerializers {
-		serializers[k] = v
+	var idFactories []IdentifiedDataSerializableFactory
+	var pFactories []PortableFactory
+	var defs []*ClassDefinition
+	var serializers map[reflect.Type]Serializer
+	if c.identifiedDataSerializableFactories != nil {
+		// this is only necessary to make the cloned value exactly the same when c.identifiedDataSerializableFactories == nil
+		idFactories = make([]IdentifiedDataSerializableFactory, len(c.identifiedDataSerializableFactories))
+		copy(idFactories, c.identifiedDataSerializableFactories)
+	}
+	if c.portableFactories != nil {
+		// this is only necessary to make the cloned value exactly the same when c.portableFactories == nil
+		pFactories = make([]PortableFactory, len(c.portableFactories))
+		copy(pFactories, c.portableFactories)
+	}
+	if c.classDefinitions != nil {
+		// this is only necessary to make the cloned value exactly the same when c.classDefinitions == nil
+		defs = make([]*ClassDefinition, len(c.classDefinitions))
+		copy(defs, c.classDefinitions)
+	}
+	if c.customSerializers != nil {
+		serializers = map[reflect.Type]Serializer{}
+		for k, v := range c.customSerializers {
+			serializers[k] = v
+		}
 	}
 	return Config{
 		LittleEndian:                        c.LittleEndian,
@@ -60,6 +75,9 @@ func (c *Config) Clone() Config {
 }
 
 func (c *Config) Validate() error {
+	if c.customSerializers == nil {
+		c.customSerializers = map[reflect.Type]Serializer{}
+	}
 	return nil
 }
 

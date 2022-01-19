@@ -282,9 +282,9 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 /*
 ExecSQL runs the given SQL query on the member-side.
 This method is used for SQL queries that don't return rows, such as INSERT, CREATE MAPPING, etc.
-Placeholders in the query is replaced by params.
+Placeholders in the query is replaced by parameters.
 A placeholder is the question mark (?) character.
-For each placeholder, a corresponding param should exist.
+For each placeholder, a corresponding parameter should exist.
 
 Example:
 
@@ -304,9 +304,9 @@ func (c *Client) ExecSQL(ctx context.Context, query string, params ...interface{
 /*
 ExecSQLWithOptions runs the given SQL query on the member-side.
 This method is used for SQL queries that don't return rows, such as INSERT, CREATE MAPPING, etc.
-Placeholders in the query is replaced by params.
+Placeholders in the query is replaced by parameters.
 A placeholder is the question mark (?) character.
-For each placeholder, a corresponding param should exist.
+For each placeholder, a corresponding parameter should exist.
 
 Example:
 
