@@ -44,9 +44,11 @@ var skipChecker = defaultSkipChecker()
 SkipIf can be used to skip a test case based on comma-separated conditions.
 There are two kinds of conditions, comparisons and booleans.
 
+Comparison conditions
+
 Comparison conditions are in the following format:
 
-	KEY OP VERSION
+	KEY OP [VERSION|STRING]
 
 KEY is one of the following keys:
 
@@ -62,6 +64,15 @@ os key supports the following operators:
 
 	=, !=
 
+VERSION has the following format:
+
+	Major[.Minor[.Patch[...]]][-SUFFIX]
+
+If minor, patch, etc. are not given, they are assumed to be 0.
+A version with a suffix is less than a version without suffix, if their Major, Minor, Patch, ... are the same.
+
+Boolean conditions
+
 Boolean conditions are in the following format:
 
 	[!]KEY
@@ -75,9 +86,18 @@ KEY is one of the following keys:
 
 ! operator negates the value of the key.
 
-Example:
+Many Conditions
+
+More than one condition may be specified by separating them with commas.
+All conditions should be satisfied to skip.
 
 	SkipIf(t, "ver > 1.1, hz = 5, os != windows, !enterprise")
+
+You can use multiple SkipIf statements to skip if one one of the conditions is satisfied:
+
+	// skip if the OS is windows or client version is greater than 1.3.2 and the Hazelcast cluster is open source:
+	SkipIf(t, "os = windows")
+	SkipIf(t, "ver > 1.3.2, oss")
 
 */
 func SkipIf(t *testing.T, conditions string) {
