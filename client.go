@@ -390,6 +390,12 @@ func (c *Client) QuerySQLWithOptions(ctx context.Context, query string, opts SQL
 	return c.db.QueryContext(ctx, query, params...)
 }
 
+// PrepareSQL creates a prepared statement with the given query.
+// See sql/driver documentation about how to use the prepared statement.
+func (c *Client) PrepareSQL(ctx context.Context, query string) (*sql.Stmt, error) {
+	return c.db.PrepareContext(ctx, query)
+}
+
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
@@ -483,6 +489,7 @@ func (c *Client) createComponents(config *Config) {
 type SQLOptions struct {
 	cursorBufferSize int32
 	timeout          *int64
+	schema           *string
 	err              error
 }
 
@@ -506,13 +513,13 @@ func (s *SQLOptions) SetCursorBufferSize(cbs int) {
 }
 
 /*
-SetTimeout sets the query execution timeout.
+SetQueryTimeout sets the query execution timeout.
 If the timeout is reached for a running statement, it will be cancelled forcefully.
 Zero value means no timeout.
 Negative values mean that the value from the server-side config will be used.
 Defaults to -1.
 */
-func (s *SQLOptions) SetTimeout(t time.Duration) {
+func (s *SQLOptions) SetQueryTimeout(t time.Duration) {
 	if t == 0 {
 		s.timeout = nil
 		return
@@ -523,6 +530,21 @@ func (s *SQLOptions) SetTimeout(t time.Duration) {
 		tm = -1
 	}
 	s.timeout = &tm
+}
+
+/*
+SetSchema sets the schema name.
+The engine will try to resolve the non-qualified object identifiers from the statement in the given schema.
+If not found, the default search path will be used.
+The schema name is case-sensitive. For example, foo and Foo are different schemas.
+By default, only the default search path is used.
+*/
+func (s *SQLOptions) SetSchema(schema string) {
+	if schema == "" {
+		s.schema = nil
+		return
+	}
+	s.schema = &schema
 }
 
 func (s *SQLOptions) validate() error {
@@ -547,10 +569,13 @@ func updateContextWithOptions(ctx context.Context, opts SQLOptions) (context.Con
 		ctx = context.Background()
 	}
 	if opts.cursorBufferSize > 0 {
-		ctx = context.WithValue(ctx, idriver.QueryCursorBufferSizeKey{}, int32(opts.cursorBufferSize))
+		ctx = context.WithValue(ctx, idriver.QueryCursorBufferSizeKey{}, opts.cursorBufferSize)
 	}
 	if opts.timeout != nil {
 		ctx = context.WithValue(ctx, idriver.QueryTimeoutKey{}, *opts.timeout)
+	}
+	if opts.schema != nil {
+		ctx = context.WithValue(ctx, idriver.QuerySchemaKey{}, *opts.schema)
 	}
 	return ctx, nil
 }

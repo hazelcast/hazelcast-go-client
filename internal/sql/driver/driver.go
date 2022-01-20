@@ -37,6 +37,7 @@ import (
 
 type QueryCursorBufferSizeKey struct{}
 type QueryTimeoutKey struct{}
+type QuerySchemaKey struct{}
 
 const (
 	driverName                    = "hazelcast"
@@ -44,6 +45,7 @@ const (
 	protocolHzViaTLS              = "hz+tls"
 	DefaultCursorBufferSize int32 = 4096
 	DefaultTimeoutMillis    int64 = -1
+	DefaultSchema                 = ""
 	optClusterName                = "cluster.name"
 	optUnisocket                  = "unisocket"
 	optCloudToken                 = "cloud.token"

@@ -378,6 +378,36 @@ func TestExtractTimeoutMillis(t *testing.T) {
 	}
 }
 
+func TestExtractSchema(t *testing.T) {
+	testCases := []struct {
+		CtxFn  func() context.Context
+		Name   string
+		Target string
+	}{
+		{
+			Name:   "default",
+			CtxFn:  func() context.Context { return context.Background() },
+			Target: "",
+		},
+		{
+			Name:   "with value",
+			CtxFn:  func() context.Context { return pubdriver.WithSchema(context.Background(), "foo") },
+			Target: "foo",
+		},
+		{
+			Name:   "with blank value",
+			CtxFn:  func() context.Context { return pubdriver.WithSchema(context.Background(), "") },
+			Target: "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			ctx := tc.CtxFn()
+			assert.Equal(t, tc.Target, idriver.ExtractSchema(ctx))
+		})
+	}
+}
+
 func TestArgNotNil(t *testing.T) {
 	var b *big.Int
 	nv := &driver.NamedValue{

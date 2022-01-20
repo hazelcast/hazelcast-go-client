@@ -91,6 +91,20 @@ func WithQueryTimeout(parent context.Context, t time.Duration) context.Context {
 	return context.WithValue(parent, driver.QueryTimeoutKey{}, tm)
 }
 
+/*
+WithSchema returns a copy of parent context which has the given schema name.
+The engine will try to resolve the non-qualified object identifiers from the statement in the given schema.
+If not found, the default search path will be used.
+The schema name is case-sensitive. For example, foo and Foo are different schemas.
+By default, only the default search path is used.
+*/
+func WithSchema(parent context.Context, schema string) context.Context {
+	if parent == nil {
+		panic(ihzerrors.NewIllegalArgumentError("parent context is nil", nil))
+	}
+	return context.WithValue(parent, driver.QuerySchemaKey{}, schema)
+}
+
 // SetSerializationConfig stores the global serialization config.
 // Subsequent sql.Open calls will use the given serialization configuration.
 // It copies the configuration before storing.

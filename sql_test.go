@@ -65,7 +65,7 @@ func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
 	}
 }
 
-func TestSQLOptions_SetTimeout(t *testing.T) {
+func TestSQLOptions_SetQueryTimeout(t *testing.T) {
 	tm1 := int64(-1)
 	t5000 := int64(5000)
 	testCases := []struct {
@@ -83,8 +83,29 @@ func TestSQLOptions_SetTimeout(t *testing.T) {
 			if err := opts.validate(); err != nil {
 				t.Fatal(err)
 			}
-			opts.SetTimeout(tc.V)
+			opts.SetQueryTimeout(tc.V)
 			assert.Equal(t, tc.T, opts.timeout)
+		})
+	}
+}
+
+func TestSQLOptions_SetSchema(t *testing.T) {
+	sfoo := "foo"
+	testCases := []struct {
+		V string
+		T *string
+	}{
+		{V: "", T: nil},
+		{V: "foo", T: &sfoo},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.V, func(t *testing.T) {
+			opts := SQLOptions{}
+			if err := opts.validate(); err != nil {
+				t.Fatal(err)
+			}
+			opts.SetSchema(tc.V)
+			assert.Equal(t, tc.T, opts.schema)
 		})
 	}
 }

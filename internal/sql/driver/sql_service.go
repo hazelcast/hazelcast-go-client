@@ -73,7 +73,8 @@ func NewSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fa
 func (s *SQLService) ExecuteSQL(ctx context.Context, query string, params []driver.Value) (*ExecResult, error) {
 	cbs := ExtractCursorBufferSize(ctx)
 	tom := ExtractTimeoutMillis(ctx)
-	resp, err := s.executeSQL(ctx, query, expectedResultUpdateCount, tom, cbs, params)
+	schema := ExtractSchema(ctx)
+	resp, err := s.executeSQL(ctx, query, expectedResultUpdateCount, tom, cbs, schema, params)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,8 @@ func (s *SQLService) ExecuteSQL(ctx context.Context, query string, params []driv
 func (s *SQLService) QuerySQL(ctx context.Context, query string, params []driver.Value) (*QueryResult, error) {
 	cbs := ExtractCursorBufferSize(ctx)
 	tom := ExtractTimeoutMillis(ctx)
-	resp, err := s.executeSQL(ctx, query, expectedResultRows, tom, cbs, params)
+	schema := ExtractSchema(ctx)
+	resp, err := s.executeSQL(ctx, query, expectedResultRows, tom, cbs, schema, params)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +117,7 @@ func (s *SQLService) closeQuery(qid isql.QueryID, conn *cluster.Connection) erro
 	return nil
 }
 
-func (s *SQLService) executeSQL(ctx context.Context, query string, resultType byte, timeoutMillis int64, cursorBufferSize int32, params []driver.Value) (interface{}, error) {
+func (s *SQLService) executeSQL(ctx context.Context, query string, resultType byte, timeoutMillis int64, cursorBufferSize int32, schema string, params []driver.Value) (interface{}, error) {
 	serParams, err := s.serializeParams(params)
 	if err != nil {
 		return nil, err
@@ -125,7 +127,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return nil, ihzerrors.NewIOError("no connection found", nil)
 	}
 	qid := isql.NewQueryIDFromUUID(conn.MemberUUID())
-	req := codec.EncodeSqlExecuteRequest(query, serParams, timeoutMillis, cursorBufferSize, "", resultType, qid, false)
+	req := codec.EncodeSqlExecuteRequest(query, serParams, timeoutMillis, cursorBufferSize, schema, resultType, qid, false)
 	s.lg.Debug(func() string {
 		return fmt.Sprintf("SqlExecuteRequest: qid: %d, q: %s", qid, query)
 	})
@@ -201,4 +203,15 @@ func ExtractTimeoutMillis(ctx context.Context) int64 {
 		return DefaultTimeoutMillis
 	}
 	return tomv.(int64)
+}
+
+func ExtractSchema(ctx context.Context) string {
+	if ctx == nil {
+		return DefaultSchema
+	}
+	v := ctx.Value(QuerySchemaKey{})
+	if v == nil {
+		return DefaultSchema
+	}
+	return v.(string)
 }

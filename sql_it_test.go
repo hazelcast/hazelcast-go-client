@@ -413,7 +413,7 @@ func TestSQLQueryWithQueryTimeout(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
 	opts := hz.SQLOptions{}
-	opts.SetTimeout(5 * time.Second)
+	opts.SetQueryTimeout(5 * time.Second)
 	testSQLQuery(t, "int", "int", fn, fn, &opts)
 }
 
@@ -449,6 +449,40 @@ func TestConcurrentQueries(t *testing.T) {
 			}(wg)
 		}
 		wg.Wait()
+	})
+}
+
+func TestPrepare(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		ctx := context.Background()
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s" (
+				__key BIGINT,
+				name VARCHAR
+			)
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'json-flat'
+			)
+		`, mapName)
+		stmt := it.MustValue(client.PrepareSQL(ctx, q)).(*sql.Stmt)
+		it.MustValue(stmt.Exec())
+		q = fmt.Sprintf(`INSERT INTO "%s" (__key, name) VALUES(?, ?)`, mapName)
+		stmt = it.MustValue(client.PrepareSQL(ctx, q)).(*sql.Stmt)
+		it.MustValue(stmt.Exec(100, "Ford Prefect"))
+		// select the value itself
+		q = fmt.Sprintf(`SELECT __key, this from "%s"`, mapName)
+		stmt = it.MustValue(client.PrepareSQL(ctx, q)).(*sql.Stmt)
+		row := stmt.QueryRow()
+		var k int64
+		var v interface{}
+		if err := row.Scan(&k, &v); err != nil {
+			t.Fatal(err)
+		}
+		target := serialization.JSON(`{"name":"Ford Prefect"}`)
+		assert.Equal(t, target, v)
 	})
 }
 
