@@ -29,9 +29,9 @@ import (
 
 func TestServer(t *testing.T) {
 	testCases := []struct {
+		target interface{}
 		name   string
 		input  string
-		target interface{}
 	}{
 		{
 			name:   "array",
