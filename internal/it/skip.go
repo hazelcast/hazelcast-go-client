@@ -40,13 +40,46 @@ const (
 
 var skipChecker = defaultSkipChecker()
 
-// SkipIf can be used to skip a test case based on comma-separated conditions.
-// The following conditions may be set:
-// "hz": Hazelcast version
-// "ver": go client version
-// "os": value of runtime.GOOS
-// "enterprise"/"oss": presence of enterprise key environment variable
-// Example: SkipIf(t, "ver > 1.1, hz = 5")
+/*
+SkipIf can be used to skip a test case based on comma-separated conditions.
+There are two kinds of conditions, comparisons and booleans.
+
+Comparison conditions are in the following format:
+
+	KEY OP VERSION
+
+KEY is one of the following keys:
+
+	hz: Hazelcast version
+	ver: Go Client version
+	os: Operating system name, taken from runtime.GOOS
+
+hz and ver keys support the following operators:
+
+	<, <=, =, !=, >=, >
+
+os key supports the following operators:
+
+	=, !=
+
+Boolean conditions are in the following format:
+
+	[!]KEY
+
+KEY is one of the following keys:
+
+	enterprise: Whether the Hazelcast cluster is enterprise
+				(existence of HAZELCAST_ENTERPRISE_KEY environment variable)
+	oss: Whether the Hazelcast cluster is open source
+		 (non-existence of HAZELCAST_ENTERPRISE_KEY environment variable)
+
+! operator negates the value of the key.
+
+Example:
+
+	SkipIf(t, "ver > 1.1, hz = 5, os != windows, !enterprise")
+
+*/
 func SkipIf(t *testing.T, conditions string) {
 	if skipChecker.CanSkip(conditions) {
 		t.Skipf("Skipping test since: %s", conditions)
