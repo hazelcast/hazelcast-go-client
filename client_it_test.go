@@ -642,7 +642,7 @@ func TestClientFixConnection(t *testing.T) {
 	port := 20701 + id*10
 	cls := it.StartNewClusterWithOptions(clusterName, int(port), memberCount)
 	defer cls.Shutdown()
-	config := hz.Config{}
+	config := cls.DefaultConfig()
 	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port+1))
 	config.Cluster.Name = clusterName
 	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
@@ -856,6 +856,35 @@ func listenersAfterClientDisconnectedXMLConfig(clusterName, publicAddr string, p
             <network>
 				<public-address>%s</public-address>
 				<port>%d</port>
+            </network>
+			<properties>
+				<property name="hazelcast.heartbeat.interval.seconds">%d</property>
+			</properties>
+        </hazelcast>
+	`, clusterName, publicAddr, port, heartBeatSec)
+}
+
+func listenersAfterClientDisconnectedXMLSSLConfig(clusterName, publicAddr string, port, heartBeatSec int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+				<public-address>%s</public-address>
+				<port>%d</port>
+				<ssl enabled="true">
+					<factory-class-name>
+						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
+					</factory-class-name>
+					<properties>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="keyManagerAlgorithm">SunX509</property>
+						<property name="protocol">TLSv1.2</property>
+					</properties>
+				</ssl>
             </network>
 			<properties>
 				<property name="hazelcast.heartbeat.interval.seconds">%d</property>

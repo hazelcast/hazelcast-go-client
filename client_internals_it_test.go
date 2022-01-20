@@ -91,6 +91,9 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 	const heartBeatSec = 6
 	// launch the cluster
 	memberConfig := listenersAfterClientDisconnectedXMLConfig(t.Name(), memberHost, port, heartBeatSec)
+	if it.SSLEnabled() {
+		memberConfig = listenersAfterClientDisconnectedXMLSSLConfig(t.Name(), memberHost, port, heartBeatSec)
+	}
 	tc := it.StartNewClusterWithConfig(1, memberConfig, port)
 	// create and start the client
 	config := tc.DefaultConfig()

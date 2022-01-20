@@ -46,7 +46,7 @@ func main() {
 	lockCtx := m.NewLockContext(ctx)
 	// Try to acquire the lock. It fails, key is locked.
 	ok := mustBool(m.TryLock(lockCtx, key))
-	fmt.Printf("operation: TryLockWith, succeed: %t\n", ok)
+	fmt.Printf("operation: TryLock, succeed: %t\n", ok)
 	// Try to acquire the lock again for 3 seconds. This time it will out run the other process and acquire it.
 	ok = mustBool(m.TryLockWithTimeout(lockCtx, key, 3*time.Second))
 	fmt.Printf("operation: TryLockWithTimeout, succeed: %t\n", ok)
@@ -60,6 +60,9 @@ func main() {
 		// Try to acquire lock for a second to hold it for 2 seconds. It fails, we have the lock.
 		ok := mustBool(m.TryLockWithLeaseAndTimeout(ctx, key, 2*time.Second, time.Millisecond))
 		fmt.Printf("[other process] operation: TryLockWithLeaseAndTimeout, succeed: %t\n", ok)
+		// There is also "TryLockWithLease" variant which returns immediately if lock is acquired. It should also fail.
+		ok = mustBool(m.TryLockWithLease(ctx, key, 2*time.Second))
+		fmt.Printf("[other process] operation: TryLockWithLease, succeed: %t\n", ok)
 		wg.Done()
 	}()
 	wg.Wait()

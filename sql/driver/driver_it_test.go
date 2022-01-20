@@ -18,9 +18,9 @@ package driver_test
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
-	"log"
 	"math/big"
 	"net/url"
 	"strconv"
@@ -227,6 +227,35 @@ func TestSQLQuery(t *testing.T) {
 			testSQLQuery(t, context.Background(), tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn)
 		})
 	}
+}
+
+func TestSQLQueryWithJSONValue(t *testing.T) {
+	it.SkipIf(t, "hz < 5.1")
+	keyFn := func(i int) interface{} { return int32(i) }
+	valueFn := func(i int) interface{} { return serialization.JSON(fmt.Sprintf(`{"id": %d, "type": "jsonValue"}`, i)) }
+	testSQLQuery(t, context.Background(), "int", "json", keyFn, valueFn)
+}
+
+func TestSQLScanJSON(t *testing.T) {
+	it.SkipIf(t, "hz < 5.1")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		testJSON := serialization.JSON(`{"test":"value"}`)
+		ctx := context.Background()
+		db := mustDB(sql.Open("hazelcast", makeDSN(config)))
+		defer db.Close()
+		ms := createMappingStr(mapName, "bigint", "json")
+		it.Must(createMapping(t, db, ms))
+		it.MustValue(db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, this) VALUES(?, ?)`, mapName), 1, testJSON))
+		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
+		row := db.QueryRowContext(ctx, query)
+		var key int
+		var value serialization.JSON
+		if err := row.Scan(&key, &value); err != nil {
+			t.Fatal(fmt.Errorf("scanning serialization.JSON: %w", err))
+		}
+		assert.Equal(t, 1, key)
+		assert.Equal(t, testJSON, value)
+	})
 }
 
 func TestSQLWithPortableData(t *testing.T) {
@@ -479,7 +508,15 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			t.Fatal(err)
 		}
 		defer driver.SetSerializationConfig(nil)
-		db, err := sql.Open("hazelcast", dsn)
+		if it.SSLEnabled() {
+			sslc := &cluster.SSLConfig{Enabled: true}
+			sslc.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+			if err := driver.SetSSLConfig(sslc); err != nil {
+				t.Fatal(err)
+			}
+			defer driver.SetSSLConfig(nil)
+		}
+		db := mustDB(sql.Open("hazelcast", dsn))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -489,16 +526,13 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			t.Fatal(err)
 		}
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
-		rows, err := db.QueryContext(ctx, query)
-		if err != nil {
-			log.Fatal(err)
-		}
+		rows := mustRows(db.QueryContext(ctx, query))
 		defer rows.Close()
 		entries := make([]types.Entry, len(target))
 		var i int
 		for rows.Next() {
 			if err := rows.Scan(&entries[i].Key, &entries[i].Value); err != nil {
-				log.Fatal(err)
+				t.Fatal(err)
 			}
 			i++
 		}
@@ -529,7 +563,7 @@ func createMapping(t *testing.T, db *sql.DB, mapping string) error {
 
 func createMappingStr(mapName, keyFmt, valueFmt string) string {
 	return fmt.Sprintf(`
-        CREATE MAPPING "%s"
+        CREATE OR REPLACE MAPPING "%s"
         TYPE IMAP 
         OPTIONS (
             'keyFormat' = '%s',
@@ -562,4 +596,14 @@ func makeDSN(config *hz.Config) string {
 	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
 	q.Add("log", string(ll))
 	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
+}
+
+func mustDB(db *sql.DB, err error) *sql.DB {
+	it.Must(err)
+	return db
+}
+
+func mustRows(rows *sql.Rows, err error) *sql.Rows {
+	it.Must(err)
+	return rows
 }

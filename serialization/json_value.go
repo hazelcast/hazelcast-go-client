@@ -16,7 +16,9 @@
 
 package serialization
 
-import ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+import (
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+)
 
 type JSON []byte
 
