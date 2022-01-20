@@ -29,15 +29,18 @@ import (
 
 type cursorBufferSizeTestCase struct {
 	V         int
-	T         int32
+	T         *int32
 	ErrString string
 }
 
 func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
+	v0 := int32(0)
+	v1 := int32(1)
+	v4096 := int32(4096)
 	testCases := []cursorBufferSizeTestCase{
-		{V: 0, T: 4096},
-		{V: 1, T: 1},
-		{V: 4096, T: 4096},
+		{V: 0, T: &v0},
+		{V: 1, T: &v1},
+		{V: 4096, T: &v4096},
 		{V: -1, ErrString: "setting cursor buffer size: non-negative integer number expected: -1: illegal argument error"},
 	}
 	if !runtime.Is32BitArch() {
@@ -66,16 +69,17 @@ func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
 }
 
 func TestSQLOptions_SetQueryTimeout(t *testing.T) {
-	tm1 := int64(-1)
-	t5000 := int64(5000)
+	v := int64(0)
+	v1 := int64(-1)
+	v5000 := int64(5000)
 	testCases := []struct {
 		V time.Duration
 		T *int64
 	}{
-		{V: 0, T: nil},
-		{V: -1, T: &tm1},
-		{V: -100, T: &tm1},
-		{V: 5 * time.Second, T: &t5000},
+		{V: 0, T: &v},
+		{V: -1, T: &v1},
+		{V: -100, T: &v1},
+		{V: 5 * time.Second, T: &v5000},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.V.String(), func(t *testing.T) {
@@ -90,13 +94,14 @@ func TestSQLOptions_SetQueryTimeout(t *testing.T) {
 }
 
 func TestSQLOptions_SetSchema(t *testing.T) {
-	sfoo := "foo"
+	blank := ""
+	foo := "foo"
 	testCases := []struct {
 		V string
 		T *string
 	}{
-		{V: "", T: nil},
-		{V: "foo", T: &sfoo},
+		{V: "", T: &blank},
+		{V: "foo", T: &foo},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.V, func(t *testing.T) {

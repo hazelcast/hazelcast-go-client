@@ -285,7 +285,7 @@ ExecSQL runs the given SQL query on the member-side.
 This method is used for SQL queries that don't return rows, such as INSERT, CREATE MAPPING, etc.
 Placeholders in the query is replaced by parameters.
 A placeholder is the question mark (?) character.
-For each placeholder, a corresponding parameter should exist.
+For each placeholder, a corresponding parameter must exist.
 
 Example:
 
@@ -307,7 +307,8 @@ ExecSQLWithOptions runs the given SQL query on the member-side.
 This method is used for SQL queries that don't return rows, such as INSERT, CREATE MAPPING, etc.
 Placeholders in the query is replaced by parameters.
 A placeholder is the question mark (?) character.
-For each placeholder, a corresponding parameter should exist.
+For each placeholder, a corresponding parameter must exist.
+This variant takes an SQLOptions parameter to specify advanced query options.
 
 Example:
 
@@ -335,9 +336,9 @@ func (c *Client) ExecSQLWithOptions(ctx context.Context, query string, opts SQLO
 /*
 QuerySQL runs the given SQL query on the member-side and returns a row iterator.
 This method is used for SQL queries that return rows, such as SELECT and SHOW MAPPINGS.
-Placeholders in the query is replaced by params.
+Placeholders in the query is replaced by parameters.
 A placeholder is the question mark (?) character.
-For each placeholder, a corresponding parameter should exist.
+For each placeholder, a corresponding parameter must exist.
 
 Example:
 
@@ -360,9 +361,10 @@ func (c *Client) QuerySQL(ctx context.Context, query string, params ...interface
 /*
 QuerySQLWithOptions runs the given SQL query on the member-side and returns a row iterator.
 This method is used for SQL queries that return rows, such as SELECT and SHOW MAPPINGS.
-Placeholders in the query is replaced by params.
+Placeholders in the query is replaced by parameters.
 A placeholder is the question mark (?) character.
-For each placeholder, a corresponding parameter should exist.
+For each placeholder, a corresponding parameter must exist.
+This variant takes an SQLOptions parameter to specify advanced query options.
 
 Example:
 
@@ -487,7 +489,7 @@ func (c *Client) createComponents(config *Config) {
 
 // SQLOptions are server-side query options.
 type SQLOptions struct {
-	cursorBufferSize int32
+	cursorBufferSize *int32
 	timeout          *int64
 	schema           *string
 	err              error
@@ -509,7 +511,7 @@ func (s *SQLOptions) SetCursorBufferSize(cbs int) {
 		s.err = ihzerrors.NewIllegalArgumentError("setting cursor buffer size", err)
 		return
 	}
-	s.cursorBufferSize = v
+	s.cursorBufferSize = &v
 }
 
 /*
@@ -520,10 +522,6 @@ Negative values mean that the value from the server-side config will be used.
 Defaults to -1.
 */
 func (s *SQLOptions) SetQueryTimeout(t time.Duration) {
-	if t == 0 {
-		s.timeout = nil
-		return
-	}
 	tm := t.Milliseconds()
 	// note that the condition below is for t, not tm
 	if t < 0 {
@@ -537,13 +535,9 @@ SetSchema sets the schema name.
 The engine will try to resolve the non-qualified object identifiers from the statement in the given schema.
 If not found, the default search path will be used.
 The schema name is case-sensitive. For example, foo and Foo are different schemas.
-By default, only the default search path is used.
+By default, only the default search path is used, which looks for objects in the predefined schemas "partitioned" and "public".
 */
 func (s *SQLOptions) SetSchema(schema string) {
-	if schema == "" {
-		s.schema = nil
-		return
-	}
 	s.schema = &schema
 }
 
@@ -551,12 +545,17 @@ func (s *SQLOptions) validate() error {
 	if s.err != nil {
 		return s.err
 	}
-	if s.cursorBufferSize == 0 {
-		s.cursorBufferSize = idriver.DefaultCursorBufferSize
+	if s.cursorBufferSize == nil {
+		v := idriver.DefaultCursorBufferSize
+		s.cursorBufferSize = &v
 	}
 	if s.timeout == nil {
 		v := idriver.DefaultTimeoutMillis
 		s.timeout = &v
+	}
+	if s.schema == nil {
+		v := idriver.DefaultSchema
+		s.schema = &v
 	}
 	return nil
 }
@@ -568,8 +567,8 @@ func updateContextWithOptions(ctx context.Context, opts SQLOptions) (context.Con
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if opts.cursorBufferSize > 0 {
-		ctx = context.WithValue(ctx, idriver.QueryCursorBufferSizeKey{}, opts.cursorBufferSize)
+	if opts.cursorBufferSize != nil {
+		ctx = context.WithValue(ctx, idriver.QueryCursorBufferSizeKey{}, *opts.cursorBufferSize)
 	}
 	if opts.timeout != nil {
 		ctx = context.WithValue(ctx, idriver.QueryTimeoutKey{}, *opts.timeout)
