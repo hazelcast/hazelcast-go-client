@@ -25,14 +25,14 @@ func setTransport(fn roundTripFunc, client *HTTPClient) {
 
 func TestHTTPClient_Get(t *testing.T) {
 	type args struct {
-		serverHandler roundTripFunc
 		url           string
+		serverHandler roundTripFunc
 		headers       []HTTPHeader
 	}
 	tcs := []struct {
 		err  *Error
-		args args
 		name string
+		args args
 	}{
 		{
 			name: "happy path, return success and response",
