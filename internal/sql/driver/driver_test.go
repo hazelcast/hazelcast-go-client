@@ -38,13 +38,13 @@ import (
 
 func TestParseDSN(t *testing.T) {
 	testCases := []struct {
+		Err           error
 		Cluster       *cluster.Config
 		Logger        *logger.Config
 		Serialization *serialization.Config
-		Err           error
-		DSN           string
 		Pre           func()
 		Post          func()
+		DSN           string
 	}{
 		{
 			DSN: "",
