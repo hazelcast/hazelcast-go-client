@@ -58,7 +58,7 @@ download () {
   else
       log_info "Downloading: $jar_path ($artifact) from: $repo"
       set +e
-      output=$(mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Ddest="$jar_path" 2>&1)
+      output=$(mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Dtransitive=false -Ddest="$jar_path" 2>&1)
       err=$?
       set -e
       if [ $err -ne 0 ]; then
