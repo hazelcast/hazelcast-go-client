@@ -31,6 +31,7 @@ const (
 	skipHzVersion     = "hz"
 	skipClientVersion = "ver"
 	skipOS            = "os"
+	skipArch          = "arch"
 	skipEnterprise    = "enterprise"
 	skipNotEnterprise = "!enterprise"
 	skipOSS           = "oss"
@@ -55,12 +56,13 @@ KEY is one of the following keys:
 	hz: Hazelcast version
 	ver: Go Client version
 	os: Operating system name, taken from runtime.GOOS
+	arch: Operating system name, taken from runtime.GOARCH
 
 hz and ver keys support the following operators:
 
 	<, <=, =, !=, >=, >
 
-os key supports the following operators:
+os and arch key support the following operators:
 
 	=, !=
 
@@ -110,6 +112,7 @@ type SkipChecker struct {
 	hzVer      string
 	ver        string
 	os         string
+	arch       string
 	enterprise bool
 }
 
@@ -120,45 +123,55 @@ func defaultSkipChecker() SkipChecker {
 		hzVer:      HzVersion(),
 		ver:        internal.ClientVersion,
 		os:         runtime.GOOS,
+		arch:       runtime.GOARCH,
 		enterprise: enterprise,
 	}
 }
 
-// CheckHzVer evaluates left OP right and returns the result.
+// checkHzVer evaluates left OP right and returns the result.
 // left is the actual Hazelcast server version.
 // op is the comparison operator.
 // right is the given Hazelcast server version.
 // Hazelcast server version is retrieved from HZ_VERSION environment variable.
-func (s SkipChecker) CheckHzVer(op, right string) bool {
+func (s SkipChecker) checkHzVer(op, right string) bool {
 	return checkVersion(s.hzVer, op, right)
 }
 
-// CheckVer evaluates left OP right and returns the result.
+// checkVer evaluates left OP right and returns the result.
 // left is the actual client version.
 // op is the comparison operator.
 // right is the given client version.
-func (s SkipChecker) CheckVer(op, right string) bool {
+func (s SkipChecker) checkVer(op, right string) bool {
 	return checkVersion(s.ver, op, right)
 }
 
-// CheckOS evaluates left OP right and returns the result.
+// checkOS evaluates left OP right and returns the result.
 // left is the actual operating system name.
 // op is the comparison operator.
 // right is the given operating system name.
 // Consult runtime.GOOS for the valid operating system names.
-func (s SkipChecker) CheckOS(op, right string) bool {
-	return checkOS(s.os, op, right)
+func (s SkipChecker) checkOS(op, right string) bool {
+	return checkEquality(s.os, op, right, skipOS)
 }
 
-// Enterprise returns true if the actual Hazelcast server is Enterprise.
+// checkArch evaluates left OP right and returns the result.
+// left is the actual operating system architecture.
+// op is the comparison operator.
+// right is the given operating system architecture.
+// Consult runtime.GOARCH for the valid operating system architectures.
+func (s SkipChecker) checkArch(op, right string) bool {
+	return checkEquality(s.arch, op, right, skipArch)
+}
+
+// isEnterprise returns true if the actual Hazelcast server is Enterprise.
 // The default skip checker considers non-blank HAZELCAST_ENTERPRISE_KEY as Hazelcast Enterprise.
-func (s SkipChecker) Enterprise() bool {
+func (s SkipChecker) isEnterprise() bool {
 	return s.enterprise
 }
 
-// OSS returns true if the actual Hazelcast server is open source.
+// isOSS returns true if the actual Hazelcast server is open source.
 // The default skip checker considers blank HAZELCAST_ENTERPRISE_KEY as Hazelcast open source.
-func (s SkipChecker) OSS() bool {
+func (s SkipChecker) isOSS() bool {
 	return !s.enterprise
 }
 
@@ -180,25 +193,28 @@ func (s SkipChecker) checkCondition(cond string) bool {
 	switch left {
 	case skipHzVersion:
 		ensureLen(parts, 3, cond, "hz = 5.0")
-		return s.CheckHzVer(parts[1], parts[2])
+		return s.checkHzVer(parts[1], parts[2])
 	case skipClientVersion:
 		ensureLen(parts, 3, cond, "ver = 5.0")
-		return s.CheckVer(parts[1], parts[2])
+		return s.checkVer(parts[1], parts[2])
 	case skipOS:
 		ensureLen(parts, 3, cond, "os = linux")
-		return s.CheckOS(parts[1], parts[2])
+		return s.checkOS(parts[1], parts[2])
+	case skipArch:
+		ensureLen(parts, 3, cond, "arch = 386")
+		return s.checkArch(parts[1], parts[2])
 	case skipEnterprise:
 		ensureLen(parts, 1, cond, "enterprise")
-		return s.Enterprise()
+		return s.isEnterprise()
 	case skipNotEnterprise:
 		ensureLen(parts, 1, cond, "!enterprise")
-		return !s.Enterprise()
+		return !s.isEnterprise()
 	case skipOSS:
 		ensureLen(parts, 1, cond, "oss")
-		return s.OSS()
+		return s.isOSS()
 	case skipNotOSS:
 		ensureLen(parts, 1, cond, "!oss")
-		return !s.OSS()
+		return !s.isOSS()
 	default:
 		panic(fmt.Errorf(`unexpected test skip constant "%s" in %s`, parts[0], cond))
 	}
@@ -286,14 +302,14 @@ func mustAtoi(s string) int {
 	return n
 }
 
-func checkOS(left, operator, right string) bool {
+func checkEquality(left, operator, right, key string) bool {
 	switch operator {
 	case "=":
 		return left == right
 	case "!=":
 		return left != right
 	default:
-		panic(fmt.Errorf(`unexpected test skip operator "%s" in "%s" condition`, operator, skipOS))
+		panic(fmt.Errorf(`unexpected test skip operator "%s" in "%s" condition`, operator, key))
 	}
 }
 

@@ -35,6 +35,7 @@ func TestSkipIf(t *testing.T) {
 		hzVer:      "5.1-SNAPSHOT",
 		ver:        "1.2.0",
 		os:         "windows",
+		arch:       "386",
 		enterprise: true,
 	}
 	testCases := []skipTestCase{
@@ -105,14 +106,19 @@ func TestSkipIf(t *testing.T) {
 		noSkip("os = linux"),
 		skips("os != darwin"),
 		noSkip("os != windows"),
-		// enterprise
+		// check Arch
+		skips("arch = 386"),
+		noSkip("arch = amd64"),
+		skips("arch != amd64"),
+		noSkip("arch != 386"),
+		// check Enterprise
 		skips("enterprise"),
 		noSkip("!enterprise"),
-		// oss
+		// check OSSs
 		skips("!oss"),
 		noSkip("oss"),
 		// Multiple conditions
-		skips("hz > 5.0, hz < 5.1.0, ver = 1.2, enterprise, !oss, os = windows, os != darwin"),
+		skips("hz > 5.0, hz < 5.1.0, ver = 1.2, enterprise, !oss, os = windows, os != darwin, arch = 386, arch != amd64"),
 		noSkip("hz > 5.0, ver != 1.2"),
 	}
 	for _, tc := range testCases {
