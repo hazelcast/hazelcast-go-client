@@ -17,6 +17,7 @@
 package driver
 
 import (
+	"context"
 	"database/sql/driver"
 	"fmt"
 	"io"
@@ -39,6 +40,7 @@ type QueryResult struct {
 	page             *sql.Page
 	ss               *SQLService
 	conn             *icluster.Connection
+	doneCh           chan struct{}
 	metadata         sql.RowMetadata
 	queryID          sql.QueryID
 	cursorBufferSize int32
@@ -47,16 +49,27 @@ type QueryResult struct {
 }
 
 // NewQueryResult creates a new QueryResult.
-func NewQueryResult(qid sql.QueryID, md sql.RowMetadata, page *sql.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
+func NewQueryResult(ctx context.Context, qid sql.QueryID, md sql.RowMetadata, page *sql.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
+	doneCh := make(chan struct{})
 	qr := &QueryResult{
 		queryID:          qid,
 		metadata:         md,
 		page:             page,
 		ss:               ss,
 		conn:             conn,
+		doneCh:           doneCh,
 		cursorBufferSize: cbs,
 		index:            0,
 	}
+	go func() {
+		select {
+		case <-ctx.Done():
+			// ignoring the error here, since there is nothing to do on error.
+			_ = qr.Close()
+		case <-doneCh:
+			return
+		}
+	}()
 	return qr, nil
 }
 
@@ -75,6 +88,7 @@ func (r *QueryResult) Columns() []string {
 // It implements database/sql/Rows interface.
 func (r *QueryResult) Close() error {
 	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
+		close(r.doneCh)
 		if err := r.ss.closeQuery(r.queryID, r.conn); err != nil {
 			return err
 		}
@@ -97,7 +111,7 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 			atomic.StoreInt32(&r.state, closed)
 			return io.EOF
 		}
-		if err := r.fetchNextPage(); err != nil {
+		if err := r.fetchNextPage(context.Background()); err != nil {
 			return err
 		}
 		// after fetching next page, the page and its cols change, so have to refresh them
@@ -110,8 +124,8 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 	return nil
 }
 
-func (r *QueryResult) fetchNextPage() error {
-	page, err := r.ss.fetch(r.queryID, r.conn, r.cursorBufferSize)
+func (r *QueryResult) fetchNextPage(ctx context.Context) error {
+	page, err := r.ss.fetch(ctx, r.queryID, r.conn, r.cursorBufferSize)
 	if err != nil {
 		return fmt.Errorf("fetching the next page: %w", err)
 	}
