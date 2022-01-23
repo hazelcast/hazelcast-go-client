@@ -66,7 +66,7 @@ func NewQueryResult(ctx context.Context, qid sql.QueryID, md sql.RowMetadata, pa
 		select {
 		case <-ctx.Done():
 			// ignoring the error here, since there is nothing to do on error.
-			//_ = qr.Close()
+			_ = qr.Close()
 		case <-doneCh:
 			return
 		}
