@@ -61,11 +61,12 @@ func NewQueryResult(ctx context.Context, qid sql.QueryID, md sql.RowMetadata, pa
 		cursorBufferSize: cbs,
 		index:            0,
 	}
+	// the following goroutine cancels the query when the context is canceled.
 	go func() {
 		select {
 		case <-ctx.Done():
 			// ignoring the error here, since there is nothing to do on error.
-			_ = qr.Close()
+			//_ = qr.Close()
 		case <-doneCh:
 			return
 		}
