@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
@@ -55,6 +56,34 @@ type Config struct {
 	Labels        []string
 	StatsEnabled  bool
 	StatsPeriod   time.Duration
+}
+
+func NewConfig() *Config {
+	return &Config{
+		Cluster:       &cluster.Config{},
+		Failover:      &cluster.FailoverConfig{},
+		Serialization: &pubserialization.Config{},
+		Logger:        &logger.Config{},
+	}
+}
+
+func (c *Config) Validate() error {
+	if err := c.Cluster.Validate(); err != nil {
+		return err
+	}
+	if err := c.Failover.Validate(*c.Cluster); err != nil {
+		return err
+	}
+	if err := c.Serialization.Validate(); err != nil {
+		return err
+	}
+	if err := c.Logger.Validate(); err != nil {
+		return err
+	}
+	if err := check.EnsureNonNegativeDuration(&c.StatsPeriod, 5*time.Second, "invalid period"); err != nil {
+		return err
+	}
+	return nil
 }
 
 type Client struct {

@@ -18,17 +18,22 @@ package hazelcast
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
 	"sync"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -59,6 +64,7 @@ func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, erro
 type Client struct {
 	membershipListenerMapMu *sync.Mutex
 	proxyManager            *proxyManager
+	db                      *sql.DB
 	membershipListenerMap   map[types.UUID]int64
 	lifecycleListenerMap    map[types.UUID]int64
 	lifecycleListenerMapMu  *sync.Mutex
@@ -274,6 +280,124 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
 }
 
+/*
+ExecSQL runs the given SQL query on the member-side.
+This method is used for SQL queries that don't return rows, such as INSERT, CREATE MAPPING, etc.
+Placeholders in the query is replaced by parameters.
+A placeholder is the question mark (?) character.
+For each placeholder, a corresponding parameter must exist.
+
+Example:
+
+	q := `INSERT INTO person(__key, age, name) VALUES (?, ?, ?)`
+	result, err := client.ExecSQL(context.TODO(), q, 1001, 35, "Jane Doe")
+	// handle the error
+	cnt, err := result.RowsAffected()
+	// handle the error
+	fmt.Printf("Affected rows: %d\n", cnt)
+
+Note that LastInsertId is not supported and at the moment AffectedRows always returns 0.
+*/
+func (c *Client) ExecSQL(ctx context.Context, query string, params ...interface{}) (driver.Result, error) {
+	return c.db.ExecContext(ctx, query, params...)
+}
+
+/*
+ExecSQLWithOptions runs the given SQL query on the member-side.
+This method is used for SQL queries that don't return rows, such as INSERT, CREATE MAPPING, etc.
+Placeholders in the query is replaced by parameters.
+A placeholder is the question mark (?) character.
+For each placeholder, a corresponding parameter must exist.
+This variant takes an SQLOptions parameter to specify advanced query options.
+
+Example:
+
+	q := `INSERT INTO person(__key, age, name) VALUES (?, ?, ?)`
+	opts := hazelcast.SQLOptions{}
+	opts.SetCursorBufferSize(1000)
+	p[ts.SetQueryTimeout(5*time.Second)
+	result, err := client.ExecSQLWithOptions(context.TODO(), q, opts, 1001, 35, "Jane Doe")
+	// handle the error
+	cnt, err := result.RowsAffected()
+	// handle the error
+	fmt.Printf("Affected rows: %d\n", cnt)
+
+Note that LastInsertId is not supported and at the moment AffectedRows always returns 0.
+*/
+func (c *Client) ExecSQLWithOptions(ctx context.Context, query string, opts SQLOptions, params ...interface{}) (driver.Result, error) {
+	var err error
+	ctx, err = updateContextWithOptions(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return c.db.ExecContext(ctx, query, params...)
+}
+
+/*
+QuerySQL runs the given SQL query on the member-side and returns a row iterator.
+This method is used for SQL queries that return rows, such as SELECT and SHOW MAPPINGS.
+Placeholders in the query is replaced by parameters.
+A placeholder is the question mark (?) character.
+For each placeholder, a corresponding parameter must exist.
+
+Example:
+
+	q :=`SELECT name, age FROM person WHERE age >= ?`
+	rows, err := client.QuerySQL(context.TODO(), q, 30)
+	// handle the error
+	defer rows.Close()
+	var name string
+	var age int
+	for rows.Next() {
+		err := rows.Scan(&name, &age)
+		// handle the error
+		fmt.Println(name, age)
+	}
+*/
+func (c *Client) QuerySQL(ctx context.Context, query string, params ...interface{}) (*sql.Rows, error) {
+	return c.db.QueryContext(ctx, query, params...)
+}
+
+/*
+QuerySQLWithOptions runs the given SQL query on the member-side and returns a row iterator.
+This method is used for SQL queries that return rows, such as SELECT and SHOW MAPPINGS.
+Placeholders in the query is replaced by parameters.
+A placeholder is the question mark (?) character.
+For each placeholder, a corresponding parameter must exist.
+This variant takes an SQLOptions parameter to specify advanced query options.
+
+Example:
+
+	q :=`SELECT name, age FROM person WHERE age >= ?`
+	opts := hazelcast.SQLOptions{}
+	opts.SetCursorBufferSize(1000)
+	rows, err := client.QuerySQLWithOptions(context.TODO(), q, opts, 30)
+	// handle the error
+	defer rows.Close()
+	var name string
+	var age int
+	for rows.Next() {
+		err := rows.Scan(&name, &age)
+		// handle the error
+		fmt.Println(name, age)
+	}
+
+*/
+func (c *Client) QuerySQLWithOptions(ctx context.Context, query string, opts SQLOptions, params ...interface{}) (*sql.Rows, error) {
+	var err error
+	ctx, err = updateContextWithOptions(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return c.db.QueryContext(ctx, query, params...)
+}
+
+// PrepareSQL creates a prepared statement with the given query.
+// See sql/driver documentation about how to use the prepared statement.
+func (c *Client) PrepareSQL(ctx context.Context, query string) (*sql.Stmt, error) {
+	return c.db.PrepareContext(ctx, query)
+}
+
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
@@ -360,4 +484,97 @@ func (c *Client) createComponents(config *Config) {
 		Logger:               c.ic.Logger,
 	}
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
+	c.db = sql.OpenDB(idriver.NewConnectorWithClient(c.ic, true))
+}
+
+// SQLOptions are server-side query options.
+type SQLOptions struct {
+	cursorBufferSize *int32
+	timeout          *int64
+	schema           *string
+	err              error
+}
+
+/*
+SetCursorBufferSize sets the query cursor buffer size.
+When rows are ready to be consumed, they are put into an internal buffer of the cursor.
+This parameter defines the maximum number of rows in that buffer.
+When the threshold is reached, the backpressure mechanism will slow down the execution, possibly to a complete halt, to prevent out-of-memory.
+The default value is expected to work well for most workloads.
+A bigger buffer size may give you a slight performance boost for queries with large result sets at the cost of increased memory consumption.
+Defaults to 4096.
+The given buffer size must be in the non-negative int32 range.
+*/
+func (s *SQLOptions) SetCursorBufferSize(cbs int) {
+	v, err := check.NonNegativeInt32(cbs)
+	if err != nil {
+		s.err = ihzerrors.NewIllegalArgumentError("setting cursor buffer size", err)
+		return
+	}
+	s.cursorBufferSize = &v
+}
+
+/*
+SetQueryTimeout sets the query execution timeout.
+If the timeout is reached for a running statement, it will be cancelled forcefully.
+Zero value means no timeout.
+Negative values mean that the value from the server-side config will be used.
+Defaults to -1.
+*/
+func (s *SQLOptions) SetQueryTimeout(t time.Duration) {
+	tm := t.Milliseconds()
+	// note that the condition below is for t, not tm
+	if t < 0 {
+		tm = -1
+	}
+	s.timeout = &tm
+}
+
+/*
+SetSchema sets the schema name.
+The engine will try to resolve the non-qualified object identifiers from the statement in the given schema.
+If not found, the default search path will be used.
+The schema name is case-sensitive. For example, foo and Foo are different schemas.
+By default, only the default search path is used, which looks for objects in the predefined schemas "partitioned" and "public".
+*/
+func (s *SQLOptions) SetSchema(schema string) {
+	s.schema = &schema
+}
+
+func (s *SQLOptions) validate() error {
+	if s.err != nil {
+		return s.err
+	}
+	if s.cursorBufferSize == nil {
+		v := idriver.DefaultCursorBufferSize
+		s.cursorBufferSize = &v
+	}
+	if s.timeout == nil {
+		v := idriver.DefaultTimeoutMillis
+		s.timeout = &v
+	}
+	if s.schema == nil {
+		v := idriver.DefaultSchema
+		s.schema = &v
+	}
+	return nil
+}
+
+func updateContextWithOptions(ctx context.Context, opts SQLOptions) (context.Context, error) {
+	if err := opts.validate(); err != nil {
+		return nil, err
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if opts.cursorBufferSize != nil {
+		ctx = context.WithValue(ctx, idriver.QueryCursorBufferSizeKey{}, *opts.cursorBufferSize)
+	}
+	if opts.timeout != nil {
+		ctx = context.WithValue(ctx, idriver.QueryTimeoutKey{}, *opts.timeout)
+	}
+	if opts.schema != nil {
+		ctx = context.WithValue(ctx, idriver.QuerySchemaKey{}, *opts.schema)
+	}
+	return ctx, nil
 }
