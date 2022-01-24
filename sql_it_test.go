@@ -42,7 +42,6 @@ const (
 
 type Record struct {
 	DecimalValue  *types.Decimal
-	NullValue     interface{}
 	VarcharValue  string
 	DoubleValue   float64
 	BigIntValue   int64
@@ -279,17 +278,7 @@ func TestSQLWithPortableData(t *testing.T) {
 			t.Fatal(err)
 		}
 		vs = append(vs, v)
-		targetThis := []interface{}{&Record{
-			VarcharValue:  "hello",
-			TinyIntValue:  -128,
-			SmallIntValue: 32767,
-			IntegerValue:  -27,
-			BigIntValue:   38,
-			BoolValue:     true,
-			RealValue:     -5.32,
-			DoubleValue:   12.789,
-			DecimalValue:  &dec,
-		}}
+		targetThis := []interface{}{rec}
 		assert.Equal(t, targetThis, vs)
 		// select individual fields
 		row, err = queryRow(client, fmt.Sprintf(`
@@ -526,6 +515,7 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 			assert.Equal(t, len(target), len(entries))
 			for i := 0; i < len(target); i++ {
 				t.Run(fmt.Sprintf("decimal-%d", i), func(t *testing.T) {
+					assert.Equal(t, target[i].Key, entries[i].Key)
 					bt := target[i].Value.(types.Decimal)
 					be := entries[i].Value.(types.Decimal)
 					assert.Equal(t, bt.Scale(), be.Scale())

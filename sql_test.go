@@ -28,8 +28,8 @@ import (
 )
 
 type cursorBufferSizeTestCase struct {
-	V         int
-	T         *int32
+	Value     int
+	Target    *int32
 	ErrString string
 }
 
@@ -38,23 +38,23 @@ func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
 	v1 := int32(1)
 	v4096 := int32(4096)
 	testCases := []cursorBufferSizeTestCase{
-		{V: 0, T: &v0},
-		{V: 1, T: &v1},
-		{V: 4096, T: &v4096},
-		{V: -1, ErrString: "setting cursor buffer size: non-negative integer number expected: -1: illegal argument error"},
+		{Value: 0, Target: &v0},
+		{Value: 1, Target: &v1},
+		{Value: 4096, Target: &v4096},
+		{Value: -1, ErrString: "setting cursor buffer size: non-negative integer number expected: -1: illegal argument error"},
 	}
 	if !runtime.Is32BitArch() {
 		v := math.MaxInt32
 		testCases = append(testCases, cursorBufferSizeTestCase{
-			V:         v + 1,
+			Value:     v + 1,
 			ErrString: "setting cursor buffer size: signed 32-bit integer number expected: 2147483648: illegal argument error",
 		})
 	}
 
 	for _, tc := range testCases {
-		t.Run(strconv.Itoa(tc.V), func(t *testing.T) {
+		t.Run(strconv.Itoa(tc.Value), func(t *testing.T) {
 			opts := SQLOptions{}
-			opts.SetCursorBufferSize(tc.V)
+			opts.SetCursorBufferSize(tc.Value)
 			err := opts.validate()
 			if tc.ErrString != "" {
 				assert.Equal(t, tc.ErrString, err.Error())
@@ -63,7 +63,7 @@ func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, tc.T, opts.cursorBufferSize)
+			assert.Equal(t, tc.Target, opts.cursorBufferSize)
 		})
 	}
 }

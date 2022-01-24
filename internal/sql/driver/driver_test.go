@@ -42,6 +42,7 @@ func TestParseDSN(t *testing.T) {
 		Cluster       *cluster.Config
 		Logger        *logger.Config
 		Serialization *serialization.Config
+		SSL           *cluster.SSLConfig
 		Pre           func()
 		Post          func()
 		DSN           string
@@ -61,10 +62,42 @@ func TestParseDSN(t *testing.T) {
 			DSN:           "",
 			Serialization: &serialization.Config{PortableVersion: 2},
 			Pre: func() {
-				idriver.SetSerializationConfig(&serialization.Config{PortableVersion: 2})
+				if err := pubdriver.SetSerializationConfig(&serialization.Config{PortableVersion: 2}); err != nil {
+					panic(err)
+				}
 			},
 			Post: func() {
-				idriver.SetSerializationConfig(nil)
+				if err := pubdriver.SetSerializationConfig(nil); err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			DSN:    "",
+			Logger: &logger.Config{Level: logger.ErrorLevel},
+			Pre: func() {
+				if err := pubdriver.SetLoggerConfig(&logger.Config{Level: logger.ErrorLevel}); err != nil {
+					panic(err)
+				}
+			},
+			Post: func() {
+				if err := pubdriver.SetSerializationConfig(nil); err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			DSN: "",
+			SSL: &cluster.SSLConfig{Enabled: true},
+			Pre: func() {
+				if err := pubdriver.SetSSLConfig(&cluster.SSLConfig{Enabled: true}); err != nil {
+					panic(err)
+				}
+			},
+			Post: func() {
+				if err := pubdriver.SetSSLConfig(nil); err != nil {
+					panic(err)
+				}
 			},
 		},
 		{

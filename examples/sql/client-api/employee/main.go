@@ -15,7 +15,7 @@
  */
 
 /*
-This example demonstrates how to use the Hazelcast database/sql driver.
+This example demonstrates how to use the SQL methods of the Hazelcast Go Client.
 */
 
 package main

@@ -106,7 +106,7 @@ func TestSerializationImprovements(t *testing.T) {
 				target: time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
 			},
 			{
-				input:  time.Date(0, 2, 10, 1, 2, 3, 50, time.Local),
+				input:  time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
 				name:   "JavaLocalTime",
 				target: time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
 			},

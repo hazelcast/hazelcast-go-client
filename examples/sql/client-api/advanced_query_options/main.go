@@ -32,7 +32,7 @@ func main() {
 	}
 	defer client.Shutdown(ctx)
 	opts := hazelcast.SQLOptions{}
-	opts.SetSchema("parititioned")
+	opts.SetSchema("partitioned")
 	_, err = client.ExecSQL(ctx, `
 			CREATE OR REPLACE MAPPING mymap
 			TYPE IMAP
