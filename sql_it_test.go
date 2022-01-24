@@ -476,10 +476,7 @@ func TestPrepare(t *testing.T) {
 }
 
 func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}, opts *hz.SQLOptions) {
-	fn := func(config *hz.Config) {
-		config.Serialization.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
-	}
-	it.SQLTesterWithConfigBuilder(t, fn, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		const rowCount = 50
 		target, err := populateMap(m, rowCount, keyFn, valueFn)
 		if err != nil {
