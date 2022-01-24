@@ -96,9 +96,9 @@ func (s *SQLService) QuerySQL(ctx context.Context, query string, params []driver
 	return resp.(*QueryResult), nil
 }
 
-func (s *SQLService) fetch(qid isql.QueryID, conn *cluster.Connection, cbs int32) (*isql.Page, error) {
+func (s *SQLService) fetch(ctx context.Context, qid isql.QueryID, conn *cluster.Connection, cbs int32) (*isql.Page, error) {
 	req := codec.EncodeSqlFetchRequest(qid, cbs)
-	resp, err := s.invokeOnConnection(context.Background(), req, conn)
+	resp, err := s.invokeOnConnection(ctx, req, conn)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return &ExecResult{UpdateCount: updateCount}, nil
 	}
 	md := isql.RowMetadata{Columns: metadata}
-	return NewQueryResult(qid, md, page, s, conn, cursorBufferSize)
+	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize)
 }
 
 func (s *SQLService) serializeParams(params []driver.Value) ([]*iserialization.Data, error) {

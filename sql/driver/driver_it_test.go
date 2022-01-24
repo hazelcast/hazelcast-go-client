@@ -442,6 +442,53 @@ func TestSQLQueryWithQueryTimeout(t *testing.T) {
 	testSQLQuery(t, ctx, "int", "int", fn, fn)
 }
 
+func TestSetLoggerConfig(t *testing.T) {
+	if err := driver.SetLoggerConfig(&logger.Config{Level: logger.ErrorLevel}); err != nil {
+		t.Fatal(err)
+	}
+	if err := driver.SetLoggerConfig(nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSetSSLConfig(t *testing.T) {
+	if err := driver.SetSSLConfig(&cluster.SSLConfig{Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := driver.SetSSLConfig(nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestContextCancelAfterFirstPage(t *testing.T) {
+	/*
+		This test ensures context cancellation works for results after the first page (fetch operation).
+		generate_stream function generates N rows per second. Since the context times out after 1100 ms, it should be canceled right after getting the first number.
+	*/
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		db := driver.Open(*config)
+		defer db.Close()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		tic := time.Now()
+		rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			cancel()
+		}
+		toc := time.Now()
+		took := toc.Sub(tic).Milliseconds()
+		if took >= 2000 {
+			// the time should be less than 2000 milliseconds (two pages of results), which proves that the query is canceled after the first page.
+			t.Fatalf("the passed time should take less than 2000 milliseconds, but it is: %d", took)
+		}
+	})
+}
+
 func TestConcurrentQueries(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
