@@ -174,6 +174,44 @@ If you don't want to receive any distributed object events, use client.RemoveDis
 
 	client.RemoveDistributedObjectListener(subscriptionID)
 
+Running SQL Queries
+
+Running SQL queries require Hazelcast 5.0 and up.
+Check out the Hazelcast SQL documentation here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview
+
+The SQL support should be enabled in Hazelcast server configuration:
+
+	<hazelcast>
+		<jet enabled="true" />
+	</hazelcast>
+
+The client supports two kinds of queries: The ones returning rows (select statements and a few others) and the rest (insert, update, etc.).
+The former kinds of queries are executed with QuerySQL method and the latter ones are executed with ExecSQL method.
+
+Use the question mark (?) for placeholders.
+
+To connect to a data source and query it as if it is a table, a mapping should be created.
+Currently, mappings for Map, Kafka and file data sources are supported.
+
+You can read the details about mappings here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview#mappings
+
+The following data types are supported when inserting/updating.
+The names in parantheses correspond to SQL types:
+
+	- string (varchar)
+	- int8 (tinyint)
+	- int16 (smallint)
+	- int32 (integer)
+	- int64 (bigint)
+	- bool (boolean)
+	- float32 (real)
+	- float64 (double)
+	- types.Decimal (decimal)
+	- time.Time (date) Detected by checking: hour == minute == second == nanoseconds = 0
+	- time.Time (time) Detected by checking: year == 0, month == day == 1
+	- time.Time (timestamp) Detected by checking: hour == minute == second == nanoseconds = 0, timezone == time.Local
+	- time.Time (timestamp with time zone) Detected by checking: hour == minute == second == nanoseconds = 0, timezone != time.Local
+
 Management Center Integration
 
 Hazelcast Management Center can monitor your clients if client-side statistics are enabled.
