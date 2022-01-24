@@ -469,7 +469,7 @@ func TestContextCancelAfterFirstPage(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		db := driver.Open(*config)
 		defer db.Close()
-		ctx, cancel := context.WithTimeout(context.Background(), 1100*time.Millisecond)
+		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		tic := time.Now()
 		rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
@@ -478,12 +478,12 @@ func TestContextCancelAfterFirstPage(t *testing.T) {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			// do nothing
+			cancel()
 		}
 		toc := time.Now()
 		took := toc.Sub(tic).Milliseconds()
 		if took >= 2000 {
-			// the time should be less than 200 milliseconds (two pages of results), which proves that the query is canceled after the first page.
+			// the time should be less than 2000 milliseconds (two pages of results), which proves that the query is canceled after the first page.
 			t.Fatalf("the passed time should take less than 2000 milliseconds, but it is: %d", took)
 		}
 	})
