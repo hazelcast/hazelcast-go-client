@@ -375,7 +375,7 @@ func makeError(rec interface{}) error {
 
 func dateTimeSerializer(t time.Time) pubserialization.Serializer {
 	// if t has its year 0, then assume it contains only the time
-	if t.Year() == 0 {
+	if t.Year() == 0 && t.Month() == 1 && t.Day() == 1 {
 		return javaLocalTimeSerializer
 	}
 	h, mn, s := t.Clock()

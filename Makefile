@@ -4,7 +4,7 @@ PORT ?= 5050
 TEST_FLAGS ?=
 MEMBER_COUNT ?= 3
 COVERAGE_OUT ?= coverage.out
-TEST_FLAGS := -v -count 1 -timeout 20m -tags=hazelcastinternal
+TEST_FLAGS := -v -count 1 -timeout 25m -tags=hazelcastinternal
 PACKAGES = $(go list ./... | grep -v org-website)
 
 build:

@@ -177,8 +177,8 @@ The names in parentheses correspond to SQL types:
 	- types.Decimal (decimal)
 	- time.Time (date) Detected by checking: hour == minute == second == nanoseconds = 0
 	- time.Time (time) Detected by checking: year == 0, month == day == 1
-	- time.Time (timestamp) Detected by checking: hour == minute == second == nanoseconds = 0, timezone == time.Local
-	- time.Time (timestamp with time zone) Detected by checking: hour == minute == second == nanoseconds = 0, timezone != time.Local
+	- time.Time (timestamp) Detected by checking: not time, timezone == time.Local
+	- time.Time (timestamp with time zone) Detected by checking: not time, timezone != time.Local
 	- serialization.JSON (json)
 
 Using Raw Values

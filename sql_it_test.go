@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package driver_test
+package hazelcast_test
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql"
 	"fmt"
+	"log"
 	"math/big"
-	"net/url"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -31,13 +29,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
-
-	"github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
 const (
@@ -48,7 +42,6 @@ const (
 
 type Record struct {
 	DecimalValue  *types.Decimal
-	NullValue     interface{}
 	VarcharValue  string
 	DoubleValue   float64
 	BigIntValue   int64
@@ -224,38 +217,9 @@ func TestSQLQuery(t *testing.T) {
 	for _, tc := range testCases {
 		name := fmt.Sprintf("%s/%s", tc.keyFmt, tc.valueFmt)
 		t.Run(name, func(t *testing.T) {
-			testSQLQuery(t, context.Background(), tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn)
+			testSQLQuery(t, tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn, nil)
 		})
 	}
-}
-
-func TestSQLQueryWithJSONValue(t *testing.T) {
-	it.SkipIf(t, "hz < 5.1")
-	keyFn := func(i int) interface{} { return int32(i) }
-	valueFn := func(i int) interface{} { return serialization.JSON(fmt.Sprintf(`{"id": %d, "type": "jsonValue"}`, i)) }
-	testSQLQuery(t, context.Background(), "int", "json", keyFn, valueFn)
-}
-
-func TestSQLScanJSON(t *testing.T) {
-	it.SkipIf(t, "hz < 5.1")
-	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		testJSON := serialization.JSON(`{"test":"value"}`)
-		ctx := context.Background()
-		db := mustDB(sql.Open("hazelcast", makeDSN(config)))
-		defer db.Close()
-		ms := createMappingStr(mapName, "bigint", "json")
-		it.Must(createMapping(t, db, ms))
-		it.MustValue(db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, this) VALUES(?, ?)`, mapName), 1, testJSON))
-		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
-		row := db.QueryRowContext(ctx, query)
-		var key int
-		var value serialization.JSON
-		if err := row.Scan(&key, &value); err != nil {
-			t.Fatal(fmt.Errorf("scanning serialization.JSON: %w", err))
-		}
-		assert.Equal(t, 1, key)
-		assert.Equal(t, testJSON, value)
-	})
 }
 
 func TestSQLWithPortableData(t *testing.T) {
@@ -264,9 +228,7 @@ func TestSQLWithPortableData(t *testing.T) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
 	}
 	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		db := driver.Open(*config)
-		defer db.Close()
-		it.MustValue(db.Exec(fmt.Sprintf(`
+		it.MustValue(client.ExecSQL(context.Background(), fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key BIGINT,
 				varcharvalue VARCHAR,
@@ -299,13 +261,16 @@ func TestSQLWithPortableData(t *testing.T) {
 			DoubleValue:   12.789,
 			DecimalValue:  &dec,
 		}
-		_, err := db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, varcharvalue, tinyintvalue, smallintvalue, integervalue, bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, mapName),
+		_, err := client.ExecSQL(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, varcharvalue, tinyintvalue, smallintvalue, integervalue, bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, mapName),
 			1, rec.VarcharValue, rec.TinyIntValue, rec.SmallIntValue, rec.IntegerValue, rec.BigIntValue, rec.BoolValue, rec.RealValue, rec.DoubleValue, *rec.DecimalValue)
 		if err != nil {
 			t.Fatal(err)
 		}
 		// select the value itself
-		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
+		row, err := queryRow(client, fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
+		if err != nil {
+			t.Fatal(err)
+		}
 		var vs []interface{}
 		var k int64
 		var v interface{}
@@ -313,22 +278,15 @@ func TestSQLWithPortableData(t *testing.T) {
 			t.Fatal(err)
 		}
 		vs = append(vs, v)
-		targetThis := []interface{}{&Record{
-			VarcharValue:  "hello",
-			TinyIntValue:  -128,
-			SmallIntValue: 32767,
-			IntegerValue:  -27,
-			BigIntValue:   38,
-			BoolValue:     true,
-			RealValue:     -5.32,
-			DoubleValue:   12.789,
-			DecimalValue:  &dec,
-		}}
+		targetThis := []interface{}{rec}
 		assert.Equal(t, targetThis, vs)
 		// select individual fields
-		row = db.QueryRow(fmt.Sprintf(`
+		row, err = queryRow(client, fmt.Sprintf(`
 			SELECT __key, varcharvalue, tinyintvalue, smallintvalue, integervalue,	
 			bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue from "%s"`, mapName))
+		if err != nil {
+			log.Fatal(err)
+		}
 		vs = nil
 		var vVarchar string
 		var vTinyInt int8
@@ -356,8 +314,6 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
 	}
 	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		db := driver.Open(*config)
-		defer db.Close()
 		q := fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key BIGINT,
@@ -375,10 +331,10 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(db.Exec(q))
+		it.MustValue(client.ExecSQL(context.Background(), q))
 		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
 		rec := NewRecordWithDateTime(&dt)
-		_, err := db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
+		_, err := client.ExecSQL(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
 			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
 		if err != nil {
 			t.Fatal(err)
@@ -389,7 +345,10 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		targetTimestampWithTimezone := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", -5*60*60))
 		var k int64
 		// select the value itself
-		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
+		row, err := queryRow(client, fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
+		if err != nil {
+			t.Fatal(err)
+		}
 		var v interface{}
 		var vs []interface{}
 		if err := row.Scan(&k, &v); err != nil {
@@ -404,11 +363,14 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		}}
 		assert.Equal(t, targetThis, vs)
 		// select individual fields
-		row = db.QueryRow(fmt.Sprintf(`
+		row, err = queryRow(client, fmt.Sprintf(`
 						SELECT
 							__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue
 						FROM "%s" LIMIT 1
 				`, mapName))
+		if err != nil {
+			t.Fatal(err)
+		}
 		var vDate, vTime, vTimestamp, vTimestampWithTimezone time.Time
 		if err := row.Scan(&k, &vDate, &vTime, &vTimestamp, &vTimestampWithTimezone); err != nil {
 			t.Fatal(err)
@@ -431,69 +393,22 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 func TestSQLQueryWithCursorBufferSize(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
-	ctx := driver.WithCursorBufferSize(context.Background(), 10)
-	testSQLQuery(t, ctx, "int", "int", fn, fn)
+	opts := hz.SQLOptions{}
+	opts.SetCursorBufferSize(10)
+	testSQLQuery(t, "int", "int", fn, fn, &opts)
 }
 
 func TestSQLQueryWithQueryTimeout(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
-	ctx := driver.WithQueryTimeout(context.Background(), 5*time.Second)
-	testSQLQuery(t, ctx, "int", "int", fn, fn)
-}
-
-func TestSetLoggerConfig(t *testing.T) {
-	if err := driver.SetLoggerConfig(&logger.Config{Level: logger.ErrorLevel}); err != nil {
-		t.Fatal(err)
-	}
-	if err := driver.SetLoggerConfig(nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestSetSSLConfig(t *testing.T) {
-	if err := driver.SetSSLConfig(&cluster.SSLConfig{Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-	if err := driver.SetSSLConfig(nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestContextCancelAfterFirstPage(t *testing.T) {
-	/*
-		This test ensures context cancellation works for results after the first page (fetch operation).
-		generate_stream function generates N rows per second. Since the context times out after 1100 ms, it should be canceled right after getting the first number.
-	*/
-	it.SkipIf(t, "hz < 5.0")
-	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		db := driver.Open(*config)
-		defer db.Close()
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		tic := time.Now()
-		rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer rows.Close()
-		for rows.Next() {
-			cancel()
-		}
-		toc := time.Now()
-		took := toc.Sub(tic).Milliseconds()
-		if took >= 2000 {
-			// the time should be less than 2000 milliseconds (two pages of results), which proves that the query is canceled after the first page.
-			t.Fatalf("the passed time should take less than 2000 milliseconds, but it is: %d", took)
-		}
-	})
+	opts := hz.SQLOptions{}
+	opts.SetQueryTimeout(5 * time.Second)
+	testSQLQuery(t, "int", "int", fn, fn, &opts)
 }
 
 func TestConcurrentQueries(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		db := driver.Open(*config)
-		defer db.Close()
 		q := fmt.Sprintf(`
 			CREATE MAPPING "%s"
 			TYPE IMAP
@@ -503,7 +418,7 @@ func TestConcurrentQueries(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(db.Exec(q))
+		it.MustValue(client.ExecSQL(context.Background(), q))
 		it.Must(m.Set(context.TODO(), 1, "foo"))
 		const cnt = 1000
 		wg := &sync.WaitGroup{}
@@ -512,7 +427,10 @@ func TestConcurrentQueries(t *testing.T) {
 			go func(wg *sync.WaitGroup) {
 				var k int64
 				var v string
-				res := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s" LIMIT 1`, mapName))
+				res, err := queryRow(client, fmt.Sprintf(`SELECT __key, this from "%s" LIMIT 1`, mapName))
+				if err != nil {
+					panic(err)
+				}
 				if err := res.Scan(&k, &v); err != nil {
 					panic(err)
 				}
@@ -523,45 +441,67 @@ func TestConcurrentQueries(t *testing.T) {
 	})
 }
 
-func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {
+func TestPrepare(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		ctx := context.Background()
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s" (
+				__key BIGINT,
+				name VARCHAR
+			)
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'json-flat'
+			)
+		`, mapName)
+		stmt := it.MustValue(client.PrepareSQL(ctx, q)).(*sql.Stmt)
+		it.MustValue(stmt.Exec())
+		q = fmt.Sprintf(`INSERT INTO "%s" (__key, name) VALUES(?, ?)`, mapName)
+		stmt = it.MustValue(client.PrepareSQL(ctx, q)).(*sql.Stmt)
+		it.MustValue(stmt.Exec(100, "Ford Prefect"))
+		// select the value itself
+		q = fmt.Sprintf(`SELECT __key, this from "%s"`, mapName)
+		stmt = it.MustValue(client.PrepareSQL(ctx, q)).(*sql.Stmt)
+		row := stmt.QueryRow()
+		var k int64
+		var v interface{}
+		if err := row.Scan(&k, &v); err != nil {
+			t.Fatal(err)
+		}
+		target := serialization.JSON(`{"name":"Ford Prefect"}`)
+		assert.Equal(t, target, v)
+	})
+}
+
+func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}, opts *hz.SQLOptions) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		const rowCount = 50
 		target, err := populateMap(m, rowCount, keyFn, valueFn)
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := makeDSN(config)
-		sc := &serialization.Config{}
-		sc.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
-		if err := driver.SetSerializationConfig(sc); err != nil {
-			t.Fatal(err)
-		}
-		defer driver.SetSerializationConfig(nil)
-		if it.SSLEnabled() {
-			sslc := &cluster.SSLConfig{Enabled: true}
-			sslc.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
-			if err := driver.SetSSLConfig(sslc); err != nil {
-				t.Fatal(err)
-			}
-			defer driver.SetSSLConfig(nil)
-		}
-		db := mustDB(sql.Open("hazelcast", dsn))
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer db.Close()
 		ms := createMappingStr(mapName, keyFmt, valueFmt)
-		if err := createMapping(t, db, ms); err != nil {
+		if err := createMapping(t, client, ms); err != nil {
 			t.Fatal(err)
 		}
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
-		rows := mustRows(db.QueryContext(ctx, query))
+		var rows *sql.Rows
+		if opts == nil {
+			rows, err = client.QuerySQL(context.Background(), query)
+		} else {
+			rows, err = client.QuerySQLWithOptions(context.Background(), query, *opts)
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
 		defer rows.Close()
 		entries := make([]types.Entry, len(target))
 		var i int
 		for rows.Next() {
 			if err := rows.Scan(&entries[i].Key, &entries[i].Value); err != nil {
-				t.Fatal(err)
+				log.Fatal(err)
 			}
 			i++
 		}
@@ -572,6 +512,7 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 			assert.Equal(t, len(target), len(entries))
 			for i := 0; i < len(target); i++ {
 				t.Run(fmt.Sprintf("decimal-%d", i), func(t *testing.T) {
+					assert.Equal(t, target[i].Key, entries[i].Key)
 					bt := target[i].Value.(types.Decimal)
 					be := entries[i].Value.(types.Decimal)
 					assert.Equal(t, bt.Scale(), be.Scale())
@@ -584,15 +525,15 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 	})
 }
 
-func createMapping(t *testing.T, db *sql.DB, mapping string) error {
+func createMapping(t *testing.T, client *hz.Client, mapping string) error {
 	t.Logf("mapping: %s", mapping)
-	_, err := db.Exec(mapping)
+	_, err := client.ExecSQL(context.Background(), mapping)
 	return err
 }
 
 func createMappingStr(mapName, keyFmt, valueFmt string) string {
 	return fmt.Sprintf(`
-        CREATE OR REPLACE MAPPING "%s"
+        CREATE MAPPING "%s"
         TYPE IMAP 
         OPTIONS (
             'keyFormat' = '%s',
@@ -615,24 +556,13 @@ func populateMap(m *hz.Map, count int, keyFn, valueFn func(i int) interface{}) (
 	return entries, nil
 }
 
-func makeDSN(config *hz.Config) string {
-	ll := logger.InfoLevel
-	if it.TraceLoggingEnabled() {
-		ll = logger.TraceLevel
+func queryRow(client *hz.Client, q string, params ...interface{}) (*sql.Rows, error) {
+	rows, err := client.QuerySQL(context.Background(), q, params...)
+	if err != nil {
+		return nil, err
 	}
-	q := url.Values{}
-	q.Add("cluster.name", config.Cluster.Name)
-	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
-	q.Add("log", string(ll))
-	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
-}
-
-func mustDB(db *sql.DB, err error) *sql.DB {
-	it.Must(err)
-	return db
-}
-
-func mustRows(rows *sql.Rows, err error) *sql.Rows {
-	it.Must(err)
-	return rows
+	for rows.Next() {
+		return rows, nil
+	}
+	return nil, nil
 }

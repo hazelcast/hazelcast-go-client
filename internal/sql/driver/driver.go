@@ -28,17 +28,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type QueryCursorBufferSizeKey struct{}
 type QueryTimeoutKey struct{}
+type QuerySchemaKey struct{}
 
 const (
 	driverName                    = "hazelcast"
@@ -46,6 +45,7 @@ const (
 	protocolHzViaTLS              = "hz+tls"
 	DefaultCursorBufferSize int32 = 4096
 	DefaultTimeoutMillis    int64 = -1
+	DefaultSchema                 = ""
 	optClusterName                = "cluster.name"
 	optUnisocket                  = "unisocket"
 	optCloudToken                 = "cloud.token"
@@ -155,13 +155,10 @@ func (d *Driver) Open(name string) (driver.Conn, error) {
 }
 
 func MakeConfigFromDSN(dsn string) (*client.Config, error) {
-	// TODO: remove hazelcast dependency
-	config := hazelcast.Config{}
-	if err := config.Validate(); err != nil {
-		return nil, err
-	}
+	config := client.NewConfig()
 	if lc := LoggerConfig(); lc != nil {
-		config.Logger = lc.Clone()
+		lcc := lc.Clone()
+		config.Logger = &lcc
 	}
 	if sc := SSLConfig(); sc != nil {
 		config.Cluster.Network.SSL = sc.Clone()
@@ -171,7 +168,7 @@ func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parsing DSN: %w", err)
 		}
-		if err := parseDSNScheme(&config, u.Scheme); err != nil {
+		if err := parseDSNScheme(config.Cluster, u.Scheme); err != nil {
 			return nil, fmt.Errorf("parsing DSN: %w", err)
 		}
 		if u.Host != "" {
@@ -181,49 +178,42 @@ func MakeConfigFromDSN(dsn string) (*client.Config, error) {
 		if u.Path != "" {
 			return nil, errors.New("parsing DSN: path is not allowed")
 		}
-		updateCredentials(&config, u.User)
-		if err := updateConfig(&config, u.Query()); err != nil {
+		updateCredentials(config.Cluster, u.User)
+		if err := updateConfig(config, u.Query()); err != nil {
 			return nil, fmt.Errorf("parsing DSN options: %w", err)
 		}
 	}
-	sc := SerializationConfig()
-	if sc == nil {
-		sc = &config.Serialization
+	if sc := SerializationConfig(); sc != nil {
+		config.Serialization = sc
 	}
-	return &client.Config{
-		Name:          config.ClientName,
-		Cluster:       &config.Cluster,
-		Failover:      &config.Failover,
-		Serialization: sc,
-		Logger:        &config.Logger,
-		Labels:        config.Labels,
-		StatsEnabled:  config.Stats.Enabled,
-		StatsPeriod:   time.Duration(config.Stats.Period),
-	}, nil
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	return config, nil
 }
 
-func parseDSNScheme(config *hazelcast.Config, scheme string) error {
+func parseDSNScheme(config *cluster.Config, scheme string) error {
 	switch scheme {
 	case "":
 		return fmt.Errorf("scheme is required")
 	case protocolHz:
 	case protocolHzViaTLS:
-		config.Cluster.Network.SSL.Enabled = true
+		config.Network.SSL.Enabled = true
 	default:
 		return fmt.Errorf("unknown scheme: %s", scheme)
 	}
 	return nil
 }
 
-func updateCredentials(config *hazelcast.Config, ui *url.Userinfo) {
+func updateCredentials(config *cluster.Config, ui *url.Userinfo) {
 	// ignoring the second return value, since pass is blank if it's true or false.
 	pass, _ := ui.Password()
-	creds := &config.Cluster.Security.Credentials
+	creds := &config.Security.Credentials
 	creds.Username = ui.Username()
 	creds.Password = pass
 }
 
-func updateConfig(config *hazelcast.Config, values map[string][]string) error {
+func updateConfig(config *client.Config, values map[string][]string) error {
 	for k, vs := range values {
 		v := firstString(vs)
 		switch k {
@@ -241,18 +231,18 @@ func updateConfig(config *hazelcast.Config, values map[string][]string) error {
 		case optLog:
 			config.Logger.Level = logger.Level(v)
 		case optStatsPeriod:
-			config.Stats.Enabled = true
+			config.StatsEnabled = true
 			dur, err := time.ParseDuration(v)
 			if err != nil {
 				return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("invalid %s option value", optStatsPeriod), err)
 			}
-			config.Stats.Period = types.Duration(dur)
+			config.StatsPeriod = dur
 		}
 	}
 	return updateSSLConfig(config, values)
 }
 
-func updateSSLConfig(config *hazelcast.Config, values map[string][]string) error {
+func updateSSLConfig(config *client.Config, values map[string][]string) error {
 	var caPath, certPath, keyPath, keyPass string
 	sslConfig := &config.Cluster.Network.SSL
 	if vs, ok := values[optSSL]; ok {
