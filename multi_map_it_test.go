@@ -539,6 +539,49 @@ func TestMultiMap_ContainsEntry(t *testing.T) {
 	})
 }
 
+func TestMultiMap_ValueCount(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		ctx := context.Background()
+		targetValues := []interface{}{"v1", "v2", "v3"}
+		targets := []types.Entry{
+			types.NewEntry("key1", "v1"),
+			types.NewEntry("key1", "v2"),
+			types.NewEntry("key1", "v3"),
+		}
+		for _, entry := range targets {
+			assert.True(t, it.MustBool(m.Put(ctx, entry.Key, entry.Value)), "multi-map put failed")
+		}
+		values := it.MustSlice(m.Get(ctx, "key1"))
+		assert.ElementsMatch(t, targetValues, values)
+		count, err := m.ValueCount(ctx, "key1")
+		if err != nil {
+			t.Error(err)
+		}
+		assert.EqualValues(t, count, len(targetValues))
+		it.Must(m.Delete(ctx, "key1"))
+		count, err = m.ValueCount(ctx, "key1")
+		if err != nil {
+			t.Error(err)
+		}
+		assert.EqualValues(t, count, 0)
+		targetValues = []interface{}{"v1", "v2"}
+		targets = []types.Entry{
+			types.NewEntry("key2", "v1"),
+			types.NewEntry("key2", "v2"),
+		}
+		for _, entry := range targets {
+			assert.True(t, it.MustBool(m.Put(ctx, entry.Key, entry.Value)), "multi-map put failed")
+		}
+		values = it.MustSlice(m.Get(ctx, "key2"))
+		assert.ElementsMatch(t, targetValues, values)
+		count, err = m.ValueCount(ctx, "key2")
+		if err != nil {
+			t.Error(err)
+		}
+		assert.EqualValues(t, count, len(targetValues))
+	})
+}
+
 func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
