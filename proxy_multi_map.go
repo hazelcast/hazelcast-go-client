@@ -181,16 +181,16 @@ func (m *MultiMap) ContainsEntry(ctx context.Context, key interface{}, value int
 // ValueCount returns the number of values that match the given key in the multi-map.
 func (m *MultiMap) ValueCount(ctx context.Context, key interface{}) (int, error) {
 	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
 		return 0, err
-	} else {
-		request := codec.EncodeMultiMapValueCountRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return 0, err
-		} else {
-			return int(codec.DecodeMultiMapValueCountResponse(response)), nil
-		}
 	}
+	request := codec.EncodeMultiMapValueCountRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return 0, err
+	}
+	return int(codec.DecodeMultiMapValueCountResponse(response)), nil
 }
 
 // Delete removes the mapping for a key from this multi-map if it is present.
