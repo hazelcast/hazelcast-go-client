@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"testing"
 
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/stretchr/testify/assert"
@@ -148,7 +149,7 @@ func TestDataCodec_EncodeNullable_When_Data_Is_Nil(t *testing.T) {
 	message := proto.NewClientMessageForEncode()
 
 	//when
-	EncodeNullableData(message, nil)
+	EncodeNullableData(message, iserialization.Data{})
 
 	//then
 	iterator := message.FrameIterator()
