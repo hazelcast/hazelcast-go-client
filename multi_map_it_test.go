@@ -635,9 +635,11 @@ func TestMultiMap_GetObservation(t *testing.T) {
 		nonExistingKey := "dummyKey"
 		// try to get non-existing key values
 		getResult := it.MustValue(m.Get(ctx, nonExistingKey))
-		// line below supposed to be wrong assertion, because according to doc it should return nil
+		// line below supposed to be correct assertion but asserting NotEqual make no sense
+		// for the sake of continuity (not fail), asserted with NotEqual
 		nilResult := assert.NotEqual(t, targetValues["nil"], getResult)
 		// line below should not be correct according to documentation
+		// But it does not fail because actual implementation return object
 		objResult := assert.Equal(t, targetValues["object"], getResult)
 		// proves there is conflict according to documentation
 		assert.Equal(t, nilResult, objResult)
