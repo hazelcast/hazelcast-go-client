@@ -48,7 +48,7 @@ func EncodeMapFetchKeysRequest(name string, iterationPointers []proto.Pair, batc
 	return clientMessage
 }
 
-func DecodeMapFetchKeysResponse(clientMessage *proto.ClientMessage) (iterationPointers []proto.Pair, keys []*iserialization.Data) {
+func DecodeMapFetchKeysResponse(clientMessage *proto.ClientMessage) (iterationPointers []proto.Pair, keys []iserialization.Data) {
 	frameIterator := clientMessage.FrameIterator()
 	frameIterator.Next()
 

@@ -20,10 +20,18 @@
 package hazelcast
 
 import (
+	"context"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
+
+type Data = serialization.Data
+type ClientMessage = proto.ClientMessage
+type ClientMessageHandler = proto.ClientMessageHandler
 
 type ClientInternal struct {
 	client *Client
@@ -47,4 +55,16 @@ func (ci *ClientInternal) InvocationService() *invocation.Service {
 
 func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 	return ci.client.ic.InvocationHandler
+}
+
+func (ci *ClientInternal) EncodeData(obj interface{}) (Data, error) {
+	return ci.client.proxyManager.invocationProxy.convertToData(obj)
+}
+
+func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
+	return ci.client.proxyManager.invocationProxy.convertToObject(data)
+}
+
+func (ci *ClientInternal) InvokeRandom(ctx context.Context, request *ClientMessage, handler ClientMessageHandler) (*ClientMessage, error) {
+	return ci.client.proxyManager.invocationProxy.invokeOnRandomTarget(ctx, request, handler)
 }

@@ -34,7 +34,7 @@ const (
 // null does not necessarily indicate that the map contained no mapping for the key; it's also possible that the map
 // explicitly mapped the key to null. The map will not contain a mapping for the specified key once the call returns.
 
-func EncodeReplicatedMapRemoveRequest(name string, key *iserialization.Data) *proto.ClientMessage {
+func EncodeReplicatedMapRemoveRequest(name string, key iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -49,7 +49,7 @@ func EncodeReplicatedMapRemoveRequest(name string, key *iserialization.Data) *pr
 	return clientMessage
 }
 
-func DecodeReplicatedMapRemoveResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeReplicatedMapRemoveResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

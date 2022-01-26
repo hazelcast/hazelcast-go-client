@@ -416,7 +416,7 @@ func (m *MultiMap) Unlock(ctx context.Context, key interface{}) error {
 
 func (m *MultiMap) addEntryListener(ctx context.Context, includeValue, localOnly bool, key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
-	var keyData *serialization.Data
+	var keyData serialization.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
 			return types.UUID{}, err
@@ -473,15 +473,15 @@ func (m *MultiMap) tryLock(ctx context.Context, key interface{}, lease int64, ti
 	}
 }
 
-func (m *MultiMap) makeListenerRequest(keyData *serialization.Data, includeValue, localOnly bool) *proto.ClientMessage {
-	if keyData != nil {
+func (m *MultiMap) makeListenerRequest(keyData serialization.Data, includeValue, localOnly bool) *proto.ClientMessage {
+	if keyData.Payload != nil {
 		return codec.EncodeMultiMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, localOnly)
 	}
 	return codec.EncodeMultiMapAddEntryListenerRequest(m.name, includeValue, localOnly)
 }
 
-func (m *MultiMap) makeListenerDecoder(msg *proto.ClientMessage, keyData *serialization.Data, handler entryNotifiedHandler) {
-	if keyData != nil {
+func (m *MultiMap) makeListenerDecoder(msg *proto.ClientMessage, keyData serialization.Data, handler entryNotifiedHandler) {
+	if keyData.Payload != nil {
 		codec.HandleMultiMapAddEntryListenerToKey(msg, handler)
 		return
 	}

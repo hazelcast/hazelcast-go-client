@@ -62,37 +62,37 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
-func (s *Service) ToData(object interface{}) (r *Data, err error) {
+func (s *Service) ToData(object interface{}) (r Data, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
 		}
 	}()
-	if serData, ok := object.(*Data); ok {
+	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
 	// initial size is kept minimal (head_data_offset + long_size), since it'll grow on demand
 	dataOutput := NewPositionalObjectDataOutput(16, s, !s.SerializationConfig.LittleEndian)
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
-		return nil, err
+		return Data{}, err
 	}
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
 	serializer.Write(dataOutput, object)
-	return &Data{dataOutput.buffer[:dataOutput.position]}, err
+	return Data{dataOutput.buffer[:dataOutput.position]}, err
 }
 
 // ToObject deserializes the given Data to an object.
 // nil is returned if called with nil.
-func (s *Service) ToObject(data *Data) (r interface{}, err error) {
+func (s *Service) ToObject(data Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
 		}
 	}()
 	var ok bool
-	if data == nil {
+	if data.Payload == nil {
 		return nil, nil
 	}
 	typeID := data.Type()

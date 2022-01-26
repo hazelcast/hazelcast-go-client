@@ -37,8 +37,8 @@ import (
 // Encoder for ClientMessage and value
 type Encoder func(message *proto.ClientMessage, value interface{})
 
-// Decoder create *iserialization.Data
-type Decoder func(frameIterator *proto.ForwardFrameIterator) *iserialization.Data
+// Decoder creates iserialization.Data
+type Decoder func(frameIterator *proto.ForwardFrameIterator) iserialization.Data
 
 // CodecUtil
 type codecUtil struct{}
@@ -82,17 +82,17 @@ func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessag
 	}
 }
 
-func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iserialization.Data) {
-	if data == nil {
+func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data iserialization.Data) {
+	if data.Payload == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
 		EncodeData(message, data)
 	}
 }
 
-func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if c.NextFrameIsNullFrame(frameIterator) {
-		return nil
+		return iserialization.Data{}
 	}
 	return DecodeData(frameIterator)
 }
@@ -154,24 +154,24 @@ func DecodeByteArray(frameIterator *proto.ForwardFrameIterator) []byte {
 }
 
 func EncodeData(message *proto.ClientMessage, value interface{}) {
-	message.AddFrame(proto.NewFrame(value.(*iserialization.Data).ToByteArray()))
+	message.AddFrame(proto.NewFrame(value.(iserialization.Data).ToByteArray()))
 }
 
-func EncodeNullableData(message *proto.ClientMessage, data *iserialization.Data) {
-	if data == nil {
+func EncodeNullableData(message *proto.ClientMessage, data iserialization.Data) {
+	if data.Payload == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
 		message.AddFrame(proto.NewFrame(data.ToByteArray()))
 	}
 }
 
-func DecodeData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
-	return iserialization.NewData(frameIterator.Next().Content)
+func DecodeData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
+	return iserialization.Data{Payload: frameIterator.Next().Content}
 }
 
-func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
-		return nil
+		return iserialization.Data{}
 	}
 	return DecodeData(frameIterator)
 }
@@ -217,7 +217,7 @@ func EncodeEntryListForDataAndListData(message *proto.ClientMessage, entries []p
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
 		EncodeData(message, value.Key())
-		EncodeListData(message, value.Value().([]*iserialization.Data))
+		EncodeListData(message, value.Value().([]iserialization.Data))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -550,7 +550,7 @@ func DecodeListLong(frameIterator *proto.ForwardFrameIterator) []int64 {
 	return result
 }
 
-func EncodeListMultiFrame(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrame(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		encoder(message, values[i])
@@ -558,7 +558,7 @@ func EncodeListMultiFrame(message *proto.ClientMessage, values []*iserialization
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameForData(message *proto.ClientMessage, values []*iserialization.Data) {
+func EncodeListMultiFrameForData(message *proto.ClientMessage, values []iserialization.Data) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeData(message, values[i])
@@ -582,10 +582,10 @@ func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, valu
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
-		if values[i] == nil {
+		if values[i].Payload == nil {
 			message.AddFrame(proto.NullFrame)
 		} else {
 			encoder(message, values[i])
@@ -594,7 +594,7 @@ func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values [
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	if len(values) == 0 {
 		message.AddFrame(proto.NullFrame)
 	} else {
@@ -602,7 +602,7 @@ func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []*iseria
 	}
 }
 
-func EncodeListMultiFrameNullableForData(message *proto.ClientMessage, values []*iserialization.Data) {
+func EncodeListMultiFrameNullableForData(message *proto.ClientMessage, values []iserialization.Data) {
 	EncodeListMultiFrameContainsNullable(message, values, EncodeData)
 }
 
@@ -621,8 +621,8 @@ func DecodeNullableListMultiFrame(frameIterator *proto.ForwardFrameIterator, dec
 	DecodeListMultiFrame(frameIterator, decoder)
 }
 
-func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
-	result := make([]*iserialization.Data, 0)
+func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []iserialization.Data {
+	result := make([]iserialization.Data, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeData(frameIterator))
@@ -718,11 +718,11 @@ func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) type
 	return types.DistributedObjectInfo{Name: name, ServiceName: serviceName}
 }
 
-func EncodeListData(message *proto.ClientMessage, entries []*iserialization.Data) {
+func EncodeListData(message *proto.ClientMessage, entries []iserialization.Data) {
 	EncodeListMultiFrameForData(message, entries)
 }
 
-func DecodeListData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
+func DecodeListData(frameIterator *proto.ForwardFrameIterator) []iserialization.Data {
 	return DecodeListMultiFrameForData(frameIterator)
 }
 

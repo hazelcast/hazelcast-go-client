@@ -18,7 +18,6 @@ package serialization
 
 import (
 	"encoding/binary"
-	"math"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 )
@@ -33,7 +32,7 @@ type Data struct {
 	Payload []byte
 }
 
-func (d *Data) ToByteArray() []byte {
+func (d Data) ToByteArray() []byte {
 	return d.Payload
 }
 
@@ -43,26 +42,29 @@ func NewData(payload []byte) *Data {
 	return &Data{payload}
 }
 
-func (d *Data) Buffer() []byte {
+func (d Data) Buffer() []byte {
 	return d.Payload
 }
 
-func (d *Data) Type() int32 {
+func (d Data) Type() int32 {
 	if d.TotalSize() == 0 {
 		return TypeNil
 	}
 	return int32(binary.BigEndian.Uint32(d.Payload[typeOffset:]))
 }
 
-func (d *Data) TotalSize() int {
+func (d Data) TotalSize() int {
 	return len(d.Payload)
 }
 
-func (d *Data) DataSize() int {
-	// TODO: Remove conversion to float64, amd math.Max
-	return int(math.Max(float64(d.TotalSize()-heapDataOverhead), 0))
+func (d Data) DataSize() int {
+	v := d.TotalSize() - heapDataOverhead
+	if v <= 0 {
+		return 0
+	}
+	return v
 }
 
-func (d *Data) PartitionHash() int32 {
+func (d Data) PartitionHash() int32 {
 	return murmur.Default3A(d.Payload, DataOffset, d.DataSize())
 }

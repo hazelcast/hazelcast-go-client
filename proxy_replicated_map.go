@@ -257,8 +257,8 @@ func (m *ReplicatedMap) Size(ctx context.Context) (int, error) {
 
 func (m *ReplicatedMap) addEntryListener(ctx context.Context, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
-	var keyData *iserialization.Data
-	var predicateData *iserialization.Data
+	var keyData iserialization.Data
+	var predicateData iserialization.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
 			return types.UUID{}, err
@@ -279,28 +279,30 @@ func (m *ReplicatedMap) addEntryListener(ctx context.Context, key interface{}, p
 	return subscriptionID, err
 }
 
-func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData *iserialization.Data, smart bool) *proto.ClientMessage {
-	if keyData != nil {
-		if predicateData != nil {
+func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData iserialization.Data, smart bool) *proto.ClientMessage {
+	if keyData.Payload != nil {
+		if predicateData.Payload != nil {
 			return codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, smart)
 		} else {
 			return codec.EncodeReplicatedMapAddEntryListenerToKeyRequest(m.name, keyData, smart)
 		}
-	} else if predicateData != nil {
+	} else if predicateData.Payload != nil {
 		return codec.EncodeReplicatedMapAddEntryListenerWithPredicateRequest(m.name, predicateData, smart)
 	} else {
 		return codec.EncodeReplicatedMapAddEntryListenerRequest(m.name, smart)
 	}
 }
 
-func (m *ReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {
-	if keyData != nil {
-		if predicateData != nil {
+func (m *ReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData iserialization.Data, handler entryNotifiedHandler) {
+	if keyData.Payload != nil {
+		if predicateData.Payload != nil {
 			codec.HandleReplicatedMapAddEntryListenerToKeyWithPredicate(msg, handler)
 		} else {
 			codec.HandleReplicatedMapAddEntryListenerToKey(msg, handler)
 		}
-	} else if predicateData != nil {
+		return
+	}
+	if predicateData.Payload != nil {
 		codec.HandleReplicatedMapAddEntryListenerWithPredicate(msg, handler)
 	} else {
 		codec.HandleReplicatedMapAddEntryListener(msg, handler)

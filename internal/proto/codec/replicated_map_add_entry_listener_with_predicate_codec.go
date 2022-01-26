@@ -42,7 +42,7 @@ const (
 // Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
 // events filtered by the given predicate.
 
-func EncodeReplicatedMapAddEntryListenerWithPredicateRequest(name string, predicate *iserialization.Data, localOnly bool) *proto.ClientMessage {
+func EncodeReplicatedMapAddEntryListenerWithPredicateRequest(name string, predicate iserialization.Data, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -65,7 +65,7 @@ func DecodeReplicatedMapAddEntryListenerWithPredicateResponse(clientMessage *pro
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ReplicatedMapAddEntryListenerWithPredicateResponseResponseOffset)
 }
 
-func HandleReplicatedMapAddEntryListenerWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key *iserialization.Data, value *iserialization.Data, oldValue *iserialization.Data, mergingValue *iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
+func HandleReplicatedMapAddEntryListenerWithPredicate(clientMessage *proto.ClientMessage, handleEntryEvent func(key iserialization.Data, value iserialization.Data, oldValue iserialization.Data, mergingValue iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ReplicatedMapAddEntryListenerWithPredicateCodecEventEntryMessageType {

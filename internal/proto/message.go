@@ -66,7 +66,6 @@ const (
 )
 
 var (
-	//EmptyArray = make([]byte, 0)
 	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
 	BeginFrame = NewFrameWith([]byte{}, BeginDataStructureFlag)
 	EndFrame   = NewFrameWith([]byte{}, EndDataStructureFlag)

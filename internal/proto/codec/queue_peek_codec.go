@@ -45,7 +45,7 @@ func EncodeQueuePeekRequest(name string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeQueuePeekResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeQueuePeekResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
