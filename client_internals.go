@@ -31,11 +31,13 @@ import (
 
 const PartitionIDOffset = proto.PartitionIDOffset
 const IntSizeInBytes = proto.IntSizeInBytes
+const UnfragmentedMessage = proto.UnfragmentedMessage
 
 type Data = serialization.Data
 type ClientMessage = proto.ClientMessage
 type ClientMessageHandler = proto.ClientMessageHandler
 type Frame = proto.Frame
+type ForwardFrameIterator = proto.ForwardFrameIterator
 
 func NewClientMessageForEncode() *ClientMessage {
 	return proto.NewClientMessageForEncode()
