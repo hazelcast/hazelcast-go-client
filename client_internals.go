@@ -29,9 +29,21 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
+const PartitionIDOffset = proto.PartitionIDOffset
+const IntSizeInBytes = proto.IntSizeInBytes
+
 type Data = serialization.Data
 type ClientMessage = proto.ClientMessage
 type ClientMessageHandler = proto.ClientMessageHandler
+type Frame = proto.Frame
+
+func NewClientMessageForEncode() *ClientMessage {
+	return proto.NewClientMessageForEncode()
+}
+
+func NewFrameWith(content []byte, flags uint16) Frame {
+	return proto.NewFrameWith(content, flags)
+}
 
 type ClientInternal struct {
 	client *Client
