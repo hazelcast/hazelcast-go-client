@@ -46,14 +46,13 @@ type codecUtil struct{}
 var CodecUtil codecUtil
 
 func (codecUtil) FastForwardToEndFrame(frameIterator *proto.ForwardFrameIterator) {
-	numberOfExpectedEndFrames := 1
-	var frame *proto.Frame
-	for numberOfExpectedEndFrames != 0 {
-		frame = frameIterator.Next()
+	expectedEndFrames := 1
+	for expectedEndFrames != 0 {
+		frame := frameIterator.Next()
 		if frame.IsEndFrame() {
-			numberOfExpectedEndFrames--
+			expectedEndFrames--
 		} else if frame.IsBeginFrame() {
-			numberOfExpectedEndFrames++
+			expectedEndFrames++
 		}
 	}
 }
@@ -818,7 +817,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 func DecodeError(msg *proto.ClientMessage) *ihzerrors.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
-	errorHolders := []proto.ErrorHolder{}
+	var errorHolders []proto.ErrorHolder
 	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		errorHolders = append(errorHolders, DecodeErrorHolder(frameIterator))
 	})
