@@ -558,7 +558,6 @@ func TestMultiMap_ValueCount(t *testing.T) {
 		assert.EqualValues(t, count, 0)
 	})
 }
-
 func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
@@ -640,28 +639,10 @@ func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 	})
 }
 
-func TestMultiMap_GetObservation(t *testing.T) {
+func TestMultiMap_NonExistentKey(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
-		// make sure that underlying multi-map is empty
-		assert.EqualValues(t, 0, it.MustValue(m.Size(ctx)))
-		targetValues := map[string][]interface{}{
-			// represent nil return value
-			"nil": nil,
-			// represent return object with zero length and capacity
-			"object": make([]interface{}, 0),
-		}
-		// represent dummy non-existing key
-		nonExistingKey := "dummyKey"
-		// try to get non-existing key values
-		getResult := it.MustValue(m.Get(ctx, nonExistingKey))
-		// line below supposed to be correct assertion but asserting NotEqual make no sense
-		// for the sake of continuity (not fail), asserted with NotEqual
-		nilResult := assert.NotEqual(t, targetValues["nil"], getResult)
-		// line below should not be correct according to documentation
-		// But it does not fail because actual implementation return object
-		objResult := assert.Equal(t, targetValues["object"], getResult)
-		// proves there is conflict according to documentation
-		assert.Equal(t, nilResult, objResult)
+		v := it.MustValue(m.Get(ctx, "non-existent-key"))
+		assert.Equal(t, []interface{}{}, v)
 	})
 }

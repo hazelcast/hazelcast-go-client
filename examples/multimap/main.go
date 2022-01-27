@@ -54,9 +54,9 @@ func main() {
 	}
 	fmt.Printf("entry found:%t\n", ok)
 	// Print number of values match given "key"
-	nOfValue, err := m.ValueCount(ctx, "key")
+	count, err := m.ValueCount(ctx, "key")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Number of values on \"%s\": %v", "key", nOfValue)
+	fmt.Printf("Number of values on \"%s\": %v", "key", count)
 }
