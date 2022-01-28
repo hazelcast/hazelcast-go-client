@@ -221,7 +221,7 @@ func (m *MultiMap) ForceUnlock(ctx context.Context, key interface{}) error {
 	}
 }
 
-// Get returns the value for the specified key, or empty slice if this multi-map does not contain this key.
+// Get returns the values for the specified key, or an empty slice if this  multi-map does not contain this key.
 // Warning:
 // This method returns a clone of original value, modifying the returned value does not change the
 // actual value in the multi-map. One should put modified value back to make changes visible to all nodes.
