@@ -154,6 +154,7 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 }
 
 func TestClusterID(t *testing.T) {
+	it.SkipIf(t, "oss")
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
 		cls1 := it.StartNewClusterWithOptions("clusterId-test-cluster1", 15701, it.MemberCount())
