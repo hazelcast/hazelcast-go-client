@@ -125,6 +125,7 @@ func TestMultiMap_Remove(t *testing.T) {
 }
 
 func TestMultiMap_RemoveEntry(t *testing.T) {
+	it.SkipIf(t, "hz < 4.1")
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
 		targetValue := "value"
