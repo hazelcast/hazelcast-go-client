@@ -22,16 +22,19 @@ package hazelcast_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // Tests that require the hazelcastinternal tag.
@@ -148,4 +151,53 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 		return 1, nil
 	}
 	return h.Handler.Invoke(inv)
+}
+
+func TestClusterID(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		ctx := context.Background()
+		cls1 := it.StartNewClusterWithOptions("clusterId-test-cluster1", 15701, it.MemberCount())
+		cls2 := it.StartNewClusterWithOptions("clusterId-test-cluster2", 16701, it.MemberCount())
+		defer cls2.Shutdown()
+		var wg sync.WaitGroup
+		wg.Add(1)
+		config1 := cls1.DefaultConfig()
+		config1.Cluster.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+		config2 := cls2.DefaultConfig()
+		config := hz.Config{
+			Failover: cluster.FailoverConfig{
+				Enabled:  true,
+				TryCount: 0,
+			},
+		}
+		config.Failover.SetConfigs(config1.Cluster, config2.Cluster)
+		config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			if event.State == hz.LifecycleStateChangedCluster {
+				wg.Done()
+			}
+		})
+		c := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		defer func(ctx context.Context, c *hz.Client) {
+			err := c.Shutdown(ctx)
+			if err != nil {
+				t.Error("client should had shutdown properly")
+			}
+		}(ctx, c)
+		ci := hz.NewClientInternal(c)
+		prevClusterId := ci.ClusterID()
+		cls1.Shutdown()
+		wg.Wait()
+		it.Eventually(t, func() bool {
+			if !c.Running() {
+				return false
+			}
+			currClusterId := ci.ClusterID()
+			switch currClusterId {
+			case types.UUID{}, prevClusterId:
+				return false
+			default:
+				return true
+			}
+		})
+	})
 }

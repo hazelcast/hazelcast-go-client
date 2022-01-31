@@ -265,6 +265,17 @@ func (m *ConnectionManager) checkClusterIDChanged() {
 	}
 }
 
+// GetClusterID returns the id of the connected cluster at that moment.
+func (m *ConnectionManager) GetClusterID() types.UUID {
+	m.clusterIDMu.Lock()
+	defer m.clusterIDMu.Unlock()
+	clusterID := m.clusterID
+	if clusterID == nil {
+		return types.UUID{}
+	}
+	return *clusterID
+}
+
 func (m *ConnectionManager) Stop() {
 	m.eventDispatcher.Unsubscribe(EventConnection, connectionManagerSubID)
 	m.eventDispatcher.Unsubscribe(EventMembers, connectionManagerSubID)
