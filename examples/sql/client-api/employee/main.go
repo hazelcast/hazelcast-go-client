@@ -104,7 +104,7 @@ func randomName() string {
 
 // randomEmployees creates count random employees.
 func randomEmployees(count int) []Employee {
-	emps := make([]Employee, count)
+	emps := make([]Employee, 0, count)
 	for i := 0; i < count; i++ {
 		e := Employee{
 			Age:  randomAge(),
