@@ -266,6 +266,7 @@ func (m *ConnectionManager) checkClusterIDChanged() {
 }
 
 // GetClusterID returns the id of the connected cluster at that moment.
+// If the client is not connected to any cluster yet, it returns an empty UUID.
 func (m *ConnectionManager) GetClusterID() types.UUID {
 	m.clusterIDMu.Lock()
 	defer m.clusterIDMu.Unlock()
