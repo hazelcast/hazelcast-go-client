@@ -27,6 +27,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const PartitionIDOffset = proto.PartitionIDOffset
@@ -49,10 +50,14 @@ func NewFrameWith(content []byte, flags uint16) Frame {
 
 type ClientInternal struct {
 	client *Client
+	proxy  *proxy
 }
 
 func NewClientInternal(c *Client) *ClientInternal {
-	return &ClientInternal{client: c}
+	return &ClientInternal{
+		client: c,
+		proxy:  c.proxyManager.invocationProxy,
+	}
 }
 
 func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
@@ -72,13 +77,25 @@ func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 }
 
 func (ci *ClientInternal) EncodeData(obj interface{}) (Data, error) {
-	return ci.client.proxyManager.invocationProxy.convertToData(obj)
+	return ci.proxy.convertToData(obj)
 }
 
 func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
-	return ci.client.proxyManager.invocationProxy.convertToObject(data)
+	return ci.proxy.convertToObject(data)
 }
 
-func (ci *ClientInternal) InvokeRandom(ctx context.Context, request *ClientMessage, handler ClientMessageHandler) (*ClientMessage, error) {
-	return ci.client.proxyManager.invocationProxy.invokeOnRandomTarget(ctx, request, handler)
+func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *ClientMessage, handler ClientMessageHandler) (*ClientMessage, error) {
+	return ci.proxy.invokeOnRandomTarget(ctx, request, handler)
+}
+
+func (ci *ClientInternal) InvokeOnPartition(ctx context.Context, request *ClientMessage, partitionID int32) (*ClientMessage, error) {
+	return ci.proxy.invokeOnPartition(ctx, request, partitionID)
+}
+
+func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessage, keyData Data) (*ClientMessage, error) {
+	return ci.proxy.invokeOnKey(ctx, request, keyData)
+}
+
+func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID) (*ClientMessage, error) {
+	panic("TODO")
 }
