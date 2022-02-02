@@ -159,7 +159,10 @@ func TestClusterID(t *testing.T) {
 		ctx := context.Background()
 		cls1 := it.StartNewClusterWithOptions("clusterId-test-cluster1", 15701, it.MemberCount())
 		cls2 := it.StartNewClusterWithOptions("clusterId-test-cluster2", 16701, it.MemberCount())
-		defer cls2.Shutdown()
+		defer func() {
+			cls2.Shutdown()
+			cls1.Shutdown()
+		}()
 		var wg sync.WaitGroup
 		wg.Add(1)
 		config1 := cls1.DefaultConfig()
@@ -168,7 +171,7 @@ func TestClusterID(t *testing.T) {
 		config := hz.Config{
 			Failover: cluster.FailoverConfig{
 				Enabled:  true,
-				TryCount: 0,
+				TryCount: 5,
 			},
 		}
 		config.Failover.SetConfigs(config1.Cluster, config2.Cluster)
