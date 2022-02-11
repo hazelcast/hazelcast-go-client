@@ -350,6 +350,8 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return javaArrayListSerializer
 	case types.UUID:
 		return uuidSerializer
+	case types.LocalDateTime:
+		return javaLocalDateTimeSerializer
 	case time.Time:
 		return dateTimeSerializer(o)
 	case *big.Int:

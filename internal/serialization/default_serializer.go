@@ -545,11 +545,11 @@ func (JavaLocalDateTimeSerializer) ID() int32 {
 }
 
 func (JavaLocalDateTimeSerializer) Read(input serialization.DataInput) interface{} {
-	return ReadTimestamp(input)
+	return types.LocalDateTime(ReadTimestamp(input))
 }
 
 func (JavaLocalDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
-	t := i.(time.Time)
+	t := time.Time(i.(types.LocalDateTime))
 	WriteTimestamp(output, t)
 }
 
