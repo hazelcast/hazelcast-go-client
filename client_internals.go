@@ -30,10 +30,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-const PartitionIDOffset = proto.PartitionIDOffset
-const IntSizeInBytes = proto.IntSizeInBytes
-const UnfragmentedMessage = proto.UnfragmentedMessage
-
 type Data = serialization.Data
 type ClientMessage = proto.ClientMessage
 type ClientMessageHandler = proto.ClientMessageHandler
@@ -42,6 +38,10 @@ type ForwardFrameIterator = proto.ForwardFrameIterator
 
 func NewClientMessageForEncode() *ClientMessage {
 	return proto.NewClientMessageForEncode()
+}
+
+func NewFrame(content []byte) Frame {
+	return proto.NewFrame(content)
 }
 
 func NewFrameWith(content []byte, flags uint16) Frame {
@@ -99,3 +99,45 @@ func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessag
 func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID) (*ClientMessage, error) {
 	panic("TODO")
 }
+
+const (
+	TypeFieldOffset            = proto.TypeFieldOffset
+	MessageTypeOffset          = proto.MessageTypeOffset
+	ByteSizeInBytes            = proto.ByteSizeInBytes
+	BooleanSizeInBytes         = proto.BooleanSizeInBytes
+	ShortSizeInBytes           = proto.ShortSizeInBytes
+	CharSizeInBytes            = proto.CharSizeInBytes
+	IntSizeInBytes             = proto.IntSizeInBytes
+	FloatSizeInBytes           = proto.FloatSizeInBytes
+	LongSizeInBytes            = proto.LongSizeInBytes
+	DoubleSizeInBytes          = proto.DoubleSizeInBytes
+	UUIDSizeInBytes            = proto.UUIDSizeInBytes
+	UuidSizeInBytes            = proto.UuidSizeInBytes
+	EntrySizeInBytes           = proto.EntrySizeInBytes
+	LocalDateSizeInBytes       = proto.LocalDateSizeInBytes
+	LocalTimeSizeInBytes       = proto.LocalTimeSizeInBytes
+	LocalDateTimeSizeInBytes   = proto.LocalDateTimeSizeInBytes
+	OffsetDateTimeSizeInBytes  = proto.OffsetDateTimeSizeInBytes
+	CorrelationIDFieldOffset   = proto.CorrelationIDFieldOffset
+	CorrelationIDOffset        = proto.CorrelationIDOffset
+	FragmentationIDOffset      = proto.FragmentationIDOffset
+	PartitionIDOffset          = proto.PartitionIDOffset
+	RequestThreadIdOffset      = proto.RequestThreadIdOffset
+	RequestTtlOffset           = proto.RequestTtlOffset
+	RequestIncludeValueOffset  = proto.RequestIncludeValueOffset
+	RequestListenerFlagsOffset = proto.RequestListenerFlagsOffset
+	RequestLocalOnlyOffset     = proto.RequestLocalOnlyOffset
+	RequestReferenceIdOffset   = proto.RequestReferenceIdOffset
+	ResponseBackupAcksOffset   = proto.ResponseBackupAcksOffset
+	UnfragmentedMessage        = proto.UnfragmentedMessage
+	DefaultFlags               = proto.DefaultFlags
+	BeginFragmentFlag          = proto.BeginFragmentFlag
+	EndFragmentFlag            = proto.EndFragmentFlag
+	IsFinalFlag                = proto.IsFinalFlag
+	BeginDataStructureFlag     = proto.BeginDataStructureFlag
+	EndDataStructureFlag       = proto.EndDataStructureFlag
+	IsNullFlag                 = proto.IsNullFlag
+	IsEventFlag                = proto.IsEventFlag
+	BackupEventFlag            = proto.BackupEventFlag
+	SizeOfFrameLengthAndFlags  = proto.SizeOfFrameLengthAndFlags
+)

@@ -21,50 +21,6 @@ import (
 	"io"
 )
 
-const (
-	TypeFieldOffset           = 0
-	MessageTypeOffset         = 0
-	ByteSizeInBytes           = 1
-	BooleanSizeInBytes        = 1
-	ShortSizeInBytes          = 2
-	CharSizeInBytes           = 2
-	IntSizeInBytes            = 4
-	FloatSizeInBytes          = 4
-	LongSizeInBytes           = 8
-	DoubleSizeInBytes         = 8
-	UUIDSizeInBytes           = 17
-	UuidSizeInBytes           = 17
-	EntrySizeInBytes          = UUIDSizeInBytes + LongSizeInBytes
-	LocalDateSizeInBytes      = IntSizeInBytes + 2*ByteSizeInBytes
-	LocalTimeSizeInBytes      = 3*ByteSizeInBytes + IntSizeInBytes
-	LocalDateTimeSizeInBytes  = LocalDateSizeInBytes + LocalTimeSizeInBytes
-	OffsetDateTimeSizeInBytes = LocalDateTimeSizeInBytes + IntSizeInBytes
-
-	CorrelationIDFieldOffset   = TypeFieldOffset + IntSizeInBytes
-	CorrelationIDOffset        = MessageTypeOffset + IntSizeInBytes
-	FragmentationIDOffset      = 0
-	PartitionIDOffset          = CorrelationIDOffset + LongSizeInBytes
-	RequestThreadIdOffset      = PartitionIDOffset + IntSizeInBytes
-	RequestTtlOffset           = RequestThreadIdOffset + LongSizeInBytes
-	RequestIncludeValueOffset  = PartitionIDOffset + IntSizeInBytes
-	RequestListenerFlagsOffset = RequestIncludeValueOffset + BooleanSizeInBytes
-	RequestLocalOnlyOffset     = RequestListenerFlagsOffset + IntSizeInBytes
-	RequestReferenceIdOffset   = RequestTtlOffset + LongSizeInBytes
-	ResponseBackupAcksOffset   = CorrelationIDOffset + LongSizeInBytes
-	UnfragmentedMessage        = BeginFragmentFlag | EndFragmentFlag
-
-	DefaultFlags              = 0
-	BeginFragmentFlag         = 1 << 15
-	EndFragmentFlag           = 1 << 14
-	IsFinalFlag               = 1 << 13
-	BeginDataStructureFlag    = 1 << 12
-	EndDataStructureFlag      = 1 << 11
-	IsNullFlag                = 1 << 10
-	IsEventFlag               = 1 << 9
-	BackupEventFlag           = 1 << 7
-	SizeOfFrameLengthAndFlags = IntSizeInBytes + ShortSizeInBytes
-)
-
 var (
 	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
 	BeginFrame = NewFrameWith([]byte{}, BeginDataStructureFlag)
