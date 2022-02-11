@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -190,6 +192,7 @@ func TestClusterID(t *testing.T) {
 		ci := hz.NewClientInternal(c)
 		prevClusterId := ci.ClusterID()
 		cls1.Shutdown()
+		assert.Equal(t, ci.ClusterID(), types.UUID{})
 		wg.Wait()
 		it.Eventually(t, func() bool {
 			if !c.Running() {
