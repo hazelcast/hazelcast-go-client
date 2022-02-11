@@ -547,13 +547,13 @@ func TestMultiMap_ValueCount(t *testing.T) {
 		it.Must(m.PutAll(ctx, key, targetValues...))
 		count, err := m.ValueCount(ctx, key)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		assert.EqualValues(t, count, len(targetValues))
 		nonExistingKey := "dummyKey"
 		count, err = m.ValueCount(ctx, nonExistingKey)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		assert.EqualValues(t, count, 0)
 	})
