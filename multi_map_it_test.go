@@ -549,15 +549,16 @@ func TestMultiMap_ValueCount(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.EqualValues(t, count, len(targetValues))
+		assert.EqualValues(t, len(targetValues), count)
 		nonExistingKey := "dummyKey"
 		count, err = m.ValueCount(ctx, nonExistingKey)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.EqualValues(t, count, 0)
+		assert.EqualValues(t, 0, count)
 	})
 }
+
 func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
