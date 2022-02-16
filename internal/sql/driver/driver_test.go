@@ -18,8 +18,10 @@ package driver_test
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"math"
+	"math/big"
 	"testing"
 	"time"
 
@@ -27,18 +29,23 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	pubdriver "github.com/hazelcast/hazelcast-go-client/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestParseDSN(t *testing.T) {
 	testCases := []struct {
-		Cluster *cluster.Config
-		Logger  *logger.Config
-		Err     error
-		DSN     string
+		Err           error
+		Cluster       *cluster.Config
+		Logger        *logger.Config
+		Serialization *serialization.Config
+		SSL           *cluster.SSLConfig
+		Pre           func()
+		Post          func()
+		DSN           string
 	}{
 		{
 			DSN: "",
@@ -49,6 +56,48 @@ func TestParseDSN(t *testing.T) {
 					PortRange:         cluster.PortRange{Min: 5701, Max: 5703},
 					ConnectionTimeout: types.Duration(5 * time.Second),
 				},
+			},
+		},
+		{
+			DSN:           "",
+			Serialization: &serialization.Config{PortableVersion: 2},
+			Pre: func() {
+				if err := pubdriver.SetSerializationConfig(&serialization.Config{PortableVersion: 2}); err != nil {
+					panic(err)
+				}
+			},
+			Post: func() {
+				if err := pubdriver.SetSerializationConfig(nil); err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			DSN:    "",
+			Logger: &logger.Config{Level: logger.ErrorLevel},
+			Pre: func() {
+				if err := pubdriver.SetLoggerConfig(&logger.Config{Level: logger.ErrorLevel}); err != nil {
+					panic(err)
+				}
+			},
+			Post: func() {
+				if err := pubdriver.SetSerializationConfig(nil); err != nil {
+					panic(err)
+				}
+			},
+		},
+		{
+			DSN: "",
+			SSL: &cluster.SSLConfig{Enabled: true},
+			Pre: func() {
+				if err := pubdriver.SetSSLConfig(&cluster.SSLConfig{Enabled: true}); err != nil {
+					panic(err)
+				}
+			},
+			Post: func() {
+				if err := pubdriver.SetSSLConfig(nil); err != nil {
+					panic(err)
+				}
 			},
 		},
 		{
@@ -222,6 +271,9 @@ func TestParseDSN(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.DSN, func(t *testing.T) {
+			if tc.Pre != nil {
+				tc.Pre()
+			}
 			if tc.Cluster != nil {
 				if err := tc.Cluster.Validate(); err != nil {
 					t.Fatal(err)
@@ -232,7 +284,12 @@ func TestParseDSN(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			c, err := driver.MakeConfigFromDSN(tc.DSN)
+			if tc.Serialization != nil {
+				if err := tc.Serialization.Validate(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			c, err := idriver.MakeConfigFromDSN(tc.DSN)
 			if tc.Err != nil {
 				if err == nil {
 					t.Fatalf("expected error")
@@ -248,6 +305,12 @@ func TestParseDSN(t *testing.T) {
 			}
 			if tc.Logger != nil {
 				assert.Equal(t, tc.Logger, c.Logger)
+			}
+			if tc.Serialization != nil {
+				assert.Equal(t, tc.Serialization, c.Serialization)
+			}
+			if tc.Post != nil {
+				tc.Post()
 			}
 		})
 	}
@@ -265,7 +328,7 @@ func TestExtractCursorBufferSize(t *testing.T) {
 		{
 			Name:   "default",
 			CtxFn:  func() context.Context { return context.Background() },
-			Target: driver.DefaultCursorBufferSize,
+			Target: idriver.DefaultCursorBufferSize,
 		},
 		{
 			Name:   "positive int32 size",
@@ -276,11 +339,6 @@ func TestExtractCursorBufferSize(t *testing.T) {
 			Name:   "positive max int32 size",
 			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), math.MaxInt32) },
 			Target: math.MaxInt32,
-		},
-		{
-			Name:   "zero size",
-			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), 0) },
-			Panics: true,
 		},
 		{
 			Name:   "negative size",
@@ -308,7 +366,7 @@ func TestExtractCursorBufferSize(t *testing.T) {
 				return
 			}
 			ctx := tc.CtxFn()
-			assert.Equal(t, tc.Target, driver.ExtractCursorBufferSize(ctx))
+			assert.Equal(t, tc.Target, idriver.ExtractCursorBufferSize(ctx))
 		})
 	}
 }
@@ -323,7 +381,7 @@ func TestExtractTimeoutMillis(t *testing.T) {
 		{
 			Name:   "default",
 			CtxFn:  func() context.Context { return context.Background() },
-			Target: driver.DefaultTimeoutMillis,
+			Target: idriver.DefaultTimeoutMillis,
 		},
 		{
 			Name:   "positive duration",
@@ -348,7 +406,50 @@ func TestExtractTimeoutMillis(t *testing.T) {
 				return
 			}
 			ctx := tc.CtxFn()
-			assert.Equal(t, tc.Target, driver.ExtractTimeoutMillis(ctx))
+			assert.Equal(t, tc.Target, idriver.ExtractTimeoutMillis(ctx))
 		})
 	}
+}
+
+func TestExtractSchema(t *testing.T) {
+	testCases := []struct {
+		CtxFn  func() context.Context
+		Name   string
+		Target string
+	}{
+		{
+			Name:   "default",
+			CtxFn:  func() context.Context { return context.Background() },
+			Target: "",
+		},
+		{
+			Name:   "with value",
+			CtxFn:  func() context.Context { return pubdriver.WithSchema(context.Background(), "foo") },
+			Target: "foo",
+		},
+		{
+			Name:   "with blank value",
+			CtxFn:  func() context.Context { return pubdriver.WithSchema(context.Background(), "") },
+			Target: "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			ctx := tc.CtxFn()
+			assert.Equal(t, tc.Target, idriver.ExtractSchema(ctx))
+		})
+	}
+}
+
+func TestArgNotNil(t *testing.T) {
+	var b *big.Int
+	nv := &driver.NamedValue{
+		Name:    "",
+		Ordinal: 0,
+		Value:   b,
+	}
+	conn := idriver.Conn{}
+	err := conn.CheckNamedValue(nv)
+	assert.Error(t, err)
+	assert.Equal(t, "nil arg is not allowed: illegal argument error", err.Error())
 }

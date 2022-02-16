@@ -123,7 +123,7 @@ func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 }
 
 func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
-	goroutineCount := 10000
+	goroutineCount := 10_000
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)

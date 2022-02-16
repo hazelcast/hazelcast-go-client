@@ -19,7 +19,6 @@ package driver
 import (
 	"context"
 	"database/sql"
-	"math"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
@@ -60,16 +59,17 @@ When the threshold is reached, the backpressure mechanism will slow down the exe
 The default value is expected to work well for most workloads.
 A bigger buffer size may give you a slight performance boost for queries with large result sets at the cost of increased memory consumption.
 Defaults to 4096.
-Panics if parent context is nil, or given buffer size is not in the positive int32 range.
+Panics if parent context is nil, or given buffer size is not in the non-negative int32 range.
 */
 func WithCursorBufferSize(parent context.Context, cbs int) context.Context {
 	if parent == nil {
 		panic(ihzerrors.NewIllegalArgumentError("parent context is nil", nil))
 	}
-	if err := check.WithinRangeInt32(int32(cbs), 1, math.MaxInt32); err != nil {
+	v, err := check.NonNegativeInt32(cbs)
+	if err != nil {
 		panic(err)
 	}
-	return context.WithValue(parent, driver.QueryCursorBufferSizeKey{}, int32(cbs))
+	return context.WithValue(parent, driver.QueryCursorBufferSizeKey{}, v)
 }
 
 /*
@@ -89,6 +89,20 @@ func WithQueryTimeout(parent context.Context, t time.Duration) context.Context {
 		tm = -1
 	}
 	return context.WithValue(parent, driver.QueryTimeoutKey{}, tm)
+}
+
+/*
+WithSchema returns a copy of parent context which has the given schema name.
+The engine will try to resolve the non-qualified object identifiers from the statement in the given schema.
+If not found, the default search path will be used.
+The schema name is case-sensitive. For example, foo and Foo are different schemas.
+By default, only the default search path is used, which looks for objects in the predefined schemas "partitioned" and "public".
+*/
+func WithSchema(parent context.Context, schema string) context.Context {
+	if parent == nil {
+		panic(ihzerrors.NewIllegalArgumentError("parent context is nil", nil))
+	}
+	return context.WithValue(parent, driver.QuerySchemaKey{}, schema)
 }
 
 // SetSerializationConfig stores the global serialization config.

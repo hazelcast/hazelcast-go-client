@@ -94,6 +94,7 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 
 func TestSerializationImprovements(t *testing.T) {
 	serializationImprovementsTester(func(ss *iserialization.Service) {
+		var dec types.Decimal
 		testCases := []struct {
 			input  interface{}
 			target interface{}
@@ -105,7 +106,7 @@ func TestSerializationImprovements(t *testing.T) {
 				target: time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
 			},
 			{
-				input:  time.Date(0, 2, 10, 1, 2, 3, 50, time.Local),
+				input:  time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
 				name:   "JavaLocalTime",
 				target: time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
 			},
@@ -120,9 +121,34 @@ func TestSerializationImprovements(t *testing.T) {
 				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
 			},
 			{
+				input:  []interface{}{"foo", int64(22)},
+				name:   "JavaArrayList",
+				target: []interface{}{"foo", int64(22)},
+			},
+			{
+				input:  []interface{}{},
+				name:   "JavaArrayList-empty",
+				target: []interface{}{},
+			},
+			{
 				input:  big.NewInt(-10_000_000),
 				name:   "JavaBigInteger",
 				target: big.NewInt(-10_000_000),
+			},
+			{
+				input:  (*big.Int)(nil),
+				name:   "JavaBigInteger-nil",
+				target: new(big.Int),
+			},
+			{
+				input:  types.NewDecimal(big.NewInt(111_111_111), 222_222_222),
+				name:   "JavaBigDecimal",
+				target: types.NewDecimal(big.NewInt(111_111_111), 222_222_222),
+			},
+			{
+				input:  dec,
+				name:   "JavaBigDecimal-nil",
+				target: types.NewDecimal(new(big.Int), 0),
 			},
 		}
 		for _, tc := range testCases {
@@ -140,10 +166,9 @@ func TestSerializationImprovements(t *testing.T) {
 					if !tt.Equal(ii) {
 						t.Fatalf("%s != %s", tt.String(), ii.String())
 					}
-				} else {
-					assert.Equal(t, tc.target, tc.input)
+					return
 				}
-
+				assert.Equal(t, tc.target, value)
 			})
 		}
 

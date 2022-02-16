@@ -21,7 +21,9 @@ import (
 	"database/sql/driver"
 	"fmt"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 var (
@@ -31,6 +33,13 @@ var (
 type Conn struct {
 	ic *client.Client
 	ss *SQLService
+}
+
+func (c *Conn) CheckNamedValue(v *driver.NamedValue) error {
+	if check.Nil(v.Value) {
+		return ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
+	}
+	return nil
 }
 
 func newConn(name string) (*Conn, error) {
@@ -49,11 +58,15 @@ func NewConnWithConfig(ctx context.Context, config *client.Config) (*Conn, error
 	if err := ic.Start(ctx); err != nil {
 		return nil, err
 	}
-	ss := newSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService, &ic.Logger)
+	return NewConnWithClient(ic), nil
+}
+
+func NewConnWithClient(ic *client.Client) *Conn {
+	ss := NewSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService, &ic.Logger)
 	return &Conn{
 		ic: ic,
 		ss: ss,
-	}, nil
+	}
 }
 
 func (c *Conn) Prepare(query string) (driver.Stmt, error) {
@@ -61,7 +74,7 @@ func (c *Conn) Prepare(query string) (driver.Stmt, error) {
 }
 
 func (c *Conn) Close() error {
-	return c.ic.Shutdown(context.Background())
+	return nil
 }
 
 func (c Conn) Begin() (driver.Tx, error) {

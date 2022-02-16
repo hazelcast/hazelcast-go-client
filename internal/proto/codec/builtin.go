@@ -947,6 +947,17 @@ func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *isql.QueryID {
 	return DecodeSqlQueryId(it)
 }
 
+func DecodeNullableForSQLHazelcastJSON(it *proto.ForwardFrameIterator) []driver.Value {
+	if CodecUtil.NextFrameIsNullFrame(it) {
+		return nil
+	}
+	// the decoder below never returns an error, so ignoring the error
+	vs, _ := DecodeListMultiFrameContainsNullable(it, func(it *proto.ForwardFrameIterator) (driver.Value, error) {
+		return DecodeHazelcastJsonValue(it), nil
+	})
+	return vs
+}
+
 func DecodeSQLColumn(t isql.ColumnType, it *proto.ForwardFrameIterator) ([]driver.Value, error) {
 	switch t {
 	case isql.ColumnTypeVarchar:
@@ -977,6 +988,8 @@ func DecodeSQLColumn(t isql.ColumnType, it *proto.ForwardFrameIterator) ([]drive
 		return DecodeListCNNull(it), nil
 	case isql.ColumnTypeDecimal:
 		return DecodeListMultiFrameContainsNullableDecimal(it), nil
+	case isql.ColumnTypeJSON:
+		return DecodeNullableForSQLHazelcastJSON(it), nil
 	default:
 		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("unknown type for SQL column: %d", t), nil)
 	}

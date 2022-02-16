@@ -15,17 +15,18 @@
  */
 
 /*
-This example demonstrates how to use the Hazelcast database/sql driver.
+This example demonstrates how to use the SQL methods of the Hazelcast Go Client.
 */
 
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"math/rand"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
@@ -38,7 +39,7 @@ type Employee struct {
 }
 
 // createMapping creates the mapping for the given map name.
-func createMapping(db *sql.DB, mapName string) error {
+func createMapping(client *hazelcast.Client, mapName string) error {
 	q := fmt.Sprintf(`
         CREATE MAPPING IF NOT EXISTS "%s" (
 			__key BIGINT,
@@ -51,7 +52,7 @@ func createMapping(db *sql.DB, mapName string) error {
             'valueFormat' = 'json-flat'
         )
 `, mapName)
-	_, err := db.Exec(q)
+	_, err := client.ExecSQL(context.Background(), q)
 	if err != nil {
 		return fmt.Errorf("error creating mapping: %w", err)
 	}
@@ -60,10 +61,10 @@ func createMapping(db *sql.DB, mapName string) error {
 
 // populateMap creates entries in the given map.
 // It uses SINK INTO instead of INSERT INTO in order to update already existing entries.
-func populateMap(db *sql.DB, mapName string, employess []Employee) error {
+func populateMap(client *hazelcast.Client, mapName string, employess []Employee) error {
 	q := fmt.Sprintf(`SINK INTO "%s"(__key, age, name) VALUES (?, ?, ?)`, mapName)
 	for i, e := range employess {
-		if _, err := db.Exec(q, i, e.Age, e.Name); err != nil {
+		if _, err := client.ExecSQL(context.Background(), q, i, e.Age, e.Name); err != nil {
 			return fmt.Errorf("populating map: %w", err)
 		}
 	}
@@ -71,9 +72,9 @@ func populateMap(db *sql.DB, mapName string, employess []Employee) error {
 }
 
 // queryMap returns employees with the given minimum age.
-func queryMap(db *sql.DB, mapName string, minAge int) ([]Employee, error) {
+func queryMap(client *hazelcast.Client, mapName string, minAge int) ([]Employee, error) {
 	q := fmt.Sprintf(`SELECT name, age FROM "%s" WHERE age >= ?`, mapName)
-	rows, err := db.Query(q, minAge)
+	rows, err := client.QuerySQL(context.Background(), q, minAge)
 	if err != nil {
 		return nil, fmt.Errorf("error querying: %w", err)
 	}
@@ -103,13 +104,13 @@ func randomName() string {
 
 // randomEmployees creates count random employees.
 func randomEmployees(count int) []Employee {
-	emps := make([]Employee, count)
+	emps := make([]Employee, 0, count)
 	for i := 0; i < count; i++ {
 		e := Employee{
 			Age:  randomAge(),
 			Name: randomName(),
 		}
-		emps[i] = e
+		emps = append(emps, e)
 	}
 	return emps
 }
@@ -117,23 +118,23 @@ func randomEmployees(count int) []Employee {
 func main() {
 	// Connect to the local Hazelcast server.
 	// Uses the unisocket option just for demonstration.
-	db, err := sql.Open("hazelcast", "hz://localhost:5701?unisocket=true")
+	client, err := hazelcast.StartNewClient(context.Background())
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("creating the client: %w", err))
 	}
 	// Don't forget to close the database.
-	defer db.Close()
+	defer client.Shutdown(context.Background())
 	const mapName = "employees"
 	// Seed the random number generator.
 	rand.Seed(time.Now().UnixNano())
 	// Creating the mapping is required only once.
-	if err := createMapping(db, mapName); err != nil {
+	if err := createMapping(client, mapName); err != nil {
 		panic(err)
 	}
-	if err := populateMap(db, mapName, randomEmployees(10)); err != nil {
+	if err := populateMap(client, mapName, randomEmployees(10)); err != nil {
 		panic(err)
 	}
-	emps, err := queryMap(db, mapName, 40)
+	emps, err := queryMap(client, mapName, 40)
 	if err != nil {
 		panic(err)
 	}

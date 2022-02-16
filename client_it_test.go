@@ -222,12 +222,10 @@ func TestClientEventHandlingOrder(t *testing.T) {
 		partitionToEvent = make([][]int, 271)
 		// wait for all events to be processed
 		wg sync.WaitGroup
-		// access it with atomic package
-		count int32
 	)
-	wg.Add(1)
+	const eventCount = 1000
+	wg.Add(eventCount)
 	handler := func(event *hz.EntryNotified) {
-		atomic.AddInt32(&count, 1)
 		// it is okay to use conversion, since greatest key is 1000
 		key := int(event.Key.(int64))
 		pid, err := calculatePartitionID(ss, key)
@@ -235,13 +233,10 @@ func TestClientEventHandlingOrder(t *testing.T) {
 			panic(err)
 		}
 		partitionToEvent[pid] = append(partitionToEvent[pid], key)
-		if count == 1000 {
-			// last event processed
-			wg.Done()
-		}
+		wg.Done()
 	}
 	it.MustValue(m.AddEntryListener(ctx, lc, handler))
-	for i := 1; i <= 1000; i++ {
+	for i := 1; i <= eventCount; i++ {
 		it.MustValue(m.Put(ctx, i, "test"))
 	}
 	wg.Wait()
@@ -647,7 +642,7 @@ func TestClientFixConnection(t *testing.T) {
 	port := 20701 + id*10
 	cls := it.StartNewClusterWithOptions(clusterName, int(port), memberCount)
 	defer cls.Shutdown()
-	config := hz.Config{}
+	config := cls.DefaultConfig()
 	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port+1))
 	config.Cluster.Name = clusterName
 	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
@@ -718,6 +713,8 @@ func TestInvocationTimeout(t *testing.T) {
 }
 
 func TestClientStartShutdownMemoryLeak(t *testing.T) {
+	// TODO make sure there is no leak, and find an upper memory limit for this
+	t.SkipNow()
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
 		defer tc.Shutdown()
@@ -729,7 +726,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 		ctx := context.Background()
 		var max uint64
 		var m runtime.MemStats
-		const limit = 8 * 1024 * 1024 // 16 MB
+		const limit = 8 * 1024 * 1024 // 8 MB
 		runtime.GC()
 		runtime.ReadMemStats(&m)
 		base := m.Alloc
@@ -859,6 +856,35 @@ func listenersAfterClientDisconnectedXMLConfig(clusterName, publicAddr string, p
             <network>
 				<public-address>%s</public-address>
 				<port>%d</port>
+            </network>
+			<properties>
+				<property name="hazelcast.heartbeat.interval.seconds">%d</property>
+			</properties>
+        </hazelcast>
+	`, clusterName, publicAddr, port, heartBeatSec)
+}
+
+func listenersAfterClientDisconnectedXMLSSLConfig(clusterName, publicAddr string, port, heartBeatSec int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+				<public-address>%s</public-address>
+				<port>%d</port>
+				<ssl enabled="true">
+					<factory-class-name>
+						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
+					</factory-class-name>
+					<properties>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="keyManagerAlgorithm">SunX509</property>
+						<property name="protocol">TLSv1.2</property>
+					</properties>
+				</ssl>
             </network>
 			<properties>
 				<property name="hazelcast.heartbeat.interval.seconds">%d</property>

@@ -15,17 +15,20 @@
  */
 
 /*
-This example demonstrates how to use the Hazelcast database/sql driver.
+This example demonstrates how to use the Hazelcast database/sql driver with JSON values.
+You need to have Hazelcast version 5.1 or later to access JSON features.
 */
 
 package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
@@ -33,8 +36,8 @@ var names = []string{"Gorkem", "Ezgi", "Joe", "Jane", "Mike", "Mandy", "Tom", "T
 var surnames = []string{"Tekol", "Brown", "Taylor", "McGregor", "Bronson"}
 
 type Employee struct {
-	Name string
-	Age  int16
+	Name string `json:"name"`
+	Age  int16  `json:"age"`
 }
 
 // createMapping creates the mapping for the given map name.
@@ -42,13 +45,12 @@ func createMapping(db *sql.DB, mapName string) error {
 	q := fmt.Sprintf(`
         CREATE MAPPING IF NOT EXISTS "%s" (
 			__key BIGINT,
-			age BIGINT,
-			name VARCHAR
+			this JSON
 		)
         TYPE IMAP 
         OPTIONS (
             'keyFormat' = 'bigint',
-            'valueFormat' = 'json-flat'
+            'valueFormat' = 'json'
         )
 `, mapName)
 	_, err := db.Exec(q)
@@ -60,10 +62,14 @@ func createMapping(db *sql.DB, mapName string) error {
 
 // populateMap creates entries in the given map.
 // It uses SINK INTO instead of INSERT INTO in order to update already existing entries.
-func populateMap(db *sql.DB, mapName string, employess []Employee) error {
-	q := fmt.Sprintf(`SINK INTO "%s"(__key, age, name) VALUES (?, ?, ?)`, mapName)
-	for i, e := range employess {
-		if _, err := db.Exec(q, i, e.Age, e.Name); err != nil {
+func populateMap(db *sql.DB, mapName string, employees []Employee) error {
+	q := fmt.Sprintf(`SINK INTO "%s"(__key, this) VALUES (?, ?)`, mapName)
+	for i, e := range employees {
+		b, err := json.Marshal(e)
+		if err != nil {
+			panic(err)
+		}
+		if _, err := db.Exec(q, i, serialization.JSON(b)); err != nil {
 			return fmt.Errorf("populating map: %w", err)
 		}
 	}
@@ -72,7 +78,7 @@ func populateMap(db *sql.DB, mapName string, employess []Employee) error {
 
 // queryMap returns employees with the given minimum age.
 func queryMap(db *sql.DB, mapName string, minAge int) ([]Employee, error) {
-	q := fmt.Sprintf(`SELECT name, age FROM "%s" WHERE age >= ?`, mapName)
+	q := fmt.Sprintf(`SELECT this FROM "%s" WHERE CAST(JSON_VALUE(this, '$.age') AS DOUBLE) > ?`, mapName)
 	rows, err := db.Query(q, minAge)
 	if err != nil {
 		return nil, fmt.Errorf("error querying: %w", err)
@@ -80,9 +86,13 @@ func queryMap(db *sql.DB, mapName string, minAge int) ([]Employee, error) {
 	defer rows.Close()
 	var emps []Employee
 	for rows.Next() {
-		e := Employee{}
-		if err := rows.Scan(&e.Name, &e.Age); err != nil {
+		var js serialization.JSON
+		if err := rows.Scan(&js); err != nil {
 			return nil, fmt.Errorf("error scanning: %w", err)
+		}
+		var e Employee
+		if err := json.Unmarshal(js, &e); err != nil {
+			return nil, fmt.Errorf("error unmarshalling to json: %w", err)
 		}
 		emps = append(emps, e)
 	}
@@ -130,12 +140,16 @@ func main() {
 	if err := createMapping(db, mapName); err != nil {
 		panic(err)
 	}
-	if err := populateMap(db, mapName, randomEmployees(10)); err != nil {
+	employees := randomEmployees(10)
+	fmt.Println("Employees:")
+	fmt.Println(employees)
+	if err := populateMap(db, mapName, employees); err != nil {
 		panic(err)
 	}
-	emps, err := queryMap(db, mapName, 40)
+	employees, err = queryMap(db, mapName, 40)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(emps)
+	fmt.Println("Employees older than 40:")
+	fmt.Println(employees)
 }

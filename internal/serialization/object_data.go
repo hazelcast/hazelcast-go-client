@@ -771,6 +771,9 @@ func WriteTimestampWithTimezone(o serialization.DataOutput, t time.Time) {
 }
 
 func WriteBigInt(o serialization.DataOutput, b *big.Int) {
+	if b == nil {
+		b = new(big.Int)
+	}
 	o.WriteByteArray(BigIntToJavaBytes(b))
 }
 
