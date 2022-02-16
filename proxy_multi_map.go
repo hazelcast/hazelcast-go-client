@@ -178,6 +178,21 @@ func (m *MultiMap) ContainsEntry(ctx context.Context, key interface{}, value int
 	return codec.DecodeMultiMapContainsEntryResponse(response), nil
 }
 
+// ValueCount returns the number of values that match the given key in the multi-map.
+func (m *MultiMap) ValueCount(ctx context.Context, key interface{}) (int, error) {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return 0, err
+	}
+	request := codec.EncodeMultiMapValueCountRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return 0, err
+	}
+	return int(codec.DecodeMultiMapValueCountResponse(response)), nil
+}
+
 // Delete removes the mapping for a key from this multi-map if it is present.
 // Unlike remove(object), this operation does not return the removed value, which avoids the serialization cost of
 // the returned value. If the removed value will not be used, delete operation is preferred over remove
@@ -206,7 +221,7 @@ func (m *MultiMap) ForceUnlock(ctx context.Context, key interface{}) error {
 	}
 }
 
-// Get returns the value for the specified key, or nil if this multi-map does not contain this key.
+// Get returns values for the specified key or an empty slice if this multi-map does not contain this key.
 // Warning:
 // This method returns a clone of original value, modifying the returned value does not change the
 // actual value in the multi-map. One should put modified value back to make changes visible to all nodes.

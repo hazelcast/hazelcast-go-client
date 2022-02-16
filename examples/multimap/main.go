@@ -52,5 +52,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("entry found:%t", ok)
+	fmt.Printf("entry found:%t\n", ok)
+	// Print number of values that match the given "key"
+	count, err := m.ValueCount(ctx, "key")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Number of values for %s: %v", "key", count)
 }

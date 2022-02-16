@@ -539,6 +539,26 @@ func TestMultiMap_ContainsEntry(t *testing.T) {
 	})
 }
 
+func TestMultiMap_ValueCount(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		ctx := context.Background()
+		key := "key"
+		targetValues := []interface{}{"v1", "v2", "v3"}
+		it.Must(m.PutAll(ctx, key, targetValues...))
+		count, err := m.ValueCount(ctx, key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.EqualValues(t, len(targetValues), count)
+		nonExistingKey := "dummyKey"
+		count, err = m.ValueCount(ctx, nonExistingKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.EqualValues(t, 0, count)
+	})
+}
+
 func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
@@ -617,5 +637,13 @@ func TestMultiMap_MultiMapEntryListener(t *testing.T) {
 				it.Must(m.RemoveEntryListener(ctx, subsID))
 			})
 		}
+	})
+}
+
+func TestMultiMap_NonExistentKey(t *testing.T) {
+	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
+		ctx := context.Background()
+		v := it.MustValue(m.Get(ctx, "non-existent-key"))
+		assert.Equal(t, []interface{}{}, v)
 	})
 }
