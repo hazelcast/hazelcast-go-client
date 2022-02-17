@@ -51,5 +51,5 @@ func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 }
 
 func (ci *ClientInternal) ClusterID() types.UUID {
-	return ci.client.ic.ConnectionManager.GetClusterID()
+	return ci.client.ic.ConnectionManager.ClusterID()
 }
