@@ -39,7 +39,7 @@ func NewVectorClock() VectorClock {
 func NewVectorClockFromPairs(pairs []proto.Pair) VectorClock {
 	vc := map[types.UUID]int64{}
 	for _, p := range pairs {
-		vc[p.Key().(types.UUID)] = p.Value().(int64)
+		vc[p.Key.(types.UUID)] = p.Value.(int64)
 	}
 	return vc
 }

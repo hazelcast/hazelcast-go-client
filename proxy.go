@@ -342,11 +342,11 @@ func (p *proxy) partitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto
 func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error) {
 	kvPairs := make([]types.Entry, len(pairs))
 	for i, pair := range pairs {
-		key, err := p.convertToObject(pair.Key().(iserialization.Data))
+		key, err := p.convertToObject(pair.Key.(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}
-		value, err := p.convertToObject(pair.Value().(iserialization.Data))
+		value, err := p.convertToObject(pair.Value.(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}
@@ -358,7 +358,7 @@ func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 func (p *proxy) convertPairsToValues(pairs []proto.Pair) ([]interface{}, error) {
 	values := make([]interface{}, len(pairs))
 	for i, pair := range pairs {
-		value, err := p.convertToObject(pair.Value().(iserialization.Data))
+		value, err := p.convertToObject(pair.Value.(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}

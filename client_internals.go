@@ -35,6 +35,13 @@ type ClientMessage = proto.ClientMessage
 type ClientMessageHandler = proto.ClientMessageHandler
 type Frame = proto.Frame
 type ForwardFrameIterator = proto.ForwardFrameIterator
+type Pair = proto.Pair
+
+var (
+	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
+	BeginFrame = NewFrameWith([]byte{}, BeginDataStructureFlag)
+	EndFrame   = NewFrameWith([]byte{}, EndDataStructureFlag)
+)
 
 func NewClientMessageForEncode() *ClientMessage {
 	return proto.NewClientMessageForEncode()
@@ -46,6 +53,10 @@ func NewFrame(content []byte) Frame {
 
 func NewFrameWith(content []byte, flags uint16) Frame {
 	return proto.NewFrameWith(content, flags)
+}
+
+func NewPair(key, value interface{}) Pair {
+	return Pair{Key: key, Value: value}
 }
 
 type ClientInternal struct {

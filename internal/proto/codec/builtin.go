@@ -178,8 +178,8 @@ func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) iserializatio
 func EncodeEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEncoder, valueEncoder Encoder) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		keyEncoder(message, value.Key())
-		valueEncoder(message, value.Value())
+		keyEncoder(message, value.Key)
+		valueEncoder(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -187,8 +187,8 @@ func EncodeEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEnco
 func EncodeEntryListForStringAndString(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeString(message, value.Key())
-		EncodeString(message, value.Value())
+		EncodeString(message, value.Key)
+		EncodeString(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -196,8 +196,8 @@ func EncodeEntryListForStringAndString(message *proto.ClientMessage, entries []p
 func EncodeEntryListForStringAndByteArray(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeString(message, value.Key())
-		EncodeByteArray(message, value.Value().([]byte))
+		EncodeString(message, value.Key)
+		EncodeByteArray(message, value.Value.([]byte))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 
@@ -206,8 +206,8 @@ func EncodeEntryListForStringAndByteArray(message *proto.ClientMessage, entries 
 func EncodeEntryListForDataAndData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeData(message, value.Key())
-		EncodeData(message, value.Value())
+		EncodeData(message, value.Key)
+		EncodeData(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -215,8 +215,8 @@ func EncodeEntryListForDataAndData(message *proto.ClientMessage, entries []proto
 func EncodeEntryListForDataAndListData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeData(message, value.Key())
-		EncodeListData(message, value.Value().([]iserialization.Data))
+		EncodeData(message, value.Key)
+		EncodeListData(message, value.Value.([]iserialization.Data))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -276,8 +276,8 @@ func EncodeListIntegerIntegerInteger(message *proto.ClientMessage, entries []pro
 	entryCount := len(entries)
 	frame := proto.NewFrame(make([]byte, entryCount*proto.EntrySizeInBytes))
 	for i := 0; i < entryCount; i++ {
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key().(int32))
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value().(int32))
+		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key.(int32))
+		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value.(int32))
 	}
 	message.AddFrame(frame)
 }
@@ -299,8 +299,8 @@ func EncodeEntryListUUIDLong(message *proto.ClientMessage, entries []proto.Pair)
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
-		key := entry.Key().(types.UUID)
-		value := entry.Value().(int64)
+		key := entry.Key.(types.UUID)
+		value := entry.Value.(int64)
 		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.EntrySizeInBytes), key)
 		FixSizedTypesCodec.EncodeLong(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
@@ -312,8 +312,8 @@ func EncodeEntryListIntegerInteger(message *proto.ClientMessage, entries []proto
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
-		key := entry.Key().(int32)
-		value := entry.Value().(int32)
+		key := entry.Key.(int32)
+		value := entry.Value.(int32)
 		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes), key)
 		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
@@ -350,8 +350,8 @@ func EncodeEntryListUUIDListInteger(message *proto.ClientMessage, entries []prot
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < entryCount; i++ {
 		entry := entries[i]
-		key := entry.Key().(types.UUID)
-		value := entry.Value().([]int32)
+		key := entry.Key.(types.UUID)
+		value := entry.Value.([]int32)
 		uuids[i] = key
 		EncodeListInteger(message, value)
 	}

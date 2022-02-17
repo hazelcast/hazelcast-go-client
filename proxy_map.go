@@ -410,11 +410,11 @@ func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, e
 			var key, value interface{}
 			var err error
 			for _, pair := range pairs {
-				key, err = m.convertToObject(pair.Key().(serialization.Data))
+				key, err = m.convertToObject(pair.Key.(serialization.Data))
 				if err != nil {
 					return nil, err
 				}
-				value, err = m.convertToObject(pair.Value().(serialization.Data))
+				value, err = m.convertToObject(pair.Value.(serialization.Data))
 				if err != nil {
 					return nil, err
 				}
