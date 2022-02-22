@@ -517,10 +517,14 @@ func (JavaLocalDateSerializer) ID() int32 {
 }
 
 func (JavaLocalDateSerializer) Read(input serialization.DataInput) interface{} {
-	return ReadDate(input)
+	return types.LocalDate(ReadDate(input))
 }
 
 func (JavaLocalDateSerializer) Write(output serialization.DataOutput, i interface{}) {
+	if t, ok := i.(types.LocalDate); ok {
+		WriteDate(output, time.Time(t))
+		return
+	}
 	WriteDate(output, i.(time.Time))
 }
 
@@ -531,10 +535,14 @@ func (JavaLocalTimeSerializer) ID() int32 {
 }
 
 func (JavaLocalTimeSerializer) Read(input serialization.DataInput) interface{} {
-	return ReadTime(input)
+	return types.LocalTime(ReadTime(input))
 }
 
 func (JavaLocalTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+	if t, ok := i.(types.LocalTime); ok {
+		WriteTime(output, time.Time(t))
+		return
+	}
 	WriteTime(output, i.(time.Time))
 }
 
@@ -549,8 +557,11 @@ func (JavaLocalDateTimeSerializer) Read(input serialization.DataInput) interface
 }
 
 func (JavaLocalDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
-	t := time.Time(i.(types.LocalDateTime))
-	WriteTimestamp(output, t)
+	if t, ok := i.(types.LocalDateTime); ok {
+		WriteTimestamp(output, time.Time(t))
+		return
+	}
+	WriteTimestamp(output, i.(time.Time))
 }
 
 type JavaOffsetDateTimeSerializer struct{}
@@ -560,12 +571,15 @@ func (JavaOffsetDateTimeSerializer) ID() int32 {
 }
 
 func (JavaOffsetDateTimeSerializer) Read(input serialization.DataInput) interface{} {
-	return ReadTimestampWithTimezone(input)
+	return types.OffsetDateTime(ReadTimestampWithTimezone(input))
 }
 
 func (JavaOffsetDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
-	t := i.(time.Time)
-	WriteTimestampWithTimezone(output, t)
+	if t, ok := i.(types.OffsetDateTime); ok {
+		WriteTimestampWithTimezone(output, time.Time(t))
+		return
+	}
+	WriteTimestampWithTimezone(output, i.(time.Time))
 }
 
 type GobSerializer struct{}

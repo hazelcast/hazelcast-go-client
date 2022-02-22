@@ -19,6 +19,7 @@ package serialization
 import (
 	"fmt"
 	"time"
+	"unsafe"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -184,48 +185,56 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	}
 }
 
-func (pw *DefaultPortableWriter) WriteDate(fieldName string, t *time.Time) {
+func (pw *DefaultPortableWriter) WriteDate(fieldName string, t *types.LocalDate) {
 	pw.writeNullableField(fieldName, serialization.TypeDate, t == nil, func() {
-		WritePortableDate(pw.output.ObjectDataOutput, *t)
+		tt := (*time.Time)(t)
+		WritePortableDate(pw.output.ObjectDataOutput, *tt)
 	})
 }
 
-func (pw *DefaultPortableWriter) WriteTime(fieldName string, t *time.Time) {
+func (pw *DefaultPortableWriter) WriteTime(fieldName string, t *types.LocalTime) {
 	pw.writeNullableField(fieldName, serialization.TypeTime, t == nil, func() {
-		WritePortableTime(pw.output.ObjectDataOutput, *t)
+		tt := (*time.Time)(t)
+		WritePortableTime(pw.output.ObjectDataOutput, *tt)
 	})
 }
 
-func (pw *DefaultPortableWriter) WriteTimestamp(fieldName string, t *time.Time) {
+func (pw *DefaultPortableWriter) WriteTimestamp(fieldName string, t *types.LocalDateTime) {
 	pw.writeNullableField(fieldName, serialization.TypeTimestamp, t == nil, func() {
-		WritePortableTimestamp(pw.output.ObjectDataOutput, *t)
+		tt := (*time.Time)(t)
+		WritePortableTimestamp(pw.output.ObjectDataOutput, *tt)
 	})
 }
 
-func (pw *DefaultPortableWriter) WriteTimestampWithTimezone(fieldName string, t *time.Time) {
+func (pw *DefaultPortableWriter) WriteTimestampWithTimezone(fieldName string, t *types.OffsetDateTime) {
 	pw.writeNullableField(fieldName, serialization.TypeTimestampWithTimezone, t == nil, func() {
-		WritePortableTimestampWithTimezone(pw.output.ObjectDataOutput, *t)
+		tt := (*time.Time)(t)
+		WritePortableTimestampWithTimezone(pw.output.ObjectDataOutput, *tt)
 	})
 }
 
-func (pw *DefaultPortableWriter) WriteDateArray(fieldName string, ts []time.Time) {
+func (pw *DefaultPortableWriter) WriteDateArray(fieldName string, a []types.LocalDate) {
 	pw.setPosition(fieldName, int32(serialization.TypeDateArray))
-	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableDate)
+	ts := (*([]time.Time))(unsafe.Pointer(&a))
+	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableDate)
 }
 
-func (pw *DefaultPortableWriter) WriteTimeArray(fieldName string, ts []time.Time) {
+func (pw *DefaultPortableWriter) WriteTimeArray(fieldName string, a []types.LocalTime) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimeArray))
-	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableTime)
+	ts := (*([]time.Time))(unsafe.Pointer(&a))
+	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableTime)
 }
 
-func (pw *DefaultPortableWriter) WriteTimestampArray(fieldName string, ts []time.Time) {
+func (pw *DefaultPortableWriter) WriteTimestampArray(fieldName string, a []types.LocalDateTime) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimestampArray))
-	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableTimestamp)
+	ts := (*([]time.Time))(unsafe.Pointer(&a))
+	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableTimestamp)
 }
 
-func (pw *DefaultPortableWriter) WriteTimestampWithTimezoneArray(fieldName string, ts []time.Time) {
+func (pw *DefaultPortableWriter) WriteTimestampWithTimezoneArray(fieldName string, a []types.OffsetDateTime) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimestampWithTimezoneArray))
-	writeArrayOfTime(pw.output.ObjectDataOutput, ts, WritePortableTimestampWithTimezone)
+	ts := (*([]time.Time))(unsafe.Pointer(&a))
+	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableTimestampWithTimezone)
 }
 
 func (pw *DefaultPortableWriter) WriteDecimal(fieldName string, d *types.Decimal) {

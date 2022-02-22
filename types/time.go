@@ -16,9 +16,18 @@
 
 package types
 
-import "time"
+import (
+	"time"
+)
 
+// LocalDate is the date part of time.Time.
 type LocalDate time.Time
+
+// LocalTime is the time part of time.Time.
 type LocalTime time.Time
+
+// LocalDateTime is the date time with local time zone.
 type LocalDateTime time.Time
+
+// OffsetDateTime is the date time with a timezone.
 type OffsetDateTime time.Time

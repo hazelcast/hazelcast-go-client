@@ -89,7 +89,7 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, target, value)
+	assert.Equal(t, types.LocalDateTime(target), value)
 }
 
 func TestSerializationImprovements(t *testing.T) {
@@ -102,23 +102,43 @@ func TestSerializationImprovements(t *testing.T) {
 		}{
 			{
 				input:  time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
-				name:   "JavaLocalDate",
-				target: time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
+				name:   "JavaLocalDate from time.LocalTime",
+				target: types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
 			},
 			{
 				input:  time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
-				name:   "JavaLocalTime",
-				target: time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
+				name:   "JavaLocalTime from time.LocalTime",
+				target: types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
 			},
 			{
 				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
-				name:   "JavaLocalDateTime",
-				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
+				name:   "JavaLocalDateTime from time.LocalTime",
+				target: types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
 			},
 			{
 				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
+				name:   "JavaOffsetDateTime from time.LocalTime",
+				target: types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
+			},
+			{
+				input:  types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
+				name:   "JavaLocalDate",
+				target: types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
+			},
+			{
+				input:  types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
+				name:   "JavaLocalTime",
+				target: types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
+			},
+			{
+				input:  types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
+				name:   "JavaLocalDateTime",
+				target: types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
+			},
+			{
+				input:  types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
 				name:   "JavaOffsetDateTime",
-				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
+				target: types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
 			},
 			{
 				input:  []interface{}{"foo", int64(22)},

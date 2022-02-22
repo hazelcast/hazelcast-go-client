@@ -17,8 +17,6 @@
 package serialization
 
 import (
-	"time"
-
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -287,22 +285,22 @@ type PortableWriter interface {
 	// All unnamed fields must be written after portable fields.
 	// Attempts to write named fields after GetRawDataOutput is called will panic.
 	GetRawDataOutput() DataOutput
-	// WriteDate writes the date part of a time.Time value.
-	WriteDate(fieldName string, t *time.Time)
-	// WriteTime writes the time part of a time.Time value.
-	WriteTime(fieldName string, t *time.Time)
-	// WriteTimestamp writes the date and time of a time.Time value, without the timezone offset.
-	WriteTimestamp(fieldName string, t *time.Time)
-	// WriteTimestampWithTimezone writes the date and time of a time.Time value, with the timezone offset.
-	WriteTimestampWithTimezone(fieldName string, t *time.Time)
-	// WriteDateArray writes date parts of time.Time values.
-	WriteDateArray(fieldName string, t []time.Time)
-	// WriteTimeArray writes time parts of time.Time values.
-	WriteTimeArray(fieldName string, t []time.Time)
-	// WriteTimestampArray writes date and time of time.Time values, without the timezone offset.
-	WriteTimestampArray(fieldName string, t []time.Time)
-	// WriteTimestampWithTimezoneArray writes date and time of time.Time values, with the timezone offset.
-	WriteTimestampWithTimezoneArray(fieldName string, t []time.Time)
+	// WriteDate writes a date.
+	WriteDate(fieldName string, t *types.LocalDate)
+	// WriteTime writes a time.
+	WriteTime(fieldName string, t *types.LocalTime)
+	// WriteTimestamp writes the date and time without the timezone offset.
+	WriteTimestamp(fieldName string, t *types.LocalDateTime)
+	// WriteTimestampWithTimezone writes the date and time with the timezone offset.
+	WriteTimestampWithTimezone(fieldName string, t *types.OffsetDateTime)
+	// WriteDateArray writes a date array.
+	WriteDateArray(fieldName string, t []types.LocalDate)
+	// WriteTimeArray writes a time array.
+	WriteTimeArray(fieldName string, t []types.LocalTime)
+	// WriteTimestampArray writes dates and times.
+	WriteTimestampArray(fieldName string, t []types.LocalDateTime)
+	// WriteTimestampWithTimezoneArray writes date and time with the timezone offsets.
+	WriteTimestampWithTimezoneArray(fieldName string, t []types.OffsetDateTime)
 	// WriteDecimal writes the given decimal value.
 	// The decimal value may be nil.
 	WriteDecimal(fieldName string, d *types.Decimal)
@@ -384,24 +382,24 @@ type PortableReader interface {
 	GetRawDataInput() DataInput
 	// ReadDate reads the date.
 	// It may return nil.
-	ReadDate(fieldName string) *time.Time
+	ReadDate(fieldName string) *types.LocalDate
 	// ReadTime reads the time.
 	// It may return nil.
-	ReadTime(fieldName string) *time.Time
+	ReadTime(fieldName string) *types.LocalTime
 	// ReadTimestamp reads the time stamp.
 	// It may return nil.
-	ReadTimestamp(fieldName string) *time.Time
+	ReadTimestamp(fieldName string) *types.LocalDateTime
 	// ReadTimestampWithTimezone reads the time stamp with time zone.
 	// It may return nil.
-	ReadTimestampWithTimezone(fieldName string) *time.Time
+	ReadTimestampWithTimezone(fieldName string) *types.OffsetDateTime
 	// ReadDateArray reads the date arrau.
-	ReadDateArray(fieldName string) []time.Time
+	ReadDateArray(fieldName string) []types.LocalDate
 	// ReadTimeArray reads the time array.
-	ReadTimeArray(fieldName string) []time.Time
+	ReadTimeArray(fieldName string) []types.LocalTime
 	// ReadTimestampArray reads the time stamp array.
-	ReadTimestampArray(fieldName string) []time.Time
+	ReadTimestampArray(fieldName string) []types.LocalDateTime
 	// ReadTimestampWithTimezoneArray reads the time stamp with time zone array.
-	ReadTimestampWithTimezoneArray(fieldName string) []time.Time
+	ReadTimestampWithTimezoneArray(fieldName string) []types.OffsetDateTime
 	// ReadDecimal reads a decimal.
 	// It may return nil.
 	ReadDecimal(fieldName string) (d *types.Decimal)
