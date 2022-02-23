@@ -185,7 +185,7 @@ The names in parentheses correspond to SQL types:
 	- time.Time (timestamp with time zone) Detected by checking: not time, timezone != time.Local
 	- serialization.JSON (json)
 
-Using Date/Time
+Using Date/Time Types
 
 time.Time values are automatically serialized to the correct type.
 

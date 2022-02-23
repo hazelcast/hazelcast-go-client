@@ -297,9 +297,9 @@ type PortableWriter interface {
 	WriteDateArray(fieldName string, t []types.LocalDate)
 	// WriteTimeArray writes a time array.
 	WriteTimeArray(fieldName string, t []types.LocalTime)
-	// WriteTimestampArray writes dates and times.
+	// WriteTimestampArray writes a timestamp array.
 	WriteTimestampArray(fieldName string, t []types.LocalDateTime)
-	// WriteTimestampWithTimezoneArray writes date and time with the timezone offsets.
+	// WriteTimestampWithTimezoneArray writes a timestamp with timezone array.
 	WriteTimestampWithTimezoneArray(fieldName string, t []types.OffsetDateTime)
 	// WriteDecimal writes the given decimal value.
 	// The decimal value may be nil.
@@ -392,7 +392,7 @@ type PortableReader interface {
 	// ReadTimestampWithTimezone reads the time stamp with time zone.
 	// It may return nil.
 	ReadTimestampWithTimezone(fieldName string) *types.OffsetDateTime
-	// ReadDateArray reads the date arrau.
+	// ReadDateArray reads the date array.
 	ReadDateArray(fieldName string) []types.LocalDate
 	// ReadTimeArray reads the time array.
 	ReadTimeArray(fieldName string) []types.LocalTime

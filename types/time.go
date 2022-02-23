@@ -26,8 +26,8 @@ type LocalDate time.Time
 // LocalTime is the time part of time.Time.
 type LocalTime time.Time
 
-// LocalDateTime is the date time with local time zone.
+// LocalDateTime is the date and time with local timezone.
 type LocalDateTime time.Time
 
-// OffsetDateTime is the date time with a timezone.
+// OffsetDateTime is the date and time with a timezone.
 type OffsetDateTime time.Time

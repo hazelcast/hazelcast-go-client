@@ -102,22 +102,22 @@ func TestSerializationImprovements(t *testing.T) {
 		}{
 			{
 				input:  time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
-				name:   "JavaLocalDate from time.LocalTime",
+				name:   "JavaLocalDate from types.LocalDate",
 				target: types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
 			},
 			{
 				input:  time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
-				name:   "JavaLocalTime from time.LocalTime",
+				name:   "JavaLocalTime from types.LocalTime",
 				target: types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
 			},
 			{
 				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
-				name:   "JavaLocalDateTime from time.LocalTime",
+				name:   "JavaLocalDateTime from types.LocalDateTime",
 				target: types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
 			},
 			{
 				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
-				name:   "JavaOffsetDateTime from time.LocalTime",
+				name:   "JavaOffsetDateTime from types.OffsetDateTime",
 				target: types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
 			},
 			{
