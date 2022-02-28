@@ -1,5 +1,7 @@
 # Hazelcast Go Client
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/hazelcast/hazelcast-go-client.svg)](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client)
+
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
 
 Hazelcast Go client is a way to communicate to Hazelcast 4 and 5 clusters and access the cluster data.
