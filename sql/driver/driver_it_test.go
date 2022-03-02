@@ -41,9 +41,10 @@ import (
 )
 
 const (
-	factoryID                 = 100
-	recordClassID             = 1
-	recordWithDateTimeClassID = 2
+	factoryID                  = 100
+	recordClassID              = 1
+	recordWithDateTimeClassID  = 2
+	recordWithDateTimeClassID2 = 3
 )
 
 type Record struct {
@@ -119,6 +120,48 @@ func (r RecordWithDateTime) ClassID() int32 {
 }
 
 func (r RecordWithDateTime) WritePortable(wr serialization.PortableWriter) {
+	wr.WriteDate("datevalue", (*types.LocalDate)(r.DateValue))
+	wr.WriteTime("timevalue", (*types.LocalTime)(r.TimeValue))
+	wr.WriteTimestamp("timestampvalue", (*types.LocalDateTime)(r.TimestampValue))
+	wr.WriteTimestampWithTimezone("timestampwithtimezonevalue", (*types.OffsetDateTime)(r.TimestampWithTimezoneValue))
+
+}
+
+func (r *RecordWithDateTime) ReadPortable(rd serialization.PortableReader) {
+	r.DateValue = (*time.Time)(rd.ReadDate("datevalue"))
+	r.TimeValue = (*time.Time)(rd.ReadTime("timevalue"))
+	r.TimestampValue = (*time.Time)(rd.ReadTimestamp("timestampvalue"))
+	r.TimestampWithTimezoneValue = (*time.Time)(rd.ReadTimestampWithTimezone("timestampwithtimezonevalue"))
+}
+
+type RecordWithDateTime2 struct {
+	DateValue                  *types.LocalDate
+	TimeValue                  *types.LocalTime
+	TimestampValue             *types.LocalDateTime
+	TimestampWithTimezoneValue *types.OffsetDateTime
+}
+
+func NewRecordWithDateTime2(t *time.Time) *RecordWithDateTime {
+	dv := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	tv := time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
+	tsv := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
+	return &RecordWithDateTime{
+		DateValue:                  &dv,
+		TimeValue:                  &tv,
+		TimestampValue:             &tsv,
+		TimestampWithTimezoneValue: t,
+	}
+}
+
+func (r RecordWithDateTime2) FactoryID() int32 {
+	return factoryID
+}
+
+func (r RecordWithDateTime2) ClassID() int32 {
+	return recordWithDateTimeClassID2
+}
+
+func (r RecordWithDateTime2) WritePortable(wr serialization.PortableWriter) {
 	wr.WriteDate("datevalue", r.DateValue)
 	wr.WriteTime("timevalue", r.TimeValue)
 	wr.WriteTimestamp("timestampvalue", r.TimestampValue)
@@ -126,7 +169,7 @@ func (r RecordWithDateTime) WritePortable(wr serialization.PortableWriter) {
 
 }
 
-func (r *RecordWithDateTime) ReadPortable(rd serialization.PortableReader) {
+func (r *RecordWithDateTime2) ReadPortable(rd serialization.PortableReader) {
 	r.DateValue = rd.ReadDate("datevalue")
 	r.TimeValue = rd.ReadTime("timevalue")
 	r.TimestampValue = rd.ReadTimestamp("timestampvalue")
@@ -141,6 +184,8 @@ func (f recordFactory) Create(classID int32) serialization.Portable {
 		return &Record{}
 	case recordWithDateTimeClassID:
 		return &RecordWithDateTime{}
+	case recordWithDateTimeClassID2:
+		return &RecordWithDateTime2{}
 	}
 	panic(fmt.Sprintf("unknown class ID: %d", classID))
 }
@@ -203,22 +248,26 @@ func TestSQLQuery(t *testing.T) {
 		{
 			keyFmt: "int", valueFmt: "date",
 			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(2021, 12, 21, 0, 0, 0, 0, time.Local) },
+			valueFn: func(i int) interface{} { return types.LocalDate(time.Date(2021, 12, 21, 0, 0, 0, 0, time.Local)) },
 		},
 		{
 			keyFmt: "int", valueFmt: "time",
 			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(0, 1, 1, 14, 15, 16, 200, time.Local) },
+			valueFn: func(i int) interface{} { return types.LocalTime(time.Date(0, 1, 1, 14, 15, 16, 200, time.Local)) },
 		},
 		{
 			keyFmt: "int", valueFmt: "timestamp",
-			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(2021, 12, 23, 14, 15, 16, 200, time.Local) },
+			keyFn: func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} {
+				return types.LocalDateTime(time.Date(2021, 12, 23, 14, 15, 16, 200, time.Local))
+			},
 		},
 		{
 			keyFmt: "int", valueFmt: "timestamp with time zone",
-			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(2021, 12, 23, 14, 15, 16, 200, time.FixedZone("", -6000)) },
+			keyFn: func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} {
+				return types.OffsetDateTime(time.Date(2021, 12, 23, 14, 15, 16, 200, time.FixedZone("", -6000)))
+			},
 		},
 	}
 	for _, tc := range testCases {
@@ -424,6 +473,87 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		}
 		if !targetTimestampWithTimezone.Equal(vTimestampWithTimezone) {
 			t.Fatalf("%s != %s", targetTimestampWithTimezone, vTimestamp)
+		}
+	})
+}
+
+func TestSQLWithPortableDateTime2(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	cb := func(c *hz.Config) {
+		c.Serialization.SetPortableFactories(&recordFactory{})
+	}
+	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		db := driver.Open(*config)
+		defer db.Close()
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s" (
+				__key BIGINT,
+				datevalue DATE,
+				timevalue TIME,
+				timestampvalue TIMESTAMP,
+				timestampwithtimezonevalue TIMESTAMP WITH TIME ZONE
+			)
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'portable',
+				'valuePortableFactoryId' = '100',
+				'valuePortableClassId' = '3'
+			)
+		`, mapName)
+		t.Logf("Query: %s", q)
+		it.MustValue(db.Exec(q))
+		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
+		rec := NewRecordWithDateTime2(&dt)
+		_, err := db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
+			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
+		if err != nil {
+			t.Fatal(err)
+		}
+		targetDate := types.LocalDate(time.Date(2021, 12, 22, 0, 0, 0, 0, time.Local))
+		targetTime := types.LocalTime(time.Date(0, 1, 1, 23, 40, 12, 3400, time.Local))
+		targetTimestamp := types.LocalDateTime(time.Date(2021, 12, 22, 23, 40, 12, 3400, time.Local))
+		targetTimestampWithTimezone := types.OffsetDateTime(time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", -5*60*60)))
+		var k int64
+		// select the value itself
+		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
+		var v interface{}
+		var vs []interface{}
+		if err := row.Scan(&k, &v); err != nil {
+			t.Fatal(err)
+		}
+		vs = append(vs, v)
+		targetThis := []interface{}{&RecordWithDateTime2{
+			DateValue:                  &targetDate,
+			TimeValue:                  &targetTime,
+			TimestampValue:             &targetTimestamp,
+			TimestampWithTimezoneValue: &targetTimestampWithTimezone,
+		}}
+		assert.Equal(t, targetThis, vs)
+		// select individual fields
+		row = db.QueryRow(fmt.Sprintf(`
+						SELECT
+							__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue
+						FROM "%s" LIMIT 1
+				`, mapName))
+		var vDate types.LocalDate
+		var vTime types.LocalTime
+		var vTimestamp types.LocalDateTime
+		var vTimestampWithTimezone types.OffsetDateTime
+		if err := row.Scan(&k, &vDate, &vTime, &vTimestamp, &vTimestampWithTimezone); err != nil {
+			t.Fatal(err)
+		}
+		if !(time.Time)(targetDate).Equal((time.Time)(vDate)) {
+			t.Fatalf("%v != %v", targetDate, vDate)
+		}
+		if !(time.Time)(targetTime).Equal((time.Time)(vTime)) {
+			t.Fatalf("%v != %v", targetTime, vTime)
+		}
+		if !(time.Time)(targetTimestamp).Equal((time.Time)(vTimestamp)) {
+			t.Fatalf("%v != %v", targetTimestamp, vTimestamp)
+		}
+		if !(time.Time)(targetTimestampWithTimezone).Equal((time.Time)(vTimestampWithTimezone)) {
+			t.Fatalf("%v != %v", targetTimestampWithTimezone, vTimestamp)
 		}
 	})
 }
