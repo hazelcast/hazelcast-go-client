@@ -59,6 +59,10 @@ func NewPair(key, value interface{}) Pair {
 	return Pair{Key: key, Value: value}
 }
 
+type InvokeOptions struct {
+	Handler ClientMessageHandler
+}
+
 type ClientInternal struct {
 	client *Client
 	proxy  *proxy
@@ -95,19 +99,19 @@ func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
 	return ci.proxy.convertToObject(data)
 }
 
-func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *ClientMessage, handler ClientMessageHandler) (*ClientMessage, error) {
-	return ci.proxy.invokeOnRandomTarget(ctx, request, handler)
+func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *ClientMessage, opts *InvokeOptions) (*ClientMessage, error) {
+	return ci.proxy.invokeOnRandomTarget(ctx, request, opts.Handler)
 }
 
-func (ci *ClientInternal) InvokeOnPartition(ctx context.Context, request *ClientMessage, partitionID int32) (*ClientMessage, error) {
+func (ci *ClientInternal) InvokeOnPartition(ctx context.Context, request *ClientMessage, partitionID int32, opts *InvokeOptions) (*ClientMessage, error) {
 	return ci.proxy.invokeOnPartition(ctx, request, partitionID)
 }
 
-func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessage, keyData Data) (*ClientMessage, error) {
+func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessage, keyData Data, opts *InvokeOptions) (*ClientMessage, error) {
 	return ci.proxy.invokeOnKey(ctx, request, keyData)
 }
 
-func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID) (*ClientMessage, error) {
+func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID, opts *InvokeOptions) (*ClientMessage, error) {
 	panic("TODO")
 }
 
