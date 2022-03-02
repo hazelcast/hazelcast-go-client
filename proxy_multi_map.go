@@ -22,7 +22,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -30,43 +29,6 @@ import (
 MultiMap is a distributed map.
 Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast MultiMap with methods like Get and Put.
 For details, see https://docs.hazelcast.com/hazelcast/latest/data-structures/multimap.html
-
-Listening for MultiMap Entry Events
-
-The first step of listening to entry-based events is  creating an instance of MultiMapEntryListenerConfig.
-MultiMapEntryListenerConfig contains options to filter the events by key and has an option to include the value of the entry, not just the key.
-You should also choose which type of events you want to receive.
-In the example below, a listener configuration for added and updated entries is created.
-Entries only with key "somekey":
-
-	entryListenerConfig := hazelcast.MultiMapEntryListenerConfig{
-		Key: "somekey",
-		IncludeValue: true,
-	}
-	entryListenerConfig.NotifyEntryAdded(true)
-	entryListenerConfig.NotifyEntryUpdated(true)
-	m, err := client.GetMap(ctx, "somemap")
-
-After creating the configuration, the second step is adding an event listener and a handler to act on received events:
-
-	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
-		switch event.EventType {
-		case hazelcast.EntryAdded:
-			fmt.Println("Entry Added:", event.Value)
-		case hazelcast.EntryRemoved:
-			fmt.Println("Entry Removed:", event.Value)
-		case hazelcast.EntryUpdated:
-			fmt.Println("Entry Updated:", event.Value)
-		case hazelcast.EntryEvicted:
-			fmt.Println("Entry Remove:", event.Value)
-		case hazelcast.EntryLoaded:
-			fmt.Println("Entry Loaded:", event.Value)
-		}
-	})
-
-Adding an event listener returns a subscription ID, which you can later use to remove the listener:
-
-	err = m.RemoveEntryListener(ctx, subscriptionID)
 
 Using Locks
 
@@ -111,16 +73,6 @@ func (m *MultiMap) NewLockContext(ctx context.Context) context.Context {
 		ctx = context.Background()
 	}
 	return context.WithValue(ctx, lockIDKey{}, lockID(m.refIDGen.NextID()))
-}
-
-// AddEntryListener adds a continuous entry listener to this multi-map.
-func (m *MultiMap) AddEntryListener(ctx context.Context, config MultiMapEntryListenerConfig, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(ctx, config.IncludeValue, m.smart, config.Key, func(event *EntryNotified) {
-		if int32(event.EventType)&config.flags == 0 {
-			return
-		}
-		handler(event)
-	})
 }
 
 // Clear deletes all entries one by one and fires related events.
@@ -376,11 +328,6 @@ func (m *MultiMap) RemoveEntry(ctx context.Context, key interface{}, value inter
 	return codec.DecodeMultiMapRemoveEntryResponse(response), nil
 }
 
-// RemoveEntryListener removes the specified entry listener.
-func (m *MultiMap) RemoveEntryListener(ctx context.Context, subscriptionID types.UUID) error {
-	return m.listenerBinder.Remove(ctx, subscriptionID)
-}
-
 // Size returns the number of entries in this multi-map.
 func (m *MultiMap) Size(ctx context.Context) (int, error) {
 	request := codec.EncodeMultiMapSizeRequest(m.name)
@@ -429,24 +376,6 @@ func (m *MultiMap) Unlock(ctx context.Context, key interface{}) error {
 	}
 }
 
-func (m *MultiMap) addEntryListener(ctx context.Context, includeValue, localOnly bool, key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
-	var err error
-	var keyData *serialization.Data
-	if key != nil {
-		if keyData, err = m.validateAndSerialize(key); err != nil {
-			return types.UUID{}, err
-		}
-	}
-	subscriptionID := types.NewUUID()
-	addRequest := m.makeListenerRequest(keyData, includeValue, localOnly)
-	listenerHandler := func(msg *proto.ClientMessage) {
-		m.makeListenerDecoder(msg, keyData, m.makeEntryNotifiedListenerHandler(handler))
-	}
-	removeRequest := codec.EncodeMultiMapRemoveEntryListenerRequest(m.name, subscriptionID)
-	err = m.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
-	return subscriptionID, err
-}
-
 func (m *MultiMap) lock(ctx context.Context, key interface{}, ttl int64) error {
 	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
@@ -486,41 +415,4 @@ func (m *MultiMap) tryLock(ctx context.Context, key interface{}, lease int64, ti
 			return codec.DecodeMultiMapTryLockResponse(response), nil
 		}
 	}
-}
-
-func (m *MultiMap) makeListenerRequest(keyData *serialization.Data, includeValue, localOnly bool) *proto.ClientMessage {
-	if keyData != nil {
-		return codec.EncodeMultiMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, localOnly)
-	}
-	return codec.EncodeMultiMapAddEntryListenerRequest(m.name, includeValue, localOnly)
-}
-
-func (m *MultiMap) makeListenerDecoder(msg *proto.ClientMessage, keyData *serialization.Data, handler entryNotifiedHandler) {
-	if keyData != nil {
-		codec.HandleMultiMapAddEntryListenerToKey(msg, handler)
-		return
-	}
-	codec.HandleMultiMapAddEntryListener(msg, handler)
-}
-
-// MultiMapEntryListenerConfig contains configuration for a multi-map entry listener.
-type MultiMapEntryListenerConfig struct {
-	Key          interface{}
-	flags        int32
-	IncludeValue bool
-}
-
-// NotifyEntryAdded enables receiving an entry event when an entry is added.
-func (c *MultiMapEntryListenerConfig) NotifyEntryAdded(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryAdded), enable)
-}
-
-// NotifyEntryRemoved enables receiving an entry event when an entry is removed.
-func (c *MultiMapEntryListenerConfig) NotifyEntryRemoved(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryRemoved), enable)
-}
-
-// NotifyEntryAllCleared enables receiving an entry event when all entries are cleared.
-func (c *MultiMapEntryListenerConfig) NotifyEntryAllCleared(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryAllCleared), enable)
 }
