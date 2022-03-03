@@ -476,6 +476,7 @@ func TestMultiMap_ContainsEntry(t *testing.T) {
 }
 
 func TestMultiMap_ValueCount(t *testing.T) {
+	it.SkipIf(t, "hz < 4.1")
 	it.MultiMapTester(t, func(t *testing.T, m *hz.MultiMap) {
 		ctx := context.Background()
 		key := "key"
