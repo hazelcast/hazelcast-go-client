@@ -448,7 +448,6 @@ func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.Mem
 				Member: member,
 			})
 		}
-
 	})
 }
 

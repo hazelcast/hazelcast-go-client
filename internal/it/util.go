@@ -341,6 +341,23 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	return config
 }
 
+func XMLConfigWithPersistenceEnabled(clusterName, baseDir string, port int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+			<hot-restart-persistence enabled="true">
+            	<base-dir>%s</base-dir>
+        	</hot-restart-persistence>
+			<network>
+               <port>%d</port>
+            </network>
+        </hazelcast>
+	`, clusterName, baseDir, port)
+}
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
