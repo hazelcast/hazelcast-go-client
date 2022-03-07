@@ -39,15 +39,19 @@ import (
 func TestListenersAfterClientDisconnected(t *testing.T) {
 	t.Run("MemberHostname_ClientIP", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501)
+		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "localhost", "127.0.0.1", 46501)
 	})
 	t.Run("MemberHostname_ClientHostname", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501)
+		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "localhost", "localhost", 47501)
 	})
 	t.Run("MemberIP_ClientIP", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501)
+		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "127.0.0.1", "127.0.0.1", 48501)
 	})
 	t.Run("MemberIP_ClientHostname", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501)
+		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "127.0.0.1", "localhost", 49501)
 	})
 }
 
@@ -111,6 +115,49 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 	it.MustValue(m.AddEntryListener(ctx, lc, func(event *hz.EntryNotified) {
 		atomic.AddInt64(&ec, 1)
 	}))
+	ci := hz.NewClientInternal(client)
+	// make sure the client connected to the member
+	it.Eventually(t, func() bool {
+		ac := len(ci.ConnectionManager().ActiveConnections())
+		t.Logf("active connections: %d", ac)
+		return ac == 1
+	})
+	// shutdown the member
+	tc.Shutdown()
+	time.Sleep(2 * heartBeatSec * time.Second)
+	// launch a member with the same address
+	tc = it.StartNewClusterWithConfig(1, memberConfig, port)
+	defer tc.Shutdown()
+	// entry notified event handler should run
+	it.Eventually(t, func() bool {
+		it.MustValue(m.Remove(ctx, 1))
+		it.MustValue(m.Put(ctx, 1, 2))
+		return atomic.LoadInt64(&ec) > 0
+	})
+}
+
+func testListenersAfterClientDisconnectedWithSpecificEventHandler(t *testing.T, memberHost string, clientHost string, port int) {
+	const heartBeatSec = 6
+	// launch the cluster
+	memberConfig := listenersAfterClientDisconnectedXMLConfig(t.Name(), memberHost, port, heartBeatSec)
+	if it.SSLEnabled() {
+		memberConfig = listenersAfterClientDisconnectedXMLSSLConfig(t.Name(), memberHost, port, heartBeatSec)
+	}
+	tc := it.StartNewClusterWithConfig(1, memberConfig, port)
+	// create and start the client
+	config := tc.DefaultConfig()
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("%s:%d", clientHost, port))
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	defer client.Shutdown(ctx)
+	ec := int64(0)
+	m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
+	lc := hz.MapEntryListenerConfig{}
+	lc.SetEntryAddedListener()
+	it.MustValue(m.AddEntryListener(ctx, lc))
 	ci := hz.NewClientInternal(client)
 	// make sure the client connected to the member
 	it.Eventually(t, func() bool {
