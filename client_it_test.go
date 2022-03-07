@@ -23,7 +23,6 @@ import (
 	"log"
 	"reflect"
 	"runtime"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -212,38 +211,38 @@ func TestClientEventHandlingOrder(t *testing.T) {
 	ctx := context.Background()
 	c := it.MustValue(hz.StartNewClientWithConfig(ctx, conf)).(*hz.Client)
 	defer c.Shutdown(ctx)
-	ss := it.MustValue(serialization.NewService(&conf.Serialization)).(*serialization.Service)
 	// Create test map
-	m := it.MustValue(c.GetMap(ctx, "TestClientEventHandlingOrder")).(*hz.Map)
+	m := it.MustValue(c.GetMap(ctx, "my-map")).(*hz.Map)
 	var lc hz.MapEntryListenerConfig
+	lc.IncludeValue = true
 	lc.NotifyEntryAdded(true)
+	lc.NotifyEntryRemoved(true)
+	const iterationCount = 5000
+	const eventCount = iterationCount * 2
 	var (
-		// have 271 partitions by default
-		partitionToEvent = make([][]int, 271)
+		// event journal to keep track of order of the published events
+		journal = make([]*hz.EntryNotified, 0, eventCount)
 		// wait for all events to be processed
 		wg sync.WaitGroup
 	)
-	const eventCount = 1000
 	wg.Add(eventCount)
 	handler := func(event *hz.EntryNotified) {
-		// it is okay to use conversion, since greatest key is 1000
-		key := int(event.Key.(int64))
-		pid, err := calculatePartitionID(ss, key)
-		if err != nil {
-			panic(err)
-		}
-		partitionToEvent[pid] = append(partitionToEvent[pid], key)
+		journal = append(journal, event)
 		wg.Done()
 	}
 	it.MustValue(m.AddEntryListener(ctx, lc, handler))
-	for i := 1; i <= eventCount; i++ {
-		it.MustValue(m.Put(ctx, i, "test"))
+	for i := 0; i < iterationCount; i++ {
+		it.Must(m.Set(ctx, "sameKey", i))
+		it.MustValue(m.Remove(ctx, "sameKey"))
 	}
 	wg.Wait()
-	for _, keys := range partitionToEvent {
-		if !sort.IntsAreSorted(keys) {
-			t.Fatalf("events are not processed in order, event keys:\n%v\n", keys)
-		}
+	assert.Equal(t, 0, len(journal)%2)
+	for i := 0; i < eventCount; i += 2 {
+		assert.Equal(t, hz.EntryAdded, journal[i].EventType)
+		assert.Equal(t, hz.EntryRemoved, journal[i+1].EventType)
+		value := i / 2
+		assert.Equal(t, int64(value), journal[i].Value)
+		assert.Equal(t, int64(value), journal[i+1].OldValue)
 	}
 }
 
