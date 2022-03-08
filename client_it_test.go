@@ -207,9 +207,9 @@ func TestClientEventHandlingOrder(t *testing.T) {
 	// Create custom cluster, and client from it
 	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, it.MemberCount())
 	defer cls.Shutdown()
-	cnfg := cls.DefaultConfig()
+	cfg := cls.DefaultConfig()
 	ctx := context.Background()
-	c := it.MustValue(hz.StartNewClientWithConfig(ctx, cnfg)).(*hz.Client)
+	c := it.MustValue(hz.StartNewClientWithConfig(ctx, cfg)).(*hz.Client)
 	defer c.Shutdown(ctx)
 	// Create test map
 	m := it.MustValue(c.GetMap(ctx, "my-map")).(*hz.Map)
@@ -236,7 +236,7 @@ func TestClientEventHandlingOrder(t *testing.T) {
 		it.MustValue(m.Remove(ctx, "sameKey"))
 	}
 	wg.Wait()
-	assert.Equal(t, 0, len(journal)%2)
+	assert.Equal(t, eventCount, len(journal))
 	for i := 0; i < eventCount; i += 2 {
 		assert.Equal(t, hz.EntryAdded, journal[i].EventType)
 		assert.Equal(t, hz.EntryRemoved, journal[i+1].EventType)
