@@ -851,6 +851,27 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 	})
 }
 
+func TestMap_EntryNotifiedEventToKeyWithSpecificHandler(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		callCount := int32(0)
+		handler := func(event *hz.EntryNotified) {
+			atomic.AddInt32(&callCount, 1)
+		}
+		listenerConfig := hz.MapEntryListenerConfig{
+			IncludeValue: true,
+			Key:          "k1",
+		}
+		listenerConfig.SetEntryAddedListener(handler)
+		if _, err := m.AddEntryListener(context.Background(), listenerConfig); err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(m.Put(context.Background(), "k1", "v1"))
+		it.Eventually(t, func() bool {
+			return atomic.LoadInt32(&callCount) == int32(1)
+		})
+	})
+}
+
 func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
@@ -884,6 +905,39 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 	})
 }
 
+func TestMap_EntryNotifiedEventWithPredicateWithSpecificHandler(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(100)
+		callCount := int32(0)
+		handler := func(event *hz.EntryNotified) {
+			atomic.AddInt32(&callCount, 1)
+		}
+		listenerConfig := hz.MapEntryListenerConfig{
+			IncludeValue: true,
+			Predicate:    predicate.Equal("A", "foo"),
+		}
+		listenerConfig.SetEntryAddedListener(handler)
+		subID, err := m.AddEntryListener(context.Background(), listenerConfig)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("TestMap_EntryNotifiedEventWithPredicateWithSpecificHandler subscriptionID: %s", subID)
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := &it.SamplePortable{A: "foo", B: int32(i)}
+			it.MustValue(m.Put(context.Background(), key, value))
+		}
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+	})
+}
+
 func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
@@ -900,6 +954,33 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		}
 		listenerConfig.NotifyEntryAdded(true)
 		if _, err := m.AddEntryListener(context.Background(), listenerConfig, handler); err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
+		it.Eventually(t, func() bool {
+			return atomic.LoadInt32(&callCount) == 1
+		})
+	})
+}
+
+func TestMap_EntryNotifiedEventToKeyAndPredicateWithSpecificHandler(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		callCount := int32(0)
+		handler := func(event *hz.EntryNotified) {
+			atomic.AddInt32(&callCount, 1)
+		}
+		listenerConfig := hz.MapEntryListenerConfig{
+			IncludeValue: true,
+			Key:          "k1",
+			Predicate:    predicate.Equal("A", "foo"),
+		}
+		listenerConfig.SetEntryAddedListener(handler)
+		if _, err := m.AddEntryListener(context.Background(), listenerConfig); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "foo", B: 10}))

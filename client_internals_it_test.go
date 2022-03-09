@@ -156,7 +156,9 @@ func testListenersAfterClientDisconnectedWithSpecificEventHandler(t *testing.T, 
 	ec := int64(0)
 	m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
 	lc := hz.MapEntryListenerConfig{}
-	lc.SetEntryAddedListener()
+	lc.SetEntryAddedListener(func(event *hz.EntryNotified) {
+		atomic.AddInt64(&ec, 1)
+	})
 	it.MustValue(m.AddEntryListener(ctx, lc))
 	ci := hz.NewClientInternal(client)
 	// make sure the client connected to the member
