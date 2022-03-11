@@ -52,11 +52,15 @@ type DispatchService struct {
 }
 
 // NewDispatchService creates a dispatch service with the following properties.
+//
 //1- It is async for the caller of Publish. Meaning Publish will not be blocked.
 //It can be blocked because we don't have infinite channels. The queue size is 1024.
+//
 //2- Events fired from the same thread for the same subscription will be handled in the same order.
 //One will finish, then other will start.
+//
 //3 - If we block an event, it will not block all events, only ones that are related to same subscription.
+//
 //4 - A close after publish in the same thread waits for published item to be handled(finished) .
 func NewDispatchService(logger ilogger.LogAdaptor) *DispatchService {
 	service := &DispatchService{

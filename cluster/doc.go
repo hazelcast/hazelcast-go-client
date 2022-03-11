@@ -67,7 +67,7 @@ Whenever Hazelcast cluster members are able to resolve their own public external
 As a result, the client can use public addresses for communication, if it cannot access members via private IPs.
 
 Hazelcast Go client has a built-in mechanism to use public IP addresses instead of private ones.
-You can enable this feature by setting config.Discovery.UsePublicIP to true and specifying the adddress of at least one member:
+You can enable this feature by setting config.Discovery.UsePublicIP to true and specifying the address of at least one member:
 
 	config := hazelcast.Config{}
 	config.Cluster.Network.SetAddresses("30.40.50.60:5701")

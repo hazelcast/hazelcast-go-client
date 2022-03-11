@@ -383,6 +383,10 @@ func xmlConfig(clusterName string, port int) string {
 	`, clusterName, port)
 }
 
+func DefaultConfig(clusterName string, port int) string {
+	return xmlConfig(clusterName, port)
+}
+
 func xmlSSLConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
 		<hazelcast xmlns="http://www.hazelcast.com/schema/config"

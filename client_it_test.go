@@ -143,15 +143,64 @@ func TestClientMemberEvents(t *testing.T) {
 	})
 }
 
+func TestClusterMemberEventWhenClusterRestartWithPersistenceEnabled(t *testing.T) {
+	t.SkipNow()
+	tcConfig := it.XMLConfigWithPersistenceEnabled("member-event-cluster-with-persistence-enabled", "/tmp/hot-restart", 55701)
+	testClusterMemberEventWhenClusterRestart(t, tcConfig, 55701)
+}
+
+func TestClusterMemberEventWhenClusterRestart(t *testing.T) {
+	t.SkipNow()
+	tcConfig := it.DefaultConfig("member-event-cluster", 55701)
+	testClusterMemberEventWhenClusterRestart(t, tcConfig, 55701)
+}
+
+func testClusterMemberEventWhenClusterRestart(t *testing.T, tcConfig string, port int) {
+	// port in config should be equivalent to with given port as a parameter
+	tc := it.StartNewClusterWithConfig(it.MemberCount(), tcConfig, port)
+	var (
+		m             = &sync.Mutex{}
+		events        = []cluster.MembershipState{}
+		memberAdded   = &sync.WaitGroup{}
+		memberRemoved = &sync.WaitGroup{}
+		timeout       = time.Second * 3
+	)
+	memberAdded.Add(1)
+	memberRemoved.Add(1)
+	configCallback := func(config *hz.Config) {
+		config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+			m.Lock()
+			switch event.State {
+			case cluster.MembershipStateAdded:
+				memberAdded.Done()
+
+			case cluster.MembershipStateRemoved:
+				memberRemoved.Done()
+			}
+			events = append(events, event.State)
+			m.Unlock()
+		})
+	}
+	it.TesterWithConfigBuilder(t, configCallback, func(t *testing.T, client *hz.Client) {
+		tc.Shutdown()
+		tc = it.StartNewClusterWithConfig(it.MemberCount(), tcConfig, port)
+		it.WaitEventuallyWithTimeout(t, memberAdded, timeout)
+		//it.WaitEventuallyWithTimeout(t, memberRemoved, timeout)
+		assert.Equal(t, len(events), 1)
+	})
+}
+
+// old
 func TestClientMembershipListenerWithPersistenceEnabled(t *testing.T) {
+	t.SkipNow()
 	tcConfig := it.XMLConfigWithPersistenceEnabled("cluster-with-persistence-enabled", "/tmp/hot-restart", 55701)
 	tc := it.StartNewClusterWithConfig(1, tcConfig, 55701)
 	oldMemberUUIDs := tc.MemberUUIDs
 	var (
 		wgAdded           = &sync.WaitGroup{}
 		wgRemoved         = &sync.WaitGroup{}
-		addedMemberUUID   = types.UUID{}
-		removedMemberUUID = types.UUID{}
+		addedMemberUUID   = atomic.Value{}
+		removedMemberUUID = atomic.Value{}
 		timeout           = time.Second * 5
 	)
 	wgAdded.Add(1)
@@ -160,22 +209,24 @@ func TestClientMembershipListenerWithPersistenceEnabled(t *testing.T) {
 		config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
 			switch event.State {
 			case cluster.MembershipStateAdded:
-				addedMemberUUID = event.Member.UUID
+				addedMemberUUID.Store(event.Member.UUID)
 				wgAdded.Done()
 			case cluster.MembershipStateRemoved:
-				removedMemberUUID = event.Member.UUID
+				removedMemberUUID.Store(event.Member.UUID)
 				wgRemoved.Done()
 			}
 		})
 	}
+
 	it.TesterWithConfigBuilder(t, configCallback, func(t *testing.T, client *hz.Client) {
 		tc.Shutdown()
+		it.StartNewClusterWithOptions("cluster-with-persistence-enabled", 55701, 1)
 		newtc := it.StartNewClusterWithConfig(1, tcConfig, 55701)
 		newMembersUUIDs := newtc.MemberUUIDs
 		it.WaitEventuallyWithTimeout(t, wgRemoved, timeout)
-		assert.Equal(t, oldMemberUUIDs[0], removedMemberUUID.String())
+		assert.Equal(t, oldMemberUUIDs[0], removedMemberUUID)
 		it.WaitEventuallyWithTimeout(t, wgAdded, timeout)
-		assert.Equal(t, newMembersUUIDs[0], addedMemberUUID.String())
+		assert.Equal(t, newMembersUUIDs[0], addedMemberUUID)
 	})
 }
 

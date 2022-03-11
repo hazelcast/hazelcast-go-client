@@ -280,10 +280,10 @@ const (
 	DistributedObjectDestroyed DistributedObjectEventType = "DESTROYED"
 )
 
-// DistributedObjectNotifiedHandler is called when a distribute object event occurs.
+// DistributedObjectNotifiedHandler is called when a distributed object event occurs.
 type DistributedObjectNotifiedHandler func(event DistributedObjectNotified)
 
-// DistributedObjectNotified contains informatino about the distributed object event.
+// DistributedObjectNotified contains information about the distributed object event.
 type DistributedObjectNotified struct {
 	ServiceName string
 	ObjectName  string
