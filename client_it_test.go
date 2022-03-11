@@ -155,78 +155,57 @@ func TestClusterMemberEventWhenClusterRestart(t *testing.T) {
 	testClusterMemberEventWhenClusterRestart(t, tcConfig, 55701)
 }
 
+type clientType struct {
+	memberAdded   *sync.WaitGroup
+	memberRemoved *sync.WaitGroup
+	timeout       time.Duration
+}
+
+// initial membership listener is absent
 func testClusterMemberEventWhenClusterRestart(t *testing.T, tcConfig string, port int) {
 	// port in config should be equivalent to with given port as a parameter
 	tc := it.StartNewClusterWithConfig(it.MemberCount(), tcConfig, port)
-	var (
-		m             = &sync.Mutex{}
-		events        = []cluster.MembershipState{}
-		memberAdded   = &sync.WaitGroup{}
-		memberRemoved = &sync.WaitGroup{}
-		timeout       = time.Second * 3
-	)
-	memberAdded.Add(1)
-	memberRemoved.Add(1)
+	unisocket := clientType{
+		&sync.WaitGroup{},
+		&sync.WaitGroup{},
+		time.Second * 6,
+	}
+	smart := clientType{
+		&sync.WaitGroup{},
+		&sync.WaitGroup{},
+		time.Second * 6,
+	}
+	setWgForRemovedAndAddedMemberEvent := func(c clientType) {
+		c.memberAdded.Add(1)
+		c.memberRemoved.Add(1)
+	}
+	setWgForRemovedAndAddedMemberEvent(smart)
+	setWgForRemovedAndAddedMemberEvent(unisocket)
 	configCallback := func(config *hz.Config) {
 		config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
-			m.Lock()
 			switch event.State {
 			case cluster.MembershipStateAdded:
-				memberAdded.Done()
-
+				if config.Cluster.Unisocket {
+					unisocket.memberAdded.Done()
+				} else {
+					smart.memberAdded.Done()
+				}
 			case cluster.MembershipStateRemoved:
-				memberRemoved.Done()
+				if config.Cluster.Unisocket {
+					unisocket.memberRemoved.Done()
+				} else {
+					smart.memberRemoved.Done()
+				}
 			}
-			events = append(events, event.State)
-			m.Unlock()
 		})
 	}
 	it.TesterWithConfigBuilder(t, configCallback, func(t *testing.T, client *hz.Client) {
 		tc.Shutdown()
 		tc = it.StartNewClusterWithConfig(it.MemberCount(), tcConfig, port)
-		it.WaitEventuallyWithTimeout(t, memberAdded, timeout)
-		//it.WaitEventuallyWithTimeout(t, memberRemoved, timeout)
-		assert.Equal(t, len(events), 1)
-	})
-}
-
-// old
-func TestClientMembershipListenerWithPersistenceEnabled(t *testing.T) {
-	t.SkipNow()
-	tcConfig := it.XMLConfigWithPersistenceEnabled("cluster-with-persistence-enabled", "/tmp/hot-restart", 55701)
-	tc := it.StartNewClusterWithConfig(1, tcConfig, 55701)
-	oldMemberUUIDs := tc.MemberUUIDs
-	var (
-		wgAdded           = &sync.WaitGroup{}
-		wgRemoved         = &sync.WaitGroup{}
-		addedMemberUUID   = atomic.Value{}
-		removedMemberUUID = atomic.Value{}
-		timeout           = time.Second * 5
-	)
-	wgAdded.Add(1)
-	wgRemoved.Add(1)
-	configCallback := func(config *hz.Config) {
-		config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
-			switch event.State {
-			case cluster.MembershipStateAdded:
-				addedMemberUUID.Store(event.Member.UUID)
-				wgAdded.Done()
-			case cluster.MembershipStateRemoved:
-				removedMemberUUID.Store(event.Member.UUID)
-				wgRemoved.Done()
-			}
-		})
-	}
-
-	it.TesterWithConfigBuilder(t, configCallback, func(t *testing.T, client *hz.Client) {
-		tc.Shutdown()
-		it.StartNewClusterWithOptions("cluster-with-persistence-enabled", 55701, 1)
-		newtc := it.StartNewClusterWithConfig(1, tcConfig, 55701)
-		newMembersUUIDs := newtc.MemberUUIDs
-		it.WaitEventuallyWithTimeout(t, wgRemoved, timeout)
-		assert.Equal(t, oldMemberUUIDs[0], removedMemberUUID)
-		it.WaitEventuallyWithTimeout(t, wgAdded, timeout)
-		assert.Equal(t, newMembersUUIDs[0], addedMemberUUID)
+		it.WaitEventuallyWithTimeout(t, smart.memberRemoved, smart.timeout)
+		it.WaitEventuallyWithTimeout(t, unisocket.memberRemoved, unisocket.timeout)
+		it.WaitEventuallyWithTimeout(t, smart.memberAdded, smart.timeout)
+		it.WaitEventuallyWithTimeout(t, unisocket.memberAdded, unisocket.timeout)
 	})
 }
 
