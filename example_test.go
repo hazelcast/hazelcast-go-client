@@ -195,62 +195,6 @@ func ExampleMap_AddEntryListener() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// enable receiving entry added events
-	entryListenerConfig.NotifyEntryAdded(true)
-	// enable receiving entry removed events
-	entryListenerConfig.NotifyEntryRemoved(true)
-	// enable receiving entry updated events
-	entryListenerConfig.NotifyEntryUpdated(true)
-	// enable receiving entry evicted events
-	entryListenerConfig.NotifyEntryEvicted(true)
-	// enable receiving entry loaded events
-	entryListenerConfig.NotifyEntryLoaded(true)
-	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
-		switch event.EventType {
-		// this is an entry added event
-		case hazelcast.EntryAdded:
-			fmt.Println("Entry Added:", event.Value)
-		// this is an entry removed event
-		case hazelcast.EntryRemoved:
-			fmt.Println("Entry Removed:", event.Value)
-		// this is an entry updated event
-		case hazelcast.EntryUpdated:
-			fmt.Println("Entry Updated:", event.Value)
-		// this is an entry evicted event
-		case hazelcast.EntryEvicted:
-			fmt.Println("Entry Remove:", event.Value)
-		// this is an entry loaded event
-		case hazelcast.EntryLoaded:
-			fmt.Println("Entry Loaded:", event.Value)
-		}
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	// performing modifications on the map entries
-	key := strconv.Itoa(int(time.Now().Unix()))
-	if err := m.Set(ctx, key, "1"); err != nil {
-		log.Fatal(err)
-	}
-	if err := m.Set(ctx, key, "2"); err != nil {
-		log.Fatal(err)
-	}
-	if err := m.Delete(ctx, key); err != nil {
-		log.Fatal(err)
-	}
-	// you can use the subscriptionID later to remove the event listener.
-	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
-		log.Fatal(err)
-	}
-
-	// You can also register event specific listeners.
-	entryListenerConfig = hazelcast.MapEntryListenerConfig{
-		IncludeValue: true,
-	}
-	m, err = client.GetMap(ctx, "somemap")
-	if err != nil {
-		log.Fatal(err)
-	}
 	// register a listener to entry added events
 	entryListenerConfig.SetEntryAddedListener(func(event *hazelcast.EntryNotified) {
 		fmt.Println("Entry Added:", event.Value)
@@ -271,12 +215,12 @@ func ExampleMap_AddEntryListener() {
 	entryListenerConfig.SetEntryLoadedListener(func(event *hazelcast.EntryNotified) {
 		fmt.Println("Entry Loaded:", event.Value)
 	})
-	subscriptionID, err = m.AddEntryListener(ctx, entryListenerConfig)
+	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// performing modifications on the map entries
-	key = strconv.Itoa(int(time.Now().Unix()))
+	key := strconv.Itoa(int(time.Now().Unix()))
 	if err := m.Set(ctx, key, "1"); err != nil {
 		log.Fatal(err)
 	}

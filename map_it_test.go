@@ -824,8 +824,9 @@ func TestMap_EntryNotifiedEventWithSpecificHandler(t *testing.T) {
 			value := fmt.Sprintf("value-%d", i)
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
-		if !assert.Equal(t, int32(0), atomic.LoadInt32(&callCount)) {
-			t.FailNow()
+		cc := atomic.LoadInt32(&callCount)
+		if !assert.Equal(t, int32(0), cc) {
+			t.Fatalf("call count target: %d, current: %d", totalCallCount, cc)
 		}
 	})
 }
@@ -853,6 +854,7 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 
 func TestMap_EntryNotifiedEventToKeyWithSpecificHandler(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(1)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.AddInt32(&callCount, 1)
@@ -867,7 +869,9 @@ func TestMap_EntryNotifiedEventToKeyWithSpecificHandler(t *testing.T) {
 		}
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == int32(1)
+			cc := atomic.LoadInt32(&callCount)
+			t.Fatalf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }
@@ -970,6 +974,7 @@ func TestMap_EntryNotifiedEventToKeyAndPredicateWithSpecificHandler(t *testing.T
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(1)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
 			atomic.AddInt32(&callCount, 1)
@@ -987,7 +992,9 @@ func TestMap_EntryNotifiedEventToKeyAndPredicateWithSpecificHandler(t *testing.T
 		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
 		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == 1
+			cc := atomic.LoadInt32(&callCount)
+			t.Fatalf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }

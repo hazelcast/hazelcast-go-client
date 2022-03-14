@@ -39,18 +39,29 @@ import (
 func TestListenersAfterClientDisconnected(t *testing.T) {
 	t.Run("MemberHostname_ClientIP", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501)
+	})
+	t.Run("MemberHostname_ClientIP_WithSpecificHandler", func(t *testing.T) {
 		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "localhost", "127.0.0.1", 46501)
 	})
+
 	t.Run("MemberHostname_ClientHostname", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501)
+	})
+	t.Run("MemberHostname_ClientHostname_WithSpecificHandler", func(t *testing.T) {
 		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "localhost", "localhost", 47501)
 	})
+
 	t.Run("MemberIP_ClientIP", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501)
+	})
+	t.Run("MemberIP_ClientIP_WithSpecificHandler", func(t *testing.T) {
 		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "127.0.0.1", "127.0.0.1", 48501)
 	})
+
 	t.Run("MemberIP_ClientHostname", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501)
+	})
+	t.Run("MemberIP_ClientHostname_WithSpecificHandler", func(t *testing.T) {
 		testListenersAfterClientDisconnectedWithSpecificEventHandler(t, "127.0.0.1", "localhost", 49501)
 	})
 }

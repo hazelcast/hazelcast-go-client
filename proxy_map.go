@@ -128,7 +128,7 @@ func (m *Map) AddEntryListener(ctx context.Context, config MapEntryListenerConfi
 		return m.addEntryListener(ctx, flags, config.IncludeValue, config.Key, config.Predicate, handler)
 	} else if len(handler) == 1 {
 		// Prevent mixed usage
-		if config.EventSpecificHandlersConfigured() {
+		if config.eventSpecificHandlersConfigured() {
 			return types.UUID{}, ihzerrors.NewIllegalArgumentError("Event specific handlers cannot be used together with the 'handler' argument.", nil)
 		}
 		return m.addEntryListener(ctx, config.flags, config.IncludeValue, config.Key, config.Predicate, handler[0])
@@ -1373,7 +1373,7 @@ func (c *MapEntryListenerConfig) SetEntryLoadedListener(handler EntryNotifiedHan
 	c.entryLoadedListener = handler
 }
 
-func (m *MapEntryListenerConfig) EventSpecificHandlersConfigured() bool {
+func (m *MapEntryListenerConfig) eventSpecificHandlersConfigured() bool {
 	return m.entryAddedListener != nil || m.entryAllClearedListener != nil || m.entryAllEvictedListener != nil ||
 		m.entryExpiredListener != nil || m.entryEvictedListener != nil || m.entryInvalidatedListener != nil ||
 		m.entryLoadedListener != nil || m.entryMergedListener != nil || m.entryRemovedListener != nil ||
