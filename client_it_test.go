@@ -206,11 +206,14 @@ func TestClientEventHandlingOrder(t *testing.T) {
 			// event journal to keep track of order of the published events
 			journal = make([]*hz.EntryNotified, 0, eventCount)
 			// wait for all events to be processed
-			wg sync.WaitGroup
+			wg  sync.WaitGroup
+			mut sync.Mutex
 		)
 		wg.Add(eventCount)
 		handler := func(event *hz.EntryNotified) {
+			mut.Lock()
 			journal = append(journal, event)
+			mut.Unlock()
 			wg.Done()
 		}
 		it.MustValue(m.AddEntryListener(ctx, lc, handler))
