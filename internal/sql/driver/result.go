@@ -24,7 +24,7 @@ import (
 	"sync/atomic"
 
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/internal/sql/types"
 )
 
 const (
@@ -37,19 +37,23 @@ const (
 // QueryResult is not concurrency-safe, except for closing it.
 type QueryResult struct {
 	err              error
-	page             *sql.Page
+	page             *types.Page
 	ss               *SQLService
 	conn             *icluster.Connection
 	doneCh           chan struct{}
-	metadata         sql.RowMetadata
-	queryID          sql.QueryID
+	metadata         types.RowMetadata
+	queryID          types.QueryID
 	cursorBufferSize int32
 	index            int32
 	state            int32
 }
 
+func (r *QueryResult) Metadata() types.RowMetadata {
+	return r.metadata
+}
+
 // NewQueryResult creates a new QueryResult.
-func NewQueryResult(ctx context.Context, qid sql.QueryID, md sql.RowMetadata, page *sql.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
+func NewQueryResult(ctx context.Context, qid types.QueryID, md types.RowMetadata, page *types.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
 	doneCh := make(chan struct{})
 	qr := &QueryResult{
 		queryID:          qid,
@@ -82,6 +86,10 @@ func (r *QueryResult) Columns() []string {
 		names[i] = r.metadata.Columns[i].Name
 	}
 	return names
+}
+
+func (r *QueryResult) Len() int {
+	return len(r.metadata.Columns)
 }
 
 // Close notifies the member to release resources for the corresponding query.

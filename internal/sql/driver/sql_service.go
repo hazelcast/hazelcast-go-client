@@ -31,7 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/internal/sql/types"
 )
 
 const (
@@ -66,6 +66,13 @@ func NewSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fa
 	}
 }
 
+func (s *SQLService) Execute(ctx context.Context, query string, params []driver.Value) (interface{}, error) {
+	cbs := ExtractCursorBufferSize(ctx)
+	tom := ExtractTimeoutMillis(ctx)
+	schema := ExtractSchema(ctx)
+	return s.executeSQL(ctx, query, expectedResultAny, tom, cbs, schema, params)
+}
+
 // ExecuteSQL runs the given SQL query on the member-side.
 // Placeholders in the query is replaced by params.
 // A placeholder is the question mark (?) character.
@@ -96,20 +103,20 @@ func (s *SQLService) QuerySQL(ctx context.Context, query string, params []driver
 	return resp.(*QueryResult), nil
 }
 
-func (s *SQLService) fetch(ctx context.Context, qid isql.QueryID, conn *cluster.Connection, cbs int32) (*isql.Page, error) {
+func (s *SQLService) fetch(ctx context.Context, qid types.QueryID, conn *cluster.Connection, cbs int32) (*types.Page, error) {
 	req := codec.EncodeSqlFetchRequest(qid, cbs)
 	resp, err := s.invokeOnConnection(ctx, req, conn)
 	if err != nil {
 		return nil, err
 	}
 	page, err := codec.DecodeSqlFetchResponse(resp, s.serializationService)
-	if err != (*isql.Error)(nil) {
+	if err != (*types.Error)(nil) {
 		return nil, err
 	}
 	return page, nil
 }
 
-func (s *SQLService) closeQuery(qid isql.QueryID, conn *cluster.Connection) error {
+func (s *SQLService) closeQuery(qid types.QueryID, conn *cluster.Connection) error {
 	req := codec.EncodeSqlCloseRequest(qid)
 	if _, err := s.invokeOnConnection(context.Background(), req, conn); err != nil {
 		return fmt.Errorf("closing query: %w", err)
@@ -126,7 +133,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	if conn == nil {
 		return nil, ihzerrors.NewIOError("no connection found", nil)
 	}
-	qid := isql.NewQueryIDFromUUID(conn.MemberUUID())
+	qid := types.NewQueryIDFromUUID(conn.MemberUUID())
 	req := codec.EncodeSqlExecuteRequest(query, serParams, timeoutMillis, cursorBufferSize, schema, resultType, qid, false)
 	s.lg.Debug(func() string {
 		return fmt.Sprintf("SqlExecuteRequest: qid: %d, q: %s", qid, query)
@@ -136,13 +143,13 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return nil, err
 	}
 	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
-	if err != (*isql.Error)(nil) {
+	if err != (*types.Error)(nil) {
 		return nil, err
 	}
 	if updateCount >= 0 {
 		return &ExecResult{UpdateCount: updateCount}, nil
 	}
-	md := isql.RowMetadata{Columns: metadata}
+	md := types.RowMetadata{Columns: metadata}
 	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize)
 }
 
