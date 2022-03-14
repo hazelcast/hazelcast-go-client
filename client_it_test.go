@@ -35,9 +35,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -195,55 +193,41 @@ func TestClientEventOrder(t *testing.T) {
 	})
 }
 
-func calculatePartitionID(ss *serialization.Service, key interface{}) (int32, error) {
-	kd, err := ss.ToData(key)
-	if err != nil {
-		return 0, err
-	}
-	return murmur.HashToIndex(kd.PartitionHash(), 271), nil
-}
-
 func TestClientEventHandlingOrder(t *testing.T) {
-	// Create custom cluster, and client from it
-	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, it.MemberCount())
-	defer cls.Shutdown()
-	cfg := cls.DefaultConfig()
-	ctx := context.Background()
-	c := it.MustValue(hz.StartNewClientWithConfig(ctx, cfg)).(*hz.Client)
-	defer c.Shutdown(ctx)
-	// Create test map
-	m := it.MustValue(c.GetMap(ctx, "my-map")).(*hz.Map)
-	var lc hz.MapEntryListenerConfig
-	lc.IncludeValue = true
-	lc.NotifyEntryAdded(true)
-	lc.NotifyEntryRemoved(true)
-	const iterationCount = 5000
-	const eventCount = iterationCount * 2
-	var (
-		// event journal to keep track of order of the published events
-		journal = make([]*hz.EntryNotified, 0, eventCount)
-		// wait for all events to be processed
-		wg sync.WaitGroup
-	)
-	wg.Add(eventCount)
-	handler := func(event *hz.EntryNotified) {
-		journal = append(journal, event)
-		wg.Done()
-	}
-	it.MustValue(m.AddEntryListener(ctx, lc, handler))
-	for i := 0; i < iterationCount; i++ {
-		it.Must(m.Set(ctx, "sameKey", i))
-		it.MustValue(m.Remove(ctx, "sameKey"))
-	}
-	wg.Wait()
-	assert.Equal(t, eventCount, len(journal))
-	for i := 0; i < eventCount; i += 2 {
-		assert.Equal(t, hz.EntryAdded, journal[i].EventType)
-		assert.Equal(t, hz.EntryRemoved, journal[i+1].EventType)
-		v := i / 2
-		assert.Equal(t, int64(v), journal[i].Value)
-		assert.Equal(t, int64(v), journal[i+1].OldValue)
-	}
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		var lc hz.MapEntryListenerConfig
+		lc.IncludeValue = true
+		lc.NotifyEntryAdded(true)
+		lc.NotifyEntryRemoved(true)
+		const iterationCount = 5000
+		const eventCount = iterationCount * 2
+		var (
+			// event journal to keep track of order of the published events
+			journal = make([]*hz.EntryNotified, 0, eventCount)
+			// wait for all events to be processed
+			wg sync.WaitGroup
+		)
+		wg.Add(eventCount)
+		handler := func(event *hz.EntryNotified) {
+			journal = append(journal, event)
+			wg.Done()
+		}
+		it.MustValue(m.AddEntryListener(ctx, lc, handler))
+		for i := 0; i < iterationCount; i++ {
+			it.Must(m.Set(ctx, "sameKey", i))
+			it.MustValue(m.Remove(ctx, "sameKey"))
+		}
+		wg.Wait()
+		assert.Equal(t, eventCount, len(journal))
+		for i := 0; i < eventCount; i += 2 {
+			assert.Equal(t, hz.EntryAdded, journal[i].EventType)
+			assert.Equal(t, hz.EntryRemoved, journal[i+1].EventType)
+			v := i / 2
+			assert.Equal(t, int64(v), journal[i].Value)
+			assert.Equal(t, int64(v), journal[i+1].OldValue)
+		}
+	})
 }
 
 func TestClientHeartbeat(t *testing.T) {
