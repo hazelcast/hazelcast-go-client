@@ -870,7 +870,7 @@ func TestMap_EntryNotifiedEventToKeyWithSpecificHandler(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.Eventually(t, func() bool {
 			cc := atomic.LoadInt32(&callCount)
-			t.Fatalf("call count target: %d, current: %d", totalCallCount, cc)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
 			return cc == totalCallCount
 		})
 	})
@@ -993,7 +993,7 @@ func TestMap_EntryNotifiedEventToKeyAndPredicateWithSpecificHandler(t *testing.T
 		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
 		it.Eventually(t, func() bool {
 			cc := atomic.LoadInt32(&callCount)
-			t.Fatalf("call count target: %d, current: %d", totalCallCount, cc)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
 			return cc == totalCallCount
 		})
 	})
