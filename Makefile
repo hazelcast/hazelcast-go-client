@@ -1,10 +1,9 @@
 .PHONY: benchmark build check doc test test-all test-all-race
 
 PORT ?= 5050
-TEST_FLAGS ?=
 MEMBER_COUNT ?= 3
 COVERAGE_OUT ?= coverage.out
-TEST_FLAGS := -v -count 1 -timeout 25m -tags=hazelcastinternal
+TEST_FLAGS ?= -v -count 1 -timeout 25m -tags="hazelcastinternal hazelcastinternaltest"
 PACKAGES = $(go list ./... | grep -v org-website)
 
 build:

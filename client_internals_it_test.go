@@ -1,5 +1,5 @@
-//go:build hazelcastinternal
-// +build hazelcastinternal
+//go:build hazelcastinternal && hazelcastinternaltest
+// +build hazelcastinternal,hazelcastinternaltest
 
 /*
  * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.

@@ -22,9 +22,6 @@ package hazelcast
 import (
 	"context"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -73,22 +70,6 @@ func NewClientInternal(c *Client) *ClientInternal {
 		client: c,
 		proxy:  c.proxyManager.invocationProxy,
 	}
-}
-
-func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
-	return ci.client.ic.ConnectionManager
-}
-
-func (ci *ClientInternal) DispatchService() *event.DispatchService {
-	return ci.client.ic.EventDispatcher
-}
-
-func (ci *ClientInternal) InvocationService() *invocation.Service {
-	return ci.client.ic.InvocationService
-}
-
-func (ci *ClientInternal) InvocationHandler() invocation.Handler {
-	return ci.client.ic.InvocationHandler
 }
 
 func (ci *ClientInternal) ClusterID() types.UUID {
