@@ -459,31 +459,31 @@ func (fixSizedTypesCodec) DecodeDouble(buffer []byte, offset int32) float64 {
 	return math.Float64frombits(binary.LittleEndian.Uint64(buffer[offset:]))
 }
 
-func (fixSizedTypesCodec) DecodeLocalDate(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeLocalDate(buffer []byte, offset int32) types.LocalDate {
 	y, m, d := decodeLocalDate(buffer, offset)
-	return time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	return types.LocalDate(time.Date(y, m, d, 0, 0, 0, 0, time.Local))
 }
 
-func (fixSizedTypesCodec) DecodeLocalTime(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeLocalTime(buffer []byte, offset int32) types.LocalTime {
 	h, m, s, nanos := decodeLocalTime(buffer, offset)
-	return time.Date(0, 1, 1, h, m, s, nanos, time.Local)
+	return types.LocalTime(time.Date(0, 1, 1, h, m, s, nanos, time.Local))
 }
 
-func (fixSizedTypesCodec) DecodeLocalDateTime(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeLocalDateTime(buffer []byte, offset int32) types.LocalDateTime {
 	y, m, d := decodeLocalDate(buffer, offset)
 	offset += proto.LocalDateSizeInBytes
 	h, mn, s, nanos := decodeLocalTime(buffer, offset)
-	return time.Date(y, m, d, h, mn, s, nanos, time.Local)
+	return types.LocalDateTime(time.Date(y, m, d, h, mn, s, nanos, time.Local))
 }
 
-func (fixSizedTypesCodec) DecodeDateTimeWithTimeZone(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeDateTimeWithTimeZone(buffer []byte, offset int32) types.OffsetDateTime {
 	y, m, d := decodeLocalDate(buffer, offset)
 	offset += proto.LocalDateSizeInBytes
 	h, mn, s, nanos := decodeLocalTime(buffer, offset)
 	offset += proto.LocalTimeSizeInBytes
 	offsetSecs := int(FixSizedTypesCodec.DecodeInt(buffer, offset))
 	tz := time.FixedZone("", offsetSecs)
-	return time.Date(y, m, d, h, mn, s, nanos, tz)
+	return types.OffsetDateTime(time.Date(y, m, d, h, mn, s, nanos, tz))
 }
 
 func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {

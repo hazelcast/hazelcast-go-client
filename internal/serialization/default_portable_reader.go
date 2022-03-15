@@ -19,6 +19,7 @@ package serialization
 import (
 	"fmt"
 	"time"
+	"unsafe"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -94,22 +95,22 @@ func TypeByID(fieldType serialization.FieldDefinitionType) string {
 		return "types.Decimal"
 	case serialization.TypeDecimalArray:
 		return "[]types.Decimal"
-	case serialization.TypeTime:
-		return "time.Time (time)"
-	case serialization.TypeTimeArray:
-		return "[]time.Time (time)"
 	case serialization.TypeDate:
-		return "time.Time (date)"
+		return "types.LocalDate"
 	case serialization.TypeDateArray:
-		return "[]time.Time (date)"
+		return "[]types.LocalDate"
+	case serialization.TypeTime:
+		return "types.LocalTime"
+	case serialization.TypeTimeArray:
+		return "[]types.LocalTime"
 	case serialization.TypeTimestamp:
-		return "time.Time (timestamp)"
+		return "types.LocalDateTime"
 	case serialization.TypeTimestampArray:
-		return "[]time.Time (timestamp)"
+		return "[]types.LocalDateTime"
 	case serialization.TypeTimestampWithTimezone:
-		return "time.Time (timestamp with timezone)"
+		return "types.OffsetDateTime"
 	case serialization.TypeTimestampWithTimezoneArray:
-		return "[]time.Time (timestamp with timezone)"
+		return "[]types.OffsetDateTime"
 	}
 	return "UNKNOWN"
 }
@@ -346,66 +347,70 @@ func (pr *DefaultPortableReader) GetRawDataInput() serialization.DataInput {
 	return pr.input
 }
 
-func (pr *DefaultPortableReader) ReadDate(fieldName string) (t *time.Time) {
+func (pr *DefaultPortableReader) ReadDate(fieldName string) (t *types.LocalDate) {
 	pr.readNullable(fieldName, serialization.TypeDate, func() {
 		v := ReadPortableDate(pr.input)
-		t = &v
+		t = (*types.LocalDate)(&v)
 	})
 	return
 }
 
-func (pr *DefaultPortableReader) ReadTime(fieldName string) (t *time.Time) {
+func (pr *DefaultPortableReader) ReadTime(fieldName string) (t *types.LocalTime) {
 	pr.readNullable(fieldName, serialization.TypeTime, func() {
 		v := ReadPortableTime(pr.input)
-		t = &v
+		t = (*types.LocalTime)(&v)
 	})
 	return
 }
 
-func (pr *DefaultPortableReader) ReadTimestamp(fieldName string) (t *time.Time) {
+func (pr *DefaultPortableReader) ReadTimestamp(fieldName string) (t *types.LocalDateTime) {
 	pr.readNullable(fieldName, serialization.TypeTimestamp, func() {
 		v := ReadPortableTimestamp(pr.input)
-		t = &v
+		t = (*types.LocalDateTime)(&v)
 	})
 	return
 }
 
-func (pr *DefaultPortableReader) ReadTimestampWithTimezone(fieldName string) (t *time.Time) {
+func (pr *DefaultPortableReader) ReadTimestampWithTimezone(fieldName string) (t *types.OffsetDateTime) {
 	pr.readNullable(fieldName, serialization.TypeTimestampWithTimezone, func() {
 		v := ReadPortableTimestampWithTimezone(pr.input)
-		t = &v
+		t = (*types.OffsetDateTime)(&v)
 	})
 	return
 }
 
-func (pr *DefaultPortableReader) ReadDateArray(fieldName string) (t []time.Time) {
+func (pr *DefaultPortableReader) ReadDateArray(fieldName string) (t []types.LocalDate) {
 	pos := pr.positionByField(fieldName, serialization.TypeDateArray)
 	pr.runAtPosition(pos, func() {
-		t = readArrayOfTime(pr.input, ReadPortableDate)
+		v := readArrayOfTime(pr.input, ReadPortableDate)
+		t = *(*[]types.LocalDate)(unsafe.Pointer(&v))
 	})
 	return
 }
 
-func (pr *DefaultPortableReader) ReadTimeArray(fieldName string) (t []time.Time) {
+func (pr *DefaultPortableReader) ReadTimeArray(fieldName string) (t []types.LocalTime) {
 	pos := pr.positionByField(fieldName, serialization.TypeTimeArray)
 	pr.runAtPosition(pos, func() {
-		t = readArrayOfTime(pr.input, ReadPortableTime)
+		v := readArrayOfTime(pr.input, ReadPortableTime)
+		t = *(*[]types.LocalTime)(unsafe.Pointer(&v))
 	})
 	return
 }
 
-func (pr *DefaultPortableReader) ReadTimestampArray(fieldName string) (t []time.Time) {
+func (pr *DefaultPortableReader) ReadTimestampArray(fieldName string) (t []types.LocalDateTime) {
 	pos := pr.positionByField(fieldName, serialization.TypeTimestampArray)
 	pr.runAtPosition(pos, func() {
-		t = readArrayOfTime(pr.input, ReadPortableTimestamp)
+		v := readArrayOfTime(pr.input, ReadPortableTimestamp)
+		t = *(*[]types.LocalDateTime)(unsafe.Pointer(&v))
 	})
 	return
 }
 
-func (pr *DefaultPortableReader) ReadTimestampWithTimezoneArray(fieldName string) (t []time.Time) {
+func (pr *DefaultPortableReader) ReadTimestampWithTimezoneArray(fieldName string) (t []types.OffsetDateTime) {
 	pos := pr.positionByField(fieldName, serialization.TypeTimestampWithTimezoneArray)
 	pr.runAtPosition(pos, func() {
-		t = readArrayOfTime(pr.input, ReadPortableTimestampWithTimezone)
+		v := readArrayOfTime(pr.input, ReadPortableTimestampWithTimezone)
+		t = *(*[]types.OffsetDateTime)(unsafe.Pointer(&v))
 	})
 	return
 }

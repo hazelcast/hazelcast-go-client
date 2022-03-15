@@ -91,6 +91,10 @@ func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 	return ci.client.ic.InvocationHandler
 }
 
+func (ci *ClientInternal) ClusterID() types.UUID {
+	return ci.client.ic.ConnectionManager.ClusterID()
+}
+
 func (ci *ClientInternal) EncodeData(obj interface{}) (Data, error) {
 	return ci.proxy.convertToData(obj)
 }

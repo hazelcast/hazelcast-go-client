@@ -460,8 +460,8 @@ func TestEntryListUUIDLongCodec_Encode(t *testing.T) {
 
 	// then
 	frame := pairs[0]
-	assert.Equal(t, frame.Key().(types.UUID).String(), key.String())
-	assert.Equal(t, frame.Value().(int64), value)
+	assert.Equal(t, frame.Key.(types.UUID).String(), key.String())
+	assert.Equal(t, frame.Value.(int64), value)
 }
 
 func TestListUUIDCodec_Encode(t *testing.T) {
@@ -586,8 +586,8 @@ func TestEntryListUUIDListIntegerCodec_Decode(t *testing.T) {
 
 	// then
 	assert.Equal(t, len(result), 1)
-	assert.Equal(t, result[0].Key().([]types.UUID)[0].String(), key.String())
-	assert.EqualValues(t, result[0].Value().([]int32), value)
+	assert.Equal(t, result[0].Key.([]types.UUID)[0].String(), key.String())
+	assert.EqualValues(t, result[0].Value.([]int32), value)
 }
 
 func TestLongArrayCodec_Encode(t *testing.T) {
