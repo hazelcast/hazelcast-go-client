@@ -28,37 +28,21 @@ const (
 	heapDataOverhead = 8
 )
 
-type Data struct {
-	Payload []byte
-}
+type Data []byte
 
 func (d Data) ToByteArray() []byte {
-	return d.Payload
-}
-
-// NewData returns serialization Data with the given payload.
-// Ownership of Payload is transferred, so it mustn't be used after passed to NewData
-func NewData(payload []byte) *Data {
-	return &Data{payload}
-}
-
-func (d Data) Buffer() []byte {
-	return d.Payload
+	return d
 }
 
 func (d Data) Type() int32 {
-	if d.TotalSize() == 0 {
+	if d == nil {
 		return TypeNil
 	}
-	return int32(binary.BigEndian.Uint32(d.Payload[typeOffset:]))
-}
-
-func (d Data) TotalSize() int {
-	return len(d.Payload)
+	return int32(binary.BigEndian.Uint32(d[typeOffset:]))
 }
 
 func (d Data) DataSize() int {
-	v := d.TotalSize() - heapDataOverhead
+	v := len(d) - heapDataOverhead
 	if v <= 0 {
 		return 0
 	}
@@ -66,5 +50,5 @@ func (d Data) DataSize() int {
 }
 
 func (d Data) PartitionHash() int32 {
-	return murmur.Default3A(d.Payload, DataOffset, d.DataSize())
+	return murmur.Default3A(d, DataOffset, d.DataSize())
 }

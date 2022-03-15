@@ -1096,26 +1096,26 @@ func (m *Map) tryLock(ctx context.Context, key interface{}, lease int64, timeout
 }
 
 func (m *Map) makeListenerRequest(keyData, predicateData serialization.Data, flags int32, includeValue bool) *proto.ClientMessage {
-	if keyData.Payload != nil {
-		if predicateData.Payload != nil {
+	if keyData != nil {
+		if predicateData != nil {
 			return codec.EncodeMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, includeValue, flags, m.smart)
 		}
 		return codec.EncodeMapAddEntryListenerToKeyRequest(m.name, keyData, includeValue, flags, m.smart)
 	}
-	if predicateData.Payload != nil {
+	if predicateData != nil {
 		return codec.EncodeMapAddEntryListenerWithPredicateRequest(m.name, predicateData, includeValue, flags, m.smart)
 	}
 	return codec.EncodeMapAddEntryListenerRequest(m.name, includeValue, flags, m.smart)
 }
 
 func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData serialization.Data, handler entryNotifiedHandler) {
-	if keyData.Payload != nil {
-		if predicateData.Payload != nil {
+	if keyData != nil {
+		if predicateData != nil {
 			codec.HandleMapAddEntryListenerToKeyWithPredicate(msg, handler)
 		} else {
 			codec.HandleMapAddEntryListenerToKey(msg, handler)
 		}
-	} else if predicateData.Payload != nil {
+	} else if predicateData != nil {
 		codec.HandleMapAddEntryListenerWithPredicate(msg, handler)
 	} else {
 		codec.HandleMapAddEntryListener(msg, handler)

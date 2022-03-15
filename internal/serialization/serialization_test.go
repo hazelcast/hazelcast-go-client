@@ -313,7 +313,7 @@ func TestIntSerializer(t *testing.T) {
 }
 
 func TestSerializeData(t *testing.T) {
-	data := iserialization.Data{Payload: []byte{10, 20, 0, 30, 5, 7, 6}}
+	data := iserialization.Data([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := &serialization.Config{}
 	service := mustSerializationService(iserialization.NewService(config))
 	serializedData, err := service.ToData(data)
@@ -346,7 +346,7 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
 	dataOutput.WriteString("Furkan")
-	data := iserialization.Data{dataOutput.ToBuffer()}
+	data := iserialization.Data(dataOutput.ToBuffer())
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")
 }

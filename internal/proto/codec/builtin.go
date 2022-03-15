@@ -82,7 +82,7 @@ func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessag
 }
 
 func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data iserialization.Data) {
-	if data.Payload == nil {
+	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
 		EncodeData(message, data)
@@ -91,7 +91,7 @@ func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data iseria
 
 func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if c.NextFrameIsNullFrame(frameIterator) {
-		return iserialization.Data{}
+		return nil
 	}
 	return DecodeData(frameIterator)
 }
@@ -157,7 +157,7 @@ func EncodeData(message *proto.ClientMessage, value interface{}) {
 }
 
 func EncodeNullableData(message *proto.ClientMessage, data iserialization.Data) {
-	if data.Payload == nil {
+	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
 		message.AddFrame(proto.NewFrame(data.ToByteArray()))
@@ -165,12 +165,12 @@ func EncodeNullableData(message *proto.ClientMessage, data iserialization.Data) 
 }
 
 func DecodeData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
-	return iserialization.Data{Payload: frameIterator.Next().Content}
+	return frameIterator.Next().Content
 }
 
 func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
-		return iserialization.Data{}
+		return nil
 	}
 	return DecodeData(frameIterator)
 }
@@ -584,7 +584,7 @@ func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, valu
 func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
-		if values[i].Payload == nil {
+		if values[i] == nil {
 			message.AddFrame(proto.NullFrame)
 		} else {
 			encoder(message, values[i])

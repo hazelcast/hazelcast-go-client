@@ -80,7 +80,7 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
 	serializer.Write(dataOutput, object)
-	return Data{dataOutput.buffer[:dataOutput.position]}, err
+	return dataOutput.buffer[:dataOutput.position], err
 }
 
 // ToObject deserializes the given Data to an object.
@@ -92,7 +92,7 @@ func (s *Service) ToObject(data Data) (r interface{}, err error) {
 		}
 	}()
 	var ok bool
-	if data.Payload == nil {
+	if data == nil {
 		return nil, nil
 	}
 	typeID := data.Type()
@@ -103,7 +103,7 @@ func (s *Service) ToObject(data Data) (r interface{}, err error) {
 			return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 		}
 	}
-	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, !s.SerializationConfig.LittleEndian)
+	dataInput := NewObjectDataInput(data, DataOffset, s, !s.SerializationConfig.LittleEndian)
 	return serializer.Read(dataInput), nil
 }
 
