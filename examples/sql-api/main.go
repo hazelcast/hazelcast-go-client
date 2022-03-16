@@ -22,6 +22,7 @@ import (
 	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
@@ -42,6 +43,7 @@ func main() {
 			)
 		`)
 	sqlService := c.GetSQL()
+	var _ isql.Result
 	result, err := sqlService.Execute(ctx, stmt)
 	handleErr(err)
 	fmt.Println(result.IsRowSet())
@@ -68,6 +70,7 @@ func main() {
 		mapValue := tmp.(string)
 		fmt.Println(mapKey, mapValue)
 	}
+	handleErr(result.Err())
 }
 
 func handleErr(err error) {

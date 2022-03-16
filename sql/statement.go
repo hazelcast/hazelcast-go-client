@@ -31,7 +31,7 @@ Changes to fields do not affect the behavior of already running statements.
 */
 type Statement struct {
 	SQL              string
-	Args             []interface{}
+	Params           []interface{}
 	cursorBufferSize int32
 	timeout          int64
 	schema           string
@@ -43,7 +43,7 @@ type Statement struct {
 func NewStatement(statement string, params ...interface{}) Statement {
 	return Statement{
 		SQL:              statement,
-		Args:             params,
+		Params:           params,
 		cursorBufferSize: idriver.DefaultCursorBufferSize,
 		timeout:          idriver.DefaultTimeoutMillis,
 		schema:           idriver.DefaultSchema,

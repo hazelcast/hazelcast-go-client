@@ -48,7 +48,7 @@ func (s Service) Execute(ctx context.Context, stmt hzsql.Statement) (Result, err
 		return Result{}, nil
 	}
 	var sqlParams []driver.Value
-	for _, p := range stmt.Args {
+	for _, p := range stmt.Params {
 		sqlParams = append(sqlParams, p)
 	}
 	resp, err := s.iService.Execute(ctx, stmt.SQL, sqlParams)
@@ -65,6 +65,13 @@ func (s Service) Execute(ctx context.Context, stmt hzsql.Statement) (Result, err
 		// todo return err
 	}
 	return result, nil
+}
+
+// ExecuteQuery is a convenient method to execute a distributed query with the given parameter
+// values. You may define parameter placeholders in the query with the "?" character.
+// For every placeholder, a value must be provided.
+func (s Service) ExecuteQuery(ctx context.Context, query string, params ...interface{}) (Result, error) {
+	return s.Execute(ctx, hzsql.NewStatement(query, params...))
 }
 
 func updateContextWithOptions(ctx context.Context, opts hzsql.Statement) (context.Context, error) {
