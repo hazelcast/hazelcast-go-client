@@ -155,27 +155,26 @@ func TestClusterMemberEventWhenClusterRestart(t *testing.T) {
 	testClusterMemberEventWhenClusterRestart(t, tcConfig, 55701)
 }
 
-type clientType struct {
+type SpyCluster struct {
 	memberAdded   *sync.WaitGroup
 	memberRemoved *sync.WaitGroup
 	timeout       time.Duration
 }
 
-// initial membership listener is absent
+func newSpyCluster(timeout time.Duration) *SpyCluster {
+	return &SpyCluster{
+		&sync.WaitGroup{},
+		&sync.WaitGroup{},
+		timeout,
+	}
+}
+
 func testClusterMemberEventWhenClusterRestart(t *testing.T, tcConfig string, port int) {
-	// port in config should be equivalent to with given port as a parameter
+	// port denoted in config should be equivalent to with given port as a parameter
 	tc := it.StartNewClusterWithConfig(it.MemberCount(), tcConfig, port)
-	unisocket := clientType{
-		&sync.WaitGroup{},
-		&sync.WaitGroup{},
-		time.Second * 6,
-	}
-	smart := clientType{
-		&sync.WaitGroup{},
-		&sync.WaitGroup{},
-		time.Second * 6,
-	}
-	setWgForRemovedAndAddedMemberEvent := func(c clientType) {
+	unisocket := newSpyCluster(6 * time.Second)
+	smart := newSpyCluster(6 * time.Second)
+	setWgForRemovedAndAddedMemberEvent := func(c *SpyCluster) {
 		c.memberAdded.Add(1)
 		c.memberRemoved.Add(1)
 	}
