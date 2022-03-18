@@ -222,3 +222,55 @@ func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorCo
 func makeProxyName(serviceName string, objectName string) string {
 	return fmt.Sprintf("%s%s", serviceName, objectName)
 }
+
+func destroyProxies(ctx context.Context, proxyArgs ...interface{}) error {
+	if proxyArgs == nil {
+		return fmt.Errorf("given proxy argument is nil")
+	}
+	destroy := func(p interface{}, i int, dsName string) error {
+		err := p.(*proxy).Destroy(ctx)
+		if err != nil {
+			return fmt.Errorf("given %s proxy cannot be destroyed, last index: %d, %w", dsName, i, err)
+		}
+		return nil
+	}
+	// Don't forget to remove listeners.
+	for i, p := range proxyArgs {
+		if p == nil {
+			return fmt.Errorf("given %d. proxy argument is nil", i)
+		}
+		switch ds := p.(type) {
+		case *Map:
+			return destroy(ds, i, "map")
+		case *ReplicatedMap:
+			return destroy(ds, i, "replicatedMap")
+		case *MultiMap:
+			return destroy(ds, i, "multiMap")
+		case *Queue:
+			return destroy(ds, i, "queue")
+		case *Topic:
+			return destroy(ds, i, "topic")
+		case *List:
+			return destroy(ds, i, "list")
+		case *PNCounter:
+			return destroy(ds, i, "pnCounter")
+		case *Set:
+			return destroy(ds, i, "set")
+		case *FlakeIDGenerator:
+			return destroy(ds, i, "flakeIDGenerator")
+		default:
+			return fmt.Errorf("proyx %v does not belong to any registered data structure", ds)
+		}
+	}
+	return nil
+}
+
+func (m *proxyManager) destroy(ctx context.Context) error {
+	for key, proxy := range m.proxies {
+		err := destroyProxies(ctx, proxy)
+		if err != nil {
+			return fmt.Errorf("proxy named with %s key cannot be destroyed, %w", key, err)
+		}
+	}
+	return nil
+}

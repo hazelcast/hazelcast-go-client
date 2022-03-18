@@ -196,6 +196,10 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 
 // Shutdown disconnects the client from the cluster and frees resources allocated by the client.
 func (c *Client) Shutdown(ctx context.Context) error {
+	err := c.proxyManager.destroy(ctx)
+	if err != nil {
+		return err
+	}
 	return c.ic.Shutdown(ctx)
 }
 
