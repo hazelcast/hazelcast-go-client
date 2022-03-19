@@ -22,6 +22,7 @@ package hazelcast_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -29,11 +30,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // Tests that require the hazelcastinternal tag.
@@ -174,4 +177,58 @@ func TestProxyManagerShutdown(t *testing.T) {
 		t.Fatalf("cannot shutdown properly, err: %q", err)
 	}
 	assert.EqualValues(t, len(proxies), 0)
+}
+
+func TestClusterID(t *testing.T) {
+	it.SkipIf(t, "oss")
+	clientTester(t, func(t *testing.T, smart bool) {
+		ctx := context.Background()
+		cls1 := it.StartNewClusterWithOptions("clusterId-test-cluster1", 15701, it.MemberCount())
+		cls2 := it.StartNewClusterWithOptions("clusterId-test-cluster2", 16701, it.MemberCount())
+		defer func() {
+			cls2.Shutdown()
+			cls1.Shutdown()
+		}()
+		var wg sync.WaitGroup
+		wg.Add(1)
+		config1 := cls1.DefaultConfig()
+		config1.Cluster.ConnectionStrategy.Timeout = types.Duration(5 * time.Second)
+		config2 := cls2.DefaultConfig()
+		config := hz.Config{
+			Failover: cluster.FailoverConfig{
+				Enabled:  true,
+				TryCount: 5,
+			},
+		}
+		config.Failover.SetConfigs(config1.Cluster, config2.Cluster)
+		config.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			if event.State == hz.LifecycleStateChangedCluster {
+				wg.Done()
+			}
+		})
+		c := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		defer func(ctx context.Context, c *hz.Client) {
+			err := c.Shutdown(ctx)
+			if err != nil {
+				t.Error("client should had shutdown properly")
+			}
+		}(ctx, c)
+		ci := hz.NewClientInternal(c)
+		prevClusterId := ci.ClusterID()
+		cls1.Shutdown()
+		assert.Equal(t, ci.ClusterID(), types.UUID{})
+		wg.Wait()
+		it.Eventually(t, func() bool {
+			if !c.Running() {
+				return false
+			}
+			currClusterId := ci.ClusterID()
+			switch currClusterId {
+			case types.UUID{}, prevClusterId:
+				return false
+			default:
+				return true
+			}
+		})
+	})
 }

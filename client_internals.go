@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type ClientInternal struct {
@@ -51,4 +52,8 @@ func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 
 func (ci *ClientInternal) ProxyManagerProxies() map[string]interface{} {
 	return ci.client.proxyManager.proxies
+}
+
+func (ci *ClientInternal) ClusterID() types.UUID {
+	return ci.client.ic.ConnectionManager.ClusterID()
 }
