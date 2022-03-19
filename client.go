@@ -196,10 +196,6 @@ func (c *Client) GetDistributedObjectsInfo(ctx context.Context) ([]types.Distrib
 
 // Shutdown disconnects the client from the cluster and frees resources allocated by the client.
 func (c *Client) Shutdown(ctx context.Context) error {
-	err := c.proxyManager.destroy(ctx)
-	if err != nil {
-		return err
-	}
 	return c.ic.Shutdown(ctx)
 }
 
@@ -489,6 +485,10 @@ func (c *Client) createComponents(config *Config) {
 	}
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.db = sql.OpenDB(idriver.NewConnectorWithClient(c.ic, true))
+	// create and assign shutdown handlers to be executed in internal shutdown
+	shutdownHandlers := make(map[client.ShutdownHandlerType]func(ctx context.Context) error)
+	shutdownHandlers[client.ProxyShutdownHandler] = c.proxyManager.destroy
+	c.ic.ShutdownHandlers = shutdownHandlers
 }
 
 // SQLOptions are server-side query options.

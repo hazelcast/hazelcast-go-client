@@ -48,3 +48,7 @@ func (ci *ClientInternal) InvocationService() *invocation.Service {
 func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 	return ci.client.ic.InvocationHandler
 }
+
+func (ci *ClientInternal) ProxyManagerProxies() map[string]interface{} {
+	return ci.client.proxyManager.proxies
+}

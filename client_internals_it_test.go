@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -148,4 +150,28 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 		return 1, nil
 	}
 	return h.Handler.Invoke(inv)
+}
+
+func TestProxyManagerShutdown(t *testing.T) {
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClient(ctx))
+	m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
+	q := it.MustValue(client.GetQueue(ctx, it.NewUniqueObjectName("queue"))).(*hz.Queue)
+	value := "dummy-value"
+	key := "dummy-key"
+	_, err := m.Put(ctx, key, value)
+	if err != nil {
+		t.Fatalf("cannot put an entry, err: %q", err)
+	}
+	err = q.Put(ctx, value)
+	if err != nil {
+		t.Fatalf("cannot put an entry, err: %q", err)
+	}
+	ci := hz.NewClientInternal(client)
+	proxies := ci.ProxyManagerProxies()
+	assert.EqualValues(t, len(proxies), 2)
+	if err := client.Shutdown(ctx); err != nil {
+		t.Fatalf("cannot shutdown properly, err: %q", err)
+	}
+	assert.EqualValues(t, len(proxies), 0)
 }

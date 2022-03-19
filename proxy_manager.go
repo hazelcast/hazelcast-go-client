@@ -227,39 +227,52 @@ func destroyProxies(ctx context.Context, proxyArgs ...interface{}) error {
 	if proxyArgs == nil {
 		return fmt.Errorf("given proxy argument is nil")
 	}
-	destroy := func(p interface{}, i int, dsName string) error {
-		err := p.(*proxy).Destroy(ctx)
-		if err != nil {
-			return fmt.Errorf("given %s proxy cannot be destroyed, last index: %d, %w", dsName, i, err)
-		}
-		return nil
+	errHandler := func(dsName string, i int, err error) error {
+		return fmt.Errorf("given %s proxy cannot be destroyed, last index: %d, %w", dsName, i, err)
 	}
-	// Don't forget to remove listeners.
 	for i, p := range proxyArgs {
 		if p == nil {
 			return fmt.Errorf("given %d. proxy argument is nil", i)
 		}
 		switch ds := p.(type) {
 		case *Map:
-			return destroy(ds, i, "map")
+			if err := p.(*Map).Destroy(ctx); err != nil {
+				return errHandler("Map", i, err)
+			}
 		case *ReplicatedMap:
-			return destroy(ds, i, "replicatedMap")
+			if err := p.(*ReplicatedMap).Destroy(ctx); err != nil {
+				return errHandler("ReplicatedMap", i, err)
+			}
 		case *MultiMap:
-			return destroy(ds, i, "multiMap")
+			if err := p.(*MultiMap).Destroy(ctx); err != nil {
+				return errHandler("MultiMap", i, err)
+			}
 		case *Queue:
-			return destroy(ds, i, "queue")
+			if err := p.(*Queue).Destroy(ctx); err != nil {
+				return errHandler("Queue", i, err)
+			}
 		case *Topic:
-			return destroy(ds, i, "topic")
+			if err := p.(*Topic).Destroy(ctx); err != nil {
+				return errHandler("Topic", i, err)
+			}
 		case *List:
-			return destroy(ds, i, "list")
+			if err := p.(*List).Destroy(ctx); err != nil {
+				return errHandler("List", i, err)
+			}
 		case *PNCounter:
-			return destroy(ds, i, "pnCounter")
+			if err := p.(*PNCounter).Destroy(ctx); err != nil {
+				return errHandler("PNCounter", i, err)
+			}
 		case *Set:
-			return destroy(ds, i, "set")
+			if err := p.(*Set).Destroy(ctx); err != nil {
+				return errHandler("Set", i, err)
+			}
 		case *FlakeIDGenerator:
-			return destroy(ds, i, "flakeIDGenerator")
+			if err := p.(*FlakeIDGenerator).Destroy(ctx); err != nil {
+				return errHandler("FlakeIDGenerator", i, err)
+			}
 		default:
-			return fmt.Errorf("proyx %v does not belong to any registered data structure", ds)
+			return fmt.Errorf("proyx %v does not belong to any data structure", ds)
 		}
 	}
 	return nil
