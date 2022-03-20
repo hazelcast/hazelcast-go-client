@@ -156,27 +156,29 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 }
 
 func TestProxyManagerShutdown(t *testing.T) {
-	ctx := context.Background()
-	client := it.MustClient(hz.StartNewClient(ctx))
-	m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
-	q := it.MustValue(client.GetQueue(ctx, it.NewUniqueObjectName("queue"))).(*hz.Queue)
-	value := "dummy-value"
-	key := "dummy-key"
-	_, err := m.Put(ctx, key, value)
-	if err != nil {
-		t.Fatalf("cannot put an entry, err: %q", err)
-	}
-	err = q.Put(ctx, value)
-	if err != nil {
-		t.Fatalf("cannot put an entry, err: %q", err)
-	}
-	ci := hz.NewClientInternal(client)
-	proxies := ci.ProxyManagerProxies()
-	assert.EqualValues(t, len(proxies), 2)
-	if err := client.Shutdown(ctx); err != nil {
-		t.Fatalf("cannot shutdown properly, err: %q", err)
-	}
-	assert.EqualValues(t, len(proxies), 0)
+	clientTester(t, func(t *testing.T, b bool) {
+		ctx := context.Background()
+		client := it.MustClient(hz.StartNewClient(ctx))
+		m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
+		q := it.MustValue(client.GetQueue(ctx, it.NewUniqueObjectName("queue"))).(*hz.Queue)
+		value := "dummy-value"
+		key := "dummy-key"
+		_, err := m.Put(ctx, key, value)
+		if err != nil {
+			t.Fatalf("cannot put an entry, err: %q", err)
+		}
+		err = q.Put(ctx, value)
+		if err != nil {
+			t.Fatalf("cannot put an entry, err: %q", err)
+		}
+		ci := hz.NewClientInternal(client)
+		proxies := ci.ProxyManagerProxies()
+		assert.EqualValues(t, len(proxies), 2)
+		if err := client.Shutdown(ctx); err != nil {
+			t.Fatalf("cannot shutdown properly, err: %q", err)
+		}
+		assert.EqualValues(t, len(proxies), 0)
+	})
 }
 
 func TestClusterID(t *testing.T) {
