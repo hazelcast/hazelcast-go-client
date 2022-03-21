@@ -16,6 +16,7 @@
 
 package sql
 
+// ExpectedResultType represents the expected statement result type.
 type ExpectedResultType byte
 
 const (

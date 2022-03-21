@@ -19,6 +19,7 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -54,7 +55,7 @@ func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) types.Co
 
 	return types.ColumnMetadata{
 		Name:     name,
-		Type:     types.ColumnType(_type),
+		Type:     sql.ColumnType(_type),
 		Nullable: nullable,
 	}
 }

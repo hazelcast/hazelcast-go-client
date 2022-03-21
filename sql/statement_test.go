@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package hazelcast
+package sql
 
 import (
 	"math"
@@ -29,18 +29,18 @@ import (
 
 type cursorBufferSizeTestCase struct {
 	Value     int
-	Target    *int32
+	Target    int32
 	ErrString string
 }
 
-func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
+func TestStatement_SetCursorBufferSize(t *testing.T) {
 	v0 := int32(0)
 	v1 := int32(1)
 	v4096 := int32(4096)
 	testCases := []cursorBufferSizeTestCase{
-		{Value: 0, Target: &v0},
-		{Value: 1, Target: &v1},
-		{Value: 4096, Target: &v4096},
+		{Value: 0, Target: v0},
+		{Value: 1, Target: v1},
+		{Value: 4096, Target: v4096},
 		{Value: -1, ErrString: "setting cursor buffer size: non-negative integer number expected: -1: illegal argument error"},
 	}
 	if !runtime.Is32BitArch() {
@@ -53,9 +53,8 @@ func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(strconv.Itoa(tc.Value), func(t *testing.T) {
-			opts := SQLOptions{}
-			opts.SetCursorBufferSize(tc.Value)
-			err := opts.validate()
+			var stmt Statement
+			err := stmt.SetCursorBufferSize(tc.Value)
 			if tc.ErrString != "" {
 				assert.Equal(t, tc.ErrString, err.Error())
 				return
@@ -63,12 +62,12 @@ func TestSQLOptions_SetCursorBufferSize(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, tc.Target, opts.cursorBufferSize)
+			assert.Equal(t, tc.Target, stmt.CursorBufferSize())
 		})
 	}
 }
 
-func TestSQLOptions_SetQueryTimeout(t *testing.T) {
+func TestStatement_SetQueryTimeout(t *testing.T) {
 	v := int64(0)
 	v1 := int64(-1)
 	v5000 := int64(5000)
@@ -83,17 +82,14 @@ func TestSQLOptions_SetQueryTimeout(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.V.String(), func(t *testing.T) {
-			opts := SQLOptions{}
-			if err := opts.validate(); err != nil {
-				t.Fatal(err)
-			}
-			opts.SetQueryTimeout(tc.V)
-			assert.Equal(t, tc.T, opts.timeout)
+			var stmt Statement
+			stmt.SetQueryTimeout(tc.V)
+			assert.Equal(t, tc.T, stmt.QueryTimeout())
 		})
 	}
 }
 
-func TestSQLOptions_SetSchema(t *testing.T) {
+func TestStatement_SetSchema(t *testing.T) {
 	blank := ""
 	foo := "foo"
 	testCases := []struct {
@@ -105,12 +101,21 @@ func TestSQLOptions_SetSchema(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.V, func(t *testing.T) {
-			opts := SQLOptions{}
-			if err := opts.validate(); err != nil {
-				t.Fatal(err)
-			}
-			opts.SetSchema(tc.V)
-			assert.Equal(t, tc.T, opts.schema)
+			var stmt Statement
+			stmt.SetSchema(tc.V)
+			assert.Equal(t, tc.T, stmt.Schema())
 		})
 	}
+}
+
+func TestStatement_DefaultValues(t *testing.T) {
+	testParams := []interface{}{123, "test", []float32{12.012, 123.123}}
+	testStatement := "sql test statement"
+	stmt := NewStatement(testStatement, testParams...)
+	assert.Equal(t, int64(-1), stmt.QueryTimeout())
+	assert.Equal(t, ANY_RESULT, stmt.ExpectedResultType())
+	assert.Equal(t, int32(4096), stmt.CursorBufferSize())
+	assert.Equal(t, "", stmt.schema)
+	assert.Equal(t, testStatement, stmt.SQL)
+	assert.Equal(t, testParams, stmt.Params)
 }

@@ -17,24 +17,34 @@
 package sql
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+)
+
+const (
+	// duplication of constants from internal driver package.
+	// todo make sure they are same with the originals with tests.
+	defaultCursorBufferSize int32 = 4096
+	defaultTimeoutMillis    int64 = -1
+	defaultSchema                 = ""
 )
 
 /*
-Statement represents an SQL Statement.
+Statement represents an SQL Statement. Use NewStatement to benefit
+from the default settings.
 Fields are read once before the execution is started.
 Changes to fields do not affect the behavior of already running statements.
 */
 type Statement struct {
-	SQL              string
-	Params           []interface{}
-	cursorBufferSize int32
-	timeout          int64
-	schema           string
+	SQL                string
+	Params             []interface{}
+	cursorBufferSize   int32
+	timeout            int64
+	schema             string
+	expectedResultType ExpectedResultType
 }
 
 // NewStatement returns a new sql Statement with provided arguments
@@ -42,11 +52,12 @@ type Statement struct {
 // value must be provided in 'params'
 func NewStatement(statement string, params ...interface{}) Statement {
 	return Statement{
-		SQL:              statement,
-		Params:           params,
-		cursorBufferSize: idriver.DefaultCursorBufferSize,
-		timeout:          idriver.DefaultTimeoutMillis,
-		schema:           idriver.DefaultSchema,
+		SQL:                statement,
+		Params:             params,
+		cursorBufferSize:   defaultCursorBufferSize,
+		timeout:            defaultTimeoutMillis,
+		schema:             defaultSchema,
+		expectedResultType: ANY_RESULT,
 	}
 }
 
@@ -97,14 +108,36 @@ func (s *Statement) SetSchema(schema string) {
 	s.schema = schema
 }
 
+// SetExpectedResultType sets the expected result type, returns error if
+// parameter is not one of ANY_RESULT, ROWS_RESULT or UPDATE_COUNT_RESULT.
+func (s *Statement) SetExpectedResultType(resultType ExpectedResultType) error {
+	switch resultType {
+	case ANY_RESULT, ROWS_RESULT, UPDATE_COUNT_RESULT:
+		s.expectedResultType = resultType
+		return nil
+	default:
+		return fmt.Errorf("invalid result type parameter")
+	}
+}
+
+// CursorBufferSize returns the cursor buffer size (measured in the number of rows).
 func (s *Statement) CursorBufferSize() int32 {
 	return s.cursorBufferSize
 }
 
+// QueryTimeout returns the execution timeout in milliseconds. -1 means timeout
+// is not set and member configuration SqlConfig#setStatementTimeoutMillis will be
+// respected.
 func (s Statement) QueryTimeout() int64 {
 	return s.timeout
 }
 
+// Schema returns the schema name.
 func (s *Statement) Schema() string {
 	return s.schema
+}
+
+// ExpectedResultType returns ExpectedResultType.
+func (s *Statement) ExpectedResultType() ExpectedResultType {
+	return s.expectedResultType
 }

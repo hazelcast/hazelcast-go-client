@@ -16,10 +16,14 @@
 
 package types
 
-import "database/sql/driver"
+import (
+	"database/sql/driver"
+
+	"github.com/hazelcast/hazelcast-go-client/sql"
+)
 
 type Page struct {
-	ColumnTypes []ColumnType
+	ColumnTypes []sql.ColumnType
 	Columns     [][]driver.Value
 	Last        bool
 }

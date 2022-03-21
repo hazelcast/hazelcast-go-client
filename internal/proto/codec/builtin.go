@@ -31,6 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	types2 "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -909,13 +910,13 @@ func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization
 	last := FixSizedTypesCodec.DecodeByte(frame.Content, 0) == 1
 	// read column types
 	colTypeIDs := DecodeListInteger(it)
-	colTypes := make([]types2.ColumnType, len(colTypeIDs))
+	colTypes := make([]sql.ColumnType, len(colTypeIDs))
 	cols := make([][]driver.Value, len(colTypeIDs))
 	var err error
 	for i, t := range colTypeIDs {
-		ct := types2.ColumnType(t)
+		ct := sql.ColumnType(t)
 		colTypes[i] = ct
-		if ct == types2.ColumnTypeObject {
+		if ct == sql.ColumnTypeObject {
 			cols[i], err = DecodeListMultiFrameContainsNullableData(it, ss)
 		} else {
 			cols[i], err = DecodeSQLColumn(ct, it)
@@ -958,37 +959,37 @@ func DecodeNullableForSQLHazelcastJSON(it *proto.ForwardFrameIterator) []driver.
 	return vs
 }
 
-func DecodeSQLColumn(t types2.ColumnType, it *proto.ForwardFrameIterator) ([]driver.Value, error) {
+func DecodeSQLColumn(t sql.ColumnType, it *proto.ForwardFrameIterator) ([]driver.Value, error) {
 	switch t {
-	case types2.ColumnTypeVarchar:
+	case sql.ColumnTypeVarchar:
 		return DecodeListMultiFrameContainsNullableString(it), nil
-	case types2.ColumnTypeBoolean:
+	case sql.ColumnTypeBoolean:
 		return DecodeListCNBoolean(it), nil
-	case types2.ColumnTypeTinyInt:
+	case sql.ColumnTypeTinyInt:
 		return DecodeListCNByte(it), nil
-	case types2.ColumnTypeSmallInt:
+	case sql.ColumnTypeSmallInt:
 		return DecodeListCNShort(it), nil
-	case types2.ColumnTypeInt:
+	case sql.ColumnTypeInt:
 		return DecodeListCNInt(it), nil
-	case types2.ColumnTypeBigInt:
+	case sql.ColumnTypeBigInt:
 		return DecodeListCNLong(it), nil
-	case types2.ColumnTypeReal:
+	case sql.ColumnTypeReal:
 		return DecodeListCNFloat(it), nil
-	case types2.ColumnTypeDouble:
+	case sql.ColumnTypeDouble:
 		return DecodeListCNDouble(it), nil
-	case types2.ColumnTypeDate:
+	case sql.ColumnTypeDate:
 		return DecodeListCNDate(it), nil
-	case types2.ColumnTypeTime:
+	case sql.ColumnTypeTime:
 		return DecodeListCNTime(it), nil
-	case types2.ColumnTypeTimestamp:
+	case sql.ColumnTypeTimestamp:
 		return DecodeListCNTimestamp(it), nil
-	case types2.ColumnTypeTimestampWithTimeZone:
+	case sql.ColumnTypeTimestampWithTimeZone:
 		return DecodeListCNTimestampWithTimeZone(it), nil
-	case types2.ColumnTypeNull:
+	case sql.ColumnTypeNull:
 		return DecodeListCNNull(it), nil
-	case types2.ColumnTypeDecimal:
+	case sql.ColumnTypeDecimal:
 		return DecodeListMultiFrameContainsNullableDecimal(it), nil
-	case types2.ColumnTypeJSON:
+	case sql.ColumnTypeJSON:
 		return DecodeNullableForSQLHazelcastJSON(it), nil
 	default:
 		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("unknown type for SQL column: %d", t), nil)
