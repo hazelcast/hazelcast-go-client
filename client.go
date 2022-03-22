@@ -29,7 +29,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql"
+	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -64,7 +65,7 @@ type Client struct {
 	lifecycleListenerMap    map[types.UUID]int64
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
-	sqlService              sql.Service
+	sqlService              isql.Service
 }
 
 func newClient(config Config) (*Client, error) {
@@ -485,7 +486,7 @@ func (c *Client) createComponents(config *Config) {
 		Logger:               c.ic.Logger,
 	}
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
-	c.sqlService = sql.New(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.sqlService = isql.New(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 }
 
 //// SQLOptions are server-side query options.

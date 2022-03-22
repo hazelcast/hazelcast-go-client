@@ -16,6 +16,7 @@
 
 package sql
 
+// ColumnType SQL column type.
 type ColumnType int32
 
 const (

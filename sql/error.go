@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-package types
+package sql
 
-import "github.com/hazelcast/hazelcast-go-client/sql"
+import "github.com/hazelcast/hazelcast-go-client/types"
 
-type ColumnMetadata struct {
-	Name     string
-	Type     sql.ColumnType
-	Nullable bool
+// Error is a server-side error that is propagated to the client.
+// Can be returned from Service.Execute, Service.ExecuteQuery,
+// Result.Next().
+type Error struct {
+	Message             string
+	Suggestion          string
+	OriginatingMemberId types.UUID
+	Code                int32
 }
 
-func (c ColumnMetadata) GetName() string {
-	return c.Name
-}
-
-func (c ColumnMetadata) GetType() sql.ColumnType {
-	return c.Type
-}
-
-func (c ColumnMetadata) IsNullable() bool {
-	return c.Nullable
+func (e Error) Error() string {
+	return e.Message
 }

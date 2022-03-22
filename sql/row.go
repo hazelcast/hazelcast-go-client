@@ -14,24 +14,12 @@
  * limitations under the License.
  */
 
-package types
+package sql
 
-import "github.com/hazelcast/hazelcast-go-client/sql"
-
-type ColumnMetadata struct {
-	Name     string
-	Type     sql.ColumnType
-	Nullable bool
-}
-
-func (c ColumnMetadata) GetName() string {
-	return c.Name
-}
-
-func (c ColumnMetadata) GetType() sql.ColumnType {
-	return c.Type
-}
-
-func (c ColumnMetadata) IsNullable() bool {
-	return c.Nullable
+// RowMetadata represents SQL row metadata.
+type RowMetadata interface {
+	GetColumn(index int) (ColumnMetadata, error)
+	FindColumn(columnName string) (int, error)
+	GetColumnCount() int
+	GetColumns() []ColumnMetadata
 }

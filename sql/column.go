@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package types
+package sql
 
-import "github.com/hazelcast/hazelcast-go-client/types"
-
-type Error struct {
-	Message             string
-	Suggestion          string
-	OriginatingMemberId types.UUID
-	Code                int32
-}
-
-func (e Error) Error() string {
-	return e.Message
+// ColumnMetadata SQL column metadata.
+type ColumnMetadata interface {
+	GetName() string
+	GetType() ColumnType
+	IsNullable() bool
 }

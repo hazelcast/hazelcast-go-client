@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package types
+package sql
 
-import "github.com/hazelcast/hazelcast-go-client/sql"
+import "context"
 
-type ColumnMetadata struct {
-	Name     string
-	Type     sql.ColumnType
-	Nullable bool
-}
-
-func (c ColumnMetadata) GetName() string {
-	return c.Name
-}
-
-func (c ColumnMetadata) GetType() sql.ColumnType {
-	return c.Type
-}
-
-func (c ColumnMetadata) IsNullable() bool {
-	return c.Nullable
+type Service interface {
+	// Execute executes the given SQL statement.
+	Execute(ctx context.Context, stmt Statement) (Result, error)
+	// ExecuteQuery is a convenient method to execute a distributed query with the given parameter
+	// values. You may define parameter placeholders in the query with the "?" character.
+	// For every placeholder, a value must be provided.
+	ExecuteQuery(ctx context.Context, query string, params ...interface{}) (Result, error)
 }

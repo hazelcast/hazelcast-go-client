@@ -25,6 +25,7 @@ import (
 
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -48,8 +49,8 @@ type QueryResult struct {
 	state            int32
 }
 
-func (r *QueryResult) Metadata() types.RowMetadata {
-	return r.metadata
+func (r *QueryResult) Metadata() sql.RowMetadata {
+	return &r.metadata
 }
 
 // NewQueryResult creates a new QueryResult.
@@ -83,7 +84,7 @@ func NewQueryResult(ctx context.Context, qid types.QueryID, md types.RowMetadata
 func (r *QueryResult) Columns() []string {
 	names := make([]string, len(r.metadata.Columns))
 	for i := 0; i < len(names); i++ {
-		names[i] = r.metadata.Columns[i].Name
+		names[i] = r.metadata.Columns[i].GetName()
 	}
 	return names
 }

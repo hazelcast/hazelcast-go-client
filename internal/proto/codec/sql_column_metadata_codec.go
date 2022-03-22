@@ -28,19 +28,19 @@ const (
 	SqlColumnMetadataCodecNullableInitialFrameSize = SqlColumnMetadataCodecNullableFieldOffset + proto.BooleanSizeInBytes
 )
 
-func EncodeSqlColumnMetadata(clientMessage *proto.ClientMessage, sqlColumnMetadata types.ColumnMetadata) {
+func EncodeSqlColumnMetadata(clientMessage *proto.ClientMessage, sqlColumnMetadata sql.ColumnMetadata) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrameWith(make([]byte, SqlColumnMetadataCodecNullableInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset, int32(sqlColumnMetadata.Type))
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset, sqlColumnMetadata.Nullable)
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset, int32(sqlColumnMetadata.GetType()))
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset, sqlColumnMetadata.IsNullable())
 	clientMessage.AddFrame(initialFrame)
 
-	EncodeString(clientMessage, sqlColumnMetadata.Name)
+	EncodeString(clientMessage, sqlColumnMetadata.GetName())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) types.ColumnMetadata {
+func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) sql.ColumnMetadata {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()

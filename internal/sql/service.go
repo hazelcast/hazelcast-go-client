@@ -27,8 +27,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql/types"
-	hzsql "github.com/hazelcast/hazelcast-go-client/sql"
+	"github.com/hazelcast/hazelcast-go-client/sql"
+)
+
+var (
+	_ sql.Result  = &Result{}
+	_ sql.Row     = &Row{}
+	_ sql.Service = Service{}
 )
 
 type Service struct {
@@ -42,10 +47,10 @@ func New(cm *cluster.ConnectionManager, ss *iserialization.Service, cif *cluster
 }
 
 // Execute executes the given SQL statement.
-func (s Service) Execute(ctx context.Context, stmt hzsql.Statement) (Result, error) {
+func (s Service) Execute(ctx context.Context, stmt sql.Statement) (sql.Result, error) {
 	var err error
 	if ctx, err = updateContextWithOptions(ctx, stmt); err != nil {
-		return Result{}, nil
+		return &Result{}, nil
 	}
 	var sqlParams []driver.Value
 	for _, p := range stmt.Params {
@@ -53,7 +58,7 @@ func (s Service) Execute(ctx context.Context, stmt hzsql.Statement) (Result, err
 	}
 	resp, err := s.iService.Execute(ctx, stmt.SQL, sqlParams)
 	if err != nil {
-		return Result{}, err
+		return &Result{}, err
 	}
 	var result Result
 	switch r := resp.(type) {
@@ -64,17 +69,17 @@ func (s Service) Execute(ctx context.Context, stmt hzsql.Statement) (Result, err
 	default:
 		// todo return err
 	}
-	return result, nil
+	return &result, nil
 }
 
 // ExecuteQuery is a convenient method to execute a distributed query with the given parameter
 // values. You may define parameter placeholders in the query with the "?" character.
 // For every placeholder, a value must be provided.
-func (s Service) ExecuteQuery(ctx context.Context, query string, params ...interface{}) (Result, error) {
-	return s.Execute(ctx, hzsql.NewStatement(query, params...))
+func (s Service) ExecuteQuery(ctx context.Context, query string, params ...interface{}) (sql.Result, error) {
+	return s.Execute(ctx, sql.NewStatement(query, params...))
 }
 
-func updateContextWithOptions(ctx context.Context, opts hzsql.Statement) (context.Context, error) {
+func updateContextWithOptions(ctx context.Context, opts sql.Statement) (context.Context, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -84,7 +89,7 @@ func updateContextWithOptions(ctx context.Context, opts hzsql.Statement) (contex
 	return ctx, nil
 }
 
-// Result represents a query result. Depending on the statement type it represents a stream of rows or an update count.
+// Result implements sql.Result. Depending on the statement type it represents a stream of rows or an update count.
 type Result struct {
 	qr         *idriver.QueryResult
 	er         *idriver.ExecResult
@@ -93,16 +98,14 @@ type Result struct {
 }
 
 // RowMetadata returns metadata information about rows. An error is returned if result represents an update count.
-func (r *Result) RowMetadata() (types.RowMetadata, error) {
+func (r *Result) RowMetadata() (sql.RowMetadata, error) {
 	if r.qr == nil {
-		return types.RowMetadata{}, fmt.Errorf("result contains only update count")
+		return nil, fmt.Errorf("result contains only update count")
 	}
-	metadata := r.qr.Metadata()
-	metadata.Columns = metadata.Columns[:] // not sure if we should copy
-	return metadata, nil
+	return r.qr.Metadata(), nil
 }
 
-// IsRowSet returns whether this result has rows to iterate using the Next method.
+// IsRowSet returns whether this result has rows to iterate using the HasNext method.
 func (r *Result) IsRowSet() bool {
 	return r.UpdateCount() == -1
 }
@@ -118,32 +121,34 @@ func (r *Result) UpdateCount() int64 {
 	return r.er.UpdateCount
 }
 
-// Next prepares the next result row for reading with the Value method. It
+// HasNext prepares the next result row for reading via Next method. It
 // returns true on success, or false if there is no next result row or an error
 // happened while preparing it. Err should be consulted to distinguish between
 // the two cases.
 //
-// Every call to Value, even the first one, must be preceded by a call to Next.
-func (r *Result) Next() bool {
+// Every call to Next, even the first one, must be preceded by a call to HasNext.
+func (r *Result) HasNext() bool {
+	if r.err != nil {
+		return false
+	}
 	emptyValues := make([]driver.Value, r.qr.Len(), r.qr.Len())
 	err := r.qr.Next(emptyValues)
-	if err == nil {
-		r.currentRow = emptyValues
-		return true
+	if err == io.EOF {
+		return false
 	}
-	if err != io.EOF {
-		r.err = err
-	}
-	return false
+	r.err = err
+	r.currentRow = emptyValues
+	return true
 }
 
-// Value returns the currentRow.
-func (r *Result) Value() Row {
+// Next returns the currentRow.
+// Every call to Next, even the first one, must be preceded by a call to HasNext.
+func (r *Result) Next() (sql.Row, error) {
 	var row Row
 	m, _ := r.RowMetadata()
 	row.metadata = m
 	row.values = r.currentRow
-	return row
+	return &row, r.err
 }
 
 // Err returns the error, if any, that was encountered during iteration.
@@ -164,7 +169,7 @@ func (r *Result) Close() error {
 
 // Row represents an SQL result row.
 type Row struct {
-	metadata types.RowMetadata
+	metadata sql.RowMetadata
 	values   []driver.Value
 }
 
@@ -182,6 +187,6 @@ func (r *Row) GetFromColumn(colName string) (interface{}, error) {
 }
 
 // GetMetadata returns the metadata information about the row.
-func (r *Row) GetMetadata() types.RowMetadata {
+func (r *Row) GetMetadata() sql.RowMetadata {
 	return r.metadata
 }

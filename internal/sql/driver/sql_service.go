@@ -32,6 +32,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -110,7 +111,7 @@ func (s *SQLService) fetch(ctx context.Context, qid types.QueryID, conn *cluster
 		return nil, err
 	}
 	page, err := codec.DecodeSqlFetchResponse(resp, s.serializationService)
-	if err != (*types.Error)(nil) {
+	if err != (*sql.Error)(nil) {
 		return nil, err
 	}
 	return page, nil
@@ -143,13 +144,13 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return nil, err
 	}
 	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
-	if err != (*types.Error)(nil) {
+	if err != (*sql.Error)(nil) {
 		return nil, err
 	}
 	if updateCount >= 0 {
 		return &ExecResult{UpdateCount: updateCount}, nil
 	}
-	md := types.RowMetadata{Columns: metadata}
+	md := types.NewRowMetadata(metadata)
 	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize)
 }
 

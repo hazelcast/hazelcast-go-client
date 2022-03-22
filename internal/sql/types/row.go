@@ -16,12 +16,51 @@
 
 package types
 
+import (
+	"fmt"
+
+	"github.com/hazelcast/hazelcast-go-client/sql"
+)
+
+var ErrIndexOutOfRange = fmt.Errorf("index out of range")
+var ErrColumnNotFound = fmt.Errorf("column not found")
+
 // RowMetadata represents SQL row metadata.
 type RowMetadata struct {
-	Columns []ColumnMetadata
+	Columns     []sql.ColumnMetadata
+	NameToIndex map[string]int
 }
 
-func (r *RowMetadata) findColumn(columnName string) (int, error) {
-	// todo
-	panic("implement me")
+func (r RowMetadata) GetColumn(index int) (sql.ColumnMetadata, error) {
+	if index >= len(r.Columns) || index < 0 {
+		return nil, ErrIndexOutOfRange
+	}
+	return r.Columns[index], nil
+}
+
+func (r RowMetadata) FindColumn(columnName string) (int, error) {
+	i, ok := r.NameToIndex[columnName]
+	if !ok {
+		return i, ErrColumnNotFound
+	}
+	return i, nil
+}
+
+func (r RowMetadata) GetColumnCount() int {
+	return len(r.Columns)
+}
+
+func (r RowMetadata) GetColumns() []sql.ColumnMetadata {
+	return r.Columns
+}
+
+func NewRowMetadata(columns []sql.ColumnMetadata) RowMetadata {
+	var rm RowMetadata
+	m := make(map[string]int, len(columns))
+	for i, c := range columns {
+		m[c.GetName()] = i
+	}
+	rm.NameToIndex = m
+	rm.Columns = columns
+	return rm
 }

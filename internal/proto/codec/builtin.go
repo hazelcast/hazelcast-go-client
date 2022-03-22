@@ -700,11 +700,11 @@ func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFr
 	return result
 }
 
-func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []types2.ColumnMetadata {
+func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []sql.ColumnMetadata {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	var cm []types2.ColumnMetadata
+	var cm []sql.ColumnMetadata
 	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		cm = append(cm, DecodeSqlColumnMetadata(it))
 	})
@@ -933,7 +933,7 @@ func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization
 	}, nil
 }
 
-func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *types2.Error {
+func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *sql.Error {
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil
 	}

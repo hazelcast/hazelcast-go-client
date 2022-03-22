@@ -43,7 +43,6 @@ func main() {
 			)
 		`)
 	sqlService := c.GetSQL()
-	var _ isql.Result
 	result, err := sqlService.Execute(ctx, stmt)
 	handleErr(err)
 	fmt.Println(result.IsRowSet())
@@ -53,15 +52,20 @@ func main() {
 	handleErr(err)
 	fmt.Println(result.IsRowSet())
 	fmt.Println(result.UpdateCount())
-	err = stmt.SetCursorBufferSize(1000)
+	err = stmt.SetCursorBufferSize(1)
 	handleErr(err)
 	stmt = sql.NewStatement(`SELECT * FROM "testMap"`)
+	stmt.SetExpectedResultType(sql.ANY_RESULT)
 	result, err = sqlService.Execute(ctx, stmt)
 	handleErr(err)
 	fmt.Println(result.IsRowSet())
 	fmt.Println(result.UpdateCount())
-	for result.Next() {
-		row := result.Value()
+	for result.HasNext() {
+		row, err := result.Next()
+		if err != nil {
+			// handle error and finish iteration
+			break
+		}
 		tmp, err := row.Get(0)
 		handleErr(err)
 		mapKey := tmp.(int64)
