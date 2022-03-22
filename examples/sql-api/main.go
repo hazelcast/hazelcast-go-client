@@ -22,7 +22,6 @@ import (
 	"log"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
@@ -73,8 +72,10 @@ func main() {
 		handleErr(err)
 		mapValue := tmp.(string)
 		fmt.Println(mapKey, mapValue)
+		metadata := row.GetMetadata()
+		firstColumn := metadata.GetColumns()[0]
+		fmt.Println("Type of first column", firstColumn.GetType())
 	}
-	handleErr(result.Err())
 }
 
 func handleErr(err error) {

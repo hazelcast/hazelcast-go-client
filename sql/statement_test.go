@@ -73,12 +73,12 @@ func TestStatement_SetQueryTimeout(t *testing.T) {
 	v5000 := int64(5000)
 	testCases := []struct {
 		V time.Duration
-		T *int64
+		T int64
 	}{
-		{V: 0, T: &v},
-		{V: -1, T: &v1},
-		{V: -100, T: &v1},
-		{V: 5 * time.Second, T: &v5000},
+		{V: 0, T: v},
+		{V: -1, T: v1},
+		{V: -100, T: v1},
+		{V: 5 * time.Second, T: v5000},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.V.String(), func(t *testing.T) {
@@ -94,10 +94,10 @@ func TestStatement_SetSchema(t *testing.T) {
 	foo := "foo"
 	testCases := []struct {
 		V string
-		T *string
+		T string
 	}{
-		{V: "", T: &blank},
-		{V: "foo", T: &foo},
+		{V: "", T: blank},
+		{V: "foo", T: foo},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.V, func(t *testing.T) {
