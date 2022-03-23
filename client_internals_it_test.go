@@ -278,6 +278,24 @@ func TestClientInternal_InvokeOnMember(t *testing.T) {
 	})
 }
 
+func TestClientInternal_EncodeData(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("ci-invoke-member", 55701, 1)
+	defer tc.Shutdown()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	data, err := ci.EncodeData("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := ci.DecodeData(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, "foo", v)
+}
+
 type invokeFilter func(inv invocation.Invocation) (ok bool)
 
 type riggedInvocationHandler struct {
