@@ -46,8 +46,8 @@ type Result interface {
 type Row interface {
 	// Get returns the value of the column by index. If index is out of range, an error is returned.
 	Get(index int) (interface{}, error)
-	// GetFromColumn returns the value of the column by name. If columns does not exist, an error is returned.
-	GetFromColumn(colName string) (interface{}, error)
+	// GetByColumnName returns the value of the column by name. If columns does not exist, an error is returned.
+	GetByColumnName(colName string) (interface{}, error)
 	// GetMetadata returns the metadata information about the row.
 	GetMetadata() RowMetadata
 }

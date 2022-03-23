@@ -52,7 +52,7 @@ func createMapping(client *hazelcast.Client, mapName string) error {
             'valueFormat' = 'json-flat'
         )
 `, mapName)
-	_, err := client.ExecSQL(context.Background(), q)
+	_, err := client.GetSQL().ExecuteQuery(context.Background(), q)
 	if err != nil {
 		return fmt.Errorf("error creating mapping: %w", err)
 	}
@@ -64,7 +64,7 @@ func createMapping(client *hazelcast.Client, mapName string) error {
 func populateMap(client *hazelcast.Client, mapName string, employess []Employee) error {
 	q := fmt.Sprintf(`SINK INTO "%s"(__key, age, name) VALUES (?, ?, ?)`, mapName)
 	for i, e := range employess {
-		if _, err := client.ExecSQL(context.Background(), q, i, e.Age, e.Name); err != nil {
+		if _, err := client.GetSQL().ExecuteQuery(context.Background(), q, i, e.Age, e.Name); err != nil {
 			return fmt.Errorf("populating map: %w", err)
 		}
 	}
@@ -74,17 +74,28 @@ func populateMap(client *hazelcast.Client, mapName string, employess []Employee)
 // queryMap returns employees with the given minimum age.
 func queryMap(client *hazelcast.Client, mapName string, minAge int) ([]Employee, error) {
 	q := fmt.Sprintf(`SELECT name, age FROM "%s" WHERE age >= ?`, mapName)
-	rows, err := client.QuerySQL(context.Background(), q, minAge)
+	rows, err := client.GetSQL().ExecuteQuery(context.Background(), q, minAge)
 	if err != nil {
 		return nil, fmt.Errorf("error querying: %w", err)
 	}
 	defer rows.Close()
 	var emps []Employee
-	for rows.Next() {
+	for rows.HasNext() {
 		e := Employee{}
-		if err := rows.Scan(&e.Name, &e.Age); err != nil {
-			return nil, fmt.Errorf("error scanning: %w", err)
+		row, err := rows.Next()
+		if err != nil {
+			return nil, fmt.Errorf("error iterating rows: %w", err)
 		}
+		tmp, err := row.Get(0)
+		if err != nil {
+			return nil, fmt.Errorf("error accessing row field: %w", err)
+		}
+		e.Name = tmp.(string)
+		tmp, err = row.Get(1)
+		if err != nil {
+			return nil, fmt.Errorf("error accessing row field: %w", err)
+		}
+		e.Age = int16(tmp.(int64))
 		emps = append(emps, e)
 	}
 	return emps, nil

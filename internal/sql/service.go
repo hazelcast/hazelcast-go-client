@@ -131,7 +131,7 @@ func (r *Result) HasNext() bool {
 	if r.err != nil {
 		return false
 	}
-	emptyValues := make([]driver.Value, r.qr.Len(), r.qr.Len())
+	emptyValues := make([]driver.Value, r.qr.Len())
 	err := r.qr.Next(emptyValues)
 	if err == io.EOF {
 		return false
@@ -182,7 +182,7 @@ func (r *Row) Get(index int) (interface{}, error) {
 }
 
 // GetFromColumn returns the value of the column by name. If columns does not exist, an error is returned.
-func (r *Row) GetFromColumn(colName string) (interface{}, error) {
+func (r *Row) GetByColumnName(colName string) (interface{}, error) {
 	panic("implement me")
 }
 

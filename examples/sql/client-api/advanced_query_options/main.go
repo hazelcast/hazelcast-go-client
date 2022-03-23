@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 func main() {
@@ -31,42 +32,54 @@ func main() {
 		panic(fmt.Errorf("creating the client"))
 	}
 	defer client.Shutdown(ctx)
-	opts := hazelcast.SQLOptions{}
-	opts.SetSchema("partitioned")
-	_, err = client.ExecSQLWithOptions(ctx, `
+	stmt := sql.NewStatement(`
 			CREATE OR REPLACE MAPPING mymap
 			TYPE IMAP
 			OPTIONS (
 				'keyFormat' = 'bigint',
 				'valueFormat' = 'varchar'
 			)
-	`, opts)
+	`)
+	stmt.SetSchema("partitioned")
+	sqlService := client.GetSQL()
+	_, err = sqlService.Execute(ctx, stmt)
 	if err != nil {
 		panic(fmt.Errorf("creating the mapping: %w", err))
 	}
-	stmt, err := client.PrepareSQL(ctx, `SINK INTO mymap VALUES(?, ?)`)
-	if err != nil {
-		panic(fmt.Errorf("preparing statement: %w", err))
-	}
-	defer stmt.Close()
 	for i := 0; i < 100; i++ {
-		if _, err = stmt.ExecContext(ctx, i, fmt.Sprintf("sample string-%d", i)); err != nil {
+		if _, err = sqlService.ExecuteQuery(ctx, `SINK INTO mymap VALUES(?, ?)`,
+			i, fmt.Sprintf("sample string-%d", i)); err != nil {
 			panic(fmt.Errorf("inserting values: %w", err))
 		}
 	}
-	opts.SetQueryTimeout(5 * time.Second)
-	opts.SetCursorBufferSize(10)
-	rows, err := client.QuerySQLWithOptions(ctx, `SELECT __key, this from mymap order by __key`, opts)
+	stmt = sql.NewStatement(`SELECT __key, this from mymap order by __key`)
+	stmt.SetQueryTimeout(5 * time.Second)
+	stmt.SetCursorBufferSize(10)
+	rows, err := sqlService.Execute(ctx, stmt)
 	if err != nil {
 		panic(fmt.Errorf("querying: %w", err))
 	}
 	defer rows.Close()
-	var k int64
-	var v string
-	for rows.Next() {
-		if err := rows.Scan(&k, &v); err != nil {
-			panic(fmt.Errorf("scanning: %w", err))
+	var (
+		k   int64
+		v   string
+		tmp interface{}
+	)
+	for rows.HasNext() {
+		row, err := rows.Next()
+		if err != nil {
+			panic(fmt.Errorf("iterating rows: %w", err))
 		}
+		tmp, err = row.Get(0)
+		if err != nil {
+			panic(fmt.Errorf("accessing row: %w", err))
+		}
+		k = tmp.(int64)
+		tmp, err = row.Get(1)
+		if err != nil {
+			panic(fmt.Errorf("accessing row: %w", err))
+		}
+		v = tmp.(string)
 		fmt.Printf("--> %d: %s\n", k, v)
 	}
 }

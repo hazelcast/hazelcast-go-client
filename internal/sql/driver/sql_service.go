@@ -112,7 +112,7 @@ func (s *SQLService) fetch(ctx context.Context, qid types.QueryID, conn *cluster
 	}
 	page, err := codec.DecodeSqlFetchResponse(resp, s.serializationService)
 	if err != (*sql.Error)(nil) {
-		return nil, err
+		return nil, ihzerrors.NewSQLError("sql fetch operation failed", err)
 	}
 	return page, nil
 }
@@ -145,7 +145,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	}
 	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
 	if err != (*sql.Error)(nil) {
-		return nil, err
+		return nil, ihzerrors.NewSQLError("sql execute operation failed", err)
 	}
 	if updateCount >= 0 {
 		return &ExecResult{UpdateCount: updateCount}, nil

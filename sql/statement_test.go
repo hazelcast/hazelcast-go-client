@@ -28,9 +28,9 @@ import (
 )
 
 type cursorBufferSizeTestCase struct {
+	ErrString string
 	Value     int
 	Target    int32
-	ErrString string
 }
 
 func TestStatement_SetCursorBufferSize(t *testing.T) {

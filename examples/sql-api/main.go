@@ -33,27 +33,25 @@ func main() {
 	handleErr(err)
 	err = tm.Clear(ctx)
 	handleErr(err)
-	stmt := sql.NewStatement(`
-			CREATE OR REPLACE MAPPING "testMap"
+	sqlService := c.GetSQL()
+	result, err := sqlService.ExecuteQuery(ctx,
+		`CREATE OR REPLACE MAPPING "testMap"
 			TYPE IMAP
 			OPTIONS (
 				'keyFormat' = 'bigint',
 				'valueFormat' = 'varchar'
-			)
-		`)
-	sqlService := c.GetSQL()
-	result, err := sqlService.Execute(ctx, stmt)
+			)`)
 	handleErr(err)
 	fmt.Println(result.IsRowSet())
 	fmt.Println(result.UpdateCount())
-	stmt = sql.NewStatement(`INSERT INTO "testMap" (__key, this) VALUES (?, ?),(?, ?)`, 10, "someValue", 20, "otherValue")
-	result, err = sqlService.Execute(ctx, stmt)
+	result, err = sqlService.ExecuteQuery(ctx, `INSERT INTO "testMap" (__key, this) VALUES (?, ?),(?, ?)`,
+		10, "someValue", 20, "otherValue")
 	handleErr(err)
 	fmt.Println(result.IsRowSet())
 	fmt.Println(result.UpdateCount())
+	stmt := sql.NewStatement(`SELECT * FROM "testMap"`)
 	err = stmt.SetCursorBufferSize(1)
 	handleErr(err)
-	stmt = sql.NewStatement(`SELECT * FROM "testMap"`)
 	stmt.SetExpectedResultType(sql.ANY_RESULT)
 	result, err = sqlService.Execute(ctx, stmt)
 	handleErr(err)

@@ -40,10 +40,10 @@ Changes to fields do not affect the behavior of already running statements.
 */
 type Statement struct {
 	SQL                string
+	schema             string
+	timeout            int64
 	Params             []interface{}
 	cursorBufferSize   int32
-	timeout            int64
-	schema             string
 	expectedResultType ExpectedResultType
 }
 
@@ -94,7 +94,6 @@ func (s *Statement) SetQueryTimeout(t time.Duration) {
 		tm = -1
 	}
 	s.timeout = tm
-	return
 }
 
 /*

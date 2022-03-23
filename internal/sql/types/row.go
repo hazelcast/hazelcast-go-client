@@ -27,8 +27,8 @@ var ErrColumnNotFound = fmt.Errorf("column not found")
 
 // RowMetadata represents SQL row metadata.
 type RowMetadata struct {
-	Columns     []sql.ColumnMetadata
 	NameToIndex map[string]int
+	Columns     []sql.ColumnMetadata
 }
 
 func (r RowMetadata) GetColumn(index int) (sql.ColumnMetadata, error) {
