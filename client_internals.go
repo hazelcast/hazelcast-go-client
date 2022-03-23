@@ -66,14 +66,17 @@ func NewPair(key, value interface{}) Pair {
 }
 
 type InvokeOptions struct {
+	// Handler is the event handler for an invocation.
 	Handler ClientMessageHandler
 }
 
+// ClientInternal is an accessor for a Client.
 type ClientInternal struct {
 	client *Client
 	proxy  *proxy
 }
 
+// NewClientInternal creates the client internal accessor with the given client.
 func NewClientInternal(c *Client) *ClientInternal {
 	return &ClientInternal{
 		client: c,
@@ -81,18 +84,24 @@ func NewClientInternal(c *Client) *ClientInternal {
 	}
 }
 
+// ClusterID returns the cluster ID.
+// It returns zero value of types.UUID{} if the cluster ID does not exist.
 func (ci *ClientInternal) ClusterID() types.UUID {
 	return ci.client.ic.ConnectionManager.ClusterID()
 }
 
+// EncodeData serializes the given value and returns a Data value.
 func (ci *ClientInternal) EncodeData(obj interface{}) (Data, error) {
 	return ci.proxy.convertToData(obj)
 }
 
+// DecodeData deserializes the given Data and returns a value.
 func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
 	return ci.proxy.convertToObject(data)
 }
 
+// InvokeOnRandomTarget sends the given request to one of the members.
+// If opts.Handler is given, it is used as an event listener handler.
 func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *ClientMessage, opts *InvokeOptions) (*ClientMessage, error) {
 	var handler proto.ClientMessageHandler
 	if opts != nil {
@@ -101,15 +110,23 @@ func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *Cli
 	return ci.proxy.invokeOnRandomTarget(ctx, request, handler)
 }
 
+// InvokeOnPartition sends the given request to the member which has the given partition ID.
 func (ci *ClientInternal) InvokeOnPartition(ctx context.Context, request *ClientMessage, partitionID int32, opts *InvokeOptions) (*ClientMessage, error) {
 	return ci.proxy.invokeOnPartition(ctx, request, partitionID)
 }
 
+// InvokeOnKey sends the given request to the member which corresponds to the given key.
 func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessage, keyData Data, opts *InvokeOptions) (*ClientMessage, error) {
 	return ci.proxy.invokeOnKey(ctx, request, keyData)
 }
 
+// InvokeOnMember sends the request to the given member.
+// If opts.Handler is given, it is used as an event listener handler.
 func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID, opts *InvokeOptions) (*ClientMessage, error) {
+	var handler proto.ClientMessageHandler
+	if opts != nil {
+		handler = opts.Handler
+	}
 	mem := ci.client.ic.ClusterService.GetMemberByUUID(uuid)
 	if mem == nil {
 		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf("member not found: %s", uuid.String()), nil)
@@ -120,6 +137,7 @@ func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMes
 			request = request.Copy()
 		}
 		inv := ci.proxy.invocationFactory.NewMemberBoundInvocation(request, mem, now)
+		inv.SetEventHandler(handler)
 		if err := ci.proxy.sendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}
