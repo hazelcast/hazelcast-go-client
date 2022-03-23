@@ -21,11 +21,20 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
+
+/*
+WARNING!
+The constants, types, methods and functions defined under hazelcastinternal are considered internal API.
+No backward-compatibility guarantees apply for this code.
+*/
 
 type Data = serialization.Data
 type ClientMessage = proto.ClientMessage
@@ -85,7 +94,11 @@ func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
 }
 
 func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *ClientMessage, opts *InvokeOptions) (*ClientMessage, error) {
-	return ci.proxy.invokeOnRandomTarget(ctx, request, opts.Handler)
+	var handler proto.ClientMessageHandler
+	if opts != nil {
+		handler = opts.Handler
+	}
+	return ci.proxy.invokeOnRandomTarget(ctx, request, handler)
 }
 
 func (ci *ClientInternal) InvokeOnPartition(ctx context.Context, request *ClientMessage, partitionID int32, opts *InvokeOptions) (*ClientMessage, error) {
@@ -97,7 +110,21 @@ func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessag
 }
 
 func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID, opts *InvokeOptions) (*ClientMessage, error) {
-	panic("TODO")
+	mem := ci.client.ic.ClusterService.GetMemberByUUID(uuid)
+	if mem == nil {
+		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf("member not found: %s", uuid.String()), nil)
+	}
+	now := time.Now()
+	return ci.proxy.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			request = request.Copy()
+		}
+		inv := ci.proxy.invocationFactory.NewMemberBoundInvocation(request, mem, now)
+		if err := ci.proxy.sendInvocation(ctx, inv); err != nil {
+			return nil, err
+		}
+		return inv.GetWithContext(ctx)
+	})
 }
 
 const (
@@ -112,7 +139,7 @@ const (
 	LongSizeInBytes            = proto.LongSizeInBytes
 	DoubleSizeInBytes          = proto.DoubleSizeInBytes
 	UUIDSizeInBytes            = proto.UUIDSizeInBytes
-	UuidSizeInBytes            = proto.UuidSizeInBytes
+	UuidSizeInBytes            = proto.UuidSizeInBytes // Deprecated
 	EntrySizeInBytes           = proto.EntrySizeInBytes
 	LocalDateSizeInBytes       = proto.LocalDateSizeInBytes
 	LocalTimeSizeInBytes       = proto.LocalTimeSizeInBytes
@@ -122,8 +149,8 @@ const (
 	CorrelationIDOffset        = proto.CorrelationIDOffset
 	FragmentationIDOffset      = proto.FragmentationIDOffset
 	PartitionIDOffset          = proto.PartitionIDOffset
-	RequestThreadIdOffset      = proto.RequestThreadIdOffset
-	RequestTtlOffset           = proto.RequestTtlOffset
+	RequestThreadIdOffset      = proto.RequestThreadIDOffset
+	RequestTtlOffset           = proto.RequestTTLOffset
 	RequestIncludeValueOffset  = proto.RequestIncludeValueOffset
 	RequestListenerFlagsOffset = proto.RequestListenerFlagsOffset
 	RequestLocalOnlyOffset     = proto.RequestLocalOnlyOffset

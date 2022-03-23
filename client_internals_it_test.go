@@ -21,6 +21,7 @@ package hazelcast_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -137,24 +138,6 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 	})
 }
 
-type invokeFilter func(inv invocation.Invocation) (ok bool)
-
-type riggedInvocationHandler struct {
-	invocation.Handler
-	invokeFilter invokeFilter
-}
-
-func newRiggedInvocationHandler(handler invocation.Handler, filter invokeFilter) *riggedInvocationHandler {
-	return &riggedInvocationHandler{Handler: handler, invokeFilter: filter}
-}
-
-func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, error) {
-	if !h.invokeFilter(inv) {
-		return 1, nil
-	}
-	return h.Handler.Invoke(inv)
-}
-
 func TestClusterID(t *testing.T) {
 	it.SkipIf(t, "oss")
 	clientTester(t, func(t *testing.T, smart bool) {
@@ -207,4 +190,108 @@ func TestClusterID(t *testing.T) {
 			}
 		})
 	})
+}
+
+func TestClientInternal_InvokeOnRandomTarget(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("ci-invoke-random", 55701, 1)
+	defer tc.Shutdown()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	t.Run("without handler", func(t *testing.T) {
+		if _, err := ci.InvokeOnRandomTarget(ctx, codec.EncodeClientPingRequest(), nil); err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("with handler", func(t *testing.T) {
+		invoked := int32(0)
+		opts := &hz.InvokeOptions{
+			Handler: func(clientMessage *hz.ClientMessage) {
+				atomic.StoreInt32(&invoked, 1)
+			},
+		}
+		req := codec.EncodeMapAddEntryListenerRequest("foo", true, int32(hz.EntryAdded), false)
+		if _, err := ci.InvokeOnRandomTarget(ctx, req, opts); err != nil {
+			t.Fatal(err)
+		}
+		m, err := client.GetMap(ctx, "foo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := m.Set(ctx, "key", "value"); err != nil {
+			t.Fatal(err)
+		}
+		it.Eventually(t, func() bool {
+			return atomic.LoadInt32(&invoked) == 1
+		})
+	})
+}
+
+func TestClientInternal_InvokeOnPartition(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("ci-invoke-partition", 55701, 1)
+	defer tc.Shutdown()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	if _, err := ci.InvokeOnPartition(ctx, codec.EncodeClientPingRequest(), 1, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClientInternal_InvokeOnKey(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("ci-invoke-key", 55701, 1)
+	defer tc.Shutdown()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	keyData, err := ci.EncodeData("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ci.InvokeOnKey(ctx, codec.EncodeClientPingRequest(), keyData, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClientInternal_InvokeOnMember(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("ci-invoke-member", 55701, 1)
+	defer tc.Shutdown()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	t.Run("invalid member", func(t *testing.T) {
+		_, err := ci.InvokeOnMember(ctx, nil, types.UUID{}, nil)
+		if !errors.Is(err, hzerrors.ErrIllegalArgument) {
+			t.Fatalf("expected hzerrors.ErrIllegalArgument but received: %v", err)
+		}
+	})
+	t.Run("valid member", func(t *testing.T) {
+		mem := ci.ClusterService().OrderedMembers()[0]
+		req := codec.EncodeClientPingRequest()
+		if _, err := ci.InvokeOnMember(ctx, req, mem.UUID, nil); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+type invokeFilter func(inv invocation.Invocation) (ok bool)
+
+type riggedInvocationHandler struct {
+	invocation.Handler
+	invokeFilter invokeFilter
+}
+
+func newRiggedInvocationHandler(handler invocation.Handler, filter invokeFilter) *riggedInvocationHandler {
+	return &riggedInvocationHandler{Handler: handler, invokeFilter: filter}
+}
+
+func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, error) {
+	if !h.invokeFilter(inv) {
+		return 1, nil
+	}
+	return h.Handler.Invoke(inv)
 }

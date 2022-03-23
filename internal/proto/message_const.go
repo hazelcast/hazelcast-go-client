@@ -28,7 +28,7 @@ const (
 	LongSizeInBytes           = 8
 	DoubleSizeInBytes         = 8
 	UUIDSizeInBytes           = 17
-	UuidSizeInBytes           = 17
+	UuidSizeInBytes           = 17 // Deprecated
 	EntrySizeInBytes          = UUIDSizeInBytes + LongSizeInBytes
 	LocalDateSizeInBytes      = IntSizeInBytes + 2*ByteSizeInBytes
 	LocalTimeSizeInBytes      = 3*ByteSizeInBytes + IntSizeInBytes
@@ -39,12 +39,12 @@ const (
 	CorrelationIDOffset        = MessageTypeOffset + IntSizeInBytes
 	FragmentationIDOffset      = 0
 	PartitionIDOffset          = CorrelationIDOffset + LongSizeInBytes
-	RequestThreadIdOffset      = PartitionIDOffset + IntSizeInBytes
-	RequestTtlOffset           = RequestThreadIdOffset + LongSizeInBytes
+	RequestThreadIDOffset      = PartitionIDOffset + IntSizeInBytes
+	RequestTTLOffset           = RequestThreadIDOffset + LongSizeInBytes
 	RequestIncludeValueOffset  = PartitionIDOffset + IntSizeInBytes
 	RequestListenerFlagsOffset = RequestIncludeValueOffset + BooleanSizeInBytes
 	RequestLocalOnlyOffset     = RequestListenerFlagsOffset + IntSizeInBytes
-	RequestReferenceIdOffset   = RequestTtlOffset + LongSizeInBytes
+	RequestReferenceIdOffset   = RequestTTLOffset + LongSizeInBytes
 	ResponseBackupAcksOffset   = CorrelationIDOffset + LongSizeInBytes
 	UnfragmentedMessage        = BeginFragmentFlag | EndFragmentFlag
 
