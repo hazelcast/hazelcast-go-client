@@ -156,9 +156,13 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 }
 
 func TestProxyManagerShutdown(t *testing.T) {
-	clientTester(t, func(t *testing.T, b bool) {
+	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
-		client := it.MustClient(hz.StartNewClient(ctx))
+		tc := it.StartNewClusterWithOptions("proxy-manager-graceful-shutdown", 55701, 1)
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		config.Cluster.Unisocket = !smart
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
 		m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
 		q := it.MustValue(client.GetQueue(ctx, it.NewUniqueObjectName("queue"))).(*hz.Queue)
 		value := "dummy-value"
