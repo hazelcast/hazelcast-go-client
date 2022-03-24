@@ -60,7 +60,7 @@ func TestNotReceivedInvocation(t *testing.T) {
 	// This test skips sending an invocation to the member in order to simulate lost connection.
 	// After 5 seconds, a GroupLost event is published to simulate the disconnection.
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("not-received-invocation", 55701, 1)
+		tc := it.StartNewClusterWithOptions("not-received-invocation", 5701, 1)
 		defer tc.Shutdown()
 		ctx := context.Background()
 		config := tc.DefaultConfig()
