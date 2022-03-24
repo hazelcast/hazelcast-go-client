@@ -84,6 +84,11 @@ func NewClientInternal(c *Client) *ClientInternal {
 	}
 }
 
+// Client returns the wrapped Client instance.
+func (ci *ClientInternal) Client() *Client {
+	return ci.client
+}
+
 // ClusterID returns the cluster ID.
 // It returns zero value of types.UUID{} if the cluster ID does not exist.
 func (ci *ClientInternal) ClusterID() types.UUID {
