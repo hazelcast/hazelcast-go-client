@@ -23,7 +23,7 @@ import (
 // Service represents the SQL service.
 type Service interface {
 	/*
-		Execute executes the given SQL Statement.
+		ExecuteStatement executes the given SQL Statement.
 		Example:
 
 			stmt := NewStatement(`INSERT INTO person(__key, age, name) VALUES (?, ?, ?)`, 1001, 35, "Jane Doe")
@@ -62,7 +62,7 @@ type Service interface {
 	*/
 	ExecuteStatement(ctx context.Context, stmt Statement) (Result, error)
 	/*
-		ExecuteQuery is a convenient method to execute a distributed query with the given parameter
+		Execute is a convenience method to execute a distributed query with the given parameter
 		values. You may define parameter placeholders in the query with the "?" character.
 		For every placeholder, a value must be provided.
 		Example:
