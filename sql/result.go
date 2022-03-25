@@ -26,20 +26,29 @@ type Result interface {
 	// is a row set. In case the result doesn't contain rows but the update
 	// count isn't applicable or known, 0 is returned.
 	UpdateCount() int64
+	// Iterator returns the RowsIterator over the result rows. The iterator may be requested only once.
+	// An error is returned if the iterator is requested more than once, or if the result contains only
+	// update count.
+	Iterator() (RowsIterator, error)
+	// Close , for results that represents a stream of rows, notifies the member to release
+	// resources for the corresponding query.
+	// It can be safely called more than once, and it is concurrency-safe.
+	// If result represents an update count, it has no effect.
+	Close() error
+}
+
+type RowsIterator interface {
 	// HasNext prepares the next result row for reading via Next method. It
 	// returns true on success, or false if there is no next result row or an error
 	// happened while preparing it. Err should be consulted to distinguish between
 	// the two cases.
 	//
 	// Every call to Next, even the first one, must be preceded by a call to HasNext.
+	// Context parameter is provided to be able to cancel the fetch operation of pages.
 	HasNext() bool
 	// Next returns the currentRow.
 	// Every call to Next, even the first one, must be preceded by a call to HasNext.
 	Next() (Row, error)
-	// Close , for results that represents a stream of rows, notifies the member to release resources for the corresponding query.
-	// It can be safely called more than once, and it is concurrency-safe.
-	// If result represents an update count, it has no effect.
-	Close() error
 }
 
 // Row represents an SQL result row.

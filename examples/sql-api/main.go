@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -26,6 +27,7 @@ import (
 )
 
 func main() {
+	// Init client & map
 	ctx := context.Background()
 	c, err := hazelcast.StartNewClient(ctx)
 	handleErr(err)
@@ -34,31 +36,42 @@ func main() {
 	err = tm.Clear(ctx)
 	handleErr(err)
 	sqlService := c.GetSQL()
-	result, err := sqlService.ExecuteQuery(ctx,
+	// Create mapping
+	result, err := sqlService.Execute(ctx,
 		`CREATE OR REPLACE MAPPING "testMap"
 			TYPE IMAP
 			OPTIONS (
 				'keyFormat' = 'bigint',
 				'valueFormat' = 'varchar'
-			)`)
-	handleErr(err)
+            )`)
+	if err != nil {
+		var sqlError sql.Error
+		if errors.As(err, &sqlError) {
+			// can access details of errors returned from member
+			fmt.Println(sqlError.Message, sqlError.Suggestion, sqlError.OriginatingMemberId)
+		} else {
+			handleErr(err)
+		}
+	}
 	fmt.Println(result.IsRowSet())
 	fmt.Println(result.UpdateCount())
-	result, err = sqlService.ExecuteQuery(ctx, `INSERT INTO "testMap" (__key, this) VALUES (?, ?),(?, ?)`,
+	// Insert entry
+	result, err = sqlService.Execute(ctx, `INSERT INTO "testMap" (__key, this) VALUES (?, ?),(?, ?)`,
 		10, "someValue", 20, "otherValue")
 	handleErr(err)
-	fmt.Println(result.IsRowSet())
-	fmt.Println(result.UpdateCount())
+	// Iterate rows of the query
 	stmt := sql.NewStatement(`SELECT * FROM "testMap"`)
 	err = stmt.SetCursorBufferSize(1)
 	handleErr(err)
-	stmt.SetExpectedResultType(sql.ANY_RESULT)
-	result, err = sqlService.Execute(ctx, stmt)
+	_ = stmt.SetExpectedResultType(sql.ANY_RESULT)
+	result, err = sqlService.ExecuteStatement(ctx, stmt)
 	handleErr(err)
 	fmt.Println(result.IsRowSet())
 	fmt.Println(result.UpdateCount())
-	for result.HasNext() {
-		row, err := result.Next()
+	it, err := result.Iterator()
+	handleErr(err)
+	for it.HasNext() {
+		row, err := it.Next()
 		if err != nil {
 			// handle error and finish iteration
 			break

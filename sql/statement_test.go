@@ -117,5 +117,5 @@ func TestStatement_DefaultValues(t *testing.T) {
 	assert.Equal(t, int32(4096), stmt.CursorBufferSize())
 	assert.Equal(t, "", stmt.schema)
 	assert.Equal(t, testStatement, stmt.SQL)
-	assert.Equal(t, testParams, stmt.Params)
+	assert.Equal(t, testParams, stmt.Parameters)
 }

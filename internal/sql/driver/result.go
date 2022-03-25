@@ -110,6 +110,7 @@ func (r *QueryResult) Close() error {
 // If there are no rows left, it returns io.EOF
 // This method is not concurrency-safe.
 // It implements database/sql/Rows interface.
+// InvocationTimeout field of hazelcast.Config is respected for timeout.
 func (r *QueryResult) Next(dest []driver.Value) error {
 	cols := r.page.Columns
 	if len(cols) == 0 {

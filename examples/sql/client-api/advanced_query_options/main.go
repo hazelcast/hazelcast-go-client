@@ -42,12 +42,12 @@ func main() {
 	`)
 	stmt.SetSchema("partitioned")
 	sqlService := client.GetSQL()
-	_, err = sqlService.Execute(ctx, stmt)
+	_, err = sqlService.ExecuteStatement(ctx, stmt)
 	if err != nil {
 		panic(fmt.Errorf("creating the mapping: %w", err))
 	}
 	for i := 0; i < 100; i++ {
-		if _, err = sqlService.ExecuteQuery(ctx, `SINK INTO mymap VALUES(?, ?)`,
+		if _, err = sqlService.Execute(ctx, `SINK INTO mymap VALUES(?, ?)`,
 			i, fmt.Sprintf("sample string-%d", i)); err != nil {
 			panic(fmt.Errorf("inserting values: %w", err))
 		}
@@ -55,18 +55,22 @@ func main() {
 	stmt = sql.NewStatement(`SELECT __key, this from mymap order by __key`)
 	stmt.SetQueryTimeout(5 * time.Second)
 	stmt.SetCursorBufferSize(10)
-	rows, err := sqlService.Execute(ctx, stmt)
+	result, err := sqlService.ExecuteStatement(ctx, stmt)
 	if err != nil {
 		panic(fmt.Errorf("querying: %w", err))
 	}
-	defer rows.Close()
+	defer result.Close()
+	it, err := result.Iterator()
+	if err != nil {
+		panic(fmt.Errorf("acquiring iterator: %w", err))
+	}
 	var (
 		k   int64
 		v   string
 		tmp interface{}
 	)
-	for rows.HasNext() {
-		row, err := rows.Next()
+	for it.HasNext() {
+		row, err := it.Next()
 		if err != nil {
 			panic(fmt.Errorf("iterating rows: %w", err))
 		}

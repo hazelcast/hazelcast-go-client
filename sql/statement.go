@@ -42,7 +42,7 @@ type Statement struct {
 	SQL                string
 	schema             string
 	timeout            int64
-	Params             []interface{}
+	Parameters         []interface{}
 	cursorBufferSize   int32
 	expectedResultType ExpectedResultType
 }
@@ -53,7 +53,7 @@ type Statement struct {
 func NewStatement(statement string, params ...interface{}) Statement {
 	return Statement{
 		SQL:                statement,
-		Params:             params,
+		Parameters:         params,
 		cursorBufferSize:   defaultCursorBufferSize,
 		timeout:            defaultTimeoutMillis,
 		schema:             defaultSchema,

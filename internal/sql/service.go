@@ -19,10 +19,12 @@ package sql
 import (
 	"context"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -31,9 +33,10 @@ import (
 )
 
 var (
-	_ sql.Result  = &Result{}
-	_ sql.Row     = &Row{}
-	_ sql.Service = Service{}
+	_ sql.Result       = &Result{}
+	_ sql.RowsIterator = &Result{}
+	_ sql.Row          = &Row{}
+	_ sql.Service      = Service{}
 )
 
 type Service struct {
@@ -47,13 +50,13 @@ func New(cm *cluster.ConnectionManager, ss *iserialization.Service, cif *cluster
 }
 
 // Execute executes the given SQL statement.
-func (s Service) Execute(ctx context.Context, stmt sql.Statement) (sql.Result, error) {
+func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.Result, error) {
 	var err error
 	if ctx, err = updateContextWithOptions(ctx, stmt); err != nil {
 		return &Result{}, nil
 	}
 	var sqlParams []driver.Value
-	for _, p := range stmt.Params {
+	for _, p := range stmt.Parameters {
 		sqlParams = append(sqlParams, p)
 	}
 	resp, err := s.iService.Execute(ctx, stmt.SQL, sqlParams)
@@ -75,8 +78,8 @@ func (s Service) Execute(ctx context.Context, stmt sql.Statement) (sql.Result, e
 // ExecuteQuery is a convenient method to execute a distributed query with the given parameter
 // values. You may define parameter placeholders in the query with the "?" character.
 // For every placeholder, a value must be provided.
-func (s Service) ExecuteQuery(ctx context.Context, query string, params ...interface{}) (sql.Result, error) {
-	return s.Execute(ctx, sql.NewStatement(query, params...))
+func (s Service) Execute(ctx context.Context, query string, params ...interface{}) (sql.Result, error) {
+	return s.ExecuteStatement(ctx, sql.NewStatement(query, params...))
 }
 
 func updateContextWithOptions(ctx context.Context, opts sql.Statement) (context.Context, error) {
@@ -91,10 +94,22 @@ func updateContextWithOptions(ctx context.Context, opts sql.Statement) (context.
 
 // Result implements sql.Result. Depending on the statement type it represents a stream of rows or an update count.
 type Result struct {
-	qr         *idriver.QueryResult
-	er         *idriver.ExecResult
-	err        error
-	currentRow []driver.Value
+	qr                *idriver.QueryResult
+	er                *idriver.ExecResult
+	err               error
+	currentRow        []driver.Value
+	iteratorRequested bool
+}
+
+func (r *Result) Iterator() (sql.RowsIterator, error) {
+	if r.iteratorRequested {
+		return nil, hzerrors.NewIllegalStateError("iterator can be requested only once", errors.New("iterator error"))
+	}
+	if !r.IsRowSet() {
+		return nil, hzerrors.NewIllegalStateError("this result contains only update count", errors.New("iterator error"))
+	}
+	r.iteratorRequested = true
+	return r, nil
 }
 
 // RowMetadata returns metadata information about rows. An error is returned if result represents an update count.
@@ -123,8 +138,7 @@ func (r *Result) UpdateCount() int64 {
 
 // HasNext prepares the next result row for reading via Next method. It
 // returns true on success, or false if there is no next result row or an error
-// happened while preparing it. Err should be consulted to distinguish between
-// the two cases.
+// happened while preparing it.
 //
 // Every call to Next, even the first one, must be preceded by a call to HasNext.
 func (r *Result) HasNext() bool {

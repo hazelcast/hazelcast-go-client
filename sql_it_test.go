@@ -18,6 +18,7 @@ package hazelcast_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -278,7 +279,7 @@ func TestSQLWithPortableData(t *testing.T) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
 	}
 	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		it.MustValue(client.GetSQL().ExecuteQuery(context.Background(), fmt.Sprintf(`
+		it.MustValue(client.GetSQL().Execute(context.Background(), fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key BIGINT,
 				varcharvalue VARCHAR,
@@ -311,7 +312,7 @@ func TestSQLWithPortableData(t *testing.T) {
 			DoubleValue:   12.789,
 			DecimalValue:  &dec,
 		}
-		_, err := client.GetSQL().ExecuteQuery(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, varcharvalue, tinyintvalue, smallintvalue, integervalue, bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, mapName),
+		_, err := client.GetSQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, varcharvalue, tinyintvalue, smallintvalue, integervalue, bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, mapName),
 			1, rec.VarcharValue, rec.TinyIntValue, rec.SmallIntValue, rec.IntegerValue, rec.BigIntValue, rec.BoolValue, rec.RealValue, rec.DoubleValue, *rec.DecimalValue)
 		if err != nil {
 			t.Fatal(err)
@@ -381,10 +382,10 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(client.GetSQL().ExecuteQuery(context.Background(), q))
+		it.MustValue(client.GetSQL().Execute(context.Background(), q))
 		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
 		rec := NewRecordWithDateTime(&dt)
-		_, err := client.GetSQL().ExecuteQuery(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
+		_, err := client.GetSQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
 			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
 		if err != nil {
 			t.Fatal(err)
@@ -467,10 +468,10 @@ func TestSQLWithPortableDateTime2(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(client.GetSQL().ExecuteQuery(context.Background(), q))
+		it.MustValue(client.GetSQL().Execute(context.Background(), q))
 		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
 		rec := NewRecordWithDateTime2(&dt)
-		_, err := client.GetSQL().ExecuteQuery(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
+		_, err := client.GetSQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
 			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
 		if err != nil {
 			t.Fatal(err)
@@ -533,16 +534,59 @@ func TestSQLQueryWithCursorBufferSize(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
 	stmt := sql.NewStatement("")
-	stmt.SetCursorBufferSize(10)
+	it.Must(stmt.SetCursorBufferSize(10))
 	testSQLQuery(t, "int", "int", fn, fn, stmt)
 }
 
 func TestSQLQueryWithQueryTimeout(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
-	stmt := sql.NewStatement("")
+	stmt := sql.NewStatement("select v, v from table(generate_stream(1))")
 	stmt.SetQueryTimeout(5 * time.Second)
+	it.Must(stmt.SetCursorBufferSize(2))
 	testSQLQuery(t, "int", "int", fn, fn, stmt)
+}
+
+func TestSQLStatementWithQueryTimeout(t *testing.T) {
+	stmt := sql.NewStatement("select v from table(generate_stream(1))")
+	stmt.SetQueryTimeout(3 * time.Second)
+	it.Must(stmt.SetCursorBufferSize(2))
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, _ *hz.Map, _ string) {
+		sqlService := client.GetSQL()
+		result := it.MustValue(sqlService.ExecuteStatement(context.Background(), stmt)).(sql.Result)
+		defer result.Close()
+		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
+		for iter.HasNext() {
+			_, err := iter.Next()
+			if err != nil {
+				var sqlError *sql.Error
+				assert.True(t, errors.As(err, &sqlError))
+				break
+			}
+		}
+	})
+}
+
+func TestSQLStatementWithContextCancellation(t *testing.T) {
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, _ *hz.Map, _ string) {
+		sqlService := client.GetSQL()
+		stmt := sql.NewStatement("select v from table(generate_stream(5))")
+		it.Must(stmt.SetCursorBufferSize(2))
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		result := it.MustValue(sqlService.ExecuteStatement(ctx, stmt)).(sql.Result)
+		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
+		for iter.HasNext() {
+			_, err := iter.Next()
+			if err != nil {
+				var sqlError *sql.Error
+				// this should be a context timeout error
+				assert.False(t, errors.As(err, &sqlError))
+				break
+			}
+		}
+	})
+	fmt.Println("bla")
 }
 
 func TestConcurrentQueries(t *testing.T) {
@@ -557,7 +601,7 @@ func TestConcurrentQueries(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(client.GetSQL().ExecuteQuery(context.Background(), q))
+		it.MustValue(client.GetSQL().Execute(context.Background(), q))
 		it.Must(m.Set(context.TODO(), 1, "foo"))
 		const cnt = 1000
 		wg := &sync.WaitGroup{}
@@ -596,16 +640,17 @@ func TestSQLService_Execute(t *testing.T) {
 			)
 		`, mapName)
 		sqlService := client.GetSQL()
-		result := it.MustValue(sqlService.ExecuteQuery(ctx, q)).(sql.Result)
+		result := it.MustValue(sqlService.Execute(ctx, q)).(sql.Result)
 		assert.Nil(t, result.Close())
 		q = fmt.Sprintf(`INSERT INTO "%s" (__key, name) VALUES(?, ?)`, mapName)
-		result = it.MustValue(sqlService.ExecuteQuery(ctx, q, 100, "Ford Prefect")).(sql.Result)
+		result = it.MustValue(sqlService.Execute(ctx, q, 100, "Ford Prefect")).(sql.Result)
 		assert.Nil(t, result.Close())
 		// select the value itself
 		q = fmt.Sprintf(`SELECT __key, this from "%s"`, mapName)
-		result = it.MustValue(sqlService.ExecuteQuery(ctx, q)).(sql.Result)
-		assert.True(t, result.HasNext())
-		row := it.MustValue(result.Next()).(sql.Row)
+		result = it.MustValue(sqlService.Execute(ctx, q)).(sql.Result)
+		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
+		assert.True(t, iter.HasNext())
+		row := it.MustValue(iter.Next()).(sql.Row)
 		var k int64
 		var v interface{}
 		if err := assignValues(row, &k, &v); err != nil {
@@ -631,8 +676,17 @@ func TestNewAPI(t *testing.T) {
 		err := stmt.SetCursorBufferSize(10)
 		assert.Nil(t, err)
 		t.Logf("Query: %+v", stmt)
-		it.MustValue(client.GetSQL().Execute(ctx, stmt))
+		it.MustValue(client.GetSQL().ExecuteStatement(ctx, stmt))
 		it.Must(m.Set(context.TODO(), 1, "foo"))
+		query, err := client.GetSQL().Execute(ctx, "select * from bla")
+		if err != nil {
+			var sqlError sql.Error
+			if errors.As(err, &sqlError) {
+				fmt.Println(sqlError.Message, sqlError.Suggestion, sqlError.OriginatingMemberId)
+			}
+		}
+		fmt.Println(query, err)
+
 	})
 }
 
@@ -654,15 +708,19 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 		if stmt.SQL == "" {
 			stmt.SQL = query
 		}
-		result, err = sqlService.Execute(context.Background(), stmt)
+		result, err = sqlService.ExecuteStatement(context.Background(), stmt)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer result.Close()
+		iter, err := result.Iterator()
+		if err != nil {
+			log.Fatal(err)
+		}
 		entries := make([]types.Entry, len(target))
 		var i int
-		for result.HasNext() {
-			row, err := result.Next()
+		for iter.HasNext() {
+			row, err := iter.Next()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -696,7 +754,7 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 
 func createMapping(t *testing.T, client *hz.Client, mapping string) error {
 	t.Logf("mapping: %s", mapping)
-	_, err := client.GetSQL().ExecuteQuery(context.Background(), mapping)
+	_, err := client.GetSQL().Execute(context.Background(), mapping)
 	return err
 }
 
@@ -726,12 +784,16 @@ func populateMap(m *hz.Map, count int, keyFn, valueFn func(i int) interface{}) (
 }
 
 func queryRow(client *hz.Client, q string, params ...interface{}) (sql.Row, error) {
-	rows, err := client.GetSQL().ExecuteQuery(context.Background(), q, params...)
+	result, err := client.GetSQL().Execute(context.Background(), q, params...)
 	if err != nil {
 		return nil, err
 	}
-	for rows.HasNext() {
-		return rows.Next()
+	iter, err := result.Iterator()
+	if err != nil {
+		return nil, err
+	}
+	for iter.HasNext() {
+		return iter.Next()
 	}
 	return nil, nil
 }
@@ -752,37 +814,3 @@ func assignValues(row sql.Row, targets ...interface{}) error {
 	return nil
 
 }
-
-//type myInt interface {
-//	bla()
-//	x()
-//}
-//
-//type mockMyInt struct {
-//}
-//
-//func (m mockMyInt) bla() {}
-//
-//func myAPI() myInt {
-//	var m myInt
-//	// m would be a real type
-//	return m
-//}
-//
-//type concreteTypeInterface interface {
-//
-//}
-//
-//type HZCInterface interface {
-//	bla()
-//}
-//
-//func otherAPI(m HZCInterface) {
-//
-//}
-//
-//
-//func testOtherAPI() {
-//	var mock mockMyInt
-//	otherAPI(mock)
-//}
