@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/sql"
@@ -567,28 +568,6 @@ func TestSQLStatementWithQueryTimeout(t *testing.T) {
 	})
 }
 
-func TestSQLStatementWithContextCancellation(t *testing.T) {
-	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, _ *hz.Map, _ string) {
-		sqlService := client.GetSQL()
-		stmt := sql.NewStatement("select v from table(generate_stream(5))")
-		it.Must(stmt.SetCursorBufferSize(2))
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		result := it.MustValue(sqlService.ExecuteStatement(ctx, stmt)).(sql.Result)
-		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
-		for iter.HasNext() {
-			_, err := iter.Next()
-			if err != nil {
-				var sqlError *sql.Error
-				// this should be a context timeout error
-				assert.False(t, errors.As(err, &sqlError))
-				break
-			}
-		}
-	})
-	fmt.Println("bla")
-}
-
 func TestConcurrentQueries(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
@@ -661,7 +640,7 @@ func TestSQLService_Execute(t *testing.T) {
 	})
 }
 
-func TestNewAPI(t *testing.T) {
+func TestSQLService_ExecuteMismatchedParams(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		ctx := context.Background()
@@ -673,20 +652,137 @@ func TestNewAPI(t *testing.T) {
 				'valueFormat' = 'varchar'
 			)
 		`, mapName))
-		err := stmt.SetCursorBufferSize(10)
-		assert.Nil(t, err)
-		t.Logf("Query: %+v", stmt)
-		it.MustValue(client.GetSQL().ExecuteStatement(ctx, stmt))
-		it.Must(m.Set(context.TODO(), 1, "foo"))
-		query, err := client.GetSQL().Execute(ctx, "select * from bla")
-		if err != nil {
-			var sqlError sql.Error
-			if errors.As(err, &sqlError) {
-				fmt.Println(sqlError.Message, sqlError.Suggestion, sqlError.OriginatingMemberId)
-			}
-		}
-		fmt.Println(query, err)
 
+		_ = it.MustValue(client.GetSQL().ExecuteStatement(ctx, stmt))
+		// with less args
+		_, err := client.GetSQL().Execute(ctx, fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5)
+		var sqlError *sql.Error
+		assert.True(t, errors.As(err, &sqlError))
+		// with more args
+		_, err = client.GetSQL().Execute(ctx, fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5, "abc", 5)
+		sqlError = nil
+		assert.True(t, errors.As(err, &sqlError))
+	})
+}
+
+func TestSQLService_ExecuteStatementMismatchedParams(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		ctx := context.Background()
+		stmt := sql.NewStatement(fmt.Sprintf(`
+			CREATE MAPPING "%s"
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'varchar'
+			)
+		`, mapName))
+
+		_ = it.MustValue(client.GetSQL().ExecuteStatement(ctx, stmt))
+		// with less args
+		_, err := client.GetSQL().ExecuteStatement(ctx, sql.NewStatement(fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5))
+		var sqlError *sql.Error
+		assert.True(t, errors.As(err, &sqlError))
+		// with more args
+		_, err = client.GetSQL().ExecuteStatement(ctx, sql.NewStatement(fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5, "abc", 5))
+		sqlError = nil
+		assert.True(t, errors.As(err, &sqlError))
+	})
+}
+
+func TestSQLService_ExecuteProvidedSuggestion(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		ctx := context.Background()
+		// for create-mapping suggestion, map must have a value
+		_ = it.MustValue(m.Put(ctx, "some-key", 5))
+		selectAllQuery := fmt.Sprintf(`SELECT * FROM "%s"`, mapName)
+		_, err := client.GetSQL().Execute(ctx, selectAllQuery)
+		var sqlError *sql.Error
+		assert.True(t, errors.As(err, &sqlError))
+		// with more args
+		_ = it.MustValue(client.GetSQL().Execute(ctx, sqlError.Suggestion))
+		resp := it.MustValue(client.GetSQL().Execute(ctx, selectAllQuery)).(sql.Result)
+		assert.True(t, resp.IsRowSet())
+		iter := it.MustValue(resp.Iterator()).(sql.RowsIterator)
+		var values []interface{}
+		for iter.HasNext() {
+			row := it.MustValue(iter.Next()).(sql.Row)
+			values = append(values, it.MustValue(row.Get(0)))
+			values = append(values, it.MustValue(row.Get(1)))
+		}
+		assert.Equal(t, []interface{}{"some-key", int64(5)}, values)
+	})
+}
+
+func TestSQLResult_IteratorRequestedMoreThanOnce(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s"
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'varchar'
+			)
+		`, mapName)
+		ctx := context.Background()
+		it.MustValue(client.GetSQL().Execute(ctx, q))
+		result := it.MustValue(client.GetSQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
+		assert.True(t, result.IsRowSet())
+		_ = it.MustValue(result.Iterator())
+		_, err := result.Iterator()
+		if err == nil {
+			t.Fatal("error must be present on second iterator request")
+		}
+	})
+}
+
+func TestSQLResult_ForRowAndNonRowResults(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s"
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'varchar'
+			)
+		`, mapName)
+		ctx := context.Background()
+		// Non-row result
+		result := it.MustValue(client.GetSQL().Execute(ctx, q)).(sql.Result)
+		assert.Equal(t, int64(0), result.UpdateCount())
+		assert.False(t, result.IsRowSet())
+		_, err := result.Iterator()
+		assert.True(t, errors.Is(err, hzerrors.ErrIllegalState))
+		_, err = result.RowMetadata()
+		assert.True(t, errors.Is(err, hzerrors.ErrIllegalState))
+		assert.Nil(t, result.Close())
+		// Row result
+		result = it.MustValue(client.GetSQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
+		assert.Equal(t, int64(-1), result.UpdateCount())
+		assert.True(t, result.IsRowSet())
+		// assert metadata
+		md := it.MustValue(result.RowMetadata()).(sql.RowMetadata)
+		assert.Equal(t, 2, md.GetColumnCount())
+		// col1
+		col := it.MustValue(md.GetColumn(0)).(sql.ColumnMetadata)
+		assert.Equal(t, 0, it.MustValue(md.FindColumn("__key")))
+		assert.Equal(t, sql.ColumnTypeBigInt, col.GetType())
+		assert.Equal(t, true, col.IsNullable())
+		// col2
+		col = it.MustValue(md.GetColumn(1)).(sql.ColumnMetadata)
+		assert.Equal(t, 1, it.MustValue(md.FindColumn("this")))
+		assert.Equal(t, sql.ColumnTypeVarchar, col.GetType())
+		assert.Equal(t, true, col.IsNullable())
+		// wrong column name
+		if _, err = md.FindColumn("wrongColumn"); err == nil {
+			t.Fatal("error must be returned for non existing column")
+		}
+		if _, err = md.GetColumn(2); err == nil {
+			t.Fatal("error must be returned for column index out of range")
+		}
 	})
 }
 
@@ -713,6 +809,8 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 			log.Fatal(err)
 		}
 		defer result.Close()
+		assert.Equal(t, -1, result.UpdateCount())
+		assert.True(t, result.IsRowSet())
 		iter, err := result.Iterator()
 		if err != nil {
 			log.Fatal(err)

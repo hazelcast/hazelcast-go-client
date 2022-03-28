@@ -115,7 +115,7 @@ func (r *Result) Iterator() (sql.RowsIterator, error) {
 // RowMetadata returns metadata information about rows. An error is returned if result represents an update count.
 func (r *Result) RowMetadata() (sql.RowMetadata, error) {
 	if r.qr == nil {
-		return nil, fmt.Errorf("result contains only update count")
+		return nil, hzerrors.NewIllegalStateError("result contains only update count", fmt.Errorf("row metadata is not applicable"))
 	}
 	return r.qr.Metadata(), nil
 }

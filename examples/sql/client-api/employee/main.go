@@ -52,11 +52,11 @@ func createMapping(client *hazelcast.Client, mapName string) error {
             'valueFormat' = 'json-flat'
         )
 `, mapName)
-	_, err := client.GetSQL().Execute(context.Background(), q)
+	result, err := client.GetSQL().Execute(context.Background(), q)
 	if err != nil {
 		return fmt.Errorf("error creating mapping: %w", err)
 	}
-	return nil
+	return result.Close()
 }
 
 // populateMap creates entries in the given map.
