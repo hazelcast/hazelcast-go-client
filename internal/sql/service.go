@@ -197,7 +197,11 @@ func (r *Row) Get(index int) (interface{}, error) {
 
 // GetFromColumn returns the value of the column by name. If columns does not exist, an error is returned.
 func (r *Row) GetByColumnName(colName string) (interface{}, error) {
-	panic("implement me")
+	i, err := r.metadata.FindColumn(colName)
+	if err != nil {
+		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf("column \"%s\" doesn't exist", colName), err)
+	}
+	return r.Get(i)
 }
 
 // GetMetadata returns the metadata information about the row.

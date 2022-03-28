@@ -783,6 +783,36 @@ func TestSQLResult_ForRowAndNonRowResults(t *testing.T) {
 		if _, err = md.GetColumn(2); err == nil {
 			t.Fatal("error must be returned for column index out of range")
 		}
+		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
+		assert.False(t, iter.HasNext())
+	})
+}
+
+func TestSQLRow_FindByColumnName(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		q := fmt.Sprintf(`
+			CREATE MAPPING "%s"
+			TYPE IMAP
+			OPTIONS (
+				'keyFormat' = 'bigint',
+				'valueFormat' = 'varchar'
+			)
+		`, mapName)
+		ctx := context.Background()
+		// Non-row result
+		result := it.MustValue(client.GetSQL().Execute(ctx, q)).(sql.Result)
+		it.Must(result.Close())
+		_ = it.MustValue(m.Put(ctx, 5, "value"))
+		result = it.MustValue(client.GetSQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
+		defer it.Must(result.Close())
+		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
+		assert.True(t, iter.HasNext())
+		row := it.MustValue(iter.Next()).(sql.Row)
+		assert.Equal(t, int64(5), it.MustValue(row.GetByColumnName("__key")))
+		assert.False(t, iter.HasNext())
+		_, err := row.GetByColumnName("non-existing-column")
+		assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
 	})
 }
 
