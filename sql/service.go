@@ -32,7 +32,7 @@ type Service interface {
 			sqlService := client.GetSQL()
 			result, err := sqlService.ExecuteStatement(context.TODO(), stmt)
 			// handle the error
-			cnt, err := result.RowsAffected()
+			cnt, err := result.UpdateCount()
 			// handle the error
 			fmt.Printf("Affected rows: %d\n", cnt)
 
@@ -53,7 +53,7 @@ type Service interface {
 					// handle the error
 					v1, err := row.Get(0)
 					// handle the error
-					v2, err := row.Get(0)
+					v2, err := row.Get(1)
 					// handle the error
 					name, age = v1.(string), v2.(int)
 					fmt.Println(name, age)
@@ -72,7 +72,7 @@ type Service interface {
 			sqlService := client.GetSQL()
 			result, err := client.Execute(context.TODO(), `INSERT INTO person(__key, age, name) VALUES (?, ?, ?)`, 1001, 35, "Jane Doe")
 			// handle the error
-			cnt, err := result.RowsAffected()
+			cnt, err := result.UpdateCount()
 			// handle the error
 			fmt.Printf("Affected rows: %d\n", cnt)
 	*/
