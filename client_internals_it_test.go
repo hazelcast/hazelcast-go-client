@@ -35,6 +35,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -207,9 +208,13 @@ func TestClientInternal_InvokeOnRandomTarget(t *testing.T) {
 	clientInternalTester(t, "ci-invoke-random", func(t *testing.T, ci *hz.ClientInternal) {
 		ctx := context.Background()
 		t.Run("without handler", func(t *testing.T) {
-			if _, err := ci.InvokeOnRandomTarget(ctx, codec.EncodeClientPingRequest(), nil); err != nil {
+			req := EncodeMCGetMemberConfigRequest()
+			resp, err := ci.InvokeOnRandomTarget(ctx, req, nil)
+			if err != nil {
 				t.Fatal(err)
 			}
+			s := DecodeMCGetMemberConfigResponse(resp)
+			assert.Greater(t, len(s), 0)
 		})
 		t.Run("with handler", func(t *testing.T) {
 			invoked := int32(0)
@@ -239,9 +244,13 @@ func TestClientInternal_InvokeOnRandomTarget(t *testing.T) {
 
 func TestClientInternal_InvokeOnPartition(t *testing.T) {
 	clientInternalTester(t, "ci-invoke-partition", func(t *testing.T, ci *hz.ClientInternal) {
-		if _, err := ci.InvokeOnPartition(context.Background(), codec.EncodeClientPingRequest(), 1, nil); err != nil {
+		req := EncodeMCGetMemberConfigRequest()
+		resp, err := ci.InvokeOnPartition(context.Background(), req, 1, nil)
+		if err != nil {
 			t.Fatal(err)
 		}
+		s := DecodeMCGetMemberConfigResponse(resp)
+		assert.Greater(t, len(s), 0)
 	})
 }
 
@@ -251,9 +260,13 @@ func TestClientInternal_InvokeOnKey(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := ci.InvokeOnKey(context.Background(), codec.EncodeClientPingRequest(), keyData, nil); err != nil {
+		req := EncodeMCGetMemberConfigRequest()
+		resp, err := ci.InvokeOnKey(context.Background(), req, keyData, nil)
+		if err != nil {
 			t.Fatal(err)
 		}
+		s := DecodeMCGetMemberConfigResponse(resp)
+		assert.Greater(t, len(s), 0)
 	})
 }
 
@@ -268,10 +281,13 @@ func TestClientInternal_InvokeOnMember(t *testing.T) {
 		})
 		t.Run("valid member", func(t *testing.T) {
 			mem := ci.ClusterService().OrderedMembers()[0]
-			req := codec.EncodeClientPingRequest()
-			if _, err := ci.InvokeOnMember(ctx, req, mem.UUID, nil); err != nil {
+			req := EncodeMCGetMemberConfigRequest()
+			resp, err := ci.InvokeOnMember(ctx, req, mem.UUID, nil)
+			if err != nil {
 				t.Fatal(err)
 			}
+			s := DecodeMCGetMemberConfigResponse(resp)
+			assert.Greater(t, len(s), 0)
 		})
 	})
 }
@@ -316,4 +332,33 @@ func clientInternalTester(t *testing.T, clusterName string, f func(t *testing.T,
 	defer client.Shutdown(ctx)
 	ci := hz.NewClientInternal(client)
 	f(t, ci)
+}
+
+const (
+	MCGetMemberConfigCodecRequestMessageType  = int32(0x200500)
+	MCGetMemberConfigCodecResponseMessageType = int32(0x200501)
+
+	MCGetMemberConfigCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+)
+
+// Gets the effective config of a member rendered as XML.
+
+func EncodeMCGetMemberConfigRequest() *proto.ClientMessage {
+	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage.SetRetryable(true)
+
+	initialFrame := proto.NewFrameWith(make([]byte, MCGetMemberConfigCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	clientMessage.AddFrame(initialFrame)
+	clientMessage.SetMessageType(MCGetMemberConfigCodecRequestMessageType)
+	clientMessage.SetPartitionId(-1)
+
+	return clientMessage
+}
+
+func DecodeMCGetMemberConfigResponse(clientMessage *proto.ClientMessage) string {
+	frameIterator := clientMessage.FrameIterator()
+	// empty initial frame
+	frameIterator.Next()
+
+	return codec.DecodeString(frameIterator)
 }
