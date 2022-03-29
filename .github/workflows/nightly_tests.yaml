@@ -1,6 +1,8 @@
 name: Go nightly build
 on:
-    workflow_dispatch:
+  workflow_dispatch:
+  schedule:
+    - cron: "6 10 * * *"
 jobs:
   test_client:
     runs-on: ${{ matrix.os }}
