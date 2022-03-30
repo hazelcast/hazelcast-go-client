@@ -64,7 +64,7 @@ func DecodeListAddListenerResponse(clientMessage *proto.ClientMessage) types.UUI
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, ListAddListenerResponseResponseOffset)
 }
 
-func HandleListAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item *iserialization.Data, uuid types.UUID, eventType int32)) {
+func HandleListAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item iserialization.Data, uuid types.UUID, eventType int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == ListAddListenerCodecEventItemMessageType {

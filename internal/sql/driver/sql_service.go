@@ -146,8 +146,8 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize)
 }
 
-func (s *SQLService) serializeParams(params []driver.Value) ([]*iserialization.Data, error) {
-	serParams := make([]*iserialization.Data, len(params))
+func (s *SQLService) serializeParams(params []driver.Value) ([]iserialization.Data, error) {
+	serParams := make([]iserialization.Data, len(params))
 	for i, param := range params {
 		data, err := s.serializationService.ToData(param)
 		if err != nil {

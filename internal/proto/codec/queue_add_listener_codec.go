@@ -64,7 +64,7 @@ func DecodeQueueAddListenerResponse(clientMessage *proto.ClientMessage) types.UU
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, QueueAddListenerResponseResponseOffset)
 }
 
-func HandleQueueAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item *iserialization.Data, uuid types.UUID, eventType int32)) {
+func HandleQueueAddListener(clientMessage *proto.ClientMessage, handleItemEvent func(item iserialization.Data, uuid types.UUID, eventType int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == QueueAddListenerCodecEventItemMessageType {

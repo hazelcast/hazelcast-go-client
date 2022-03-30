@@ -33,7 +33,7 @@ const (
 
 // Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
 
-func EncodeMapIsLockedRequest(name string, key *iserialization.Data) *proto.ClientMessage {
+func EncodeMapIsLockedRequest(name string, key iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

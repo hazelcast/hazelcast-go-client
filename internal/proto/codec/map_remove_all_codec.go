@@ -31,7 +31,7 @@ const (
 
 // Removes all entries which match with the supplied predicate
 
-func EncodeMapRemoveAllRequest(name string, predicate *iserialization.Data) *proto.ClientMessage {
+func EncodeMapRemoveAllRequest(name string, predicate iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

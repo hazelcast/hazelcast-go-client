@@ -31,7 +31,7 @@ const (
 
 // Inserts the specified element into this queue, waiting if necessary for space to become available.
 
-func EncodeQueuePutRequest(name string, value *iserialization.Data) *proto.ClientMessage {
+func EncodeQueuePutRequest(name string, value iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
