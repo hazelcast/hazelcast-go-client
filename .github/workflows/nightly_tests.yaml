@@ -28,5 +28,5 @@ jobs:
           
       - name: Test
         run: |
-          ./rc.sh start
-          env MEMBER_COUNT=3 make test-cover
+          env HZ_VERSION=5.1 ./rc.sh start
+          env HZ_VERSION=5.1 MEMBER_COUNT=3 make test-cover
