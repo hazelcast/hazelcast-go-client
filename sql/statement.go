@@ -47,8 +47,8 @@ type Statement struct {
 }
 
 // NewStatement returns a new sql Statement with provided arguments
-// You may define parameter placeholders in the Statement with the "?" character. For every placeholder, a
-// value must be provided in 'params'
+// You may define parameter placeholders in the Statement with the "?" character.
+// For every placeholder, a value must be provided in 'params'.
 func NewStatement(statement string, params ...interface{}) Statement {
 	return Statement{
 		SQL:                statement,
@@ -106,8 +106,8 @@ func (s *Statement) SetSchema(schema string) {
 	s.schema = schema
 }
 
-// SetExpectedResultType sets the expected result type, returns error if
-// parameter is not one of AnyResult, RowsResult or UpdateCountResult.
+// SetExpectedResultType sets the expected result type.
+// Returns an error if parameter is not one of AnyResult, RowsResult or UpdateCountResult.
 func (s *Statement) SetExpectedResultType(resultType ExpectedResultType) error {
 	switch resultType {
 	case AnyResult, RowsResult, UpdateCountResult:
@@ -123,9 +123,8 @@ func (s *Statement) CursorBufferSize() int32 {
 	return s.cursorBufferSize
 }
 
-// QueryTimeout returns the execution timeout in milliseconds. -1 means timeout
-// is not set and member configuration SqlConfig#setStatementTimeoutMillis will be
-// respected.
+// QueryTimeout returns the execution timeout in milliseconds.
+// -1 means timeout is not set and member configuration SqlConfig#setStatementTimeoutMillis will be respected.
 func (s Statement) QueryTimeout() int64 {
 	return s.timeout
 }

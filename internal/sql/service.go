@@ -92,7 +92,8 @@ func updateContextWithOptions(ctx context.Context, opts sql.Statement) (context.
 	return ctx, nil
 }
 
-// Result implements sql.Result. Depending on the statement type it represents a stream of rows or an update count.
+// Result implements sql.Result.
+// Depending on the statement type it represents a stream of rows or an update count.
 type Result struct {
 	qr                *idriver.QueryResult
 	er                *idriver.ExecResult
@@ -112,7 +113,8 @@ func (r *Result) Iterator() (sql.RowsIterator, error) {
 	return r, nil
 }
 
-// RowMetadata returns metadata information about rows. An error is returned if result represents an update count.
+// RowMetadata returns metadata information about rows.
+// An error is returned if result represents an update count.
 func (r *Result) RowMetadata() (sql.RowMetadata, error) {
 	if r.qr == nil {
 		return nil, hzerrors.NewIllegalStateError("result contains only update count", fmt.Errorf("row metadata is not applicable"))
@@ -125,9 +127,8 @@ func (r *Result) IsRowSet() bool {
 	return r.UpdateCount() == -1
 }
 
-// UpdateCount returns the number of rows updated by the statement or -1 if this result
-// is a row set. In case the result doesn't contain rows but the update
-// count isn't applicable or known, 0 is returned.
+// UpdateCount returns the number of rows updated by the statement or -1 if this result is a row set.
+// In case the result doesn't contain rows but the update count isn't applicable or known, 0 is returned.
 func (r *Result) UpdateCount() int64 {
 	if r.er == nil {
 		// means this is a query result
@@ -136,9 +137,8 @@ func (r *Result) UpdateCount() int64 {
 	return r.er.UpdateCount
 }
 
-// HasNext prepares the next result row for reading via Next method. It
-// returns true on success, or false if there is no next result row or an error
-// happened while preparing it.
+// HasNext prepares the next result row for reading via Next method.
+// It returns true on success, or false if there is no next result row or an error happened while preparing it.
 //
 // Every call to Next, even the first one, must be preceded by a call to HasNext.
 func (r *Result) HasNext() bool {
