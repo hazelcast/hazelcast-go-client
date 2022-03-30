@@ -16,9 +16,11 @@
 
 package sql
 
-// Result represents a query result. Depending on the statement type it represents a stream of rows or an update count.
+// Result represents a query result.
+// Depending on the statement type it represents a stream of rows or an update count.
 type Result interface {
-	// RowMetadata returns metadata information about rows. An error is returned if result represents an update count.
+	// RowMetadata returns metadata information about rows.
+	// An error is returned if result represents an update count.
 	RowMetadata() (RowMetadata, error)
 	// IsRowSet returns whether this result has rows to iterate using the HasNext method.
 	IsRowSet() bool
@@ -44,9 +46,8 @@ type RowsIterator interface {
 	// the two cases.
 	//
 	// Every call to Next, even the first one, must be preceded by a call to HasNext.
-	// Context parameter is provided to be able to cancel the fetch operation of pages.
 	HasNext() bool
-	// Next returns the currentRow.
+	// Next returns the current row.
 	// Every call to Next, even the first one, must be preceded by a call to HasNext.
 	Next() (Row, error)
 }
@@ -56,7 +57,7 @@ type Row interface {
 	// Get returns the value of the column by index. If index is out of range, an error is returned.
 	Get(index int) (interface{}, error)
 	// GetByColumnName returns the value of the column by name. If columns does not exist, an error is returned.
-	GetByColumnName(colName string) (interface{}, error)
+	GetByColumnName(name string) (interface{}, error)
 	// GetMetadata returns the metadata information about the row.
 	GetMetadata() RowMetadata
 }

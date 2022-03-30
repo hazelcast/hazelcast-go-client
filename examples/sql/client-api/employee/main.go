@@ -54,7 +54,7 @@ func createMapping(client *hazelcast.Client, mapName string) error {
 `, mapName)
 	result, err := client.GetSQL().Execute(context.Background(), q)
 	if err != nil {
-		return fmt.Errorf("error creating mapping: %w", err)
+		return fmt.Errorf("creating mapping: %w", err)
 	}
 	return result.Close()
 }
@@ -76,7 +76,7 @@ func queryMap(client *hazelcast.Client, mapName string, minAge int) ([]Employee,
 	q := fmt.Sprintf(`SELECT name, age FROM "%s" WHERE age >= ?`, mapName)
 	result, err := client.GetSQL().Execute(context.Background(), q, minAge)
 	if err != nil {
-		return nil, fmt.Errorf("error querying: %w", err)
+		return nil, fmt.Errorf("querying: %w", err)
 	}
 	defer result.Close()
 	iter, err := result.Iterator()
@@ -88,18 +88,18 @@ func queryMap(client *hazelcast.Client, mapName string, minAge int) ([]Employee,
 		e := Employee{}
 		row, err := iter.Next()
 		if err != nil {
-			return nil, fmt.Errorf("error iterating rows: %w", err)
+			return nil, fmt.Errorf("iterating rows: %w", err)
 		}
-		tmp, err := row.Get(0)
+		name, err := row.Get(0)
 		if err != nil {
-			return nil, fmt.Errorf("error accessing row field: %w", err)
+			return nil, fmt.Errorf("accessing row field: %w", err)
 		}
-		e.Name = tmp.(string)
-		tmp, err = row.Get(1)
+		e.Name = name.(string)
+		age, err := row.Get(1)
 		if err != nil {
-			return nil, fmt.Errorf("error accessing row field: %w", err)
+			return nil, fmt.Errorf("accessing row field: %w", err)
 		}
-		e.Age = int16(tmp.(int64))
+		e.Age = int16(age.(int64))
 		emps = append(emps, e)
 	}
 	return emps, nil

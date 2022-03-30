@@ -145,7 +145,7 @@ func NewIllegalStateError(msg string, err error) *ClientError {
 }
 
 func NewSQLError(msg string, err error) *ClientError {
-	return NewClientError(msg, err, hzerrors.ErrSQLError)
+	return NewClientError(msg, err, hzerrors.ErrSQL)
 }
 
 func IsRetryable(err error) bool {

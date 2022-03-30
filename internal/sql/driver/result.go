@@ -24,7 +24,7 @@ import (
 	"sync/atomic"
 
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
@@ -38,12 +38,12 @@ const (
 // QueryResult is not concurrency-safe, except for closing it.
 type QueryResult struct {
 	err              error
-	page             *types.Page
+	page             *itype.Page
 	ss               *SQLService
 	conn             *icluster.Connection
 	doneCh           chan struct{}
-	metadata         types.RowMetadata
-	queryID          types.QueryID
+	metadata         itype.RowMetadata
+	queryID          itype.QueryID
 	cursorBufferSize int32
 	index            int32
 	state            int32
@@ -54,7 +54,7 @@ func (r *QueryResult) Metadata() sql.RowMetadata {
 }
 
 // NewQueryResult creates a new QueryResult.
-func NewQueryResult(ctx context.Context, qid types.QueryID, md types.RowMetadata, page *types.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
+func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page *itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
 	doneCh := make(chan struct{})
 	qr := &QueryResult{
 		queryID:          qid,

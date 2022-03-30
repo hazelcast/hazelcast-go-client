@@ -18,7 +18,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
 )
 
 const (
@@ -30,7 +30,7 @@ const (
 
 // Closes server-side query cursor.
 
-func EncodeSqlCloseRequest(queryId isql.QueryID) *proto.ClientMessage {
+func EncodeSqlCloseRequest(queryId itype.QueryID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

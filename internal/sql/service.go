@@ -40,26 +40,26 @@ var (
 )
 
 type Service struct {
-	iService *idriver.SQLService
+	service *idriver.SQLService
 }
 
 func New(cm *cluster.ConnectionManager, ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Service {
 	var s Service
-	s.iService = idriver.NewSQLService(cm, ss, cif, is, l)
+	s.service = idriver.NewSQLService(cm, ss, cif, is, l)
 	return s
 }
 
-// Execute executes the given SQL statement.
+// ExecuteStatement executes the given SQL statement.
 func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.Result, error) {
 	var err error
 	if ctx, err = updateContextWithOptions(ctx, stmt); err != nil {
 		return &Result{}, nil
 	}
-	var sqlParams []driver.Value
+	sqlParams := make([]driver.Value, len(stmt.Parameters))
 	for _, p := range stmt.Parameters {
 		sqlParams = append(sqlParams, p)
 	}
-	resp, err := s.iService.Execute(ctx, stmt.SQL, sqlParams)
+	resp, err := s.service.Execute(ctx, stmt.SQL, sqlParams)
 	if err != nil {
 		return &Result{}, err
 	}
@@ -75,8 +75,8 @@ func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.
 	return &result, nil
 }
 
-// ExecuteQuery is a convenient method to execute a distributed query with the given parameter
-// values. You may define parameter placeholders in the query with the "?" character.
+// Execute is a convenient method to execute a distributed query with the given parameter values.
+// You may define parameter placeholders in the query with the "?" character.
 // For every placeholder, a value must be provided.
 func (s Service) Execute(ctx context.Context, query string, params ...interface{}) (sql.Result, error) {
 	return s.ExecuteStatement(ctx, sql.NewStatement(query, params...))
@@ -102,11 +102,11 @@ type Result struct {
 }
 
 func (r *Result) Iterator() (sql.RowsIterator, error) {
-	if r.iteratorRequested {
-		return nil, hzerrors.NewIllegalStateError("iterator can be requested only once", errors.New("iterator error"))
-	}
 	if !r.IsRowSet() {
 		return nil, hzerrors.NewIllegalStateError("this result contains only update count", errors.New("iterator error"))
+	}
+	if r.iteratorRequested {
+		return nil, hzerrors.NewIllegalStateError("iterator can be requested only once", errors.New("iterator error"))
 	}
 	r.iteratorRequested = true
 	return r, nil
@@ -159,7 +159,10 @@ func (r *Result) HasNext() bool {
 // Every call to Next, even the first one, must be preceded by a call to HasNext.
 func (r *Result) Next() (sql.Row, error) {
 	var row Row
-	m, _ := r.RowMetadata()
+	m, err := r.RowMetadata()
+	if err != nil {
+		return nil, err
+	}
 	row.metadata = m
 	row.values = r.currentRow
 	return &row, r.err
@@ -171,7 +174,7 @@ func (r *Result) Err() error {
 	return r.err
 }
 
-// Close , for results that represents a stream of rows, notifies the member to release resources for the corresponding query.
+// Close notifies the member to release resources for the corresponding query for results that represents a stream of rows.
 // It can be safely called more than once, and it is concurrency-safe.
 // If result represents an update count, it has no effect.
 func (r *Result) Close() error {
@@ -195,11 +198,11 @@ func (r *Row) Get(index int) (interface{}, error) {
 	return r.values[index], nil
 }
 
-// GetFromColumn returns the value of the column by name. If columns does not exist, an error is returned.
+// GetByColumnName returns the value of the column by name. If columns does not exist, an error is returned.
 func (r *Row) GetByColumnName(colName string) (interface{}, error) {
 	i, err := r.metadata.FindColumn(colName)
 	if err != nil {
-		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf("column \"%s\" doesn't exist", colName), err)
+		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf(`column "%s" doesn't exist`, colName), err)
 	}
 	return r.Get(i)
 }

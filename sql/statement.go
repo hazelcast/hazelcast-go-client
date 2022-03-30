@@ -24,9 +24,8 @@ import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
+// duplication of constants from internal driver package.
 const (
-	// duplication of constants from internal driver package.
-	// todo make sure they are same with the originals with tests.
 	defaultCursorBufferSize int32 = 4096
 	defaultTimeoutMillis    int64 = -1
 	defaultSchema                 = ""
@@ -41,8 +40,8 @@ Changes to fields do not affect the behavior of already running statements.
 type Statement struct {
 	SQL                string
 	schema             string
-	timeout            int64
 	Parameters         []interface{}
+	timeout            int64
 	cursorBufferSize   int32
 	expectedResultType ExpectedResultType
 }
@@ -57,7 +56,7 @@ func NewStatement(statement string, params ...interface{}) Statement {
 		cursorBufferSize:   defaultCursorBufferSize,
 		timeout:            defaultTimeoutMillis,
 		schema:             defaultSchema,
-		expectedResultType: ANY_RESULT,
+		expectedResultType: AnyResult,
 	}
 }
 
@@ -108,10 +107,10 @@ func (s *Statement) SetSchema(schema string) {
 }
 
 // SetExpectedResultType sets the expected result type, returns error if
-// parameter is not one of ANY_RESULT, ROWS_RESULT or UPDATE_COUNT_RESULT.
+// parameter is not one of AnyResult, RowsResult or UpdateCountResult.
 func (s *Statement) SetExpectedResultType(resultType ExpectedResultType) error {
 	switch resultType {
-	case ANY_RESULT, ROWS_RESULT, UPDATE_COUNT_RESULT:
+	case AnyResult, RowsResult, UpdateCountResult:
 		s.expectedResultType = resultType
 		return nil
 	default:

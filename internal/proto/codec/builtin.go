@@ -30,7 +30,7 @@ import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	types2 "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -900,7 +900,7 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization.Service) (*types2.Page, error) {
+func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization.Service) (*itype.Page, error) {
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil, nil
 	}
@@ -926,7 +926,7 @@ func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization
 		}
 	}
 	CodecUtil.FastForwardToEndFrame(it)
-	return &types2.Page{
+	return &itype.Page{
 		Columns:     cols,
 		ColumnTypes: colTypes,
 		Last:        last,
@@ -941,7 +941,7 @@ func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *sql.Error {
 	return &e
 }
 
-func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *types2.QueryID {
+func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *itype.QueryID {
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil
 	}
