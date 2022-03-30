@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"testing"
 
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/stretchr/testify/assert"
@@ -148,7 +149,7 @@ func TestDataCodec_EncodeNullable_When_Data_Is_Nil(t *testing.T) {
 	message := proto.NewClientMessageForEncode()
 
 	//when
-	EncodeNullableData(message, nil)
+	EncodeNullableData(message, iserialization.Data{})
 
 	//then
 	iterator := message.FrameIterator()
@@ -459,8 +460,8 @@ func TestEntryListUUIDLongCodec_Encode(t *testing.T) {
 
 	// then
 	frame := pairs[0]
-	assert.Equal(t, frame.Key().(types.UUID).String(), key.String())
-	assert.Equal(t, frame.Value().(int64), value)
+	assert.Equal(t, frame.Key.(types.UUID).String(), key.String())
+	assert.Equal(t, frame.Value.(int64), value)
 }
 
 func TestListUUIDCodec_Encode(t *testing.T) {
@@ -585,8 +586,8 @@ func TestEntryListUUIDListIntegerCodec_Decode(t *testing.T) {
 
 	// then
 	assert.Equal(t, len(result), 1)
-	assert.Equal(t, result[0].Key().([]types.UUID)[0].String(), key.String())
-	assert.EqualValues(t, result[0].Value().([]int32), value)
+	assert.Equal(t, result[0].Key.([]types.UUID)[0].String(), key.String())
+	assert.EqualValues(t, result[0].Value.([]int32), value)
 }
 
 func TestLongArrayCodec_Encode(t *testing.T) {

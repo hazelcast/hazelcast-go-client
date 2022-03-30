@@ -34,7 +34,7 @@ const (
 
 // Replaces the the entry for a key only if existing values equal to the testValue
 
-func EncodeMapReplaceIfSameRequest(name string, key *iserialization.Data, testValue *iserialization.Data, value *iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapReplaceIfSameRequest(name string, key iserialization.Data, testValue iserialization.Data, value iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

@@ -33,7 +33,7 @@ const (
 // This method returns a clone of the original value, so modifying the returned value does not change the actual
 // value in the map. You should put the modified value back to make changes visible to all nodes.
 
-func EncodeMapGetRequest(name string, key *iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapGetRequest(name string, key iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,7 +49,7 @@ func EncodeMapGetRequest(name string, key *iserialization.Data, threadId int64) 
 	return clientMessage
 }
 
-func DecodeMapGetResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeMapGetResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

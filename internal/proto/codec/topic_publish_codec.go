@@ -31,7 +31,7 @@ const (
 
 // Publishes the message to all subscribers of this topic
 
-func EncodeTopicPublishRequest(name string, message *iserialization.Data) *proto.ClientMessage {
+func EncodeTopicPublishRequest(name string, message iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

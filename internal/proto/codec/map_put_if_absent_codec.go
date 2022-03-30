@@ -34,7 +34,7 @@ const (
 // Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
 // with a value. Entry will expire and get evicted after the ttl.
 
-func EncodeMapPutIfAbsentRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
+func EncodeMapPutIfAbsentRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -52,7 +52,7 @@ func EncodeMapPutIfAbsentRequest(name string, key *iserialization.Data, value *i
 	return clientMessage
 }
 
-func DecodeMapPutIfAbsentResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeMapPutIfAbsentResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

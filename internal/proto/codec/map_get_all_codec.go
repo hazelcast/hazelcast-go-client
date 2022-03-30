@@ -35,7 +35,7 @@ const (
 // matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
 // of these request messages for filling a request for a key set if the keys belong to different partitions.
 
-func EncodeMapGetAllRequest(name string, keys []*iserialization.Data) *proto.ClientMessage {
+func EncodeMapGetAllRequest(name string, keys []iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

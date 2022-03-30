@@ -62,30 +62,30 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
-func (s *Service) ToData(object interface{}) (r *Data, err error) {
+func (s *Service) ToData(object interface{}) (r Data, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
 		}
 	}()
-	if serData, ok := object.(*Data); ok {
+	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
 	// initial size is kept minimal (head_data_offset + long_size), since it'll grow on demand
 	dataOutput := NewPositionalObjectDataOutput(16, s, !s.SerializationConfig.LittleEndian)
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
-		return nil, err
+		return Data{}, err
 	}
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
 	serializer.Write(dataOutput, object)
-	return &Data{dataOutput.buffer[:dataOutput.position]}, err
+	return dataOutput.buffer[:dataOutput.position], err
 }
 
 // ToObject deserializes the given Data to an object.
 // nil is returned if called with nil.
-func (s *Service) ToObject(data *Data) (r interface{}, err error) {
+func (s *Service) ToObject(data Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
@@ -103,7 +103,7 @@ func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 			return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 		}
 	}
-	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, !s.SerializationConfig.LittleEndian)
+	dataInput := NewObjectDataInput(data, DataOffset, s, !s.SerializationConfig.LittleEndian)
 	return serializer.Read(dataInput), nil
 }
 
