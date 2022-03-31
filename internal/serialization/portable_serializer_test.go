@@ -528,5 +528,4 @@ func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
 	if !reflect.DeepEqual(deserializedParent, p) {
 		t.Error("nested portable version is wrong")
 	}
-
 }
