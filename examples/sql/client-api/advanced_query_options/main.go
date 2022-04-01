@@ -41,7 +41,7 @@ func main() {
 			)
 	`)
 	stmt.SetSchema("partitioned")
-	sqlService := client.GetSQL()
+	sqlService := client.SQL()
 	_, err = sqlService.ExecuteStatement(ctx, stmt)
 	if err != nil {
 		panic(fmt.Errorf("creating the mapping: %w", err))

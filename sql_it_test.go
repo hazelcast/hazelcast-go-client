@@ -280,7 +280,7 @@ func TestSQLWithPortableData(t *testing.T) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
 	}
 	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		it.MustValue(client.GetSQL().Execute(context.Background(), fmt.Sprintf(`
+		it.MustValue(client.SQL().Execute(context.Background(), fmt.Sprintf(`
 			CREATE MAPPING "%s" (
 				__key BIGINT,
 				varcharvalue VARCHAR,
@@ -313,7 +313,7 @@ func TestSQLWithPortableData(t *testing.T) {
 			DoubleValue:   12.789,
 			DecimalValue:  &dec,
 		}
-		_, err := client.GetSQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, varcharvalue, tinyintvalue, smallintvalue, integervalue, bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, mapName),
+		_, err := client.SQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, varcharvalue, tinyintvalue, smallintvalue, integervalue, bigintvalue, boolvalue, realvalue, doublevalue, decimalvalue) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, mapName),
 			1, rec.VarcharValue, rec.TinyIntValue, rec.SmallIntValue, rec.IntegerValue, rec.BigIntValue, rec.BoolValue, rec.RealValue, rec.DoubleValue, *rec.DecimalValue)
 		if err != nil {
 			t.Fatal(err)
@@ -383,10 +383,10 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(client.GetSQL().Execute(context.Background(), q))
+		it.MustValue(client.SQL().Execute(context.Background(), q))
 		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
 		rec := NewRecordWithDateTime(&dt)
-		_, err := client.GetSQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
+		_, err := client.SQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
 			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
 		if err != nil {
 			t.Fatal(err)
@@ -466,10 +466,10 @@ func TestSQLWithPortableDateTime2(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(client.GetSQL().Execute(context.Background(), q))
+		it.MustValue(client.SQL().Execute(context.Background(), q))
 		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
 		rec := NewRecordWithDateTime2(&dt)
-		_, err := client.GetSQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
+		_, err := client.SQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
 			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
 		if err != nil {
 			t.Fatal(err)
@@ -542,7 +542,7 @@ func TestSQLStatementWithQueryTimeout(t *testing.T) {
 	stmt.SetQueryTimeout(3 * time.Second)
 	it.Must(stmt.SetCursorBufferSize(2))
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, _ *hz.Map, _ string) {
-		sqlService := client.GetSQL()
+		sqlService := client.SQL()
 		result := it.MustValue(sqlService.ExecuteStatement(context.Background(), stmt)).(sql.Result)
 		defer result.Close()
 		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
@@ -569,7 +569,7 @@ func TestConcurrentQueries(t *testing.T) {
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
-		it.MustValue(client.GetSQL().Execute(context.Background(), q))
+		it.MustValue(client.SQL().Execute(context.Background(), q))
 		it.Must(m.Set(context.TODO(), 1, "foo"))
 		const cnt = 1000
 		wg := &sync.WaitGroup{}
@@ -607,7 +607,7 @@ func TestSQLService_Execute(t *testing.T) {
 				'valueFormat' = 'json-flat'
 			)
 		`, mapName)
-		sqlService := client.GetSQL()
+		sqlService := client.SQL()
 		result := it.MustValue(sqlService.Execute(ctx, q)).(sql.Result)
 		assert.Nil(t, result.Close())
 		q = fmt.Sprintf(`INSERT INTO "%s" (__key, name) VALUES(?, ?)`, mapName)
@@ -642,13 +642,13 @@ func TestSQLService_ExecuteMismatchedParams(t *testing.T) {
 			)
 		`, mapName))
 
-		_ = it.MustValue(client.GetSQL().ExecuteStatement(ctx, stmt))
+		_ = it.MustValue(client.SQL().ExecuteStatement(ctx, stmt))
 		// with less args
-		_, err := client.GetSQL().Execute(ctx, fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5)
+		_, err := client.SQL().Execute(ctx, fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5)
 		var sqlError *sql.Error
 		assert.True(t, errors.As(err, &sqlError))
 		// with more args
-		_, err = client.GetSQL().Execute(ctx, fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5, "abc", 5)
+		_, err = client.SQL().Execute(ctx, fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5, "abc", 5)
 		sqlError = nil
 		assert.True(t, errors.As(err, &sqlError))
 	})
@@ -667,13 +667,13 @@ func TestSQLService_ExecuteStatementMismatchedParams(t *testing.T) {
 			)
 		`, mapName))
 
-		_ = it.MustValue(client.GetSQL().ExecuteStatement(ctx, stmt))
+		_ = it.MustValue(client.SQL().ExecuteStatement(ctx, stmt))
 		// with less args
-		_, err := client.GetSQL().ExecuteStatement(ctx, sql.NewStatement(fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5))
+		_, err := client.SQL().ExecuteStatement(ctx, sql.NewStatement(fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5))
 		var sqlError *sql.Error
 		assert.True(t, errors.As(err, &sqlError))
 		// with more args
-		_, err = client.GetSQL().ExecuteStatement(ctx, sql.NewStatement(fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5, "abc", 5))
+		_, err = client.SQL().ExecuteStatement(ctx, sql.NewStatement(fmt.Sprintf(`SELECT * FROM "%s" WHERE __key > ? AND this > ?`, mapName), 5, "abc", 5))
 		sqlError = nil
 		assert.True(t, errors.As(err, &sqlError))
 	})
@@ -686,12 +686,12 @@ func TestSQLService_ExecuteProvidedSuggestion(t *testing.T) {
 		// for create-mapping suggestion, map must have a value
 		_ = it.MustValue(m.Put(ctx, "some-key", 5))
 		selectAllQuery := fmt.Sprintf(`SELECT * FROM "%s"`, mapName)
-		_, err := client.GetSQL().Execute(ctx, selectAllQuery)
+		_, err := client.SQL().Execute(ctx, selectAllQuery)
 		var sqlError *sql.Error
 		assert.True(t, errors.As(err, &sqlError))
 		// with more args
-		_ = it.MustValue(client.GetSQL().Execute(ctx, sqlError.Suggestion))
-		resp := it.MustValue(client.GetSQL().Execute(ctx, selectAllQuery)).(sql.Result)
+		_ = it.MustValue(client.SQL().Execute(ctx, sqlError.Suggestion))
+		resp := it.MustValue(client.SQL().Execute(ctx, selectAllQuery)).(sql.Result)
 		assert.True(t, resp.IsRowSet())
 		iter := it.MustValue(resp.Iterator()).(sql.RowsIterator)
 		var values []interface{}
@@ -716,8 +716,8 @@ func TestSQLResult_IteratorRequestedMoreThanOnce(t *testing.T) {
 			)
 		`, mapName)
 		ctx := context.Background()
-		it.MustValue(client.GetSQL().Execute(ctx, q))
-		result := it.MustValue(client.GetSQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
+		it.MustValue(client.SQL().Execute(ctx, q))
+		result := it.MustValue(client.SQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
 		assert.True(t, result.IsRowSet())
 		_ = it.MustValue(result.Iterator())
 		_, err := result.Iterator()
@@ -740,7 +740,7 @@ func TestSQLResult_ForRowAndNonRowResults(t *testing.T) {
 		`, mapName)
 		ctx := context.Background()
 		// Non-row result
-		result := it.MustValue(client.GetSQL().Execute(ctx, q)).(sql.Result)
+		result := it.MustValue(client.SQL().Execute(ctx, q)).(sql.Result)
 		assert.Equal(t, int64(0), result.UpdateCount())
 		assert.False(t, result.IsRowSet())
 		_, err := result.Iterator()
@@ -749,7 +749,7 @@ func TestSQLResult_ForRowAndNonRowResults(t *testing.T) {
 		assert.True(t, errors.Is(err, hzerrors.ErrIllegalState))
 		assert.Nil(t, result.Close())
 		// Row result
-		result = it.MustValue(client.GetSQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
+		result = it.MustValue(client.SQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
 		assert.Equal(t, int64(-1), result.UpdateCount())
 		assert.True(t, result.IsRowSet())
 		// assert metadata
@@ -790,10 +790,10 @@ func TestSQLRow_FindByColumnName(t *testing.T) {
 		`, mapName)
 		ctx := context.Background()
 		// Non-row result
-		result := it.MustValue(client.GetSQL().Execute(ctx, q)).(sql.Result)
+		result := it.MustValue(client.SQL().Execute(ctx, q)).(sql.Result)
 		it.Must(result.Close())
 		_ = it.MustValue(m.Put(ctx, 5, "value"))
-		result = it.MustValue(client.GetSQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
+		result = it.MustValue(client.SQL().Execute(ctx, fmt.Sprintf(`select * from "%s"`, mapName))).(sql.Result)
 		defer it.Must(result.Close())
 		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
 		assert.True(t, iter.HasNext())
@@ -819,7 +819,7 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 		}
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
 		var result sql.Result
-		sqlService := client.GetSQL()
+		sqlService := client.SQL()
 		if stmt.SQL == "" {
 			stmt.SQL = query
 		}
@@ -871,7 +871,7 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 
 func createMapping(t *testing.T, client *hz.Client, mapping string) error {
 	t.Logf("mapping: %s", mapping)
-	_, err := client.GetSQL().Execute(context.Background(), mapping)
+	_, err := client.SQL().Execute(context.Background(), mapping)
 	return err
 }
 
@@ -901,7 +901,7 @@ func populateMap(m *hz.Map, count int, keyFn, valueFn func(i int) interface{}) (
 }
 
 func queryRow(client *hz.Client, q string, params ...interface{}) (sql.Row, error) {
-	result, err := client.GetSQL().Execute(context.Background(), q, params...)
+	result, err := client.SQL().Execute(context.Background(), q, params...)
 	if err != nil {
 		return nil, err
 	}

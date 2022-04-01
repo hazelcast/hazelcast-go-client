@@ -30,7 +30,7 @@ func ExampleService_ExecuteStatement() {
 	if err != nil {
 		// handle the error
 	}
-	sqlService := client.GetSQL()
+	sqlService := client.SQL()
 	result, err := sqlService.ExecuteStatement(context.TODO(), stmt)
 	if err != nil {
 		// handle the error
@@ -44,7 +44,7 @@ func Example() {
 	if err != nil {
 		// handle the error
 	}
-	sqlService := client.GetSQL()
+	sqlService := client.SQL()
 	stmt := sql.NewStatement(`SELECT name, age FROM person WHERE age >= ?`, 30)
 	err = stmt.SetCursorBufferSize(1000)
 	if err != nil {

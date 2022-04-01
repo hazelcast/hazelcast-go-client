@@ -277,8 +277,8 @@ func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscripti
 	return c.proxyManager.removeDistributedObjectEventListener(ctx, subscriptionID)
 }
 
-// GetSQL returns a service to execute distributes SQL queries.
-func (c *Client) GetSQL() sql.Service {
+// SQL returns a service to execute distributes SQL queries.
+func (c *Client) SQL() sql.Service {
 	return c.sqlService
 }
 
