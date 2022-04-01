@@ -79,7 +79,7 @@ func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), 
 	}
 }
 
-func sqlXMLConfig(clusterName, publicAddr string, port int) string {
+func SqlXMLConfig(clusterName, publicAddr string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

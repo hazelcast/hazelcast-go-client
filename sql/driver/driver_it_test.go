@@ -573,6 +573,35 @@ func TestConcurrentQueries(t *testing.T) {
 	})
 }
 
+func TestClusterShutdownWithContextCancel(t *testing.T) {
+	tc := it.StartNewClusterWithConfig(1, it.SqlXMLConfig(t.Name(), "localhost", 60001), 60001)
+	defer tc.Shutdown()
+	db := driver.Open(tc.DefaultConfig())
+	defer db.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// shutdown the cluster
+	defer rows.Close()
+	finish := make(chan bool)
+	go func() {
+		for rows.Next() {
+			// shutdown cluster after first page
+			tc.Shutdown()
+			// cancel context so that client does not block trying to connect to the cluster
+		}
+		close(finish)
+	}()
+	select {
+	case <-finish:
+	case <-time.After(3 * time.Second):
+		t.Fatal("driver did not respect the context timeout")
+	}
+}
+
 func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		const rowCount = 50
