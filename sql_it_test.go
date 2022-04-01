@@ -428,9 +428,6 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 		vTime := time.Time(it.MustValue(row.Get(2)).(types.LocalTime))
 		vTimestamp := time.Time(it.MustValue(row.Get(3)).(types.LocalDateTime))
 		vTimestampWithTimezone := time.Time(it.MustValue(row.Get(4)).(types.OffsetDateTime))
-		//if err := assignValues(row, &k, &vDate, &vTime, &vTimestamp, &vTimestampWithTimezone); err != nil {
-		//	t.Fatal(err)
-		//}
 		if !targetDate.Equal(vDate) {
 			t.Fatalf("%s != %s", targetDate, vDate)
 		}
