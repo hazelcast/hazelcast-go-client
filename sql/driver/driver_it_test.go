@@ -590,7 +590,6 @@ func TestClusterShutdownWithContextCancel(t *testing.T) {
 		for rows.Next() {
 			// shutdown cluster after first page
 			tc.Shutdown()
-			// cancel context so that client does not block trying to connect to the cluster
 		}
 		close(finish)
 	}()
