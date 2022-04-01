@@ -59,6 +59,6 @@ type Row interface {
 	Get(index int) (interface{}, error)
 	// GetByColumnName returns the value of the column by name. If columns does not exist, an error is returned.
 	GetByColumnName(name string) (interface{}, error)
-	// GetMetadata returns the metadata information about the row.
-	GetMetadata() RowMetadata
+	// Metadata returns the metadata information about the row.
+	Metadata() RowMetadata
 }

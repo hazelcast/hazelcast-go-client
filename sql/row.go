@@ -20,6 +20,6 @@ package sql
 type RowMetadata interface {
 	GetColumn(index int) (ColumnMetadata, error)
 	FindColumn(columnName string) (int, error)
-	GetColumnCount() int
-	GetColumns() []ColumnMetadata
+	ColumnCount() int
+	Columns() []ColumnMetadata
 }

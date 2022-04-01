@@ -27,40 +27,40 @@ var ErrColumnNotFound = fmt.Errorf("column not found")
 
 // RowMetadata represents SQL row metadata.
 type RowMetadata struct {
-	NameToIndex map[string]int
-	Columns     []sql.ColumnMetadata
+	nameToIndex map[string]int
+	columns     []sql.ColumnMetadata
 }
 
 func (r RowMetadata) GetColumn(index int) (sql.ColumnMetadata, error) {
-	if index >= len(r.Columns) || index < 0 {
+	if index >= len(r.columns) || index < 0 {
 		return nil, ErrIndexOutOfRange
 	}
-	return r.Columns[index], nil
+	return r.columns[index], nil
 }
 
 func (r RowMetadata) FindColumn(columnName string) (int, error) {
-	i, ok := r.NameToIndex[columnName]
+	i, ok := r.nameToIndex[columnName]
 	if !ok {
 		return i, ErrColumnNotFound
 	}
 	return i, nil
 }
 
-func (r RowMetadata) GetColumnCount() int {
-	return len(r.Columns)
+func (r RowMetadata) ColumnCount() int {
+	return len(r.columns)
 }
 
-func (r RowMetadata) GetColumns() []sql.ColumnMetadata {
-	return r.Columns
+func (r RowMetadata) Columns() []sql.ColumnMetadata {
+	return r.columns
 }
 
 func NewRowMetadata(columns []sql.ColumnMetadata) RowMetadata {
 	var rm RowMetadata
 	m := make(map[string]int, len(columns))
 	for i, c := range columns {
-		m[c.GetName()] = i
+		m[c.Name()] = i
 	}
-	rm.NameToIndex = m
-	rm.Columns = columns
+	rm.nameToIndex = m
+	rm.columns = columns
 	return rm
 }

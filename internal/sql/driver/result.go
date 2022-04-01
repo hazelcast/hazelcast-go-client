@@ -82,15 +82,16 @@ func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata
 // Columns returns the column names for the rows in the query result.
 // It implements database/sql/Rows interface.
 func (r *QueryResult) Columns() []string {
-	names := make([]string, len(r.metadata.Columns))
+	names := make([]string, r.metadata.ColumnCount())
+	cols := r.metadata.Columns()
 	for i := 0; i < len(names); i++ {
-		names[i] = r.metadata.Columns[i].GetName()
+		names[i] = cols[i].Name()
 	}
 	return names
 }
 
 func (r *QueryResult) Len() int {
-	return len(r.metadata.Columns)
+	return r.metadata.ColumnCount()
 }
 
 // Close notifies the member to release resources for the corresponding query.

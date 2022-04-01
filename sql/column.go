@@ -18,7 +18,7 @@ package sql
 
 // ColumnMetadata SQL column metadata.
 type ColumnMetadata interface {
-	GetName() string
-	GetType() ColumnType
-	IsNullable() bool
+	Name() string
+	Type() ColumnType
+	Nullable() bool
 }

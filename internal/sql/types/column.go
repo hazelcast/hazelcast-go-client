@@ -19,19 +19,19 @@ package types
 import "github.com/hazelcast/hazelcast-go-client/sql"
 
 type ColumnMetadata struct {
-	Name     string
-	Type     sql.ColumnType
-	Nullable bool
+	ColumnName string
+	ColumnType sql.ColumnType
+	IsNullable bool
 }
 
-func (c ColumnMetadata) GetName() string {
-	return c.Name
+func (c ColumnMetadata) Name() string {
+	return c.ColumnName
 }
 
-func (c ColumnMetadata) GetType() sql.ColumnType {
-	return c.Type
+func (c ColumnMetadata) Type() sql.ColumnType {
+	return c.ColumnType
 }
 
-func (c ColumnMetadata) IsNullable() bool {
-	return c.Nullable
+func (c ColumnMetadata) Nullable() bool {
+	return c.IsNullable
 }

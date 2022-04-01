@@ -757,17 +757,17 @@ func TestSQLResult_ForRowAndNonRowResults(t *testing.T) {
 		assert.True(t, result.IsRowSet())
 		// assert metadata
 		md := it.MustValue(result.RowMetadata()).(sql.RowMetadata)
-		assert.Equal(t, 2, md.GetColumnCount())
+		assert.Equal(t, 2, md.ColumnCount())
 		// col1
 		col := it.MustValue(md.GetColumn(0)).(sql.ColumnMetadata)
 		assert.Equal(t, 0, it.MustValue(md.FindColumn("__key")))
-		assert.Equal(t, sql.ColumnTypeBigInt, col.GetType())
-		assert.Equal(t, true, col.IsNullable())
+		assert.Equal(t, sql.ColumnTypeBigInt, col.Type())
+		assert.Equal(t, true, col.Nullable())
 		// col2
 		col = it.MustValue(md.GetColumn(1)).(sql.ColumnMetadata)
 		assert.Equal(t, 1, it.MustValue(md.FindColumn("this")))
-		assert.Equal(t, sql.ColumnTypeVarchar, col.GetType())
-		assert.Equal(t, true, col.IsNullable())
+		assert.Equal(t, sql.ColumnTypeVarchar, col.Type())
+		assert.Equal(t, true, col.Nullable())
 		// wrong column name
 		if _, err = md.FindColumn("wrongColumn"); err == nil {
 			t.Fatal("error must be returned for non existing column")
@@ -920,7 +920,7 @@ func queryRow(client *hz.Client, q string, params ...interface{}) (sql.Row, erro
 
 func assignValues(row sql.Row, targets ...interface{}) error {
 	var err error
-	for i := 0; i < row.GetMetadata().GetColumnCount(); i++ {
+	for i := 0; i < row.Metadata().ColumnCount(); i++ {
 		var tmp interface{}
 		tmp, err = row.Get(i)
 		if err != nil {

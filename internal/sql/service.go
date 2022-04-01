@@ -212,7 +212,7 @@ func (r *Row) GetByColumnName(colName string) (interface{}, error) {
 	return r.Get(i)
 }
 
-// GetMetadata returns the metadata information about the row.
-func (r *Row) GetMetadata() sql.RowMetadata {
+// Metadata returns the metadata information about the row.
+func (r *Row) Metadata() sql.RowMetadata {
 	return r.metadata
 }

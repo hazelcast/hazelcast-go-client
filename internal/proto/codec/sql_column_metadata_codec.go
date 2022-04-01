@@ -31,11 +31,11 @@ const (
 func EncodeSqlColumnMetadata(clientMessage *proto.ClientMessage, sqlColumnMetadata sql.ColumnMetadata) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrameWith(make([]byte, SqlColumnMetadataCodecNullableInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset, int32(sqlColumnMetadata.GetType()))
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset, sqlColumnMetadata.IsNullable())
+	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset, int32(sqlColumnMetadata.Type()))
+	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset, sqlColumnMetadata.Nullable())
 	clientMessage.AddFrame(initialFrame)
 
-	EncodeString(clientMessage, sqlColumnMetadata.GetName())
+	EncodeString(clientMessage, sqlColumnMetadata.Name())
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -54,8 +54,8 @@ func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) sql.Colu
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
 	return itype.ColumnMetadata{
-		Name:     name,
-		Type:     sql.ColumnType(_type),
-		Nullable: nullable,
+		ColumnName: name,
+		ColumnType: sql.ColumnType(_type),
+		IsNullable: nullable,
 	}
 }
