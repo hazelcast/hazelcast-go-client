@@ -539,16 +539,8 @@ func TestSQLQueryWithCursorBufferSize(t *testing.T) {
 	testSQLQuery(t, "int", "int", fn, fn, stmt)
 }
 
-func TestSQLQueryWithQueryTimeout(t *testing.T) {
-	it.SkipIf(t, "hz < 5.0")
-	fn := func(i int) interface{} { return int32(i) }
-	stmt := sql.NewStatement("select v, v from table(generate_stream(1))")
-	stmt.SetQueryTimeout(5 * time.Second)
-	it.Must(stmt.SetCursorBufferSize(2))
-	testSQLQuery(t, "int", "int", fn, fn, stmt)
-}
-
 func TestSQLStatementWithQueryTimeout(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
 	stmt := sql.NewStatement("select v from table(generate_stream(1))")
 	stmt.SetQueryTimeout(3 * time.Second)
 	it.Must(stmt.SetCursorBufferSize(2))
@@ -809,7 +801,7 @@ func TestSQLRow_FindByColumnName(t *testing.T) {
 		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
 		assert.True(t, iter.HasNext())
 		row := it.MustValue(iter.Next()).(sql.Row)
-		assert.Equal(t, int64(5), it.MustValue(row.GetByColumnName("__key")))
+		assert.EqualValues(t, 5, it.MustValue(row.GetByColumnName("__key")))
 		assert.False(t, iter.HasNext())
 		_, err := row.GetByColumnName("non-existing-column")
 		assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
@@ -839,7 +831,7 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 			log.Fatal(err)
 		}
 		defer result.Close()
-		assert.Equal(t, -1, result.UpdateCount())
+		assert.EqualValues(t, -1, result.UpdateCount())
 		assert.True(t, result.IsRowSet())
 		iter, err := result.Iterator()
 		if err != nil {
@@ -940,5 +932,4 @@ func assignValues(row sql.Row, targets ...interface{}) error {
 		iValue.Set(x)
 	}
 	return nil
-
 }

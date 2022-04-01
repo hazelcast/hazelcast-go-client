@@ -18,6 +18,7 @@ package sql
 
 // Result represents a query result.
 // Depending on the statement type it represents a stream of rows or an update count.
+// It is not concurrency-safe except the Close and Iterator method.
 type Result interface {
 	// RowMetadata returns metadata information about rows.
 	// An error is returned if result represents an update count.
@@ -37,6 +38,8 @@ type Result interface {
 	Close() error
 }
 
+// RowsIterator provides means to iterate over SQL statement result.
+// It is not concurrency-safe.
 type RowsIterator interface {
 	// HasNext prepares the next result row for reading via Next method. It
 	// returns true on success, or false if there is no next result row or an error

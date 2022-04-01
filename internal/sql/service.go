@@ -19,9 +19,9 @@ package sql
 import (
 	"context"
 	"database/sql/driver"
-	"errors"
 	"fmt"
 	"io"
+	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -56,8 +56,8 @@ func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.
 		return &Result{}, nil
 	}
 	sqlParams := make([]driver.Value, len(stmt.Parameters))
-	for _, p := range stmt.Parameters {
-		sqlParams = append(sqlParams, p)
+	for i := range stmt.Parameters {
+		sqlParams[i] = stmt.Parameters[i]
 	}
 	resp, err := s.service.Execute(ctx, stmt.SQL, sqlParams)
 	if err != nil {
@@ -70,7 +70,7 @@ func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.
 	case *idriver.ExecResult:
 		result.er = r
 	default:
-		// todo return err
+		return &Result{}, fmt.Errorf("unknown result type")
 	}
 	return &result, nil
 }
@@ -92,24 +92,29 @@ func updateContextWithOptions(ctx context.Context, opts sql.Statement) (context.
 	return ctx, nil
 }
 
-// Result implements sql.Result.
+const (
+	iteratorInitial   = 0
+	iteratorRequested = 1
+)
+
+// Result implements sql.Result and sql.RowsIterator.
 // Depending on the statement type it represents a stream of rows or an update count.
+// It is not concurrency-safe except the Close and Iterator method.
 type Result struct {
-	qr                *idriver.QueryResult
-	er                *idriver.ExecResult
-	err               error
-	currentRow        []driver.Value
-	iteratorRequested bool
+	qr            *idriver.QueryResult
+	er            *idriver.ExecResult
+	err           error
+	currentRow    []driver.Value
+	iteratorState int32
 }
 
 func (r *Result) Iterator() (sql.RowsIterator, error) {
 	if !r.IsRowSet() {
-		return nil, hzerrors.NewIllegalStateError("this result contains only update count", errors.New("iterator error"))
+		return nil, hzerrors.NewIllegalStateError("this result contains only update count", nil)
 	}
-	if r.iteratorRequested {
-		return nil, hzerrors.NewIllegalStateError("iterator can be requested only once", errors.New("iterator error"))
+	if !atomic.CompareAndSwapInt32(&r.iteratorState, iteratorInitial, iteratorRequested) {
+		return nil, hzerrors.NewIllegalStateError("iterator can be requested only once", nil)
 	}
-	r.iteratorRequested = true
 	return r, nil
 }
 
@@ -117,7 +122,7 @@ func (r *Result) Iterator() (sql.RowsIterator, error) {
 // An error is returned if result represents an update count.
 func (r *Result) RowMetadata() (sql.RowMetadata, error) {
 	if r.qr == nil {
-		return nil, hzerrors.NewIllegalStateError("result contains only update count", fmt.Errorf("row metadata is not applicable"))
+		return nil, hzerrors.NewIllegalStateError("result contains only update count", nil)
 	}
 	return r.qr.Metadata(), nil
 }
