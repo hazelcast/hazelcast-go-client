@@ -584,7 +584,6 @@ func TestClusterShutdownWithContextCancel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// shutdown the cluster
 	defer rows.Close()
 	finish := make(chan bool)
 	go func() {
