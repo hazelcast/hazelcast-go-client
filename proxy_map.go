@@ -18,6 +18,7 @@ package hazelcast
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -119,6 +120,35 @@ func (m *Map) NewLockContext(ctx context.Context) context.Context {
 		ctx = context.Background()
 	}
 	return context.WithValue(ctx, lockIDKey{}, lockID(m.refIDGen.NextID()))
+}
+
+type MapListener struct {
+	EntryAdded       func(event *EntryNotified)
+	EntryRemoved     func(event *EntryNotified)
+	EntryUpdated     func(event *EntryNotified)
+	EntryEvicted     func(event *EntryNotified)
+	EntryExpired     func(event *EntryNotified)
+	EntryAllEvicted  func(event *EntryNotified)
+	EntryAllCleared  func(event *EntryNotified)
+	EntryMerged      func(event *EntryNotified)
+	EntryInvalidated func(event *EntryNotified)
+	EntryLoaded      func(event *EntryNotified)
+}
+
+func (m *Map) AddListener(ctx context.Context, listener MapListener, includeValue bool) (types.UUID, error) {
+	return types.NewUUID(), errors.New("s")
+}
+
+func (m *Map) AddListenerWithKey(ctx context.Context, listener MapListener, key interface{}, includeValue bool) (types.UUID, error) {
+	return types.NewUUID(), errors.New("s")
+}
+
+func (m *Map) AddListenerWithPredicate(ctx context.Context, listener MapListener, predicate predicate.Predicate, includeValue bool) (types.UUID, error) {
+	return types.NewUUID(), errors.New("s")
+}
+
+func (m *Map) AddListenerWithKeyAndPredicate(ctx context.Context, listener MapListener, predicate predicate.Predicate, key interface{}, includeValue bool) (types.UUID, error) {
+	return types.NewUUID(), errors.New("s")
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
