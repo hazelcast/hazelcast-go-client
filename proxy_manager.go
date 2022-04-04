@@ -223,37 +223,28 @@ func makeProxyName(serviceName string, objectName string) string {
 	return fmt.Sprintf("%s%s", serviceName, objectName)
 }
 
-type ProxyDestroyer interface {
+type proxyDestroyer interface {
 	Destroy(ctx context.Context) error
-	Name() string
 }
 
-func destroyProxies(ctx context.Context, proxyArgs ...interface{}) error {
-	if proxyArgs == nil {
+func destroy(ctx context.Context, name string, p interface{}) error {
+	if p == nil {
 		return fmt.Errorf("given proxy argument is nil")
 	}
-	errHandler := func(dsName string, i int, err error) error {
-		return fmt.Errorf("given %s proxy cannot be destroyed, last index: %d, %w", dsName, i, err)
+	ds, ok := p.(proxyDestroyer)
+	if !ok {
+		return fmt.Errorf("given %s proxy argument does not implement proxyDestroyer", name)
 	}
-	for i, p := range proxyArgs {
-		if p == nil {
-			return fmt.Errorf("given %d. proxy argument is nil", i)
-		}
-		ds, ok := p.(ProxyDestroyer)
-		if !ok {
-			return fmt.Errorf("given %d. proxy argument does not implement Destroy method", i)
-		}
-		err := ds.Destroy(ctx)
-		if err != nil {
-			return errHandler(ds.Name(), i, err)
-		}
+	err := ds.Destroy(ctx)
+	if err != nil {
+		return fmt.Errorf("given %s proxy cannot be destroyed, %s", name, err)
 	}
 	return nil
 }
 
-func (m *proxyManager) destroy(ctx context.Context) error {
+func (m *proxyManager) destroyProxies(ctx context.Context) error {
 	for key, proxy := range m.proxies {
-		err := destroyProxies(ctx, proxy)
+		err := destroy(ctx, key, proxy)
 		if err != nil {
 			return fmt.Errorf("proxy named with %s key cannot be destroyed, %w", key, err)
 		}

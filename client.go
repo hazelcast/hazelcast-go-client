@@ -487,7 +487,7 @@ func (c *Client) createComponents(config *Config) {
 	c.db = sql.OpenDB(idriver.NewConnectorWithClient(c.ic, true))
 	// create and assign shutdown handlers to be executed in internal shutdown
 	shutdownHandlers := make(map[client.ShutdownHandlerType]func(ctx context.Context) error)
-	shutdownHandlers[client.ProxyShutdownHandler] = c.proxyManager.destroy
+	shutdownHandlers[client.ProxyShutdownHandler] = c.proxyManager.destroyProxies
 	c.ic.ShutdownHandlers = shutdownHandlers
 }
 
