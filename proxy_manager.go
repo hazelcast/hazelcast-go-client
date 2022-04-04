@@ -223,6 +223,11 @@ func makeProxyName(serviceName string, objectName string) string {
 	return fmt.Sprintf("%s%s", serviceName, objectName)
 }
 
+type ProxyDestroyer interface {
+	Destroy(ctx context.Context) error
+	Name() string
+}
+
 func destroyProxies(ctx context.Context, proxyArgs ...interface{}) error {
 	if proxyArgs == nil {
 		return fmt.Errorf("given proxy argument is nil")
@@ -234,45 +239,13 @@ func destroyProxies(ctx context.Context, proxyArgs ...interface{}) error {
 		if p == nil {
 			return fmt.Errorf("given %d. proxy argument is nil", i)
 		}
-		switch ds := p.(type) {
-		case *Map:
-			if err := p.(*Map).Destroy(ctx); err != nil {
-				return errHandler("Map", i, err)
-			}
-		case *ReplicatedMap:
-			if err := p.(*ReplicatedMap).Destroy(ctx); err != nil {
-				return errHandler("ReplicatedMap", i, err)
-			}
-		case *MultiMap:
-			if err := p.(*MultiMap).Destroy(ctx); err != nil {
-				return errHandler("MultiMap", i, err)
-			}
-		case *Queue:
-			if err := p.(*Queue).Destroy(ctx); err != nil {
-				return errHandler("Queue", i, err)
-			}
-		case *Topic:
-			if err := p.(*Topic).Destroy(ctx); err != nil {
-				return errHandler("Topic", i, err)
-			}
-		case *List:
-			if err := p.(*List).Destroy(ctx); err != nil {
-				return errHandler("List", i, err)
-			}
-		case *PNCounter:
-			if err := p.(*PNCounter).Destroy(ctx); err != nil {
-				return errHandler("PNCounter", i, err)
-			}
-		case *Set:
-			if err := p.(*Set).Destroy(ctx); err != nil {
-				return errHandler("Set", i, err)
-			}
-		case *FlakeIDGenerator:
-			if err := p.(*FlakeIDGenerator).Destroy(ctx); err != nil {
-				return errHandler("FlakeIDGenerator", i, err)
-			}
-		default:
-			return fmt.Errorf("proyx %v does not belong to any data structure", ds)
+		ds, ok := p.(ProxyDestroyer)
+		if !ok {
+			return fmt.Errorf("given %d. proxy argument does not implement Destroy method", i)
+		}
+		err := ds.Destroy(ctx)
+		if err != nil {
+			return errHandler(ds.Name(), i, err)
 		}
 	}
 	return nil
