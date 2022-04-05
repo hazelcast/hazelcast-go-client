@@ -704,6 +704,78 @@ func TestSQLService_ExecuteProvidedSuggestion(t *testing.T) {
 	})
 }
 
+func TestSQLService_ExecuteMismatchExpectedResultType(t *testing.T) {
+	it.SkipIf(t, "hz < 5.0")
+	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
+		ctx := context.Background()
+		sqlRead := fmt.Sprintf(`SELECT * FROM "%s"`, mapName)
+		sqlDelete := fmt.Sprintf(`DELETE FROM "%s" WHERE __key = 1`, mapName)
+		it.Must(m.Set(ctx, int32(1), int32(1)))
+		it.Must(createMapping(t, client, createMappingStr(mapName, "int", "int")))
+		// Row results
+		testCases := []struct {
+			expectedResultType sql.ExpectedResultType
+			expectErr          error
+			count              int
+		}{
+			{
+				expectedResultType: sql.ExpectedResultTypeAny,
+				count:              1,
+			},
+			{
+				expectedResultType: sql.ExpectedResultTypeRows,
+				count:              1,
+			},
+			{
+				expectedResultType: sql.ExpectedResultTypeUpdateCount,
+				expectErr:          hzerrors.ErrSQL,
+			},
+		}
+		for _, tc := range testCases {
+			stmt := sql.NewStatement(sqlRead)
+			it.Must(stmt.SetExpectedResultType(tc.expectedResultType))
+			rows, err := queryAllRowsWithStatement(client, stmt)
+			if tc.expectErr != nil {
+				assert.True(t, errors.Is(err, tc.expectErr))
+				continue
+			}
+			assert.Nil(t, err)
+			assert.Equal(t, 1, len(rows))
+		}
+		// Update count results
+		testCases = []struct {
+			expectedResultType sql.ExpectedResultType
+			expectErr          error
+			count              int
+		}{
+			{
+				expectedResultType: sql.ExpectedResultTypeAny,
+				count:              0,
+			},
+			{
+				expectedResultType: sql.ExpectedResultTypeUpdateCount,
+				count:              0,
+			},
+			{
+				expectedResultType: sql.ExpectedResultTypeRows,
+				expectErr:          hzerrors.ErrSQL,
+			},
+		}
+		for _, tc := range testCases {
+			stmt := sql.NewStatement(sqlDelete)
+			it.Must(stmt.SetExpectedResultType(tc.expectedResultType))
+			result, err := client.SQL().ExecuteStatement(ctx, stmt)
+			if tc.expectErr != nil {
+				assert.True(t, errors.Is(err, tc.expectErr))
+				continue
+			}
+			assert.Nil(t, err)
+			assert.EqualValues(t, tc.count, result.UpdateCount())
+			assert.False(t, result.IsRowSet())
+		}
+	})
+}
+
 func TestSQLResult_IteratorRequestedMoreThanOnce(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
@@ -913,6 +985,26 @@ func queryRow(client *hz.Client, q string, params ...interface{}) (sql.Row, erro
 		return iter.Next()
 	}
 	return nil, nil
+}
+
+func queryAllRowsWithStatement(client *hz.Client, stmt sql.Statement) ([]sql.Row, error) {
+	result, err := client.SQL().ExecuteStatement(context.Background(), stmt)
+	if err != nil {
+		return nil, err
+	}
+	iter, err := result.Iterator()
+	if err != nil {
+		return nil, err
+	}
+	var rows []sql.Row
+	for iter.HasNext() {
+		row, err := iter.Next()
+		if err != nil {
+			return nil, err
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
 }
 
 func assignValues(row sql.Row, targets ...interface{}) error {
