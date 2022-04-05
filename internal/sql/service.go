@@ -55,11 +55,12 @@ func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.
 	if ctx, err = updateContextWithOptions(ctx, stmt); err != nil {
 		return &Result{}, nil
 	}
-	params := make([]driver.Value, len(stmt.Parameters))
-	for i := range stmt.Parameters {
-		params[i] = stmt.Parameters[i]
+	stmtParams := stmt.Parameters()
+	params := make([]driver.Value, len(stmtParams))
+	for i := range stmtParams {
+		params[i] = stmtParams[i]
 	}
-	resp, err := s.service.Execute(ctx, stmt.SQL, params, stmt.ExpectedResultType())
+	resp, err := s.service.Execute(ctx, stmt.SQL(), params, stmt.ExpectedResultType())
 	if err != nil {
 		return &Result{}, err
 	}

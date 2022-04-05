@@ -38,9 +38,9 @@ Fields are read once before the execution is started.
 Changes to fields do not affect the behavior of already running statements.
 */
 type Statement struct {
-	SQL                string
+	statement          string
 	schema             string
-	Parameters         []interface{}
+	params             []interface{}
 	timeout            int64
 	cursorBufferSize   int32
 	expectedResultType ExpectedResultType
@@ -51,13 +51,50 @@ type Statement struct {
 // For every placeholder, a value must be provided in 'params'.
 func NewStatement(statement string, params ...interface{}) Statement {
 	return Statement{
-		SQL:                statement,
-		Parameters:         params,
+		statement:          statement,
+		params:             params,
 		cursorBufferSize:   defaultCursorBufferSize,
 		timeout:            defaultTimeoutMillis,
 		schema:             defaultSchema,
 		expectedResultType: ExpectedResultTypeAny,
 	}
+}
+
+// SQL returns the SQL string to be executed.
+func (s *Statement) SQL() string {
+	return s.statement
+}
+
+// SetSQL Sets the SQL string to be executed.
+// Returns an error if statement is empty string.
+func (s *Statement) SetSQL(statement string) error {
+	if statement == "" {
+		return ihzerrors.NewIllegalArgumentError("SQL cannot be empty", nil)
+	}
+	s.statement = statement
+	return nil
+}
+
+// Parameters returns the statement parameter values.
+func (s *Statement) Parameters() []interface{} {
+	return s.params
+}
+
+// SetParameters sets the values for statement parameters.
+// You may define parameter placeholders in the SQL statement with the "?" character.
+// For every placeholder, a value must be provided.
+func (s *Statement) SetParameters(params ...interface{}) {
+	s.params = params
+}
+
+// AddParameter adds a single parameter value to the end of the parameter values slice.
+func (s *Statement) AddParameter(param interface{}) {
+	s.params = append(s.params, param)
+}
+
+// ClearParameters clears statement parameter values.
+func (s *Statement) ClearParameters() {
+	s.params = nil
 }
 
 /*

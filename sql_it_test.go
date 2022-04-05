@@ -820,8 +820,8 @@ func testSQLQuery(t *testing.T, keyFmt, valueFmt string, keyFn, valueFn func(i i
 		query := fmt.Sprintf(`SELECT __key, this FROM "%s" ORDER BY __key`, mapName)
 		var result sql.Result
 		sqlService := client.SQL()
-		if stmt.SQL == "" {
-			stmt.SQL = query
+		if stmt.SQL() == "" {
+			it.Must(stmt.SetSQL(query))
 		}
 		result, err = sqlService.ExecuteStatement(context.Background(), stmt)
 		if err != nil {

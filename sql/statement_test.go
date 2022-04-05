@@ -89,6 +89,32 @@ func TestStatement_SetQueryTimeout(t *testing.T) {
 	}
 }
 
+func TestStatement_GetSetSQL(t *testing.T) {
+	var s Statement
+	assert.Equal(t, "", s.SQL())
+	err := s.SetSQL("")
+	if err == nil {
+		t.Fatal("err should not be nil")
+	}
+	testStatement := "test statement"
+	assert.Nil(t, s.SetSQL(testStatement))
+	assert.Equal(t, testStatement, s.SQL())
+}
+
+func TestStatement_Parameters(t *testing.T) {
+	var s Statement
+	assert.Empty(t, s.Parameters())
+	s.SetParameters()
+	assert.Empty(t, s.Parameters())
+	p1 := []interface{}{"test", "case"}
+	s.SetParameters(p1...)
+	assert.Equal(t, p1, s.Parameters())
+	s.AddParameter("test")
+	assert.Equal(t, append(p1, "test"), s.Parameters())
+	s.ClearParameters()
+	assert.Empty(t, s.Parameters())
+}
+
 func TestStatement_SetSchema(t *testing.T) {
 	blank := ""
 	foo := "foo"
@@ -116,6 +142,6 @@ func TestStatement_DefaultValues(t *testing.T) {
 	assert.Equal(t, ExpectedResultTypeAny, stmt.ExpectedResultType())
 	assert.Equal(t, int32(4096), stmt.CursorBufferSize())
 	assert.Equal(t, "", stmt.schema)
-	assert.Equal(t, testStatement, stmt.SQL)
-	assert.Equal(t, testParams, stmt.Parameters)
+	assert.Equal(t, testStatement, stmt.statement)
+	assert.Equal(t, testParams, stmt.params)
 }
