@@ -56,7 +56,7 @@ func NewStatement(statement string, params ...interface{}) Statement {
 		cursorBufferSize:   defaultCursorBufferSize,
 		timeout:            defaultTimeoutMillis,
 		schema:             defaultSchema,
-		expectedResultType: AnyResult,
+		expectedResultType: ExpectedResultTypeAny,
 	}
 }
 
@@ -107,10 +107,10 @@ func (s *Statement) SetSchema(schema string) {
 }
 
 // SetExpectedResultType sets the expected result type.
-// Returns an error if parameter is not one of AnyResult, RowsResult or UpdateCountResult.
+// Returns an error if parameter is not one of ExpectedResultTypeAny, ExpectedResultTypeRows or ExpectedResultTypeUpdateCount.
 func (s *Statement) SetExpectedResultType(resultType ExpectedResultType) error {
 	switch resultType {
-	case AnyResult, RowsResult, UpdateCountResult:
+	case ExpectedResultTypeAny, ExpectedResultTypeRows, ExpectedResultTypeUpdateCount:
 		s.expectedResultType = resultType
 		return nil
 	default:

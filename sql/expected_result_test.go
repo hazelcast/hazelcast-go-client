@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package sql
+package sql_test
 
-// ExpectedResultType represents the expected statement result type.
-type ExpectedResultType byte
+import (
+	"testing"
 
-const (
-	ExpectedResultTypeAny         = ExpectedResultType(0)
-	ExpectedResultTypeRows        = ExpectedResultType(1)
-	ExpectedResultTypeUpdateCount = ExpectedResultType(2)
+	"github.com/stretchr/testify/assert"
+
+	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
+
+func TestExpectedResultType_InternalValues(t *testing.T) {
+	// Make sure public and internal values are same
+	assert.EqualValues(t, idriver.ExpectedResultAny, sql.ExpectedResultTypeAny)
+	assert.EqualValues(t, idriver.ExpectedResultRows, sql.ExpectedResultTypeRows)
+	assert.EqualValues(t, idriver.ExpectedResultUpdateCount, sql.ExpectedResultTypeUpdateCount)
+}

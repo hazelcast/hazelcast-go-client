@@ -113,7 +113,7 @@ func TestStatement_DefaultValues(t *testing.T) {
 	testStatement := "sql test statement"
 	stmt := NewStatement(testStatement, testParams...)
 	assert.Equal(t, int64(-1), stmt.QueryTimeout())
-	assert.Equal(t, AnyResult, stmt.ExpectedResultType())
+	assert.Equal(t, ExpectedResultTypeAny, stmt.ExpectedResultType())
 	assert.Equal(t, int32(4096), stmt.CursorBufferSize())
 	assert.Equal(t, "", stmt.schema)
 	assert.Equal(t, testStatement, stmt.SQL)

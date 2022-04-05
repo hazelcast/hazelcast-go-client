@@ -41,12 +41,8 @@ type Result interface {
 // RowsIterator provides means to iterate over SQL statement result.
 // It is not concurrency-safe.
 type RowsIterator interface {
-	// HasNext prepares the next result row for reading via Next method. It
-	// returns true on success, or false if there is no next result row or an error
-	// happened while preparing it. Err should be consulted to distinguish between
-	// the two cases.
-	//
-	// Every call to Next, even the first one, must be preceded by a call to HasNext.
+	// HasNext prepares the next result row for reading via Next method.
+	// It returns true on success, or false if there is no next result row or an error happened while preparing it.
 	HasNext() bool
 	// Next returns the current row.
 	// Every call to Next, even the first one, must be preceded by a call to HasNext.
@@ -55,9 +51,11 @@ type RowsIterator interface {
 
 // Row represents an SQL result row.
 type Row interface {
-	// Get returns the value of the column by index. If index is out of range, an error is returned.
+	// Get returns the value of the column by index.
+	// If index is out of range, an error is returned.
 	Get(index int) (interface{}, error)
-	// GetByColumnName returns the value of the column by name. If columns does not exist, an error is returned.
+	// GetByColumnName returns the value of the column by name.
+	// If columns does not exist, an error is returned.
 	GetByColumnName(name string) (interface{}, error)
 	// Metadata returns the metadata information about the row.
 	Metadata() RowMetadata

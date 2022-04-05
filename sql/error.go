@@ -19,8 +19,6 @@ package sql
 import "github.com/hazelcast/hazelcast-go-client/types"
 
 // Error is a server-side error that is propagated to the client.
-// Can be returned from Service.Execute, Service.ExecuteQuery,
-// Result.Next().
 type Error struct {
 	Message             string
 	Suggestion          string

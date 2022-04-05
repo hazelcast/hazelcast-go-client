@@ -25,7 +25,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
-func TestStatement_ConstValues(t *testing.T) {
+func TestStatement_DefaultValues(t *testing.T) {
 	stmt := sql.NewStatement("")
 	assert.Equal(t, stmt.CursorBufferSize(), driver.DefaultCursorBufferSize)
 	assert.Equal(t, stmt.QueryTimeout(), driver.DefaultTimeoutMillis)

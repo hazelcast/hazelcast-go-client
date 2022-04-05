@@ -28,18 +28,6 @@ const (
 	SqlColumnMetadataCodecNullableInitialFrameSize = SqlColumnMetadataCodecNullableFieldOffset + proto.BooleanSizeInBytes
 )
 
-func EncodeSqlColumnMetadata(clientMessage *proto.ClientMessage, sqlColumnMetadata sql.ColumnMetadata) {
-	clientMessage.AddFrame(proto.BeginFrame.Copy())
-	initialFrame := proto.NewFrameWith(make([]byte, SqlColumnMetadataCodecNullableInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset, int32(sqlColumnMetadata.Type()))
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset, sqlColumnMetadata.Nullable())
-	clientMessage.AddFrame(initialFrame)
-
-	EncodeString(clientMessage, sqlColumnMetadata.Name())
-
-	clientMessage.AddFrame(proto.EndFrame.Copy())
-}
-
 func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) sql.ColumnMetadata {
 	// begin frame
 	frameIterator.Next()

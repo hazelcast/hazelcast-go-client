@@ -368,5 +368,5 @@ func (c *Client) createComponents(config *Config) {
 		Logger:               c.ic.Logger,
 	}
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
-	c.sqlService = isql.New(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 }

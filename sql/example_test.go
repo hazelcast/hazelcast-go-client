@@ -28,12 +28,12 @@ func ExampleService_ExecuteStatement() {
 	stmt := sql.NewStatement(`INSERT INTO person(__key, age, name) VALUES (?, ?, ?)`, 1001, 35, "Jane Doe")
 	client, err := hazelcast.StartNewClient(context.TODO())
 	if err != nil {
-		// handle the error
+		panic(err)
 	}
 	sqlService := client.SQL()
 	result, err := sqlService.ExecuteStatement(context.TODO(), stmt)
 	if err != nil {
-		// handle the error
+		panic(err)
 	}
 	cnt := result.UpdateCount()
 	fmt.Printf("Affected rows: %d\n", cnt)
@@ -42,37 +42,37 @@ func ExampleService_ExecuteStatement() {
 func Example() {
 	client, err := hazelcast.StartNewClient(context.TODO())
 	if err != nil {
-		// handle the error
+		panic(err)
 	}
 	sqlService := client.SQL()
 	stmt := sql.NewStatement(`SELECT name, age FROM person WHERE age >= ?`, 30)
 	err = stmt.SetCursorBufferSize(1000)
 	if err != nil {
-		// handle the error
+		panic(err)
 	}
 	result, err := sqlService.ExecuteStatement(context.TODO(), stmt)
 	if err != nil {
-		// handle the error
+		panic(err)
 	}
 	defer result.Close()
 	it, err := result.Iterator()
 	if err != nil {
-		// handle the error
+		panic(err)
 	}
 	var name string
 	var age int
 	for it.HasNext() {
 		row, err := it.Next()
 		if err != nil {
-			// handle the error
+			panic(err)
 		}
 		v1, err := row.Get(0)
 		if err != nil {
-			// handle the error
+			panic(err)
 		}
 		v2, err := row.Get(1)
 		if err != nil {
-			// handle the error
+			panic(err)
 		}
 		name, age = v1.(string), v2.(int)
 		fmt.Println(name, age)

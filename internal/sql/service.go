@@ -43,7 +43,7 @@ type Service struct {
 	service *idriver.SQLService
 }
 
-func New(cm *cluster.ConnectionManager, ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Service {
+func NewService(cm *cluster.ConnectionManager, ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Service {
 	var s Service
 	s.service = idriver.NewSQLService(cm, ss, cif, is, l)
 	return s
@@ -55,11 +55,11 @@ func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.
 	if ctx, err = updateContextWithOptions(ctx, stmt); err != nil {
 		return &Result{}, nil
 	}
-	sqlParams := make([]driver.Value, len(stmt.Parameters))
+	params := make([]driver.Value, len(stmt.Parameters))
 	for i := range stmt.Parameters {
-		sqlParams[i] = stmt.Parameters[i]
+		params[i] = stmt.Parameters[i]
 	}
-	resp, err := s.service.Execute(ctx, stmt.SQL, sqlParams)
+	resp, err := s.service.Execute(ctx, stmt.SQL, params, stmt.ExpectedResultType())
 	if err != nil {
 		return &Result{}, err
 	}
@@ -129,7 +129,7 @@ func (r *Result) RowMetadata() (sql.RowMetadata, error) {
 
 // IsRowSet returns whether this result has rows to iterate using the HasNext method.
 func (r *Result) IsRowSet() bool {
-	return r.UpdateCount() == -1
+	return r.qr != nil
 }
 
 // UpdateCount returns the number of rows updated by the statement or -1 if this result is a row set.
@@ -144,19 +144,17 @@ func (r *Result) UpdateCount() int64 {
 
 // HasNext prepares the next result row for reading via Next method.
 // It returns true on success, or false if there is no next result row or an error happened while preparing it.
-//
-// Every call to Next, even the first one, must be preceded by a call to HasNext.
 func (r *Result) HasNext() bool {
 	if r.err != nil {
 		return false
 	}
-	emptyValues := make([]driver.Value, r.qr.Len())
-	err := r.qr.Next(emptyValues)
+	row := make([]driver.Value, r.qr.Len())
+	err := r.qr.Next(row)
 	if err == io.EOF {
 		return false
 	}
 	r.err = err
-	r.currentRow = emptyValues
+	r.currentRow = row
 	return true
 }
 
@@ -168,9 +166,10 @@ func (r *Result) Next() (sql.Row, error) {
 	if err != nil {
 		return nil, err
 	}
+	r.qr.Metadata()
 	row.metadata = m
 	row.values = r.currentRow
-	return &row, r.err
+	return row, r.err
 }
 
 // Err returns the error, if any, that was encountered during iteration.
@@ -196,7 +195,7 @@ type Row struct {
 }
 
 // Get returns the value of the column by index. If index is out of range, an error is returned.
-func (r *Row) Get(index int) (interface{}, error) {
+func (r Row) Get(index int) (interface{}, error) {
 	if (index < 0) || (index >= len(r.values)) {
 		return nil, fmt.Errorf("index out of range")
 	}
@@ -204,7 +203,7 @@ func (r *Row) Get(index int) (interface{}, error) {
 }
 
 // GetByColumnName returns the value of the column by name. If columns does not exist, an error is returned.
-func (r *Row) GetByColumnName(colName string) (interface{}, error) {
+func (r Row) GetByColumnName(colName string) (interface{}, error) {
 	i, err := r.metadata.FindColumn(colName)
 	if err != nil {
 		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf(`column "%s" doesn't exist`, colName), err)
@@ -213,6 +212,6 @@ func (r *Row) GetByColumnName(colName string) (interface{}, error) {
 }
 
 // Metadata returns the metadata information about the row.
-func (r *Row) Metadata() sql.RowMetadata {
+func (r Row) Metadata() sql.RowMetadata {
 	return r.metadata
 }
