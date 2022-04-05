@@ -123,16 +123,15 @@ func (m *Map) NewLockContext(ctx context.Context) context.Context {
 }
 
 type MapListener struct {
-	EntryAdded       func(event *EntryNotified)
-	EntryRemoved     func(event *EntryNotified)
-	EntryUpdated     func(event *EntryNotified)
-	EntryEvicted     func(event *EntryNotified)
-	EntryExpired     func(event *EntryNotified)
-	EntryAllEvicted  func(event *EntryNotified)
-	EntryAllCleared  func(event *EntryNotified)
-	EntryMerged      func(event *EntryNotified)
-	EntryInvalidated func(event *EntryNotified)
-	EntryLoaded      func(event *EntryNotified)
+	EntryAdded   func(event *EntryNotified)
+	EntryRemoved func(event *EntryNotified)
+	EntryUpdated func(event *EntryNotified)
+	EntryEvicted func(event *EntryNotified)
+	EntryExpired func(event *EntryNotified)
+	MapEvicted   func(event *EntryNotified)
+	MapCleared   func(event *EntryNotified)
+	EntryMerged  func(event *EntryNotified)
+	EntryLoaded  func(event *EntryNotified)
 }
 
 func (m *Map) AddListener(ctx context.Context, listener MapListener, includeValue bool) (types.UUID, error) {
@@ -854,6 +853,11 @@ func (m *Map) RemoveAll(ctx context.Context, predicate predicate.Predicate) erro
 
 // RemoveEntryListener removes the specified entry listener.
 func (m *Map) RemoveEntryListener(ctx context.Context, subscriptionID types.UUID) error {
+	return m.listenerBinder.Remove(ctx, subscriptionID)
+}
+
+// RemoveListener removes the specified entry listener.
+func (m *Map) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return m.listenerBinder.Remove(ctx, subscriptionID)
 }
 
