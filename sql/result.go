@@ -26,7 +26,6 @@ type Result interface {
 	// IsRowSet returns whether this result has rows to iterate using the HasNext method.
 	IsRowSet() bool
 	// UpdateCount returns the number of rows updated by the statement or -1 if this result is a row set.
-	// In case the result doesn't contain rows but the update count isn't applicable or known, 0 is returned.
 	UpdateCount() int64
 	// Iterator returns the RowsIterator over the result rows.
 	// The iterator may be requested only once.
