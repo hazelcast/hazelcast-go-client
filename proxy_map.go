@@ -151,80 +151,10 @@ func (m *Map) AddListenerWithKeyAndPredicate(ctx context.Context, listener MapLi
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
-func (m *Map) AddEntryListener(ctx context.Context, config MapEntryListenerConfig, handler ...EntryNotifiedHandler) (types.UUID, error) {
-	if len(handler) == 0 {
-		handler, flags := m.prepareFlagsAndHandler(config)
-		return m.addEntryListener(ctx, flags, config.IncludeValue, config.Key, config.Predicate, handler)
-	} else if len(handler) == 1 {
-		// Prevent mixed usage
-		if config.eventSpecificHandlersConfigured() {
-			return types.UUID{}, ihzerrors.NewIllegalArgumentError("Event specific handlers cannot be used together with the 'handler' argument.", nil)
-		}
-		return m.addEntryListener(ctx, config.flags, config.IncludeValue, config.Key, config.Predicate, handler[0])
-	} else {
-		return types.UUID{}, ihzerrors.NewIllegalArgumentError("At most one handler can be passed", nil)
-	}
-}
-
-func (m *Map) prepareFlagsAndHandler(config MapEntryListenerConfig) (EntryNotifiedHandler, int32) {
-	var flags int32
-	if config.entryAddedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryAdded), true)
-	}
-	if config.entryRemovedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryRemoved), true)
-	}
-	if config.entryUpdatedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryUpdated), true)
-	}
-	if config.entryEvictedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryEvicted), true)
-	}
-	if config.entryExpiredListener != nil {
-		flagsSetOrClear(&flags, int32(EntryExpired), true)
-	}
-	if config.entryAllEvictedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryAllEvicted), true)
-	}
-	if config.entryAllClearedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryAllCleared), true)
-	}
-	if config.entryMergedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryMerged), true)
-	}
-	if config.entryInvalidatedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryInvalidated), true)
-	}
-	if config.entryLoadedListener != nil {
-		flagsSetOrClear(&flags, int32(EntryLoaded), true)
-	}
-
-	handler := func(event *EntryNotified) {
-		switch event.EventType {
-		case EntryAdded:
-			config.entryAddedListener(event)
-		case EntryRemoved:
-			config.entryRemovedListener(event)
-		case EntryUpdated:
-			config.entryUpdatedListener(event)
-		case EntryEvicted:
-			config.entryEvictedListener(event)
-		case EntryExpired:
-			config.entryExpiredListener(event)
-		case EntryAllEvicted:
-			config.entryAllEvictedListener(event)
-		case EntryAllCleared:
-			config.entryAllClearedListener(event)
-		case EntryMerged:
-			config.entryMergedListener(event)
-		case EntryInvalidated:
-			config.entryInvalidatedListener(event)
-		case EntryLoaded:
-			config.entryLoadedListener(event)
-		}
-	}
-
-	return handler, flags
+// Deprecated: In favor of AddListener, AddListenerWithKey, AddListenerWithPredicate,
+// AddListenerWithKeyAndPredicate methods.
+func (m *Map) AddEntryListener(ctx context.Context, config MapEntryListenerConfig, handler EntryNotifiedHandler) (types.UUID, error) {
+	return m.addEntryListener(ctx, config.flags, config.IncludeValue, config.Key, config.Predicate, handler)
 }
 
 // AddIndex adds an index to this map for the specified entries so that queries can run faster.
@@ -1341,135 +1271,68 @@ func (as attributeSet) Attrs() []string {
 
 // MapEntryListenerConfig contains configuration for a map entry listener.
 type MapEntryListenerConfig struct {
-	Predicate                predicate.Predicate
-	Key                      interface{}
-	flags                    int32
-	IncludeValue             bool
-	entryAddedListener       EntryNotifiedHandler
-	entryRemovedListener     EntryNotifiedHandler
-	entryUpdatedListener     EntryNotifiedHandler
-	entryEvictedListener     EntryNotifiedHandler
-	entryExpiredListener     EntryNotifiedHandler
-	entryAllEvictedListener  EntryNotifiedHandler
-	entryAllClearedListener  EntryNotifiedHandler
-	entryMergedListener      EntryNotifiedHandler
-	entryInvalidatedListener EntryNotifiedHandler
-	entryLoadedListener      EntryNotifiedHandler
-}
-
-// SetEntryAddedListener adds a listener to entry added events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryAddedListener(handler EntryNotifiedHandler) {
-	c.entryAddedListener = handler
-}
-
-// SetEntryRemovedListener adds a listener to entry removed events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryRemovedListener(handler EntryNotifiedHandler) {
-	c.entryRemovedListener = handler
-}
-
-// SetEntryUpdatedListener adds a listener to entry updated events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryUpdatedListener(handler EntryNotifiedHandler) {
-	c.entryUpdatedListener = handler
-}
-
-// SetEntryEvictedListener adds a listener to entry evicted events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryEvictedListener(handler EntryNotifiedHandler) {
-	c.entryEvictedListener = handler
-}
-
-// SetEntryExpiredListener adds a listener to entry expired events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryExpiredListener(handler EntryNotifiedHandler) {
-	c.entryExpiredListener = handler
-}
-
-// SetEntryAllEvictedListener adds a listener to entry evicted events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryAllEvictedListener(handler EntryNotifiedHandler) {
-	c.entryAllEvictedListener = handler
-}
-
-// SetEntryAllClearedListener adds a listener to entry all cleared events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryAllClearedListener(handler EntryNotifiedHandler) {
-	c.entryAllClearedListener = handler
-}
-
-// SetEntryMergedListener adds a listener to entry merged events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryMergedListener(handler EntryNotifiedHandler) {
-	c.entryMergedListener = handler
-}
-
-// SetEntryInvalidatedListener adds a listener to entry invalidated events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryInvalidatedListener(handler EntryNotifiedHandler) {
-	c.entryInvalidatedListener = handler
-}
-
-// SetEntryLoadedListener adds a listener to entry loaded events to the hazelcast.MapEntryListenerConfig.
-func (c *MapEntryListenerConfig) SetEntryLoadedListener(handler EntryNotifiedHandler) {
-	c.entryLoadedListener = handler
-}
-
-func (m *MapEntryListenerConfig) eventSpecificHandlersConfigured() bool {
-	return m.entryAddedListener != nil || m.entryAllClearedListener != nil || m.entryAllEvictedListener != nil ||
-		m.entryExpiredListener != nil || m.entryEvictedListener != nil || m.entryInvalidatedListener != nil ||
-		m.entryLoadedListener != nil || m.entryMergedListener != nil || m.entryRemovedListener != nil ||
-		m.entryUpdatedListener != nil
+	Predicate    predicate.Predicate
+	Key          interface{}
+	flags        int32
+	IncludeValue bool
 }
 
 // NotifyEntryAdded enables receiving an entry event when an entry is added.
-// Deprecated: You can add a listener to the entry added event using AddEntryAddedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryAdded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAdded), enable)
 }
 
 // NotifyEntryRemoved enables receiving an entry event when an entry is removed.
-// Deprecated: You can add a listener to the entry removed event using AddEntryRemovedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryRemoved(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryRemoved), enable)
 }
 
 // NotifyEntryUpdated enables receiving an entry event when an entry is updated.
-// Deprecated: You can add a listener to the entry updated event using AddEntryUpdatedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryUpdated(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryUpdated), enable)
 }
 
 // NotifyEntryEvicted enables receiving an entry event when an entry is evicted.
-// Deprecated: You can add a listener to the entry evicted event using AddEntryEvictedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryEvicted(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryEvicted), enable)
 }
 
 // NotifyEntryExpired enables receiving an entry event when an entry is expired.
-// Deprecated: You can add a listener to the entry expired event using AddEntryExpiredListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryExpired(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryExpired), enable)
 }
 
 // NotifyEntryAllEvicted enables receiving an entry event when all entries are evicted.
-// Deprecated: You can add a listener to the entry all evicted event using AddEntryAllEvictedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryAllEvicted(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAllEvicted), enable)
 }
 
 // NotifyEntryAllCleared enables receiving an entry event when all entries are cleared.
-// Deprecated: You can add a listener to the entry all cleared event using AddEntryAllClearedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryAllCleared(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryAllCleared), enable)
 }
 
 // NotifyEntryMerged enables receiving an entry event when an entry is merged.
-// Deprecated: You can add a listener to the entry merged event using AddEntryMergedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryMerged(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryMerged), enable)
 }
 
 // NotifyEntryInvalidated enables receiving an entry event when an entry is invalidated.
-// Deprecated: You can add a listener to the entry invalidated event using AddEntryInvalidatedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryInvalidated), enable)
 }
 
 // NotifyEntryLoaded enables receiving an entry event when an entry is loaded.
-// Deprecated: You can add a listener to the entry loaded event using AddEntryLoadedListener.
+// Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
 }
