@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"time"
 
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -93,6 +94,16 @@ func (ci *ClientInternal) Client() *Client {
 // It returns zero value of types.UUID{} if the cluster ID does not exist.
 func (ci *ClientInternal) ClusterID() types.UUID {
 	return ci.client.ic.ConnectionManager.ClusterID()
+}
+
+// OrderedMembers returns the most recent member list of the cluster.
+func (ci *ClientInternal) OrderedMembers() []pubcluster.MemberInfo {
+	return ci.ClusterService().OrderedMembers()
+}
+
+// ConnectedToMember returns true if there is a connection to the given member.
+func (ci *ClientInternal) ConnectedToMember(uuid types.UUID) bool {
+	return ci.ConnectionManager().GetConnectionForUUID(uuid) != nil
 }
 
 // EncodeData serializes the given value and returns a Data value.
