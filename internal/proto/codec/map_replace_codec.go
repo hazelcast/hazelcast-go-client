@@ -32,7 +32,7 @@ const (
 
 // Replaces the entry for a key only if currently mapped to a given value.
 
-func EncodeMapReplaceRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapReplaceRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -49,7 +49,7 @@ func EncodeMapReplaceRequest(name string, key *iserialization.Data, value *iseri
 	return clientMessage
 }
 
-func DecodeMapReplaceResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeMapReplaceResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

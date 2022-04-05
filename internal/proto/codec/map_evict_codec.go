@@ -35,7 +35,7 @@ const (
 // Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
 // from the underlying MapStore, evict only removes the entry from the memory.
 
-func EncodeMapEvictRequest(name string, key *iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapEvictRequest(name string, key iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

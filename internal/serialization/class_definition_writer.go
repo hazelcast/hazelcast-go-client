@@ -17,8 +17,6 @@
 package serialization
 
 import (
-	"time"
-
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -127,35 +125,35 @@ func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []str
 	must(cdw.classDefinition.AddStringArrayField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteDate(fieldName string, value *time.Time) {
+func (cdw *ClassDefinitionWriter) WriteDate(fieldName string, value *types.LocalDate) {
 	must(cdw.classDefinition.AddDateField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteTime(fieldName string, value *time.Time) {
+func (cdw *ClassDefinitionWriter) WriteTime(fieldName string, value *types.LocalTime) {
 	must(cdw.classDefinition.AddTimeField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteTimestamp(fieldName string, value *time.Time) {
+func (cdw *ClassDefinitionWriter) WriteTimestamp(fieldName string, value *types.LocalDateTime) {
 	must(cdw.classDefinition.AddTimestampField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezone(fieldName string, value *time.Time) {
+func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
 	must(cdw.classDefinition.AddTimestampWithTimezoneField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteDateArray(fieldName string, value []time.Time) {
+func (cdw *ClassDefinitionWriter) WriteDateArray(fieldName string, value []types.LocalDate) {
 	must(cdw.classDefinition.AddDateArrayField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteTimeArray(fieldName string, value []time.Time) {
+func (cdw *ClassDefinitionWriter) WriteTimeArray(fieldName string, value []types.LocalTime) {
 	must(cdw.classDefinition.AddTimeArrayField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteTimestampArray(fieldName string, value []time.Time) {
+func (cdw *ClassDefinitionWriter) WriteTimestampArray(fieldName string, value []types.LocalDateTime) {
 	must(cdw.classDefinition.AddTimestampArrayField(fieldName))
 }
 
-func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezoneArray(fieldName string, value []time.Time) {
+func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezoneArray(fieldName string, value []types.OffsetDateTime) {
 	must(cdw.classDefinition.AddTimestampWithTimezoneArrayField(fieldName))
 }
 

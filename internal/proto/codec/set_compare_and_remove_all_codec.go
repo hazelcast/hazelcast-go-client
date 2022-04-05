@@ -35,7 +35,7 @@ const (
 // If the specified collection is also a set, this operation effectively modifies this set so that its value is the
 // asymmetric set difference of the two sets.
 
-func EncodeSetCompareAndRemoveAllRequest(name string, values []*serialization.Data) *proto.ClientMessage {
+func EncodeSetCompareAndRemoveAllRequest(name string, values []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

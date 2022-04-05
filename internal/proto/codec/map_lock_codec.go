@@ -38,7 +38,7 @@ const (
 // Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
 // so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
 
-func EncodeMapLockRequest(name string, key *iserialization.Data, threadId int64, ttl int64, referenceId int64) *proto.ClientMessage {
+func EncodeMapLockRequest(name string, key iserialization.Data, threadId int64, ttl int64, referenceId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

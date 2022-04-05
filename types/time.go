@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-package proto
+package types
 
-type Pair struct {
-	Key   interface{}
-	Value interface{}
-}
+import (
+	"time"
+)
 
-func NewPair(key, value interface{}) Pair {
-	return Pair{Key: key, Value: value}
-}
+// LocalDate is the date part of time.Time.
+type LocalDate time.Time
+
+// LocalTime is the time part of time.Time.
+type LocalTime time.Time
+
+// LocalDateTime is the date and time with local timezone.
+type LocalDateTime time.Time
+
+// OffsetDateTime is the date and time with a timezone.
+type OffsetDateTime time.Time

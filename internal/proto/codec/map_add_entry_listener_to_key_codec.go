@@ -44,7 +44,7 @@ const (
 // Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
 // sub-interface for that event.
 
-func EncodeMapAddEntryListenerToKeyRequest(name string, key *iserialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *proto.ClientMessage {
+func EncodeMapAddEntryListenerToKeyRequest(name string, key iserialization.Data, includeValue bool, listenerFlags int32, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -69,7 +69,7 @@ func DecodeMapAddEntryListenerToKeyResponse(clientMessage *proto.ClientMessage) 
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerToKeyResponseResponseOffset)
 }
 
-func HandleMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEntryEvent func(key *iserialization.Data, value *iserialization.Data, oldValue *iserialization.Data, mergingValue *iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
+func HandleMapAddEntryListenerToKey(clientMessage *proto.ClientMessage, handleEntryEvent func(key iserialization.Data, value iserialization.Data, oldValue iserialization.Data, mergingValue iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerToKeyCodecEventEntryMessageType {

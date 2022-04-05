@@ -37,8 +37,8 @@ import (
 // Encoder for ClientMessage and value
 type Encoder func(message *proto.ClientMessage, value interface{})
 
-// Decoder create *iserialization.Data
-type Decoder func(frameIterator *proto.ForwardFrameIterator) *iserialization.Data
+// Decoder creates iserialization.Data
+type Decoder func(frameIterator *proto.ForwardFrameIterator) iserialization.Data
 
 // CodecUtil
 type codecUtil struct{}
@@ -46,14 +46,13 @@ type codecUtil struct{}
 var CodecUtil codecUtil
 
 func (codecUtil) FastForwardToEndFrame(frameIterator *proto.ForwardFrameIterator) {
-	numberOfExpectedEndFrames := 1
-	var frame *proto.Frame
-	for numberOfExpectedEndFrames != 0 {
-		frame = frameIterator.Next()
+	expectedEndFrames := 1
+	for expectedEndFrames != 0 {
+		frame := frameIterator.Next()
 		if frame.IsEndFrame() {
-			numberOfExpectedEndFrames--
+			expectedEndFrames--
 		} else if frame.IsBeginFrame() {
-			numberOfExpectedEndFrames++
+			expectedEndFrames++
 		}
 	}
 }
@@ -82,7 +81,7 @@ func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessag
 	}
 }
 
-func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iserialization.Data) {
+func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data iserialization.Data) {
 	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
@@ -90,7 +89,7 @@ func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iseri
 	}
 }
 
-func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
@@ -154,10 +153,10 @@ func DecodeByteArray(frameIterator *proto.ForwardFrameIterator) []byte {
 }
 
 func EncodeData(message *proto.ClientMessage, value interface{}) {
-	message.AddFrame(proto.NewFrame(value.(*iserialization.Data).ToByteArray()))
+	message.AddFrame(proto.NewFrame(value.(iserialization.Data).ToByteArray()))
 }
 
-func EncodeNullableData(message *proto.ClientMessage, data *iserialization.Data) {
+func EncodeNullableData(message *proto.ClientMessage, data iserialization.Data) {
 	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
@@ -165,11 +164,11 @@ func EncodeNullableData(message *proto.ClientMessage, data *iserialization.Data)
 	}
 }
 
-func DecodeData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
-	return iserialization.NewData(frameIterator.Next().Content)
+func DecodeData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
+	return frameIterator.Next().Content
 }
 
-func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
@@ -179,8 +178,8 @@ func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) *iserializati
 func EncodeEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEncoder, valueEncoder Encoder) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		keyEncoder(message, value.Key())
-		valueEncoder(message, value.Value())
+		keyEncoder(message, value.Key)
+		valueEncoder(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -188,8 +187,8 @@ func EncodeEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEnco
 func EncodeEntryListForStringAndString(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeString(message, value.Key())
-		EncodeString(message, value.Value())
+		EncodeString(message, value.Key)
+		EncodeString(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -197,8 +196,8 @@ func EncodeEntryListForStringAndString(message *proto.ClientMessage, entries []p
 func EncodeEntryListForStringAndByteArray(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeString(message, value.Key())
-		EncodeByteArray(message, value.Value().([]byte))
+		EncodeString(message, value.Key)
+		EncodeByteArray(message, value.Value.([]byte))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 
@@ -207,8 +206,8 @@ func EncodeEntryListForStringAndByteArray(message *proto.ClientMessage, entries 
 func EncodeEntryListForDataAndData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeData(message, value.Key())
-		EncodeData(message, value.Value())
+		EncodeData(message, value.Key)
+		EncodeData(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -216,8 +215,8 @@ func EncodeEntryListForDataAndData(message *proto.ClientMessage, entries []proto
 func EncodeEntryListForDataAndListData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeData(message, value.Key())
-		EncodeListData(message, value.Value().([]*iserialization.Data))
+		EncodeData(message, value.Key)
+		EncodeListData(message, value.Value.([]iserialization.Data))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -277,8 +276,8 @@ func EncodeListIntegerIntegerInteger(message *proto.ClientMessage, entries []pro
 	entryCount := len(entries)
 	frame := proto.NewFrame(make([]byte, entryCount*proto.EntrySizeInBytes))
 	for i := 0; i < entryCount; i++ {
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key().(int32))
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value().(int32))
+		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key.(int32))
+		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value.(int32))
 	}
 	message.AddFrame(frame)
 }
@@ -300,8 +299,8 @@ func EncodeEntryListUUIDLong(message *proto.ClientMessage, entries []proto.Pair)
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
-		key := entry.Key().(types.UUID)
-		value := entry.Value().(int64)
+		key := entry.Key.(types.UUID)
+		value := entry.Value.(int64)
 		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.EntrySizeInBytes), key)
 		FixSizedTypesCodec.EncodeLong(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
@@ -313,8 +312,8 @@ func EncodeEntryListIntegerInteger(message *proto.ClientMessage, entries []proto
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
-		key := entry.Key().(int32)
-		value := entry.Value().(int32)
+		key := entry.Key.(int32)
+		value := entry.Value.(int32)
 		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes), key)
 		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
@@ -351,8 +350,8 @@ func EncodeEntryListUUIDListInteger(message *proto.ClientMessage, entries []prot
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < entryCount; i++ {
 		entry := entries[i]
-		key := entry.Key().(types.UUID)
-		value := entry.Value().([]int32)
+		key := entry.Key.(types.UUID)
+		value := entry.Value.([]int32)
 		uuids[i] = key
 		EncodeListInteger(message, value)
 	}
@@ -460,31 +459,31 @@ func (fixSizedTypesCodec) DecodeDouble(buffer []byte, offset int32) float64 {
 	return math.Float64frombits(binary.LittleEndian.Uint64(buffer[offset:]))
 }
 
-func (fixSizedTypesCodec) DecodeLocalDate(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeLocalDate(buffer []byte, offset int32) types.LocalDate {
 	y, m, d := decodeLocalDate(buffer, offset)
-	return time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	return types.LocalDate(time.Date(y, m, d, 0, 0, 0, 0, time.Local))
 }
 
-func (fixSizedTypesCodec) DecodeLocalTime(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeLocalTime(buffer []byte, offset int32) types.LocalTime {
 	h, m, s, nanos := decodeLocalTime(buffer, offset)
-	return time.Date(0, 1, 1, h, m, s, nanos, time.Local)
+	return types.LocalTime(time.Date(0, 1, 1, h, m, s, nanos, time.Local))
 }
 
-func (fixSizedTypesCodec) DecodeLocalDateTime(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeLocalDateTime(buffer []byte, offset int32) types.LocalDateTime {
 	y, m, d := decodeLocalDate(buffer, offset)
 	offset += proto.LocalDateSizeInBytes
 	h, mn, s, nanos := decodeLocalTime(buffer, offset)
-	return time.Date(y, m, d, h, mn, s, nanos, time.Local)
+	return types.LocalDateTime(time.Date(y, m, d, h, mn, s, nanos, time.Local))
 }
 
-func (fixSizedTypesCodec) DecodeDateTimeWithTimeZone(buffer []byte, offset int32) time.Time {
+func (fixSizedTypesCodec) DecodeDateTimeWithTimeZone(buffer []byte, offset int32) types.OffsetDateTime {
 	y, m, d := decodeLocalDate(buffer, offset)
 	offset += proto.LocalDateSizeInBytes
 	h, mn, s, nanos := decodeLocalTime(buffer, offset)
 	offset += proto.LocalTimeSizeInBytes
 	offsetSecs := int(FixSizedTypesCodec.DecodeInt(buffer, offset))
 	tz := time.FixedZone("", offsetSecs)
-	return time.Date(y, m, d, h, mn, s, nanos, tz)
+	return types.OffsetDateTime(time.Date(y, m, d, h, mn, s, nanos, tz))
 }
 
 func (fixSizedTypesCodec) EncodeUUID(buffer []byte, offset int32, uuid types.UUID) {
@@ -550,7 +549,7 @@ func DecodeListLong(frameIterator *proto.ForwardFrameIterator) []int64 {
 	return result
 }
 
-func EncodeListMultiFrame(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrame(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		encoder(message, values[i])
@@ -558,7 +557,7 @@ func EncodeListMultiFrame(message *proto.ClientMessage, values []*iserialization
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameForData(message *proto.ClientMessage, values []*iserialization.Data) {
+func EncodeListMultiFrameForData(message *proto.ClientMessage, values []iserialization.Data) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeData(message, values[i])
@@ -582,7 +581,7 @@ func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, valu
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		if values[i] == nil {
@@ -594,7 +593,7 @@ func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values [
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	if len(values) == 0 {
 		message.AddFrame(proto.NullFrame)
 	} else {
@@ -602,7 +601,7 @@ func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []*iseria
 	}
 }
 
-func EncodeListMultiFrameNullableForData(message *proto.ClientMessage, values []*iserialization.Data) {
+func EncodeListMultiFrameNullableForData(message *proto.ClientMessage, values []iserialization.Data) {
 	EncodeListMultiFrameContainsNullable(message, values, EncodeData)
 }
 
@@ -621,8 +620,8 @@ func DecodeNullableListMultiFrame(frameIterator *proto.ForwardFrameIterator, dec
 	DecodeListMultiFrame(frameIterator, decoder)
 }
 
-func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
-	result := make([]*iserialization.Data, 0)
+func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []iserialization.Data {
+	result := make([]iserialization.Data, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeData(frameIterator))
@@ -718,11 +717,11 @@ func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) type
 	return types.DistributedObjectInfo{Name: name, ServiceName: serviceName}
 }
 
-func EncodeListData(message *proto.ClientMessage, entries []*iserialization.Data) {
+func EncodeListData(message *proto.ClientMessage, entries []iserialization.Data) {
 	EncodeListMultiFrameForData(message, entries)
 }
 
-func DecodeListData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
+func DecodeListData(frameIterator *proto.ForwardFrameIterator) []iserialization.Data {
 	return DecodeListMultiFrameForData(frameIterator)
 }
 
@@ -818,7 +817,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 func DecodeError(msg *proto.ClientMessage) *ihzerrors.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
-	errorHolders := []proto.ErrorHolder{}
+	var errorHolders []proto.ErrorHolder
 	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		errorHolders = append(errorHolders, DecodeErrorHolder(frameIterator))
 	})

@@ -37,7 +37,7 @@ const (
 
 // Starts execution of an SQL query (as of 4.2).
 
-func EncodeSqlExecuteRequest(sql string, parameters []*iserialization.Data, timeoutMillis int64, cursorBufferSize int32, schema string, expectedResultType byte, queryId isql.QueryID, skipUpdateStatistics bool) *proto.ClientMessage {
+func EncodeSqlExecuteRequest(sql string, parameters []iserialization.Data, timeoutMillis int64, cursorBufferSize int32, schema string, expectedResultType byte, queryId isql.QueryID, skipUpdateStatistics bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
