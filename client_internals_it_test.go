@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -204,6 +205,61 @@ func TestClientInternal_ClusterID(t *testing.T) {
 	assert.Equal(t, types.UUID{}, ci.ClusterID())
 }
 
+func TestClientInternal_OrderedMembers(t *testing.T) {
+	// start a 1 member cluster
+	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55701, 1)
+	defer tc.Shutdown()
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	targetUUIDs := tc.MemberUUIDs
+	assert.True(t, sameMembers(targetUUIDs, ci.OrderedMembers()))
+	// start another member
+	mem, err := tc.RC.StartMember(ctx, tc.ClusterID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetUUIDs = append(targetUUIDs, mem.UUID)
+	assert.True(t, sameMembers(targetUUIDs, ci.OrderedMembers()))
+	// start another member
+	mem, err = tc.RC.StartMember(ctx, tc.ClusterID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetUUIDs = append(targetUUIDs, mem.UUID)
+	assert.True(t, sameMembers(targetUUIDs, ci.OrderedMembers()))
+	// stop a member
+	stopped := ci.OrderedMembers()[0]
+	if _, err := tc.RC.ShutdownMember(ctx, tc.ClusterID, stopped.UUID.String()); err != nil {
+		t.Fatal(err)
+	}
+	targetUUIDs = targetUUIDs[1:]
+	it.Eventually(t, func() bool {
+		return sameMembers(targetUUIDs, ci.OrderedMembers())
+	})
+	types.NewUUID()
+	assert.False(t, ci.ConnectedToMember(stopped.UUID))
+	for _, mem := range ci.OrderedMembers() {
+		if mem.UUID == stopped.UUID {
+			continue
+		}
+		assert.True(t, ci.ConnectedToMember(mem.UUID))
+	}
+}
+
+func TestClientInternal_ConnectedToMember(t *testing.T) {
+	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55701, 2)
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
+	defer client.Shutdown(ctx)
+	ci := hz.NewClientInternal(client)
+	tc.Shutdown()
+	it.Eventually(t, func() bool {
+		return len(filterConnectedMembers(ci)) == 0
+	})
+}
+
 func TestClientInternal_InvokeOnRandomTarget(t *testing.T) {
 	clientInternalTester(t, "ci-invoke-random", func(t *testing.T, ci *hz.ClientInternal) {
 		ctx := context.Background()
@@ -332,6 +388,25 @@ func clientInternalTester(t *testing.T, clusterName string, f func(t *testing.T,
 	defer client.Shutdown(ctx)
 	ci := hz.NewClientInternal(client)
 	f(t, ci)
+}
+
+func sameMembers(target []string, mems []cluster.MemberInfo) bool {
+	memUUIDs := make([]string, len(mems))
+	for i, mem := range mems {
+		memUUIDs[i] = mem.UUID.String()
+	}
+	return reflect.DeepEqual(target, memUUIDs)
+}
+
+func filterConnectedMembers(ci *hz.ClientInternal) []cluster.MemberInfo {
+	mems := ci.OrderedMembers()
+	var connected []cluster.MemberInfo
+	for _, mem := range mems {
+		if ci.ConnectedToMember(mem.UUID) {
+			connected = append(connected, mem)
+		}
+	}
+	return connected
 }
 
 const (
