@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"sync/atomic"
+	"unsafe"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -56,10 +57,7 @@ func (s Service) ExecuteStatement(ctx context.Context, stmt sql.Statement) (sql.
 		return &Result{}, nil
 	}
 	stmtParams := stmt.Parameters()
-	params := make([]driver.Value, len(stmtParams))
-	for i := range stmtParams {
-		params[i] = stmtParams[i]
-	}
+	params := *(*[]driver.Value)(unsafe.Pointer(&stmtParams))
 	resp, err := s.service.Execute(ctx, stmt.SQL(), params, stmt.ExpectedResultType())
 	if err != nil {
 		return &Result{}, err
