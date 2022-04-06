@@ -717,52 +717,43 @@ func TestSQLService_ExecuteMismatchExpectedResultType(t *testing.T) {
 			expectedResultType sql.ExpectedResultType
 			expectErr          error
 			count              int
+			sql                string
 		}{
+			// Row result cases
 			{
 				expectedResultType: sql.ExpectedResultTypeAny,
 				count:              1,
+				sql:                sqlRead,
 			},
 			{
 				expectedResultType: sql.ExpectedResultTypeRows,
 				count:              1,
+				sql:                sqlRead,
 			},
 			{
 				expectedResultType: sql.ExpectedResultTypeUpdateCount,
 				expectErr:          hzerrors.ErrSQL,
+				sql:                sqlRead,
 			},
-		}
-		for _, tc := range testCases {
-			stmt := sql.NewStatement(sqlRead)
-			it.Must(stmt.SetExpectedResultType(tc.expectedResultType))
-			rows, err := queryAllRowsWithStatement(client, stmt)
-			if tc.expectErr != nil {
-				assert.True(t, errors.Is(err, tc.expectErr))
-				continue
-			}
-			assert.Nil(t, err)
-			assert.Equal(t, 1, len(rows))
-		}
-		// Update count results
-		testCases = []struct {
-			expectedResultType sql.ExpectedResultType
-			expectErr          error
-			count              int
-		}{
+			// Update count result cases
 			{
 				expectedResultType: sql.ExpectedResultTypeAny,
 				count:              0,
+				sql:                sqlDelete,
 			},
 			{
 				expectedResultType: sql.ExpectedResultTypeUpdateCount,
 				count:              0,
+				sql:                sqlDelete,
 			},
 			{
 				expectedResultType: sql.ExpectedResultTypeRows,
 				expectErr:          hzerrors.ErrSQL,
+				sql:                sqlDelete,
 			},
 		}
 		for _, tc := range testCases {
-			stmt := sql.NewStatement(sqlDelete)
+			stmt := sql.NewStatement(tc.sql)
 			it.Must(stmt.SetExpectedResultType(tc.expectedResultType))
 			result, err := client.SQL().ExecuteStatement(ctx, stmt)
 			if tc.expectErr != nil {
@@ -770,7 +761,17 @@ func TestSQLService_ExecuteMismatchExpectedResultType(t *testing.T) {
 				continue
 			}
 			assert.Nil(t, err)
-			assert.EqualValues(t, tc.count, result.UpdateCount())
+			if result.IsRowSet() {
+				iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
+				var rows []sql.Row
+				for iter.HasNext() {
+					row := it.MustValue(iter.Next()).(sql.Row)
+					rows = append(rows, row)
+				}
+				assert.Equal(t, 1, len(rows))
+				continue
+			}
+			assert.Equal(t, int64(tc.count), result.UpdateCount())
 			assert.False(t, result.IsRowSet())
 		}
 	})
@@ -985,26 +986,6 @@ func queryRow(client *hz.Client, q string, params ...interface{}) (sql.Row, erro
 		return iter.Next()
 	}
 	return nil, nil
-}
-
-func queryAllRowsWithStatement(client *hz.Client, stmt sql.Statement) ([]sql.Row, error) {
-	result, err := client.SQL().ExecuteStatement(context.Background(), stmt)
-	if err != nil {
-		return nil, err
-	}
-	iter, err := result.Iterator()
-	if err != nil {
-		return nil, err
-	}
-	var rows []sql.Row
-	for iter.HasNext() {
-		row, err := iter.Next()
-		if err != nil {
-			return nil, err
-		}
-		rows = append(rows, row)
-	}
-	return rows, nil
 }
 
 func assignValues(row sql.Row, targets ...interface{}) error {
