@@ -246,7 +246,7 @@ func TestClientInternal_OrderedMembers(t *testing.T) {
 }
 
 func TestClientInternal_ConnectedToMember(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55701, 2)
+	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55701, 2)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
