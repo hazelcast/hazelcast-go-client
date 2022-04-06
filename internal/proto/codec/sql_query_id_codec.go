@@ -18,7 +18,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 	SqlQueryIdCodecLocalIdLowInitialFrameSize = SqlQueryIdCodecLocalIdLowFieldOffset + proto.LongSizeInBytes
 )
 
-func EncodeSqlQueryId(clientMessage *proto.ClientMessage, sqlQueryId isql.QueryID) {
+func EncodeSqlQueryId(clientMessage *proto.ClientMessage, sqlQueryId itype.QueryID) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, SqlQueryIdCodecLocalIdLowInitialFrameSize))
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, SqlQueryIdCodecMemberIdHighFieldOffset, int64(sqlQueryId.MemberIDHigh))
@@ -41,7 +41,7 @@ func EncodeSqlQueryId(clientMessage *proto.ClientMessage, sqlQueryId isql.QueryI
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeSqlQueryId(frameIterator *proto.ForwardFrameIterator) *isql.QueryID {
+func DecodeSqlQueryId(frameIterator *proto.ForwardFrameIterator) *itype.QueryID {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -51,7 +51,7 @@ func DecodeSqlQueryId(frameIterator *proto.ForwardFrameIterator) *isql.QueryID {
 	localIdLow := FixSizedTypesCodec.DecodeLong(initialFrame.Content, SqlQueryIdCodecLocalIdLowFieldOffset)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return &isql.QueryID{
+	return &itype.QueryID{
 		MemberIDHigh: memberIdHigh,
 		MemberIDLow:  memberIdLow,
 		LocalIDHigh:  localIdHigh,

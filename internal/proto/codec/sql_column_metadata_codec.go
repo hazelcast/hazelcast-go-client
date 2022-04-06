@@ -18,7 +18,8 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -26,18 +27,6 @@ const (
 	SqlColumnMetadataCodecNullableFieldOffset      = SqlColumnMetadataCodecTypeFieldOffset + proto.IntSizeInBytes
 	SqlColumnMetadataCodecNullableInitialFrameSize = SqlColumnMetadataCodecNullableFieldOffset + proto.BooleanSizeInBytes
 )
-
-func EncodeSqlColumnMetadata(clientMessage *proto.ClientMessage, sqlColumnMetadata sql.ColumnMetadata) {
-	clientMessage.AddFrame(proto.BeginFrame.Copy())
-	initialFrame := proto.NewFrameWith(make([]byte, SqlColumnMetadataCodecNullableInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlColumnMetadataCodecTypeFieldOffset, int32(sqlColumnMetadata.Type))
-	FixSizedTypesCodec.EncodeBoolean(initialFrame.Content, SqlColumnMetadataCodecNullableFieldOffset, sqlColumnMetadata.Nullable)
-	clientMessage.AddFrame(initialFrame)
-
-	EncodeString(clientMessage, sqlColumnMetadata.Name)
-
-	clientMessage.AddFrame(proto.EndFrame.Copy())
-}
 
 func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) sql.ColumnMetadata {
 	// begin frame
@@ -52,9 +41,9 @@ func DecodeSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) sql.Colu
 	name := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return sql.ColumnMetadata{
-		Name:     name,
-		Type:     sql.ColumnType(_type),
-		Nullable: nullable,
+	return itype.ColumnMetadata{
+		ColumnName: name,
+		ColumnType: sql.ColumnType(_type),
+		IsNullable: nullable,
 	}
 }
