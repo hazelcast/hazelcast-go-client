@@ -64,26 +64,19 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("acquiring iterator: %w", err))
 	}
-	var (
-		k   int64
-		v   string
-		tmp interface{}
-	)
 	for it.HasNext() {
 		row, err := it.Next()
 		if err != nil {
 			panic(fmt.Errorf("iterating rows: %w", err))
 		}
-		tmp, err = row.Get(0)
+		key, err := row.Get(0)
 		if err != nil {
 			panic(fmt.Errorf("accessing row: %w", err))
 		}
-		k = tmp.(int64)
-		tmp, err = row.Get(1)
+		value, err := row.Get(1)
 		if err != nil {
 			panic(fmt.Errorf("accessing row: %w", err))
 		}
-		v = tmp.(string)
-		fmt.Printf("--> %d: %s\n", k, v)
+		fmt.Printf("--> %d: %s\n", key, value)
 	}
 }
