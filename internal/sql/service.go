@@ -165,7 +165,6 @@ func (r *Result) Next() (sql.Row, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.qr.Metadata()
 	row.metadata = m
 	row.values = r.currentRow
 	return row, r.err
