@@ -98,12 +98,12 @@ func (ci *ClientInternal) ClusterID() types.UUID {
 
 // OrderedMembers returns the most recent member list of the cluster.
 func (ci *ClientInternal) OrderedMembers() []pubcluster.MemberInfo {
-	return ci.ClusterService().OrderedMembers()
+	return ci.client.ic.ClusterService.OrderedMembers()
 }
 
 // ConnectedToMember returns true if there is a connection to the given member.
 func (ci *ClientInternal) ConnectedToMember(uuid types.UUID) bool {
-	return ci.ConnectionManager().GetConnectionForUUID(uuid) != nil
+	return ci.client.ic.ConnectionManager.GetConnectionForUUID(uuid) != nil
 }
 
 // EncodeData serializes the given value and returns a Data value.
