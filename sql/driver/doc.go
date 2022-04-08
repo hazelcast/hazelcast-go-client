@@ -175,6 +175,7 @@ The names in parentheses correspond to SQL types:
 	- float32 (real)
 	- float64 (double)
 	- types.Decimal (decimal)
+	- time.Time not supported, use one of types.LocalDate, types.LocalTime, types.LocalDateTime or types.OffsetDateTime
 	- types.LocalDate (date)
 	- types.LocalTime (time)
 	- types.LocalDateTime (timestamp)
