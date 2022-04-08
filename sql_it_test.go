@@ -1,17 +1,17 @@
 /*
-* Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License")
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package hazelcast_test
@@ -137,15 +137,16 @@ type RecordWithDateTime2 struct {
 	TimestampWithTimezoneValue *types.OffsetDateTime
 }
 
-func NewRecordWithDateTime2(t *time.Time) *RecordWithDateTime {
-	dv := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-	tv := time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	tsv := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	return &RecordWithDateTime{
+func NewRecordWithDateTime2(t *time.Time) *RecordWithDateTime2 {
+	dv := types.LocalDate(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local))
+	tv := types.LocalTime(time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local))
+	tsv := types.LocalDateTime(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local))
+	tt := types.OffsetDateTime(*t)
+	return &RecordWithDateTime2{
 		DateValue:                  &dv,
 		TimeValue:                  &tv,
 		TimestampValue:             &tsv,
-		TimestampWithTimezoneValue: t,
+		TimestampWithTimezoneValue: &tt,
 	}
 }
 
@@ -361,89 +362,6 @@ func TestSQLWithPortableData(t *testing.T) {
 }
 
 func TestSQLWithPortableDateTime(t *testing.T) {
-	it.SkipIf(t, "hz < 5.0")
-	cb := func(c *hz.Config) {
-		c.Serialization.SetPortableFactories(&recordFactory{})
-	}
-	it.SQLTesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		q := fmt.Sprintf(`
-			CREATE MAPPING "%s" (
-				__key BIGINT,
-				datevalue DATE,
-				timevalue TIME,
-				timestampvalue TIMESTAMP,
-				timestampwithtimezonevalue TIMESTAMP WITH TIME ZONE
-			)
-			TYPE IMAP
-			OPTIONS (
-				'keyFormat' = 'bigint',
-				'valueFormat' = 'portable',
-				'valuePortableFactoryId' = '100',
-				'valuePortableClassId' = '2'
-			)
-		`, mapName)
-		t.Logf("Query: %s", q)
-		it.MustValue(client.SQL().Execute(context.Background(), q))
-		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
-		rec := NewRecordWithDateTime(&dt)
-		_, err := client.SQL().Execute(context.Background(), fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
-			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
-		if err != nil {
-			t.Fatal(err)
-		}
-		targetDate := time.Date(2021, 12, 22, 0, 0, 0, 0, time.Local)
-		targetTime := time.Date(0, 1, 1, 23, 40, 12, 3400, time.Local)
-		targetTimestamp := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.Local)
-		targetTimestampWithTimezone := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", -5*60*60))
-		var k int64
-		// select the value itself
-		row, err := queryRow(client, fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
-		if err != nil {
-			t.Fatal(err)
-		}
-		var v interface{}
-		var vs []interface{}
-		if err := assignValues(row, &k, &v); err != nil {
-			t.Fatal(err)
-		}
-		vs = append(vs, v)
-		targetThis := []interface{}{&RecordWithDateTime{
-			DateValue:                  &targetDate,
-			TimeValue:                  &targetTime,
-			TimestampValue:             &targetTimestamp,
-			TimestampWithTimezoneValue: &targetTimestampWithTimezone,
-		}}
-		assert.Equal(t, targetThis, vs)
-		// select individual fields
-		row, err = queryRow(client, fmt.Sprintf(`
-						SELECT
-							__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue
-						FROM "%s" LIMIT 1
-				`, mapName))
-		if err != nil {
-			t.Fatal(err)
-		}
-		k = it.MustValue(row.Get(0)).(int64)
-		vDate := time.Time(it.MustValue(row.Get(1)).(types.LocalDate))
-		vTime := time.Time(it.MustValue(row.Get(2)).(types.LocalTime))
-		vTimestamp := time.Time(it.MustValue(row.Get(3)).(types.LocalDateTime))
-		vTimestampWithTimezone := time.Time(it.MustValue(row.Get(4)).(types.OffsetDateTime))
-		if !targetDate.Equal(vDate) {
-			t.Fatalf("%s != %s", targetDate, vDate)
-		}
-		if !targetTime.Equal(vTime) {
-			t.Fatalf("%s != %s", targetTime, vTime)
-		}
-		if !targetTimestamp.Equal(vTimestamp) {
-			t.Fatalf("%s != %s", targetTimestamp, vTimestamp)
-		}
-		if !targetTimestampWithTimezone.Equal(vTimestampWithTimezone) {
-			t.Fatalf("%s != %s", targetTimestampWithTimezone, vTimestamp)
-		}
-	})
-}
-
-func TestSQLWithPortableDateTime2(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetPortableFactories(&recordFactory{})

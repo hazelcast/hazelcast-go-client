@@ -211,15 +211,9 @@ The names in parantheses correspond to SQL types:
 	- types.LocalTime (time)
 	- types.LocalDateTime (timestamp)
 	- types.OffsetDateTime (timestamp with time zone)
-	- time.Time (date) Detected by checking: hour == minute == second == nanoseconds = 0
-	- time.Time (time) Detected by checking: year == 0, month == day == 1
-	- time.Time (timestamp) Detected by checking: not time, timezone == time.Local
-	- time.Time (timestamp with time zone) Detected by checking: not time, timezone != time.Local
 	- serialization.JSON (json)
 
 Using Date/Time
-
-time.Time values are automatically serialized to the correct type.
 
 In order to force using a specific date/time type, create a time.Time value and cast it to the target type:
 
