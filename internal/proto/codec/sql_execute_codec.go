@@ -19,7 +19,8 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -37,7 +38,7 @@ const (
 
 // Starts execution of an SQL query (as of 4.2).
 
-func EncodeSqlExecuteRequest(sql string, parameters []iserialization.Data, timeoutMillis int64, cursorBufferSize int32, schema string, expectedResultType byte, queryId isql.QueryID, skipUpdateStatistics bool) *proto.ClientMessage {
+func EncodeSqlExecuteRequest(sql string, parameters []iserialization.Data, timeoutMillis int64, cursorBufferSize int32, schema string, expectedResultType byte, queryId itype.QueryID, skipUpdateStatistics bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -58,7 +59,7 @@ func EncodeSqlExecuteRequest(sql string, parameters []iserialization.Data, timeo
 	return clientMessage
 }
 
-func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage, ss *iserialization.Service) (rowMetadata []isql.ColumnMetadata, rowPage *isql.Page, updateCount int64, err error) {
+func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage, ss *iserialization.Service) (rowMetadata []sql.ColumnMetadata, rowPage *itype.Page, updateCount int64, err error) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
