@@ -238,14 +238,6 @@ func TestClientInternal_OrderedMembers(t *testing.T) {
 	it.Eventually(t, func() bool {
 		return sameMembers(targetUUIDs, ci.OrderedMembers())
 	})
-	types.NewUUID()
-	assert.False(t, ci.ConnectedToMember(stopped.UUID))
-	for _, mem := range ci.OrderedMembers() {
-		if mem.UUID == stopped.UUID {
-			continue
-		}
-		assert.True(t, ci.ConnectedToMember(mem.UUID))
-	}
 }
 
 func TestClientInternal_ConnectedToMember(t *testing.T) {

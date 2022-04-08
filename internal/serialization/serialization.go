@@ -301,7 +301,7 @@ func (s *Service) registerIdentifiedFactories() error {
 }
 
 func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Serializer {
-	switch o := obj.(type) {
+	switch obj.(type) {
 	case nil:
 		return nilSerializer
 	case bool:
@@ -359,7 +359,7 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 	case types.OffsetDateTime:
 		return javaOffsetDateTimeSerializer
 	case time.Time:
-		return dateTimeSerializer(o)
+		return javaDateSerializer
 	case *big.Int:
 		return javaBigIntegerSerializer
 	case types.Decimal:
@@ -379,21 +379,6 @@ func makeError(rec interface{}) error {
 	default:
 		return fmt.Errorf("%v", rec)
 	}
-}
-
-func dateTimeSerializer(t time.Time) pubserialization.Serializer {
-	// if t has its year 0, then assume it contains only the time
-	if t.Year() == 0 && t.Month() == 1 && t.Day() == 1 {
-		return javaLocalTimeSerializer
-	}
-	h, mn, s := t.Clock()
-	if h == 0 && mn == 0 && s == 0 && t.Nanosecond() == 0 {
-		return javaLocalDateSerializer
-	}
-	if t.Location() == time.Local {
-		return javaLocalDateTimeSerializer
-	}
-	return javaOffsetDateTimeSerializer
 }
 
 var nilSerializer = &NilSerializer{}
