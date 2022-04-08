@@ -990,14 +990,14 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	})
 }
 
-func TestMap_EntryNotifiedEventToKeyAndPredicateWithAddListenerWithKeyAndPredicate(t *testing.T) {
+func TestMap_EntryNotifiedEventToKeyAndPredicateWithAddListenerWithPredicateAndKey(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		const totalCallCount = int32(1)
 		callCount := int32(0)
-		_, err := m.AddListenerWithKeyAndPredicate(context.Background(), hz.MapListener{
+		_, err := m.AddListenerWithPredicateAndKey(context.Background(), hz.MapListener{
 			EntryAdded: func(event *hz.EntryNotified) {
 				if event.EventType == hz.EntryAdded {
 					atomic.AddInt32(&callCount, 1)

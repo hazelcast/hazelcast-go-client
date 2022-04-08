@@ -389,7 +389,7 @@ func ExampleMap_AddListenerWithPredicate() {
 	}
 }
 
-func ExampleMap_AddListenerWithKeyAndPredicate() {
+func ExampleMap_AddListenerWithPredicateAndKey() {
 	// error handling was omitted for brevity
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
@@ -402,7 +402,7 @@ func ExampleMap_AddListenerWithKeyAndPredicate() {
 	}
 	key := strconv.Itoa(int(time.Now().Unix()))
 
-	subscriptionID, err := m.AddListenerWithKeyAndPredicate(ctx, hazelcast.MapListener{
+	subscriptionID, err := m.AddListenerWithPredicateAndKey(ctx, hazelcast.MapListener{
 		EntryAdded: func(event *hazelcast.EntryNotified) {
 			fmt.Println("Entry Added:", event.Key)
 		},
