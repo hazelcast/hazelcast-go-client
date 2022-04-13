@@ -1,14 +1,38 @@
 name: Report coverage to Codecov
 on:
+    workflow_dispatch:
+      inputs:
+        pr_number:
+          description: Enter PR number coming from community to run coverage on it. Do not run for PR coming from hazelcast organization, they will be run automatically.
+          required: true
     push:
       branches: 
         - master
-    pull_request:
-      branches: 
+    pull_request_target:
+      branches:
         - master
+      types:
+        [opened]
 jobs:
+
+  check_for_membership:
+    runs-on: ubuntu-latest
+    name: Check membership of given user  
+    outputs:
+      check-result: ${{ steps.composite.outputs.check-result }}
+    steps: 
+      - name: Action for membership check
+        id: composite
+        uses: hazelcast/hazelcast-tpm/membership@main
+        with:
+          organization-name: 'hazelcast'
+          member-name: ${{ github.event.pull_request.head.repo.owner.login }}
+          token: ${{ secrets.PAT }}
+
   test_client:
     name: Run code coverage and upload to Codecov
+    needs: [check_for_membership]
+    if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:     
     
@@ -21,15 +45,47 @@ jobs:
         with:
           go-version: '1.15'
           
-      - name: Checkout code
+      - name: Checkout code for push event
+        if: github.event_name == 'push'
         uses: actions/checkout@v2
+
+      - name: Checkout code for PR
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout repository to fetch PR coming from community
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v2
+
+      - name: Fetch PR coming from community
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git fetch origin pull/${{github.event.inputs.pr_number }}/head:temp_branch
+          git checkout temp_branch
           
       - name: Test
         run: |
           ./rc.sh start
           env MEMBER_COUNT=3 HZ_VERSION="5.1" make test-cover
-        
-      - name: Publish to Codecov
+
+      - name: Publish results to Codecov for PR coming from hazelcast organization
+        if: ${{ github.event_name == 'pull_request_target' }}
         uses: codecov/codecov-action@v2
         with:
           files: coverage.out
+          override_pr: ${{ github.event.pull_request.number }}
+
+      - name: Publish results to Codecov for Push
+        if: ${{ github.event_name == 'push' }}
+        uses: codecov/codecov-action@v2
+        with:
+          files: coverage.out
+        
+      - name: Publish result to Codecov for PR coming from community
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: codecov/codecov-action@v2
+        with:
+          files: coverage.out
+          override_pr: ${{ github.event.inputs.pr_number }}
