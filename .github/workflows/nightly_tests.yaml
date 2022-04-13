@@ -27,6 +27,11 @@ jobs:
         uses: actions/checkout@v2
           
       - name: Test
+        env:
+          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+          HZ_VERSION: 5.1
+          SSL_ENABLED: 1
+          MEMBER_COUNT: 3
         run: |
-          env HZ_VERSION=5.1 ./rc.sh start
-          env HZ_VERSION=5.1 MEMBER_COUNT=3 make test-cover
+          ./rc.sh start
+          make test-cover
