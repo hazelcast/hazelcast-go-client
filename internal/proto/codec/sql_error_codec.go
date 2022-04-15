@@ -18,7 +18,7 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 	SqlErrorCodecOriginatingMemberIdInitialFrameSize = SqlErrorCodecOriginatingMemberIdFieldOffset + proto.UUIDSizeInBytes
 )
 
-func EncodeSqlError(clientMessage *proto.ClientMessage, sqlError isql.Error) {
+func EncodeSqlError(clientMessage *proto.ClientMessage, sqlError sql.Error) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, SqlErrorCodecOriginatingMemberIdInitialFrameSize))
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, SqlErrorCodecCodeFieldOffset, int32(sqlError.Code))
@@ -40,7 +40,7 @@ func EncodeSqlError(clientMessage *proto.ClientMessage, sqlError isql.Error) {
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeSqlError(frameIterator *proto.ForwardFrameIterator) isql.Error {
+func DecodeSqlError(frameIterator *proto.ForwardFrameIterator) sql.Error {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -54,7 +54,7 @@ func DecodeSqlError(frameIterator *proto.ForwardFrameIterator) isql.Error {
 	}
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return isql.Error{
+	return sql.Error{
 		Code:                code,
 		Message:             message,
 		OriginatingMemberId: originatingMemberId,

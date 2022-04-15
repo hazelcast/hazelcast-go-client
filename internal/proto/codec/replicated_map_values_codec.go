@@ -45,7 +45,7 @@ func EncodeReplicatedMapValuesRequest(name string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeReplicatedMapValuesResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeReplicatedMapValuesResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

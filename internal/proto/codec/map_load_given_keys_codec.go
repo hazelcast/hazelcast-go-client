@@ -32,7 +32,7 @@ const (
 
 // Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
 
-func EncodeMapLoadGivenKeysRequest(name string, keys []*iserialization.Data, replaceExistingValues bool) *proto.ClientMessage {
+func EncodeMapLoadGivenKeysRequest(name string, keys []iserialization.Data, replaceExistingValues bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

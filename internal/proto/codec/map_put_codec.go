@@ -36,7 +36,7 @@ const (
 // (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
 // rounded to the next closest second value.
 
-func EncodeMapPutRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
+func EncodeMapPutRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -54,7 +54,7 @@ func EncodeMapPutRequest(name string, key *iserialization.Data, value *iserializ
 	return clientMessage
 }
 
-func DecodeMapPutResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeMapPutResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

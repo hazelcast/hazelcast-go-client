@@ -31,7 +31,7 @@ const (
 
 // Applies the user defined EntryProcessor to the all entries in the map.Returns the results mapped by each key in the map.
 
-func EncodeMapExecuteOnAllKeysRequest(name string, entryProcessor *iserialization.Data) *proto.ClientMessage {
+func EncodeMapExecuteOnAllKeysRequest(name string, entryProcessor iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

@@ -49,7 +49,7 @@ func EncodeQueueDrainToRequest(name string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeQueueDrainToResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeQueueDrainToResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

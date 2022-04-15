@@ -31,8 +31,8 @@ func TestNewPair_With_Int(t *testing.T) {
 	pair := NewPair(key, value)
 
 	//then
-	assert.Equal(t, pair.key, key)
-	assert.Equal(t, pair.value, value)
+	assert.Equal(t, pair.Key, key)
+	assert.Equal(t, pair.Value, value)
 }
 
 func TestNewPair_With_String(t *testing.T) {
@@ -44,8 +44,8 @@ func TestNewPair_With_String(t *testing.T) {
 	pair := NewPair(key, value)
 
 	//then
-	assert.Equal(t, pair.key, key)
-	assert.Equal(t, pair.value, value)
+	assert.Equal(t, pair.Key, key)
+	assert.Equal(t, pair.Value, value)
 }
 
 func TestNewPair_With_ByteArray(t *testing.T) {
@@ -57,8 +57,8 @@ func TestNewPair_With_ByteArray(t *testing.T) {
 	pair := NewPair(key, value)
 
 	//then
-	assert.Equal(t, pair.key, key)
-	assert.Equal(t, pair.value, value)
+	assert.Equal(t, pair.Key, key)
+	assert.Equal(t, pair.Value, value)
 }
 
 func TestNewPair_With_IntArray(t *testing.T) {
@@ -70,6 +70,6 @@ func TestNewPair_With_IntArray(t *testing.T) {
 	pair := NewPair(key, value)
 
 	//then
-	assert.Equal(t, pair.key, key)
-	assert.Equal(t, pair.value, value)
+	assert.Equal(t, pair.Key, key)
+	assert.Equal(t, pair.Value, value)
 }

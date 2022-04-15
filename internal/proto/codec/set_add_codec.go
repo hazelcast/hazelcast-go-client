@@ -38,7 +38,7 @@ const (
 // element, including null, and throw an exception, as described in the specification for Collection
 // Individual set implementations should clearly document any restrictions on the elements that they may contain.
 
-func EncodeSetAddRequest(name string, value *serialization.Data) *proto.ClientMessage {
+func EncodeSetAddRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

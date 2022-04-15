@@ -24,7 +24,8 @@ import (
 	"sync/atomic"
 
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/sql"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 const (
@@ -37,19 +38,23 @@ const (
 // QueryResult is not concurrency-safe, except for closing it.
 type QueryResult struct {
 	err              error
-	page             *sql.Page
+	page             *itype.Page
 	ss               *SQLService
 	conn             *icluster.Connection
 	doneCh           chan struct{}
-	metadata         sql.RowMetadata
-	queryID          sql.QueryID
+	metadata         itype.RowMetadata
+	queryID          itype.QueryID
 	cursorBufferSize int32
 	index            int32
 	state            int32
 }
 
+func (r *QueryResult) Metadata() sql.RowMetadata {
+	return &r.metadata
+}
+
 // NewQueryResult creates a new QueryResult.
-func NewQueryResult(ctx context.Context, qid sql.QueryID, md sql.RowMetadata, page *sql.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
+func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page *itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
 	doneCh := make(chan struct{})
 	qr := &QueryResult{
 		queryID:          qid,
@@ -77,11 +82,16 @@ func NewQueryResult(ctx context.Context, qid sql.QueryID, md sql.RowMetadata, pa
 // Columns returns the column names for the rows in the query result.
 // It implements database/sql/Rows interface.
 func (r *QueryResult) Columns() []string {
-	names := make([]string, len(r.metadata.Columns))
+	names := make([]string, r.metadata.ColumnCount())
+	cols := r.metadata.Columns()
 	for i := 0; i < len(names); i++ {
-		names[i] = r.metadata.Columns[i].Name
+		names[i] = cols[i].Name()
 	}
 	return names
+}
+
+func (r *QueryResult) Len() int {
+	return r.metadata.ColumnCount()
 }
 
 // Close notifies the member to release resources for the corresponding query.
@@ -101,6 +111,7 @@ func (r *QueryResult) Close() error {
 // If there are no rows left, it returns io.EOF
 // This method is not concurrency-safe.
 // It implements database/sql/Rows interface.
+// InvocationTimeout field of hazelcast.Config is respected for timeout.
 func (r *QueryResult) Next(dest []driver.Value) error {
 	cols := r.page.Columns
 	if len(cols) == 0 {

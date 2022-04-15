@@ -45,7 +45,7 @@ func EncodeSetGetAllRequest(name string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeSetGetAllResponse(clientMessage *proto.ClientMessage) []*serialization.Data {
+func DecodeSetGetAllResponse(clientMessage *proto.ClientMessage) []serialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
