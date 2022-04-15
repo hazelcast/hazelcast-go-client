@@ -42,6 +42,7 @@ func TestProxy_Destroy(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
 }
 
 func retryResult(t *testing.T, redo bool, target bool) {
