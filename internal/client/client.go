@@ -105,6 +105,7 @@ func executeShutdownHandlers(
 type Client struct {
 	InvocationHandler    invocation.Handler
 	Logger               ilogger.LogAdaptor
+	ShutdownHandlers     map[ShutdownHandlerType]func(ctx context.Context) error
 	ConnectionManager    *icluster.ConnectionManager
 	ClusterService       *icluster.Service
 	PartitionService     *icluster.PartitionService
@@ -118,7 +119,6 @@ type Client struct {
 	clusterConfig        *cluster.Config
 	name                 string
 	state                int32
-	ShutdownHandlers     map[ShutdownHandlerType]func(ctx context.Context) error
 }
 
 func New(config *Config) (*Client, error) {
