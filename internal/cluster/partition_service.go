@@ -69,7 +69,7 @@ func (s *PartitionService) PartitionCount() int32 {
 	return atomic.LoadInt32(&s.partitionCount)
 }
 
-func (s *PartitionService) GetPartitionID(keyData *iserialization.Data) (int32, error) {
+func (s *PartitionService) GetPartitionID(keyData iserialization.Data) (int32, error) {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
@@ -118,8 +118,8 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 	}
 	newPartitions := map[int32]types.UUID{}
 	for _, pair := range pairs {
-		uuids := pair.Key().([]types.UUID)
-		ids := pair.Value().([]int32)
+		uuids := pair.Key.([]types.UUID)
+		ids := pair.Value.([]int32)
 		for _, uuid := range uuids {
 			for _, id := range ids {
 				newPartitions[id] = uuid

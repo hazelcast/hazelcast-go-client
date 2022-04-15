@@ -38,7 +38,7 @@ const (
 //
 // Similar to the put operation except that set doesn't return the old value, which is more efficient.
 
-func EncodeMapSetWithMaxIdleRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
+func EncodeMapSetWithMaxIdleRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64, ttl int64, maxIdle int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
@@ -57,7 +57,7 @@ func EncodeMapSetWithMaxIdleRequest(name string, key *iserialization.Data, value
 	return clientMessage
 }
 
-func DecodeMapSetWithMaxIdleResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeMapSetWithMaxIdleResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

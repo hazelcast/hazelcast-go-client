@@ -36,7 +36,7 @@ const (
 // set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
 // collection is modified while the operation is in progress.
 
-func EncodeSetAddAllRequest(name string, valueList []*serialization.Data) *proto.ClientMessage {
+func EncodeSetAddAllRequest(name string, valueList []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

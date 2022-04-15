@@ -18,7 +18,6 @@ package serialization
 
 import (
 	"encoding/binary"
-	"math"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 )
@@ -29,40 +28,27 @@ const (
 	heapDataOverhead = 8
 )
 
-type Data struct {
-	Payload []byte
+type Data []byte
+
+func (d Data) ToByteArray() []byte {
+	return d
 }
 
-func (d *Data) ToByteArray() []byte {
-	return d.Payload
-}
-
-// NewData returns serialization Data with the given payload.
-// Ownership of Payload is transferred, so it mustn't be used after passed to NewData
-func NewData(payload []byte) *Data {
-	return &Data{payload}
-}
-
-func (d *Data) Buffer() []byte {
-	return d.Payload
-}
-
-func (d *Data) Type() int32 {
-	if d.TotalSize() == 0 {
+func (d Data) Type() int32 {
+	if d == nil {
 		return TypeNil
 	}
-	return int32(binary.BigEndian.Uint32(d.Payload[typeOffset:]))
+	return int32(binary.BigEndian.Uint32(d[typeOffset:]))
 }
 
-func (d *Data) TotalSize() int {
-	return len(d.Payload)
+func (d Data) DataSize() int {
+	v := len(d) - heapDataOverhead
+	if v <= 0 {
+		return 0
+	}
+	return v
 }
 
-func (d *Data) DataSize() int {
-	// TODO: Remove conversion to float64, amd math.Max
-	return int(math.Max(float64(d.TotalSize()-heapDataOverhead), 0))
-}
-
-func (d *Data) PartitionHash() int32 {
-	return murmur.Default3A(d.Payload, DataOffset, d.DataSize())
+func (d Data) PartitionHash() int32 {
+	return murmur.Default3A(d, DataOffset, d.DataSize())
 }

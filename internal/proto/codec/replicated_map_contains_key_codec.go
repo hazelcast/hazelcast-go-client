@@ -33,7 +33,7 @@ const (
 
 // Returns true if this map contains a mapping for the specified key.
 
-func EncodeReplicatedMapContainsKeyRequest(name string, key *iserialization.Data) *proto.ClientMessage {
+func EncodeReplicatedMapContainsKeyRequest(name string, key iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

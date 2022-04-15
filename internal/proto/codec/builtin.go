@@ -30,15 +30,16 @@ import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	itype "github.com/hazelcast/hazelcast-go-client/internal/sql/types"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 // Encoder for ClientMessage and value
 type Encoder func(message *proto.ClientMessage, value interface{})
 
-// Decoder create *iserialization.Data
-type Decoder func(frameIterator *proto.ForwardFrameIterator) *iserialization.Data
+// Decoder creates iserialization.Data
+type Decoder func(frameIterator *proto.ForwardFrameIterator) iserialization.Data
 
 // CodecUtil
 type codecUtil struct{}
@@ -46,14 +47,13 @@ type codecUtil struct{}
 var CodecUtil codecUtil
 
 func (codecUtil) FastForwardToEndFrame(frameIterator *proto.ForwardFrameIterator) {
-	numberOfExpectedEndFrames := 1
-	var frame *proto.Frame
-	for numberOfExpectedEndFrames != 0 {
-		frame = frameIterator.Next()
+	expectedEndFrames := 1
+	for expectedEndFrames != 0 {
+		frame := frameIterator.Next()
 		if frame.IsEndFrame() {
-			numberOfExpectedEndFrames--
+			expectedEndFrames--
 		} else if frame.IsBeginFrame() {
-			numberOfExpectedEndFrames++
+			expectedEndFrames++
 		}
 	}
 }
@@ -82,7 +82,7 @@ func (codecUtil) EncodeNullableForBitmapIndexOptions(message *proto.ClientMessag
 	}
 }
 
-func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iserialization.Data) {
+func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data iserialization.Data) {
 	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
@@ -90,7 +90,7 @@ func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data *iseri
 	}
 }
 
-func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if c.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
@@ -154,10 +154,10 @@ func DecodeByteArray(frameIterator *proto.ForwardFrameIterator) []byte {
 }
 
 func EncodeData(message *proto.ClientMessage, value interface{}) {
-	message.AddFrame(proto.NewFrame(value.(*iserialization.Data).ToByteArray()))
+	message.AddFrame(proto.NewFrame(value.(iserialization.Data).ToByteArray()))
 }
 
-func EncodeNullableData(message *proto.ClientMessage, data *iserialization.Data) {
+func EncodeNullableData(message *proto.ClientMessage, data iserialization.Data) {
 	if data == nil {
 		message.AddFrame(proto.NullFrame.Copy())
 	} else {
@@ -165,11 +165,11 @@ func EncodeNullableData(message *proto.ClientMessage, data *iserialization.Data)
 	}
 }
 
-func DecodeData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
-	return iserialization.NewData(frameIterator.Next().Content)
+func DecodeData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
+	return frameIterator.Next().Content
 }
 
-func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) *iserialization.Data {
+func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
@@ -179,8 +179,8 @@ func DecodeNullableData(frameIterator *proto.ForwardFrameIterator) *iserializati
 func EncodeEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEncoder, valueEncoder Encoder) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		keyEncoder(message, value.Key())
-		valueEncoder(message, value.Value())
+		keyEncoder(message, value.Key)
+		valueEncoder(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -188,8 +188,8 @@ func EncodeEntryList(message *proto.ClientMessage, entries []proto.Pair, keyEnco
 func EncodeEntryListForStringAndString(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeString(message, value.Key())
-		EncodeString(message, value.Value())
+		EncodeString(message, value.Key)
+		EncodeString(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -197,8 +197,8 @@ func EncodeEntryListForStringAndString(message *proto.ClientMessage, entries []p
 func EncodeEntryListForStringAndByteArray(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeString(message, value.Key())
-		EncodeByteArray(message, value.Value().([]byte))
+		EncodeString(message, value.Key)
+		EncodeByteArray(message, value.Value.([]byte))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 
@@ -207,8 +207,8 @@ func EncodeEntryListForStringAndByteArray(message *proto.ClientMessage, entries 
 func EncodeEntryListForDataAndData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeData(message, value.Key())
-		EncodeData(message, value.Value())
+		EncodeData(message, value.Key)
+		EncodeData(message, value.Value)
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -216,8 +216,8 @@ func EncodeEntryListForDataAndData(message *proto.ClientMessage, entries []proto
 func EncodeEntryListForDataAndListData(message *proto.ClientMessage, entries []proto.Pair) {
 	message.AddFrame(proto.BeginFrame.Copy())
 	for _, value := range entries {
-		EncodeData(message, value.Key())
-		EncodeListData(message, value.Value().([]*iserialization.Data))
+		EncodeData(message, value.Key)
+		EncodeListData(message, value.Value.([]iserialization.Data))
 	}
 	message.AddFrame(proto.EndFrame.Copy())
 }
@@ -277,8 +277,8 @@ func EncodeListIntegerIntegerInteger(message *proto.ClientMessage, entries []pro
 	entryCount := len(entries)
 	frame := proto.NewFrame(make([]byte, entryCount*proto.EntrySizeInBytes))
 	for i := 0; i < entryCount; i++ {
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key().(int32))
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value().(int32))
+		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key.(int32))
+		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value.(int32))
 	}
 	message.AddFrame(frame)
 }
@@ -300,8 +300,8 @@ func EncodeEntryListUUIDLong(message *proto.ClientMessage, entries []proto.Pair)
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
-		key := entry.Key().(types.UUID)
-		value := entry.Value().(int64)
+		key := entry.Key.(types.UUID)
+		value := entry.Value.(int64)
 		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.EntrySizeInBytes), key)
 		FixSizedTypesCodec.EncodeLong(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
@@ -313,8 +313,8 @@ func EncodeEntryListIntegerInteger(message *proto.ClientMessage, entries []proto
 	content := make([]byte, size*proto.EntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
-		key := entry.Key().(int32)
-		value := entry.Value().(int32)
+		key := entry.Key.(int32)
+		value := entry.Value.(int32)
 		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes), key)
 		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
@@ -351,8 +351,8 @@ func EncodeEntryListUUIDListInteger(message *proto.ClientMessage, entries []prot
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < entryCount; i++ {
 		entry := entries[i]
-		key := entry.Key().(types.UUID)
-		value := entry.Value().([]int32)
+		key := entry.Key.(types.UUID)
+		value := entry.Value.([]int32)
 		uuids[i] = key
 		EncodeListInteger(message, value)
 	}
@@ -550,7 +550,7 @@ func DecodeListLong(frameIterator *proto.ForwardFrameIterator) []int64 {
 	return result
 }
 
-func EncodeListMultiFrame(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrame(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		encoder(message, values[i])
@@ -558,7 +558,7 @@ func EncodeListMultiFrame(message *proto.ClientMessage, values []*iserialization
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameForData(message *proto.ClientMessage, values []*iserialization.Data) {
+func EncodeListMultiFrameForData(message *proto.ClientMessage, values []iserialization.Data) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeData(message, values[i])
@@ -582,7 +582,7 @@ func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, valu
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		if values[i] == nil {
@@ -594,7 +594,7 @@ func EncodeListMultiFrameContainsNullable(message *proto.ClientMessage, values [
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []*iserialization.Data, encoder Encoder) {
+func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []iserialization.Data, encoder Encoder) {
 	if len(values) == 0 {
 		message.AddFrame(proto.NullFrame)
 	} else {
@@ -602,7 +602,7 @@ func EncodeListMultiFrameNullable(message *proto.ClientMessage, values []*iseria
 	}
 }
 
-func EncodeListMultiFrameNullableForData(message *proto.ClientMessage, values []*iserialization.Data) {
+func EncodeListMultiFrameNullableForData(message *proto.ClientMessage, values []iserialization.Data) {
 	EncodeListMultiFrameContainsNullable(message, values, EncodeData)
 }
 
@@ -621,8 +621,8 @@ func DecodeNullableListMultiFrame(frameIterator *proto.ForwardFrameIterator, dec
 	DecodeListMultiFrame(frameIterator, decoder)
 }
 
-func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
-	result := make([]*iserialization.Data, 0)
+func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []iserialization.Data {
+	result := make([]iserialization.Data, 0)
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeData(frameIterator))
@@ -699,11 +699,11 @@ func DecodeListMultiFrameForDistributedObjectInfo(frameIterator *proto.ForwardFr
 	return result
 }
 
-func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []isql.ColumnMetadata {
+func DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator *proto.ForwardFrameIterator) []sql.ColumnMetadata {
 	if CodecUtil.NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	var cm []isql.ColumnMetadata
+	var cm []sql.ColumnMetadata
 	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		cm = append(cm, DecodeSqlColumnMetadata(it))
 	})
@@ -718,11 +718,11 @@ func DecodeDistributedObjectInfo(frameIterator *proto.ForwardFrameIterator) type
 	return types.DistributedObjectInfo{Name: name, ServiceName: serviceName}
 }
 
-func EncodeListData(message *proto.ClientMessage, entries []*iserialization.Data) {
+func EncodeListData(message *proto.ClientMessage, entries []iserialization.Data) {
 	EncodeListMultiFrameForData(message, entries)
 }
 
-func DecodeListData(frameIterator *proto.ForwardFrameIterator) []*iserialization.Data {
+func DecodeListData(frameIterator *proto.ForwardFrameIterator) []iserialization.Data {
 	return DecodeListMultiFrameForData(frameIterator)
 }
 
@@ -818,7 +818,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 func DecodeError(msg *proto.ClientMessage) *ihzerrors.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
-	errorHolders := []proto.ErrorHolder{}
+	var errorHolders []proto.ErrorHolder
 	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		errorHolders = append(errorHolders, DecodeErrorHolder(frameIterator))
 	})
@@ -899,7 +899,7 @@ func EncodeAddress(clientMessage *proto.ClientMessage, address pubcluster.Addres
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization.Service) (*isql.Page, error) {
+func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization.Service) (*itype.Page, error) {
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil, nil
 	}
@@ -909,13 +909,13 @@ func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization
 	last := FixSizedTypesCodec.DecodeByte(frame.Content, 0) == 1
 	// read column types
 	colTypeIDs := DecodeListInteger(it)
-	colTypes := make([]isql.ColumnType, len(colTypeIDs))
+	colTypes := make([]sql.ColumnType, len(colTypeIDs))
 	cols := make([][]driver.Value, len(colTypeIDs))
 	var err error
 	for i, t := range colTypeIDs {
-		ct := isql.ColumnType(t)
+		ct := sql.ColumnType(t)
 		colTypes[i] = ct
-		if ct == isql.ColumnTypeObject {
+		if ct == sql.ColumnTypeObject {
 			cols[i], err = DecodeListMultiFrameContainsNullableData(it, ss)
 		} else {
 			cols[i], err = DecodeSQLColumn(ct, it)
@@ -925,14 +925,14 @@ func DecodeNullableForSQLPage(it *proto.ForwardFrameIterator, ss *iserialization
 		}
 	}
 	CodecUtil.FastForwardToEndFrame(it)
-	return &isql.Page{
+	return &itype.Page{
 		Columns:     cols,
 		ColumnTypes: colTypes,
 		Last:        last,
 	}, nil
 }
 
-func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *isql.Error {
+func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *sql.Error {
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil
 	}
@@ -940,7 +940,7 @@ func DecodeNullableForSQLError(it *proto.ForwardFrameIterator) *isql.Error {
 	return &e
 }
 
-func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *isql.QueryID {
+func DecodeNullableForSQLQueryId(it *proto.ForwardFrameIterator) *itype.QueryID {
 	if CodecUtil.NextFrameIsNullFrame(it) {
 		return nil
 	}
@@ -958,37 +958,37 @@ func DecodeNullableForSQLHazelcastJSON(it *proto.ForwardFrameIterator) []driver.
 	return vs
 }
 
-func DecodeSQLColumn(t isql.ColumnType, it *proto.ForwardFrameIterator) ([]driver.Value, error) {
+func DecodeSQLColumn(t sql.ColumnType, it *proto.ForwardFrameIterator) ([]driver.Value, error) {
 	switch t {
-	case isql.ColumnTypeVarchar:
+	case sql.ColumnTypeVarchar:
 		return DecodeListMultiFrameContainsNullableString(it), nil
-	case isql.ColumnTypeBoolean:
+	case sql.ColumnTypeBoolean:
 		return DecodeListCNBoolean(it), nil
-	case isql.ColumnTypeTinyInt:
+	case sql.ColumnTypeTinyInt:
 		return DecodeListCNByte(it), nil
-	case isql.ColumnTypeSmallInt:
+	case sql.ColumnTypeSmallInt:
 		return DecodeListCNShort(it), nil
-	case isql.ColumnTypeInt:
+	case sql.ColumnTypeInt:
 		return DecodeListCNInt(it), nil
-	case isql.ColumnTypeBigInt:
+	case sql.ColumnTypeBigInt:
 		return DecodeListCNLong(it), nil
-	case isql.ColumnTypeReal:
+	case sql.ColumnTypeReal:
 		return DecodeListCNFloat(it), nil
-	case isql.ColumnTypeDouble:
+	case sql.ColumnTypeDouble:
 		return DecodeListCNDouble(it), nil
-	case isql.ColumnTypeDate:
+	case sql.ColumnTypeDate:
 		return DecodeListCNDate(it), nil
-	case isql.ColumnTypeTime:
+	case sql.ColumnTypeTime:
 		return DecodeListCNTime(it), nil
-	case isql.ColumnTypeTimestamp:
+	case sql.ColumnTypeTimestamp:
 		return DecodeListCNTimestamp(it), nil
-	case isql.ColumnTypeTimestampWithTimeZone:
+	case sql.ColumnTypeTimestampWithTimeZone:
 		return DecodeListCNTimestampWithTimeZone(it), nil
-	case isql.ColumnTypeNull:
+	case sql.ColumnTypeNull:
 		return DecodeListCNNull(it), nil
-	case isql.ColumnTypeDecimal:
+	case sql.ColumnTypeDecimal:
 		return DecodeListMultiFrameContainsNullableDecimal(it), nil
-	case isql.ColumnTypeJSON:
+	case sql.ColumnTypeJSON:
 		return DecodeNullableForSQLHazelcastJSON(it), nil
 	default:
 		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("unknown type for SQL column: %d", t), nil)

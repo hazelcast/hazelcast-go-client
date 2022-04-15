@@ -46,7 +46,7 @@ const (
 // <p>
 // Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
 
-func EncodeMapSetTtlRequest(name string, key *iserialization.Data, ttl int64) *proto.ClientMessage {
+func EncodeMapSetTtlRequest(name string, key iserialization.Data, ttl int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

@@ -33,7 +33,7 @@ const (
 
 // Return true if this collection contains all of the elements in the specified collection.
 
-func EncodeQueueContainsAllRequest(name string, dataList []*iserialization.Data) *proto.ClientMessage {
+func EncodeQueueContainsAllRequest(name string, dataList []iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

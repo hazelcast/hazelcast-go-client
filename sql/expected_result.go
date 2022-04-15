@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,11 @@
 
 package sql
 
-import "github.com/hazelcast/hazelcast-go-client/types"
+// ExpectedResultType represents the expected statement result type.
+type ExpectedResultType byte
 
-type QueryID struct {
-	MemberIDHigh int64
-	MemberIDLow  int64
-	LocalIDHigh  int64
-	LocalIDLow   int64
-}
-
-func NewQueryIDFromUUID(uuid types.UUID) QueryID {
-	local := types.NewUUID()
-	return QueryID{
-		MemberIDHigh: int64(uuid.MostSignificantBits()),
-		MemberIDLow:  int64(uuid.LeastSignificantBits()),
-		LocalIDHigh:  int64(local.MostSignificantBits()),
-		LocalIDLow:   int64(local.LeastSignificantBits()),
-	}
-}
+const (
+	ExpectedResultTypeAny         = ExpectedResultType(0)
+	ExpectedResultTypeRows        = ExpectedResultType(1)
+	ExpectedResultTypeUpdateCount = ExpectedResultType(2)
+)

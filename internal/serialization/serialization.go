@@ -62,30 +62,30 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
-func (s *Service) ToData(object interface{}) (r *Data, err error) {
+func (s *Service) ToData(object interface{}) (r Data, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
 		}
 	}()
-	if serData, ok := object.(*Data); ok {
+	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
 	// initial size is kept minimal (head_data_offset + long_size), since it'll grow on demand
 	dataOutput := NewPositionalObjectDataOutput(16, s, !s.SerializationConfig.LittleEndian)
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
-		return nil, err
+		return Data{}, err
 	}
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
 	serializer.Write(dataOutput, object)
-	return &Data{dataOutput.buffer[:dataOutput.position]}, err
+	return dataOutput.buffer[:dataOutput.position], err
 }
 
 // ToObject deserializes the given Data to an object.
 // nil is returned if called with nil.
-func (s *Service) ToObject(data *Data) (r interface{}, err error) {
+func (s *Service) ToObject(data Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
@@ -103,7 +103,7 @@ func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 			return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 		}
 	}
-	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, !s.SerializationConfig.LittleEndian)
+	dataInput := NewObjectDataInput(data, DataOffset, s, !s.SerializationConfig.LittleEndian)
 	return serializer.Read(dataInput), nil
 }
 
@@ -301,7 +301,7 @@ func (s *Service) registerIdentifiedFactories() error {
 }
 
 func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Serializer {
-	switch o := obj.(type) {
+	switch obj.(type) {
 	case nil:
 		return nilSerializer
 	case bool:
@@ -359,7 +359,7 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 	case types.OffsetDateTime:
 		return javaOffsetDateTimeSerializer
 	case time.Time:
-		return dateTimeSerializer(o)
+		return javaDateSerializer
 	case *big.Int:
 		return javaBigIntegerSerializer
 	case types.Decimal:
@@ -379,21 +379,6 @@ func makeError(rec interface{}) error {
 	default:
 		return fmt.Errorf("%v", rec)
 	}
-}
-
-func dateTimeSerializer(t time.Time) pubserialization.Serializer {
-	// if t has its year 0, then assume it contains only the time
-	if t.Year() == 0 && t.Month() == 1 && t.Day() == 1 {
-		return javaLocalTimeSerializer
-	}
-	h, mn, s := t.Clock()
-	if h == 0 && mn == 0 && s == 0 && t.Nanosecond() == 0 {
-		return javaLocalDateSerializer
-	}
-	if t.Location() == time.Local {
-		return javaLocalDateTimeSerializer
-	}
-	return javaOffsetDateTimeSerializer
 }
 
 var nilSerializer = &NilSerializer{}

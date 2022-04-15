@@ -59,7 +59,7 @@ func EncodeListSubRequest(name string, from int32, to int32) *proto.ClientMessag
 	return clientMessage
 }
 
-func DecodeListSubResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeListSubResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

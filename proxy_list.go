@@ -357,7 +357,7 @@ func (l *List) addListener(ctx context.Context, includeValue bool, handler ListI
 	addRequest := codec.EncodeListAddListenerRequest(l.name, includeValue, l.smart)
 	removeRequest := codec.EncodeListRemoveListenerRequest(l.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleListAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {
+		codec.HandleListAddListener(msg, func(itemData iserialization.Data, uuid types.UUID, eventType int32) {
 			item, err := l.convertToObject(itemData)
 			if err != nil {
 				l.logger.Warnf("cannot convert data to Go value: %v", err)

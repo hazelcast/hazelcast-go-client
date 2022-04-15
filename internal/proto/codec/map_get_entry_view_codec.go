@@ -37,7 +37,7 @@ const (
 // This method returns a clone of original mapping, modifying the returned value does not change the actual value
 // in the map. One should put modified value back to make changes visible to all nodes.
 
-func EncodeMapGetEntryViewRequest(name string, key *iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapGetEntryViewRequest(name string, key iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

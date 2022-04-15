@@ -302,7 +302,7 @@ func (q *Queue) addListener(ctx context.Context, includeValue bool, handler Queu
 	addRequest := codec.EncodeQueueAddListenerRequest(q.name, includeValue, q.smart)
 	removeRequest := codec.EncodeQueueRemoveListenerRequest(q.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleQueueAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {
+		codec.HandleQueueAddListener(msg, func(itemData iserialization.Data, uuid types.UUID, eventType int32) {
 			item, err := q.convertToObject(itemData)
 			if err != nil {
 				q.logger.Warnf("cannot convert data to Go value")
