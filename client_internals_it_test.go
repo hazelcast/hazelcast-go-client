@@ -354,6 +354,36 @@ func TestClientInternal_EncodeData(t *testing.T) {
 	})
 }
 
+func TestProxyManagerShutdown(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		ctx := context.Background()
+		tc := it.StartNewClusterWithOptions("proxy-manager-graceful-shutdown", 5701, 1)
+		defer tc.Shutdown()
+		config := tc.DefaultConfig()
+		config.Cluster.Unisocket = !smart
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
+		q := it.MustValue(client.GetQueue(ctx, it.NewUniqueObjectName("queue"))).(*hz.Queue)
+		value := "dummy-value"
+		key := "dummy-key"
+		_, err := m.Put(ctx, key, value)
+		if err != nil {
+			t.Fatalf("cannot put an entry, err: %q", err)
+		}
+		err = q.Put(ctx, value)
+		if err != nil {
+			t.Fatalf("cannot put an entry, err: %q", err)
+		}
+		ci := hz.NewClientInternal(client)
+		proxies := ci.ProxyManagerProxies()
+		assert.EqualValues(t, len(proxies), 2)
+		if err := client.Shutdown(ctx); err != nil {
+			t.Fatalf("cannot shutdown properly, err: %q", err)
+		}
+		assert.EqualValues(t, len(proxies), 0)
+	})
+}
+
 type invokeFilter func(inv invocation.Invocation) (ok bool)
 
 type riggedInvocationHandler struct {

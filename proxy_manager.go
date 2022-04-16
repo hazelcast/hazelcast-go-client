@@ -222,3 +222,32 @@ func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorCo
 func makeProxyName(serviceName string, objectName string) string {
 	return fmt.Sprintf("%s%s", serviceName, objectName)
 }
+
+type proxyDestroyer interface {
+	Destroy(ctx context.Context) error
+}
+
+func destroy(ctx context.Context, name string, p interface{}) error {
+	if p == nil {
+		return fmt.Errorf("given proxy argument is nil")
+	}
+	ds, ok := p.(proxyDestroyer)
+	if !ok {
+		return fmt.Errorf("given %s proxy argument does not implement proxyDestroyer", name)
+	}
+	err := ds.Destroy(ctx)
+	if err != nil {
+		return fmt.Errorf("given %s proxy cannot be destroyed, %s", name, err)
+	}
+	return nil
+}
+
+func (m *proxyManager) destroyProxies(ctx context.Context) error {
+	for key, proxy := range m.proxies {
+		err := destroy(ctx, key, proxy)
+		if err != nil {
+			return fmt.Errorf("proxy named with %s key cannot be destroyed, %w", key, err)
+		}
+	}
+	return nil
+}

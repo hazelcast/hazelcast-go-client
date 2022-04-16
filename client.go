@@ -369,4 +369,8 @@ func (c *Client) createComponents(config *Config) {
 	}
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	// create and assign shutdown handlers to be executed in internal shutdown
+	shutdownHandlers := make(map[client.ShutdownHandlerType]func(ctx context.Context) error)
+	shutdownHandlers[client.ProxyShutdownHandler] = c.proxyManager.destroyProxies
+	c.ic.ShutdownHandlers = shutdownHandlers
 }
