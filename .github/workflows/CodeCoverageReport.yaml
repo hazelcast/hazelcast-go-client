@@ -14,7 +14,6 @@ on:
       types:
         [opened]
 jobs:
-
   check_for_membership:
     runs-on: ubuntu-latest
     name: Check membership of given user  
@@ -34,8 +33,7 @@ jobs:
     needs: [check_for_membership]
     if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    steps:     
-    
+    steps:         
       - name: Setup Java
         uses: actions/setup-java@v1
         with:
@@ -44,10 +42,6 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '1.15'
-          
-      - name: Checkout code for push event
-        if: github.event_name == 'push'
-        uses: actions/checkout@v2
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
@@ -55,8 +49,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Checkout repository to fetch PR coming from community
-        if: github.event_name == 'workflow_dispatch'
+      - name: Checkout repository for push event and PR coming from community
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event_name == 'push' }}
         uses: actions/checkout@v2
 
       - name: Fetch PR coming from community
