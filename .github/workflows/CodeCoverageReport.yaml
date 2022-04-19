@@ -66,9 +66,14 @@ jobs:
           git checkout temp_branch
           
       - name: Test
+        env:
+          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+          HZ_VERSION: 5.1
+          SSL_ENABLED: 1
+          MEMBER_COUNT: 3
         run: |
           ./rc.sh start
-          env MEMBER_COUNT=3 HZ_VERSION="5.1" make test-cover
+          make test-cover
 
       - name: Publish results to Codecov for PR coming from hazelcast organization
         if: ${{ github.event_name == 'pull_request_target' }}
