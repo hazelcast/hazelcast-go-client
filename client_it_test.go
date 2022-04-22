@@ -149,6 +149,29 @@ func TestClusterMemberEventWhenClusterRestartWithPersistenceEnabled(t *testing.T
 	testClusterMemberEventWhenClusterRestart(t, tcConfig, 55701)
 }
 
+func TestClusterMemberEventInitial(t *testing.T) {
+	// Figure out how to subscribe cluster status event
+	handlerCalled := int32(0)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	configCallback := func(config *hz.Config) {
+		config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+			if event.State == cluster.MembershipStateInit {
+				if atomic.CompareAndSwapInt32(&handlerCalled, 0, 1) {
+					wg.Done()
+				}
+			}
+		})
+	}
+	it.TesterWithConfigBuilder(t, configCallback, func(t *testing.T, client *hz.Client) {
+		defer func() {
+			atomic.StoreInt32(&handlerCalled, 0)
+			wg.Add(1)
+		}()
+		wg.Wait()
+	})
+}
+
 func TestClusterMemberEventWhenClusterRestart(t *testing.T) {
 	t.SkipNow()
 	tcConfig := it.DefaultConfig("member-event-cluster", 55701)
@@ -172,8 +195,9 @@ func newSpyCluster(timeout time.Duration) *SpyCluster {
 func testClusterMemberEventWhenClusterRestart(t *testing.T, tcConfig string, port int) {
 	// port denoted in config should be equivalent to with given port as a parameter
 	tc := it.StartNewClusterWithConfig(it.MemberCount(), tcConfig, port)
-	unisocket := newSpyCluster(6 * time.Second)
-	smart := newSpyCluster(6 * time.Second)
+	timeout := time.Second * 6
+	unisocket := newSpyCluster(timeout)
+	smart := newSpyCluster(timeout)
 	setWgForRemovedAndAddedMemberEvent := func(c *SpyCluster) {
 		c.memberAdded.Add(1)
 		c.memberRemoved.Add(1)

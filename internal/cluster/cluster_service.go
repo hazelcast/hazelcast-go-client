@@ -27,6 +27,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -42,6 +43,8 @@ type Service struct {
 	invocationService *invocation.Service
 	invocationFactory *ConnectionInvocationFactory
 	membersMap        membersMap
+	initAddrMu        sync.Mutex
+	initState         initializedState
 }
 
 type CreationBundle struct {
@@ -81,6 +84,8 @@ func NewService(bundle CreationBundle) *Service {
 		logger:            bundle.Logger,
 		config:            bundle.Config,
 		membersMap:        newMembersMap(bundle.FailoverService, bundle.Logger),
+		initAddrMu:        sync.Mutex{},
+		initState:         initializedState{},
 	}
 }
 
@@ -120,17 +125,42 @@ func (s *Service) Reset() {
 	s.membersMap.reset()
 }
 
+type initializedState struct {
+	members []pubcluster.MemberInfo
+	changed bool
+}
+
+func (s *Service) HandleMemberInitialized(event event.Event) {
+	e := event.(*lifecycle.StateChangedEvent)
+	if e.State == lifecycle.StateChangedCluster {
+		s.initAddrMu.Lock()
+		s.initState.changed = true
+		s.initState.members = s.OrderedMembers()
+		s.initAddrMu.Unlock()
+	}
+}
+
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
+	// m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateChangedCluster))
 	s.logger.Debug(func() string {
 		return fmt.Sprintf("%d: members updated: %v", conn.connectionID, memberInfos)
 	})
+
 	added, removed := s.membersMap.Update(memberInfos, version)
-	if len(added) > 0 {
-		s.eventDispatcher.Publish(NewMembersAdded(added))
+	s.initAddrMu.Lock()
+	changed := s.initState.changed
+	if changed == true {
+		s.eventDispatcher.Publish(NewMemberInitialized(s.initState.members))
+		s.initState.changed = false
+	} else {
+		if len(added) > 0 {
+			s.eventDispatcher.Publish(NewMembersAdded(added))
+		}
+		if len(removed) > 0 {
+			s.eventDispatcher.Publish(NewMemberRemoved(removed))
+		}
 	}
-	if len(removed) > 0 {
-		s.eventDispatcher.Publish(NewMemberRemoved(removed))
-	}
+	s.initAddrMu.Unlock()
 }
 
 func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connection) error {

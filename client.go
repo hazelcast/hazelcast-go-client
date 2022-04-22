@@ -62,10 +62,10 @@ func StartNewClientWithConfig(ctx context.Context, config Config) (*Client, erro
 // Client enables you to do all Hazelcast operations without being a member of the cluster.
 // It connects to one or more of the cluster members and delegates all cluster wide operations to them.
 type Client struct {
+	membershipListenerMapMu *sync.Mutex
 	proxyManager            *proxyManager
 	db                      *sql.DB
 	membershipListenerMap   map[types.UUID]int64
-	membershipListenerMapMu *sync.Mutex
 	lifecycleListenerMap    map[types.UUID]int64
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
@@ -432,22 +432,35 @@ func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleSta
 
 func (c *Client) addMembershipListener(subscriptionID int64, handler cluster.MembershipStateChangeHandler) {
 	c.ic.EventDispatcher.Subscribe(icluster.EventMembers, subscriptionID, func(event event.Event) {
-		e := event.(*icluster.MembersStateChangedEvent)
-		if e.State == icluster.MembersStateAdded {
-			for _, member := range e.Members {
+		e, ok := event.(*icluster.MemberStateInitializedEvent)
+		if ok {
+			handler(cluster.MembershipStateChanged{
+				State: cluster.MembershipStateInit,
+				Initial: &cluster.MembershipStateInitialized{
+					Members: e.Members,
+				},
+			})
+			return
+		}
+		c := event.(*icluster.MembersStateChangedEvent)
+		if c.State == icluster.MembersStateAdded {
+			for _, member := range c.Members {
 				handler(cluster.MembershipStateChanged{
-					State:  cluster.MembershipStateAdded,
-					Member: member,
+					State:   cluster.MembershipStateAdded,
+					Member:  member,
+					Initial: nil,
 				})
 			}
 			return
 		}
-		for _, member := range e.Members {
+		for _, member := range c.Members {
 			handler(cluster.MembershipStateChanged{
-				State:  cluster.MembershipStateRemoved,
-				Member: member,
+				State:   cluster.MembershipStateRemoved,
+				Member:  member,
+				Initial: nil,
 			})
 		}
+		return
 	})
 }
 

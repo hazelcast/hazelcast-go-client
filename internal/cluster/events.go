@@ -65,6 +65,18 @@ func (c ConnectionStateChangedEvent) EventName() string {
 	return EventConnection
 }
 
+type MemberStateInitializedEvent struct {
+	Members []pubcluster.MemberInfo
+}
+
+func (m *MemberStateInitializedEvent) EventName() string {
+	return EventMembers
+}
+
+func NewMemberInitialized(members []pubcluster.MemberInfo) *MemberStateInitializedEvent {
+	return &MemberStateInitializedEvent{Members: members}
+}
+
 type MembersState int
 
 const (

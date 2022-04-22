@@ -156,6 +156,7 @@ func (c *Client) Start(ctx context.Context) error {
 		c.statsService.Start()
 	}
 	c.EventDispatcher.Subscribe(icluster.EventCluster, event.MakeSubscriptionID(c.handleClusterEvent), c.handleClusterEvent)
+	c.EventDispatcher.Subscribe(lifecycle.EventLifecycleStateChanged, event.MakeSubscriptionID(c.ClusterService.HandleMemberInitialized), c.ClusterService.HandleMemberInitialized)
 	atomic.StoreInt32(&c.state, Ready)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateStarted))
 	return nil

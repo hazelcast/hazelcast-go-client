@@ -24,6 +24,8 @@ func (m MembershipState) String() string {
 		return "added"
 	case 1:
 		return "removed"
+	case 2:
+		return "init"
 	default:
 		return "UNKNOWN"
 	}
@@ -32,15 +34,21 @@ func (m MembershipState) String() string {
 const (
 	MembershipStateAdded MembershipState = iota
 	MembershipStateRemoved
+	MembershipStateInit
 )
 
 type MembershipStateChangeHandler func(event MembershipStateChanged)
 
 type MembershipStateChanged struct {
-	Member MemberInfo
-	State  MembershipState
+	Member  MemberInfo
+	State   MembershipState
+	Initial *MembershipStateInitialized
 }
 
 func (e *MembershipStateChanged) EventName() string {
 	return "cluster.membershipstatechanged"
+}
+
+type MembershipStateInitialized struct {
+	Members []MemberInfo
 }
