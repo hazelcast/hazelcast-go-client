@@ -632,7 +632,11 @@ func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []is
 }
 
 func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterator) [][]int32 {
-	result := make([][]int32, 0)
+	var result [][]int32
+	DecodeListMultiFrame(frameIterator, func(fi *proto.ForwardFrameIterator) {
+		result = append(result, DecodeListInteger(fi))
+	})
+	return result
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		result = append(result, DecodeListInteger(frameIterator))
