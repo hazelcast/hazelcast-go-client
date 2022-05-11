@@ -11,8 +11,6 @@ on:
     pull_request_target:
       branches:
         - master
-      types:
-        [opened]
 jobs:
   check_for_membership:
     runs-on: ubuntu-latest
@@ -43,21 +41,27 @@ jobs:
         with:
           go-version: '1.15'
 
+      - name: Install JDK      
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '8'
+
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Checkout repository for push event and PR coming from community
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event_name == 'push' }}
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          
+      - name: Checkout repository for push event
+        if: github.event_name == 'push'
         uses: actions/checkout@v2
-
-      - name: Fetch PR coming from community
+              
+      - name: Checkout PR coming from community.
         if: github.event_name == 'workflow_dispatch'
-        run: |
-          git fetch origin pull/${{github.event.inputs.pr_number }}/head:temp_branch
-          git checkout temp_branch
+        uses: actions/checkout@v2
+        with:
+          ref: refs/pull/${{ github.event.inputs.pr_number }}/merge
           
       - name: Test
         env:
