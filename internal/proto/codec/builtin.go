@@ -637,12 +637,6 @@ func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterat
 		result = append(result, DecodeListInteger(fi))
 	})
 	return result
-	frameIterator.Next()
-	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, DecodeListInteger(frameIterator))
-	}
-	frameIterator.Next()
-	return result
 }
 
 func DecodeListMultiFrameForMemberInfo(frameIterator *proto.ForwardFrameIterator) []pubcluster.MemberInfo {
