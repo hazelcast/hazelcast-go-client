@@ -8,9 +8,11 @@ on:
     push:
       branches: 
         - master
+        - new_code_coverage
     pull_request_target:
       branches:
         - master
+        - new_code_coverage
 jobs:
   check_for_membership:
     runs-on: ubuntu-latest
