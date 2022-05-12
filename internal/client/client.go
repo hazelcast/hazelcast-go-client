@@ -92,20 +92,16 @@ const ProxyShutdownHandler ShutdownHandlerType = iota
 
 func executeShutdownHandlers(
 	ctx context.Context,
-	m map[ShutdownHandlerType]func(ctx context.Context) error) error {
+	m map[ShutdownHandlerType]func(ctx context.Context)) {
 	for _, f := range m {
-		err := f(ctx)
-		if err != nil {
-			return err
-		}
+		f(ctx)
 	}
-	return nil
 }
 
 type Client struct {
 	InvocationHandler    invocation.Handler
 	Logger               ilogger.LogAdaptor
-	ShutdownHandlers     map[ShutdownHandlerType]func(ctx context.Context) error
+	ShutdownHandlers     map[ShutdownHandlerType]func(ctx context.Context)
 	ConnectionManager    *icluster.ConnectionManager
 	ClusterService       *icluster.Service
 	PartitionService     *icluster.PartitionService
@@ -187,10 +183,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		ctx = context.Background()
 	}
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
-	err := executeShutdownHandlers(ctx, c.ShutdownHandlers)
-	if err != nil {
-		return err
-	}
+	executeShutdownHandlers(ctx, c.ShutdownHandlers)
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
 	c.ConnectionManager.Stop()

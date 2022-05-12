@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -227,27 +229,28 @@ type proxyDestroyer interface {
 	Destroy(ctx context.Context) error
 }
 
-func destroy(ctx context.Context, name string, p interface{}) error {
-	if p == nil {
-		return fmt.Errorf("given proxy argument is nil")
-	}
-	ds, ok := p.(proxyDestroyer)
-	if !ok {
-		return fmt.Errorf("given %s proxy argument does not implement proxyDestroyer", name)
-	}
-	err := ds.Destroy(ctx)
-	if err != nil {
-		return fmt.Errorf("given %s proxy cannot be destroyed, %s", name, err)
-	}
-	return nil
-}
-
-func (m *proxyManager) destroyProxies(ctx context.Context) error {
-	for key, proxy := range m.proxies {
-		err := destroy(ctx, key, proxy)
+func (m *proxyManager) destroyProxies(ctx context.Context) {
+	for key, p := range m.proxies {
+		if p == nil {
+			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
+				return hzerrors.NewShutdownHandlerError(
+					fmt.Sprintf("proxy named with %s key cannot be destroyed, given proxy argument is nil", key), nil).Error()
+			})
+			continue
+		}
+		ds, ok := p.(proxyDestroyer)
+		if !ok {
+			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
+				return hzerrors.NewShutdownHandlerError(
+					fmt.Sprintf("proxy named with %s key cannot be destroyed, proxy argument does not implement proxyDestroyer", key), nil).Error()
+			})
+			continue
+		}
+		err := ds.Destroy(ctx)
 		if err != nil {
-			return fmt.Errorf("proxy named with %s key cannot be destroyed, %w", key, err)
+			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
+				return hzerrors.NewShutdownHandlerError(fmt.Sprintf("proxy named with %s key cannot be destroyed", key), err).Error()
+			})
 		}
 	}
-	return nil
 }

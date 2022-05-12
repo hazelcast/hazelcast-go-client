@@ -148,6 +148,10 @@ func NewSQLError(msg string, err error) *ClientError {
 	return NewClientError(msg, err, hzerrors.ErrSQL)
 }
 
+func NewShutdownHandlerError(msg string, err error) *ClientError {
+	return NewClientError(msg, err, hzerrors.ErrShutdownHandler)
+}
+
 func IsRetryable(err error) bool {
 	// check whether the error is retryable
 	if _, ok := err.(*hzerrors.RetryableError); ok {
