@@ -118,12 +118,10 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 	}
 	newPartitions := map[int32]types.UUID{}
 	for _, pair := range pairs {
-		uuids := pair.Key.([]types.UUID)
+		uuid := pair.Key.(types.UUID)
 		ids := pair.Value.([]int32)
-		for _, uuid := range uuids {
-			for _, id := range ids {
-				newPartitions[id] = uuid
-			}
+		for _, id := range ids {
+			newPartitions[id] = uuid
 		}
 	}
 	if reflect.DeepEqual(p.partitions, newPartitions) {
