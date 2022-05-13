@@ -43,7 +43,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// Get the values back and print it.
+	// Get the values back and print them.
 	values, err := myMap.Get(ctx, "some-key")
 	if err != nil {
 		panic(err)

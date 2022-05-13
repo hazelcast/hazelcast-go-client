@@ -1,48 +1,55 @@
+//go:build ignore
 // +build ignore
+
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package main
 
 import (
 	"context"
 	"fmt"
-	"log"
-	"math/rand"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func main() {
-	// Start the client with defaults
 	ctx := context.TODO()
+	// Start the client with defaults.
 	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	// Get a random set
-	rand.Seed(time.Now().Unix())
-	setName := fmt.Sprintf("sample-%d", rand.Int())
-	set, err := client.GetSet(ctx, setName)
+	// Get a reference to the set.
+	mySet, err := client.GetSet(ctx, "my-set")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	// Add items to set
-	for i := 0; i < 10; i++ {
-		// First returned value of Add() is a boolean describing
-		// if the value was already in the set.
-		_, err := set.Add(ctx, fmt.Sprintf("Item %d", i))
-		if err != nil {
-			log.Fatal(err)
-		}
+	// Add items to set.
+	// Note that value1 is added twice.
+	changed, err := mySet.AddAll(ctx, "value1", "value2", "value1", "value3")
+	if err != nil {
+		panic(err)
 	}
+	fmt.Println("Was the set changed?", changed)
 	// Print contents of the set
-	items, err := set.GetAll(ctx)
+	items, err := mySet.GetAll(ctx)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	for _, val := range items {
-		fmt.Println(val)
-	}
-	// Shutdown client
-	client.Shutdown(ctx)
+	// Get the items back and print them.
+	fmt.Println("Got the items back:", items)
 }
