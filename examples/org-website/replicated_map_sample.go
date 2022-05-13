@@ -1,43 +1,53 @@
+//go:build ignore
 // +build ignore
+
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package main
 
 import (
 	"context"
 	"fmt"
-	"log"
-	"math/rand"
-	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
 func main() {
-	// Start the client with defaults
 	ctx := context.TODO()
+	// Start the client with defaults.
 	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	// Get a random replicated map
-	rand.Seed(time.Now().Unix())
-	replicatedMapName := fmt.Sprintf("sample-%d", rand.Int())
-	replicatedMap, err := client.GetReplicatedMap(ctx, replicatedMapName)
+	// Get a reference to the replicated map.
+	myMap, err := client.GetReplicatedMap(ctx, "my-replicated-map")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	// Populate map
-	replacedValue, err := replicatedMap.Put(ctx, "key", "value")
+	// Put a value in the map and retrieve the previous value.
+	oldValue, err := myMap.Put(ctx, "some-key", "some-value")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(replacedValue)
-	// Get value and print
-	value, err := replicatedMap.Get(ctx, "key")
+	fmt.Println("Previous value:", oldValue)
+	// Get the value back and print it.
+	value, err := myMap.Get(ctx, "some-key")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(value)
-	// Shutdown client
-	client.Shutdown(ctx)
+	fmt.Println("Got the value back:", value)
 }
