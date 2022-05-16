@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -233,23 +232,21 @@ func (m *proxyManager) destroyProxies(ctx context.Context) {
 	for key, p := range m.proxies {
 		if p == nil {
 			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
-				return hzerrors.NewShutdownHandlerError(
-					fmt.Sprintf("proxy named with %s key cannot be destroyed, given proxy argument is nil", key), nil).Error()
+				return fmt.Sprintf("proxy named with %s key cannot be destroyed, given proxy argument is nil", key)
 			})
 			continue
 		}
 		ds, ok := p.(proxyDestroyer)
 		if !ok {
 			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
-				return hzerrors.NewShutdownHandlerError(
-					fmt.Sprintf("proxy named with %s key cannot be destroyed, proxy argument does not implement proxyDestroyer", key), nil).Error()
+				return fmt.Sprintf("proxy named with %s key cannot be destroyed, proxy argument does not implement proxyDestroyer", key)
 			})
 			continue
 		}
 		err := ds.Destroy(ctx)
 		if err != nil {
 			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
-				return hzerrors.NewShutdownHandlerError(fmt.Sprintf("proxy named with %s key cannot be destroyed", key), err).Error()
+				return fmt.Sprintf("proxy named with %s key cannot be destroyed", key)
 			})
 		}
 	}

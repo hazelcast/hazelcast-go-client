@@ -124,7 +124,6 @@ var (
 	ErrNoSuchFieldException             = errors.New("no such field exception error")
 	ErrNoClassDefFound                  = errors.New("no class def found error")
 	ErrSQL                              = errors.New("sql error")
-	ErrShutdownHandler                  = errors.New("shutdown handler error")
 )
 
 type RetryableError string
