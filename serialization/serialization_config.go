@@ -34,6 +34,7 @@ type Config struct {
 	PortableVersion int32 `json:",omitempty"`
 	// LittleEndian sets byte order to Little Endian. Default is false.
 	LittleEndian bool `json:",omitempty"`
+	Compact      CompactConfig
 }
 
 func (c *Config) Clone() Config {
@@ -71,6 +72,7 @@ func (c *Config) Clone() Config {
 		customSerializers:                   serializers,
 		globalSerializer:                    c.globalSerializer,
 		classDefinitions:                    defs,
+		Compact:                             c.Compact.Clone(),
 	}
 }
 
@@ -78,7 +80,7 @@ func (c *Config) Validate() error {
 	if c.customSerializers == nil {
 		c.customSerializers = map[reflect.Type]Serializer{}
 	}
-	return nil
+	return c.Compact.Validate()
 }
 
 // SetIdentifiedDataSerializableFactories adds zore or more identified data serializable factories.

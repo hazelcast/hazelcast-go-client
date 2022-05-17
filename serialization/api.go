@@ -17,6 +17,8 @@
 package serialization
 
 import (
+	"reflect"
+
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -405,4 +407,23 @@ type PortableReader interface {
 	ReadDecimal(fieldName string) (d *types.Decimal)
 	// ReadDecimalArray a decimal array.
 	ReadDecimalArray(fieldName string) (ds []types.Decimal)
+}
+
+type CompactSerializer interface {
+	Type() reflect.Type
+	TypeName() string
+	Read(reader *CompactReader) interface{}
+	Write(writer *CompactWriter, value interface{})
+}
+
+type CompactReader struct{}
+
+func (r *CompactReader) ReadInt32(fieldName string) int32 {
+	panic("not implemented")
+}
+
+type CompactWriter struct{}
+
+func (w *CompactWriter) WriteInt32(fieldName string, value int32) {
+	panic("not implemented")
 }
