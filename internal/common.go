@@ -18,8 +18,9 @@ package internal
 
 const (
 	// ClientType is used in the Management
-	ClientType         = "GOO"
 	AggregateFactoryID = -29
 	// ClientVersion should be manually set
 	ClientVersion = "1.2.0"
 )
+
+var ClientType = "GOO"
