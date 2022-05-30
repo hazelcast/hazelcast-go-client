@@ -412,26 +412,16 @@ type PortableReader interface {
 type CompactSerializer interface {
 	Type() reflect.Type
 	TypeName() string
-	Read(reader *CompactReader) interface{}
-	Write(writer *CompactWriter, value interface{})
+	Read(reader CompactReader) interface{}
+	Write(writer CompactWriter, value interface{})
 }
 
-type CompactReader struct{}
-
-func (r *CompactReader) ReadInt32(fieldName string) int32 {
-	panic("not implemented")
+type CompactReader interface {
+	ReadInt32(fieldName string) int32
+	ReadString(fieldName string) string
 }
 
-func (r *CompactReader) ReadString(fieldName string) string {
-	panic("not implemented")
-}
-
-type CompactWriter struct{}
-
-func (w *CompactWriter) WriteInt32(fieldName string, value int32) {
-	panic("not implemented")
-}
-
-func (w *CompactWriter) WriteString(fieldName string, value string) {
-	panic("not implemented")
+type CompactWriter interface {
+	WriteInt32(fieldName string, value int32)
+	WriteString(fieldName string, value string)
 }

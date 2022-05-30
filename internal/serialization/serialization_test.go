@@ -384,14 +384,14 @@ func (c studentCompactSerializer) TypeName() string {
 	return c.Type().Name()
 }
 
-func (studentCompactSerializer) Read(reader *serialization.CompactReader) interface{} {
+func (studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
 	return student{
 		Age:  reader.ReadInt32("age"),
 		Name: reader.ReadString("name"),
 	}
 }
 
-func (studentCompactSerializer) Write(writer *serialization.CompactWriter, value interface{}) {
+func (studentCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
 	c, ok := value.(student)
 	if !ok {
 		panic("not a student")
@@ -403,7 +403,7 @@ func (studentCompactSerializer) Write(writer *serialization.CompactWriter, value
 func TestCompactSerializer(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
 	serializer := studentCompactSerializer{}
-	compactConfig.SetSerializers(&serializer)
+	compactConfig.SetSerializers(serializer)
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
