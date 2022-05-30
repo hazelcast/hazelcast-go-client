@@ -273,7 +273,7 @@ func (m *ReplicatedMap) addEntryListener(ctx context.Context, key interface{}, p
 	addRequest := m.makeListenerRequest(keyData, predicateData, m.smart)
 	removeRequest := codec.EncodeReplicatedMapRemoveEntryListenerRequest(m.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler, methodName))
+		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
 	err = m.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
 	return subscriptionID, err

@@ -409,7 +409,7 @@ func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingVal
 	return
 }
 
-func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler, methodName string) entryNotifiedHandler {
+func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) entryNotifiedHandler {
 	return func(binKey, binValue, binOldValue, binMergingValue iserialization.Data,
 		binEventType int32,
 		binUUID types.UUID,
@@ -417,7 +417,7 @@ func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler, m
 	) {
 		event, err := p.prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMergingValue, binEventType, binUUID, affectedEntries)
 		if err != nil {
-			p.logger.Errorf("error at %s: %w", methodName, err)
+			p.logger.Errorf("error while preparing entry notified event: %w", err)
 			return
 		}
 		handler(event)

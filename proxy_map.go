@@ -195,32 +195,32 @@ func (m *Map) mapListenerEventHandler(listener MapListener) EntryNotifiedHandler
 // AddListener adds a continuous entry listener to this map.
 func (m *Map) AddListener(ctx context.Context, listener MapListener, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
-	return m.addEntryListener(ctx, flags, includeValue, nil, nil, m.mapListenerEventHandler(listener), "AddListener")
+	return m.addEntryListener(ctx, flags, includeValue, nil, nil, m.mapListenerEventHandler(listener))
 }
 
 // AddListenerWithKey adds a continuous entry listener on a specific key to this map.
 func (m *Map) AddListenerWithKey(ctx context.Context, listener MapListener, key interface{}, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
-	return m.addEntryListener(ctx, flags, includeValue, key, nil, m.mapListenerEventHandler(listener), "AddListenerWithKey")
+	return m.addEntryListener(ctx, flags, includeValue, key, nil, m.mapListenerEventHandler(listener))
 }
 
 // AddListenerWithPredicate adds a continuous entry listener to this map. Events are filtered by a predicate.
 func (m *Map) AddListenerWithPredicate(ctx context.Context, listener MapListener, predicate predicate.Predicate, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
-	return m.addEntryListener(ctx, flags, includeValue, nil, predicate, m.mapListenerEventHandler(listener), "AddListenerWithPredicate")
+	return m.addEntryListener(ctx, flags, includeValue, nil, predicate, m.mapListenerEventHandler(listener))
 }
 
 // AddListenerWithPredicateAndKey adds a continuous entry listener on a specific key to this map. Events are filtered by a predicate.
 func (m *Map) AddListenerWithPredicateAndKey(ctx context.Context, listener MapListener, predicate predicate.Predicate, key interface{}, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
-	return m.addEntryListener(ctx, flags, includeValue, key, predicate, m.mapListenerEventHandler(listener), "AddListenerWithPredicateAndKey")
+	return m.addEntryListener(ctx, flags, includeValue, key, predicate, m.mapListenerEventHandler(listener))
 }
 
 // AddEntryListener adds a continuous entry listener to this map.
 // Deprecated: In favor of AddListener, AddListenerWithKey, AddListenerWithPredicate,
 // AddListenerWithPredicateAndKey methods.
 func (m *Map) AddEntryListener(ctx context.Context, config MapEntryListenerConfig, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(ctx, config.flags, config.IncludeValue, config.Key, config.Predicate, handler, "AddEntryListener")
+	return m.addEntryListener(ctx, config.flags, config.IncludeValue, config.Key, config.Predicate, handler)
 }
 
 // AddIndex adds an index to this map for the specified entries so that queries can run faster.
@@ -1052,30 +1052,6 @@ func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error
 	return err
 }
 
-//func (m *Map) addListener(ctx context.Context, flags int32, includeValue bool, key *interface{}, predicate *predicate.Predicate, listener MapListener, methodName string) (types.UUID, error) {
-//	var err error
-//	var keyData serialization.Data
-//	var predicateData serialization.Data
-//	if key != nil {
-//		if keyData, err = m.validateAndSerialize(*key); err != nil {
-//			return types.UUID{}, err
-//		}
-//	}
-//	if predicate != nil {
-//		if predicateData, err = m.validateAndSerialize(*predicate); err != nil {
-//			return types.UUID{}, err
-//		}
-//	}
-//	subscriptionID := types.NewUUID()
-//	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue)
-//	listenerHandler := func(msg *proto.ClientMessage) {
-//		m.makeListenerDecoder(msg, keyData, predicateData, m.mapListenerEventHandler(listener, methodName))
-//	}
-//	removeRequest := codec.EncodeMapRemoveEntryListenerRequest(m.name, subscriptionID)
-//	err = m.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
-//	return subscriptionID, err
-//}
-
 func (m *Map) addEntryListener(
 	ctx context.Context,
 	flags int32,
@@ -1083,7 +1059,6 @@ func (m *Map) addEntryListener(
 	key interface{},
 	predicate predicate.Predicate,
 	handler EntryNotifiedHandler,
-	methodName string,
 ) (types.UUID, error) {
 	var err error
 	var keyData serialization.Data
@@ -1101,7 +1076,7 @@ func (m *Map) addEntryListener(
 	subscriptionID := types.NewUUID()
 	addRequest := m.makeListenerRequest(keyData, predicateData, flags, includeValue)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler, methodName))
+		m.makeListenerDecoder(msg, keyData, predicateData, m.makeEntryNotifiedListenerHandler(handler))
 	}
 	removeRequest := codec.EncodeMapRemoveEntryListenerRequest(m.name, subscriptionID)
 	err = m.listenerBinder.Add(ctx, subscriptionID, addRequest, removeRequest, listenerHandler)
