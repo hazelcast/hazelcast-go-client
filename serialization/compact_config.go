@@ -17,14 +17,11 @@
 package serialization
 
 type CompactConfig struct {
-	Enabled     bool
 	serializers map[string]CompactSerializer
 }
 
 func (cc CompactConfig) Clone() CompactConfig {
-	clone := CompactConfig{
-		Enabled: cc.Enabled,
-	}
+	clone := CompactConfig{}
 	m := make(map[string]CompactSerializer)
 	for k, v := range cc.serializers {
 		m[k] = v

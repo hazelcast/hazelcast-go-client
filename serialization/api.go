@@ -422,8 +422,16 @@ func (r *CompactReader) ReadInt32(fieldName string) int32 {
 	panic("not implemented")
 }
 
+func (r *CompactReader) ReadString(fieldName string) string {
+	panic("not implemented")
+}
+
 type CompactWriter struct{}
 
 func (w *CompactWriter) WriteInt32(fieldName string, value int32) {
+	panic("not implemented")
+}
+
+func (w *CompactWriter) WriteString(fieldName string, value string) {
 	panic("not implemented")
 }

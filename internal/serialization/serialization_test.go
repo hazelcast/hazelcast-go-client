@@ -365,3 +365,59 @@ func mustData(value interface{}, err error) iserialization.Data {
 	}
 	return value.(iserialization.Data)
 }
+
+type student struct {
+	Age  int32
+	Name string
+}
+
+type studentCompactSerializer struct {
+	readCalled  bool
+	writeCalled bool
+}
+
+func (studentCompactSerializer) Type() reflect.Type {
+	return reflect.TypeOf(student{})
+}
+
+func (c studentCompactSerializer) TypeName() string {
+	return c.Type().Name()
+}
+
+func (studentCompactSerializer) Read(reader *serialization.CompactReader) interface{} {
+	return student{
+		Age:  reader.ReadInt32("age"),
+		Name: reader.ReadString("name"),
+	}
+}
+
+func (studentCompactSerializer) Write(writer *serialization.CompactWriter, value interface{}) {
+	c, ok := value.(student)
+	if !ok {
+		panic("not a student")
+	}
+	writer.WriteInt32("age", c.Age)
+	writer.WriteString("name", c.Name)
+}
+
+func TestCompactSerializer(t *testing.T) {
+	compactConfig := serialization.CompactConfig{}
+	serializer := studentCompactSerializer{}
+	compactConfig.SetSerializers(&serializer)
+	c := &serialization.Config{
+		Compact: compactConfig,
+	}
+	service, _ := iserialization.NewService(c)
+	obj := student{Age: 12, Name: "S"}
+
+	data, _ := service.ToData(obj)
+	ret, _ := service.ToObject(data)
+
+	if !reflect.DeepEqual(obj, ret) {
+		t.Error("compact serialization failed")
+	}
+
+	if !serializer.readCalled || !serializer.writeCalled {
+		t.Fatalf("compact serializer is not used")
+	}
+}
