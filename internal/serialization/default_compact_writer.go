@@ -16,12 +16,85 @@
 
 package serialization
 
-type DefaultCompactWriter struct {}
+import (
+	"fmt"
 
-func (r *DefaultCompactWriter) WriteInt32(fieldName string, value int32) {
-	panic("not implemented")
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+)
+
+type DefaultCompactWriter struct {
+	dataStartPosition int32
+	schema            Schema
+	out               *PositionalObjectDataOutput
+	fieldOffsets      []int32
+}
+
+func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind FieldKind) (FieldDescriptor, error) {
+	fd := r.schema.GetField(fieldName)
+	if fd == nil {
+		return FieldDescriptor{}, ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.ToString()), nil)
+	}
+	if fd.fieldKind != fieldKind {
+		return FieldDescriptor{}, ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %s", fieldName, r.schema.ToString()), nil)
+	}
+	return *fd, nil
+}
+
+func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind FieldKind) (int32, error) {
+	fd, err := r.getFieldDescriptorChecked(fieldName, fieldKind)
+	if err != nil {
+		return 0, err
+	}
+	return fd.offset + r.dataStartPosition, nil
+}
+
+func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind FieldKind) error {
+	fd, err := r.getFieldDescriptorChecked(fieldName, fieldKind)
+	if err != nil {
+		return err
+	}
+	position := r.out.Position()
+	fieldPosition := position - r.dataStartPosition
+	index := fd.index
+	r.fieldOffsets[index] = fieldPosition
+	return nil
+}
+
+func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind FieldKind) error {
+	fd, err := r.getFieldDescriptorChecked(fieldName, fieldKind)
+	if err != nil {
+		return err
+	}
+	index := fd.index
+	r.fieldOffsets[index] = -1
+	return nil
+}
+
+func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKind FieldKind, value interface{}, writer func(*PositionalObjectDataOutput, interface{})) error {
+	if check.Nil(value) {
+		err := r.setPositionAsNull(fieldName, fieldKind)
+		if err != nil {
+			return err
+		}
+	} else {
+		r.setPosition(fieldName, fieldKind)
+		writer(r.out, value)
+	}
+	return nil
+}
+
+func (r *DefaultCompactWriter) WriteInt32(fieldName string, value int32) error {
+	position, err := r.getFixedSizeFieldPosition(fieldName, FieldKindInt32)
+	if err != nil {
+		return err
+	}
+	r.out.PWriteInt32(position, value)
+	return nil
 }
 
 func (r *DefaultCompactWriter) WriteString(fieldName string, value string) {
-	panic("not implemented")
+	r.writeVariableSizeField(fieldName, FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
+		out.WriteString(v.(string))
+	})
 }

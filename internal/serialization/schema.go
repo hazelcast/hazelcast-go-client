@@ -27,3 +27,7 @@ func (s *Schema) GetField(fieldName string) *FieldDescriptor {
 	}
 	return nil
 }
+
+func (s *Schema) ToString() string {
+	return ""
+}
