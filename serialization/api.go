@@ -417,11 +417,11 @@ type CompactSerializer interface {
 }
 
 type CompactReader interface {
-	ReadInt32(fieldName string) int32
-	ReadString(fieldName string) string
+	ReadInt32(fieldName string) (int32, error)
+	ReadString(fieldName string) (string, error)
 }
 
 type CompactWriter interface {
-	WriteInt32(fieldName string, value int32)
-	WriteString(fieldName string, value string)
+	WriteInt32(fieldName string, value int32) error
+	WriteString(fieldName string, value string) error
 }

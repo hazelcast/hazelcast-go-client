@@ -28,6 +28,15 @@ type DefaultCompactWriter struct {
 	schema            Schema
 	out               *PositionalObjectDataOutput
 	fieldOffsets      []int32
+	serializer        CompactStreamSerializer
+}
+
+func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *PositionalObjectDataOutput, schema Schema) DefaultCompactWriter {
+	return DefaultCompactWriter{
+		serializer: serializer,
+		out:        out,
+		schema:     schema,
+	}
 }
 
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind FieldKind) (FieldDescriptor, error) {
@@ -84,7 +93,7 @@ func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKin
 	return nil
 }
 
-func (r *DefaultCompactWriter) WriteInt32(fieldName string, value int32) error {
+func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) error {
 	position, err := r.getFixedSizeFieldPosition(fieldName, FieldKindInt32)
 	if err != nil {
 		return err
@@ -93,8 +102,12 @@ func (r *DefaultCompactWriter) WriteInt32(fieldName string, value int32) error {
 	return nil
 }
 
-func (r *DefaultCompactWriter) WriteString(fieldName string, value string) {
+func (r DefaultCompactWriter) WriteString(fieldName string, value string) error {
 	r.writeVariableSizeField(fieldName, FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteString(v.(string))
 	})
+	return nil
+}
+
+func (r DefaultCompactWriter) End() {
 }

@@ -16,28 +16,11 @@
 
 package serialization
 
-type Schema struct {
-	fieldDefinitionMap map[string]FieldDescriptor
-	typeName           string
-	schemaId 		   int64
+type SchemaService struct {
+	schemaMap map[int64]Schema
 }
 
-func (s *Schema) GetField(fieldName string) *FieldDescriptor {
-	if fieldDefinition, ok := s.fieldDefinitionMap[fieldName]; ok {
-		return &fieldDefinition
-	}
-	return nil
-}
-
-func (Schema) SchemaID() int64 {
-	return 0
-}
-
-
-func (Schema) ToString() string {
-	return ""
-}
-
-func (s *Schema) TypeName() string {
-	return s.typeName
+func (s *SchemaService) Get(schemaId int64) (Schema, bool) {
+	schema, ok := s.schemaMap[schemaId]
+	return schema, ok
 }
