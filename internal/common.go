@@ -17,10 +17,14 @@
 package internal
 
 const (
-	// ClientType is used in the Management
 	AggregateFactoryID = -29
-	// ClientVersion should be manually set
-	ClientVersion = "1.2.0"
+	// CurrentClientVersion should be manually set
+	CurrentClientVersion = "1.3.0"
 )
 
+// ClientType is used in the Management Center
 var ClientType = "GOO"
+
+// ClientVersion is the effective client version.
+// It is sent to the member during authentication.
+var ClientVersion = CurrentClientVersion
