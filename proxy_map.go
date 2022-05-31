@@ -46,8 +46,7 @@ In all methods you specify whether you want to include value in the event or not
 
 You can pass a MapListener struct to these methods to add handlers to different event types. You can add different handlers to different event types
 with a single MapListener struct. If you don't specify a handler in for an event type in MapListener struct, there will be no handler for that event.
-In the example below, a listener for added and updated entry events is created. Entries only with key "somekey" and matching to predicate year > 2000
-are considered:
+In the example below, a listener for added and updated entry events is created. Entries only with key "somekey" and matching to predicate year > 2000 are considered:
 
 	entryListenerConfig := hazelcast.MapEntryListenerConfig{
 		Key: "somekey",
@@ -56,6 +55,7 @@ are considered:
 	}
 
 	m, err := client.GetMap(ctx, "somemap")
+	// error checking is omitted.
 	subscriptionID, err := m.AddListenerWithPredicateAndKey(ctx, hazelcast.MapListener{
 		EntryAdded: func(event *hazelcast.EntryNotified) {
 			fmt.Println("Entry Added:", event.Value)
@@ -64,6 +64,7 @@ are considered:
 			fmt.Println("Entry Removed:", event.Value)
 		},
 	}, predicate.Greater("year", 2000), "somekey", true)
+	// error checking is omitted.
 
 Adding an event listener returns a subscription ID, which you can later use to remove the listener:
 
@@ -163,31 +164,24 @@ func (m *Map) mapListenerEventHandler(listener MapListener) EntryNotifiedHandler
 		switch event.EventType {
 		case EntryAdded:
 			listener.EntryAdded(event)
-			break
 		case EntryUpdated:
 			listener.EntryUpdated(event)
-			break
 		case EntryRemoved:
 			listener.EntryRemoved(event)
-			break
 		case EntryEvicted:
 			listener.EntryEvicted(event)
-			break
 		case EntryExpired:
 			listener.EntryExpired(event)
-			break
 		case EntryMerged:
 			listener.EntryMerged(event)
-			break
 		case EntryLoaded:
 			listener.EntryLoaded(event)
-			break
 		case EntryAllCleared:
 			listener.MapCleared(event)
-			break
 		case EntryAllEvicted:
 			listener.MapEvicted(event)
-			break
+		default: 
+			m.logger.Warnf("Not a known map event type: %d", event.EventType)
 		}
 	}
 }
@@ -1052,14 +1046,7 @@ func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error
 	return err
 }
 
-func (m *Map) addEntryListener(
-	ctx context.Context,
-	flags int32,
-	includeValue bool,
-	key interface{},
-	predicate predicate.Predicate,
-	handler EntryNotifiedHandler,
-) (types.UUID, error) {
+func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bool, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	var err error
 	var keyData serialization.Data
 	var predicateData serialization.Data
