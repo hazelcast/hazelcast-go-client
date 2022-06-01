@@ -84,6 +84,13 @@ func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKin
 	return nil
 }
 
+func (r DefaultCompactWriter) writeOffsets(dataLength int32, fieldOffsets []int32) {
+	// Write now we don't need other offset writers
+	for _, offset := range fieldOffsets {
+		r.out.WriteByte(byte(offset))
+	}
+}
+
 func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) {
 	position := r.getFixedSizeFieldPosition(fieldName, FieldKindInt32)
 	r.out.PWriteInt32(position, value)
@@ -95,6 +102,18 @@ func (r DefaultCompactWriter) WriteString(fieldName string, value string) {
 	})
 }
 
+/**
+ * Ends the serialization of the compact objects by writing
+ * the offsets of the variable-size fields as well as the
+ * data length, if there are some variable-size fields.
+ */
 func (r DefaultCompactWriter) End() {
-	
+	if r.schema.numberVarSizeFields == 0 {
+		return;
+	}
+	position := r.out.Position()
+	dataLength := position - r.dataStartPosition
+	r.writeOffsets(dataLength, r.fieldOffsets)
+	//write dataLength
+	r.out.PWriteInt32(r.dataStartPosition - Int32SizeInBytes, dataLength)
 }

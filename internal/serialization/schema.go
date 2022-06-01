@@ -16,10 +16,14 @@
 
 package serialization
 
+import "sort"
+
 type Schema struct {
-	fieldDefinitionMap map[string]FieldDescriptor
-	typeName           string
-	id 		   int64
+	fieldDefinitionMap    map[string]FieldDescriptor
+	typeName              string
+	id 		   		      int64
+	numberVarSizeFields   int32
+	fixedSizeFieldsLength int32
 }
 
 func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor) Schema {
@@ -32,7 +36,38 @@ func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor) S
 }
 
 func (s Schema) init() {
+	fixedSizeFields := make([]FieldDescriptor, 0)
+	variableSizeFields := make([]FieldDescriptor, 0)
+
+	for _, descriptor := range s.fieldDefinitionMap {
+		fieldKind := descriptor.fieldKind
+		if FieldOperations(fieldKind).KindSizeInBytes() == VARIABLE_SIZE {
+			variableSizeFields = append(variableSizeFields, descriptor)
+		} else {
+			fixedSizeFields = append(fixedSizeFields, descriptor)
+		}
+	}
+
+	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
+		return FieldOperations(fixedSizeFields[j].fieldKind).KindSizeInBytes() < FieldOperations(fixedSizeFields[i].fieldKind).KindSizeInBytes()
+	})
+
+	offset := int32(0)
+	for _, descriptor := range fixedSizeFields {
+		descriptor.offset = offset
+		offset += FieldOperations(descriptor.fieldKind).KindSizeInBytes()
+	}
+
+	s.fixedSizeFieldsLength = offset
+
+	index := int32(0)
+	for _, descriptor := range variableSizeFields {
+		descriptor.index = index
+		index += 1
+	}
+	s.numberVarSizeFields = index
 	
+	s.id = RabinFingerPrintSchema(s)
 }
 
 func (s *Schema) GetField(fieldName string) *FieldDescriptor {

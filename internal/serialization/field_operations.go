@@ -16,16 +16,33 @@
 
 package serialization
 
-const INIT int64 = -4513414715797952619
+import "fmt"
 
-func RabinFingerPrintSchema(schema Schema) int64 {
-	fingerprint := rabinFingerPrintString(INIT, schema.TypeName())
+type FieldKindOperation interface {
+	KindSizeInBytes() int32
 }
 
-func rabinFingerPrintString(fp int64, value string) int64 {
-	
+const VARIABLE_SIZE = -1
+
+type Int32FieldKindOperation struct{}
+
+func (Int32FieldKindOperation) KindSizeInBytes() int32 {
+	return Int32SizeInBytes
 }
 
-func rabinFingerPrintInt(fp int64, value int32) int64 {
-	
+type StringFieldKindOperation struct{}
+
+func (StringFieldKindOperation) KindSizeInBytes() int32 {
+	return VARIABLE_SIZE
+}
+
+func FieldOperations(fieldKind FieldKind) FieldKindOperation {
+	switch fieldKind {
+	case FieldKindInt32:
+		return &Int32FieldKindOperation{}
+	case FieldKindString:
+		return &StringFieldKindOperation{}
+	default:
+		panic(fmt.Sprintf("Unknown field kind for field operations: %d", fieldKind))
+	}
 }
