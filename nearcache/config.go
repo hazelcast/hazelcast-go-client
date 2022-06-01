@@ -16,7 +16,10 @@
 
 package nearcache
 
-import "github.com/hazelcast/hazelcast-go-client/internal/check"
+import (
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
+	"github.com/hazelcast/hazelcast-go-client/types"
+)
 
 const (
 	DefaultMaxEntryCount            = 10_000
@@ -39,6 +42,10 @@ type Config struct {
 	PreloaderConfig    PreloaderConfig
 }
 
+func (c *Config) Validate() error {
+	return nil
+}
+
 func (c *Config) SetInvalidateOnChange(enabled bool) {
 	c.invalidateOnChange = &enabled
 }
@@ -50,10 +57,15 @@ func (c Config) InvalidateOnChange() bool {
 	return *c.invalidateOnChange
 }
 
+type EvictionPolicyComparator interface {
+	Compare(a, b types.EvictableEntryView) int
+}
+
 type EvictionConfig struct {
 	maxSizePolicy  *MaxSizePolicy
 	evictionPolicy *EvictionPolicy
 	size           *int32
+	comparator     EvictionPolicyComparator
 }
 
 func (c *EvictionConfig) Validate() error {
@@ -91,9 +103,28 @@ func (c *EvictionConfig) SetSize(size int) error {
 	return nil
 }
 
+func (c EvictionConfig) Size() int {
+	if c.size == nil {
+		return 0
+	}
+	return int(*c.size)
+}
+
+func (c *EvictionConfig) SetComparator(cmp EvictionPolicyComparator) {
+	c.comparator = cmp
+}
+
+func (c EvictionConfig) Comparator() EvictionPolicyComparator {
+	return c.comparator
+}
+
 type PreloaderConfig struct {
 	Enabled                  bool
 	Directory                string
 	StoreInitialDelaySeconds int32
 	StoreIntervalSeconds     int32
+}
+
+func (c *PreloaderConfig) Validate() error {
+	return nil
 }
