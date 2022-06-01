@@ -29,31 +29,25 @@ type DefaultCompactReader struct {
 	serializer        CompactStreamSerializer
 }
 
-func (r DefaultCompactReader) ReadInt32(fieldName string) (int32, error) {
-	fd, err := r.getFieldDefinition(fieldName)
-	if err != nil {
-		return 0, err
-	}
+func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
+	fd := r.getFieldDefinition(fieldName)
 	fieldKind := fd.fieldKind
 	switch fieldKind {
 	case FieldKindInt32:
 		position := r.readFixedSizePosition(fd)
-		return r.in.ReadInt32AtPosition(position), nil
+		return r.in.ReadInt32AtPosition(position)
 	default:
-		return 0, r.unexpectedFieldKind(fieldKind, fieldName)
+		panic(r.unexpectedFieldKind(fieldKind, fieldName))
 	}
 }
 
-func (r DefaultCompactReader) ReadString(fieldName string) (string, error) {
-	fd, err := r.getFieldDefinitionChecked(fieldName, FieldKindString)
-	if err != nil {
-		return "", err
-	}
+func (r DefaultCompactReader) ReadString(fieldName string) string {
+	fd := r.getFieldDefinitionChecked(fieldName, FieldKindString)
 
-	value, err := r.getVariableSize(fd, func() interface{} {
+	value := r.getVariableSize(fd, func() interface{} {
 		return r.in.ReadString()
 	})
-	return value.(string), err
+	return value.(string)
 }
 
 func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDataInput, schema Schema) DefaultCompactReader {
@@ -64,20 +58,20 @@ func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDa
 	}
 }
 
-func (r *DefaultCompactReader) getFieldDefinition(fieldName string) (FieldDescriptor, error) {
+func (r *DefaultCompactReader) getFieldDefinition(fieldName string) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
-		return FieldDescriptor{}, r.unknownField(fieldName)
+		panic(r.unknownField(fieldName))
 	}
-	return *fd, nil
+	return *fd
 }
 
-func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind FieldKind) (FieldDescriptor, error) {
+func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd.fieldKind != fieldKind {
-		return FieldDescriptor{}, r.unexpectedFieldKind(fd.fieldKind, fieldName)
+		panic(r.unexpectedFieldKind(fd.fieldKind, fieldName))
 	}
-	return *fd, nil
+	return *fd
 }
 
 func (r *DefaultCompactReader) readFixedSizePosition(fd FieldDescriptor) int32 {
@@ -93,13 +87,13 @@ func (r *DefaultCompactReader) unexpectedFieldKind(actualFieldKind FieldKind, fi
 	return ihzerrors.NewSerializationError(fmt.Sprintf("Unexpected field kind '%d' for field %s", actualFieldKind, fieldName), nil)
 }
 
-func (r *DefaultCompactReader) getVariableSize(fd FieldDescriptor, reader func() interface{}) (interface{}, error) {
+func (r *DefaultCompactReader) getVariableSize(fd FieldDescriptor, reader func() interface{}) interface{} {
 	fieldKind := fd.fieldKind
 	switch fieldKind {
 	case FieldKindInt32:
 		position := r.readFixedSizePosition(fd)
-		return r.in.ReadInt32AtPosition(position), nil
+		return r.in.ReadInt32AtPosition(position)
 	default:
-		return 0, r.unexpectedFieldKind(fieldKind, fd.fieldName)
+		panic(r.unexpectedFieldKind(fieldKind, fd.fieldName))
 	}
 }

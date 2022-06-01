@@ -46,6 +46,7 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 		SerializationConfig: config,
 		registry:            make(map[int32]pubserialization.Serializer),
 		customSerializers:   config.CustomSerializers(),
+		compactSerializer:  NewCompactStreamSerializer(config.Compact),
 	}
 	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
 	if err != nil {

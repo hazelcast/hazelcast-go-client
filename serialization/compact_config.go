@@ -30,6 +30,10 @@ func (cc CompactConfig) Clone() CompactConfig {
 	return clone
 }
 
+func (cc *CompactConfig) Serializers() map[string]CompactSerializer {
+	return cc.serializers
+}
+
 func (cc *CompactConfig) Validate() error {
 	cc.ensureSerializers()
 	return nil

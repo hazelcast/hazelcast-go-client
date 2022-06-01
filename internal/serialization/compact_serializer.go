@@ -24,16 +24,33 @@ import (
 )
 
 type CompactStreamSerializer struct {
-	classToSchema    map[reflect.Type]Schema
-	classToSerializer    map[reflect.Type]serialization.CompactSerializer
+	typeToSchema    map[reflect.Type]Schema
+	typeToSerializer    map[reflect.Type]serialization.CompactSerializer
 	typeNameToSerializer map[string]serialization.CompactSerializer
 	schemaService SchemaService
+}
+
+func NewCompactStreamSerializer(compactConfig serialization.CompactConfig) *CompactStreamSerializer {
+	typeToSchema := make(map[reflect.Type]Schema)
+	typeToSerializer := make(map[reflect.Type]serialization.CompactSerializer)
+	typeNameToSerializer := make(map[string]serialization.CompactSerializer)
+	serializers := compactConfig.Serializers()
+	for typeName, serializer := range serializers {
+		typeNameToSerializer[typeName] = serializer
+		typeToSerializer[serializer.Type()] = serializer
+	}
+	
+	return &CompactStreamSerializer{
+		schemaService: *NewSchemaService(),
+		typeToSchema: typeToSchema,
+		typeToSerializer: typeToSerializer,
+		typeNameToSerializer: typeNameToSerializer,
+	}
 }
 
 func (CompactStreamSerializer) ID() int32 {
 	return TypeCompact
 }
-
 
 func (c *CompactStreamSerializer) Read(input serialization.DataInput) interface{} {
 	schema := c.getOrReadSchema(input)
@@ -48,20 +65,24 @@ func (c *CompactStreamSerializer) Read(input serialization.DataInput) interface{
 
 func (c *CompactStreamSerializer) Write(output serialization.DataOutput, object interface{}) {
 	t := reflect.TypeOf(object)
-	serializer, _ := c.classToSerializer[t]
-
-	schema, ok := c.classToSchema[t]
+	serializer := c.typeToSerializer[t]
+	
+	schema, ok := c.typeToSchema[t]
 	if !ok {
-
+		schemaWriter := NewSchemaWriter(t.Name())
+		serializer.Write(schemaWriter, object)
+		schema := schemaWriter.Build()
+		c.schemaService.PutLocal(schema)
+		c.typeToSchema[t] = schema
 	}
-	output.WriteInt64(schema.SchemaID())
+	output.WriteInt64(schema.ID())
 	writer := NewDefaultCompactWriter(*c, output.(*PositionalObjectDataOutput), schema)
 	serializer.Write(writer, object)
 	writer.End()
 }
 
 func (c *CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
-	_, ok := c.classToSerializer[t]
+	_, ok := c.typeToSerializer[t]
 	return ok
 }
 

@@ -39,30 +39,24 @@ func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *Positional
 	}
 }
 
-func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind FieldKind) (FieldDescriptor, error) {
+func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
-		return FieldDescriptor{}, ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.ToString()), nil)
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.ToString()), nil))
 	}
 	if fd.fieldKind != fieldKind {
-		return FieldDescriptor{}, ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %s", fieldName, r.schema.ToString()), nil)
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %s", fieldName, r.schema.ToString()), nil))
 	}
-	return *fd, nil
+	return *fd
 }
 
-func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind FieldKind) (int32, error) {
-	fd, err := r.getFieldDescriptorChecked(fieldName, fieldKind)
-	if err != nil {
-		return 0, err
-	}
-	return fd.offset + r.dataStartPosition, nil
+func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind FieldKind) int32 {
+	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
+	return fd.offset + r.dataStartPosition
 }
 
 func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind FieldKind) error {
-	fd, err := r.getFieldDescriptorChecked(fieldName, fieldKind)
-	if err != nil {
-		return err
-	}
+	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	position := r.out.Position()
 	fieldPosition := position - r.dataStartPosition
 	index := fd.index
@@ -71,10 +65,7 @@ func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind FieldKind
 }
 
 func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind FieldKind) error {
-	fd, err := r.getFieldDescriptorChecked(fieldName, fieldKind)
-	if err != nil {
-		return err
-	}
+	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	index := fd.index
 	r.fieldOffsets[index] = -1
 	return nil
@@ -93,21 +84,17 @@ func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKin
 	return nil
 }
 
-func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) error {
-	position, err := r.getFixedSizeFieldPosition(fieldName, FieldKindInt32)
-	if err != nil {
-		return err
-	}
+func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) {
+	position := r.getFixedSizeFieldPosition(fieldName, FieldKindInt32)
 	r.out.PWriteInt32(position, value)
-	return nil
 }
 
-func (r DefaultCompactWriter) WriteString(fieldName string, value string) error {
+func (r DefaultCompactWriter) WriteString(fieldName string, value string) {
 	r.writeVariableSizeField(fieldName, FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteString(v.(string))
 	})
-	return nil
 }
 
 func (r DefaultCompactWriter) End() {
+	
 }

@@ -16,19 +16,3 @@
 
 package serialization
 
-type SchemaService struct {
-	schemaMap map[int64]Schema
-}
-
-func NewSchemaService() *SchemaService {
-	return &SchemaService{}
-}
-
-func (s *SchemaService) Get(schemaId int64) (Schema, bool) {
-	schema, ok := s.schemaMap[schemaId]
-	return schema, ok
-}
-
-func (s *SchemaService) PutLocal(schema Schema) {
-	s.schemaMap[schema.ID()] = schema
-}

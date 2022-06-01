@@ -16,41 +16,30 @@
 
 package serialization
 
-type Schema struct {
+type SchemaWriter struct {
+	typeName string
 	fieldDefinitionMap map[string]FieldDescriptor
-	typeName           string
-	id 		   int64
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor) Schema {
-	schema := Schema{
+func NewSchemaWriter(typeName string) SchemaWriter {
+	return SchemaWriter{
 		typeName: typeName,
-		fieldDefinitionMap: fieldDefinitionMap,
+		fieldDefinitionMap: make(map[string]FieldDescriptor),
 	}
-	schema.init()
-	return schema
 }
 
-func (s Schema) init() {
-	
+func (s SchemaWriter) addField(fd FieldDescriptor) {
+	s.fieldDefinitionMap[fd.fieldName] = fd
 }
 
-func (s *Schema) GetField(fieldName string) *FieldDescriptor {
-	if fieldDefinition, ok := s.fieldDefinitionMap[fieldName]; ok {
-		return &fieldDefinition
-	}
-	return nil
+func (s SchemaWriter) Build() Schema {
+	return NewSchema(s.typeName, s.fieldDefinitionMap)
 }
 
-func (s Schema) ID() int64 {
-	return s.id 
+func (s SchemaWriter) WriteInt32(fieldName string, value int32) {
+	s.addField(NewFieldDescriptor(fieldName, FieldKindInt32))
 }
 
-
-func (Schema) ToString() string {
-	return ""
-}
-
-func (s *Schema) TypeName() string {
-	return s.typeName
+func (s SchemaWriter) WriteString(fieldName string, value string) {
+	s.addField(NewFieldDescriptor(fieldName, FieldKindString))
 }
