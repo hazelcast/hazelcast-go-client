@@ -24,10 +24,11 @@ import (
 )
 
 type CompactStreamSerializer struct {
-	typeToSchema    map[reflect.Type]Schema
-	typeToSerializer    map[reflect.Type]serialization.CompactSerializer
+	typeToSchema         map[reflect.Type]Schema
+	typeToSerializer     map[reflect.Type]serialization.CompactSerializer
 	typeNameToSerializer map[string]serialization.CompactSerializer
-	schemaService SchemaService
+	schemaService        SchemaService
+	rabin                RabinFingerPrint
 }
 
 func NewCompactStreamSerializer(compactConfig serialization.CompactConfig) *CompactStreamSerializer {
@@ -39,12 +40,14 @@ func NewCompactStreamSerializer(compactConfig serialization.CompactConfig) *Comp
 		typeNameToSerializer[typeName] = serializer
 		typeToSerializer[serializer.Type()] = serializer
 	}
-	
+	rabin := NewRabinFingerPrint()
+	rabin.Init()
 	return &CompactStreamSerializer{
-		schemaService: *NewSchemaService(),
-		typeToSchema: typeToSchema,
-		typeToSerializer: typeToSerializer,
+		schemaService:        *NewSchemaService(),
+		typeToSchema:         typeToSchema,
+		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
+		rabin:                rabin,
 	}
 }
 
@@ -66,12 +69,12 @@ func (c *CompactStreamSerializer) Read(input serialization.DataInput) interface{
 func (c *CompactStreamSerializer) Write(output serialization.DataOutput, object interface{}) {
 	t := reflect.TypeOf(object)
 	serializer := c.typeToSerializer[t]
-	
+
 	schema, ok := c.typeToSchema[t]
 	if !ok {
 		schemaWriter := NewSchemaWriter(t.Name())
 		serializer.Write(schemaWriter, object)
-		schema := schemaWriter.Build()
+		schema := schemaWriter.Build(c.rabin)
 		c.schemaService.PutLocal(schema)
 		c.typeToSchema[t] = schema
 	}

@@ -26,16 +26,43 @@ type Schema struct {
 	fixedSizeFieldsLength int32
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor) Schema {
+func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor, rabin RabinFingerPrint) Schema {
 	schema := Schema{
 		typeName: typeName,
 		fieldDefinitionMap: fieldDefinitionMap,
 	}
-	schema.init()
+	schema.init(rabin)
 	return schema
 }
 
-func (s Schema) init() {
+func (s *Schema) FieldDefinitionMap() map[string]FieldDescriptor {
+	return s.fieldDefinitionMap
+}
+
+func (s *Schema) GetField(fieldName string) *FieldDescriptor {
+	if fieldDefinition, ok := s.fieldDefinitionMap[fieldName]; ok {
+		return &fieldDefinition
+	}
+	return nil
+}
+
+func (s Schema) ID() int64 {
+	return s.id 
+}
+
+func (s Schema) FieldCount() int {
+	return len(s.fieldDefinitionMap)
+}
+
+func (Schema) ToString() string {
+	return ""
+}
+
+func (s *Schema) TypeName() string {
+	return s.typeName
+}
+
+func (s Schema) init(rabin RabinFingerPrint) {
 	fixedSizeFields := make([]FieldDescriptor, 0)
 	variableSizeFields := make([]FieldDescriptor, 0)
 
@@ -67,25 +94,6 @@ func (s Schema) init() {
 	}
 	s.numberVarSizeFields = index
 	
-	s.id = RabinFingerPrintSchema(s)
+	s.id = rabin.OfSchema(s)
 }
 
-func (s *Schema) GetField(fieldName string) *FieldDescriptor {
-	if fieldDefinition, ok := s.fieldDefinitionMap[fieldName]; ok {
-		return &fieldDefinition
-	}
-	return nil
-}
-
-func (s Schema) ID() int64 {
-	return s.id 
-}
-
-
-func (Schema) ToString() string {
-	return ""
-}
-
-func (s *Schema) TypeName() string {
-	return s.typeName
-}

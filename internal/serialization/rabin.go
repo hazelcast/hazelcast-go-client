@@ -18,14 +18,40 @@ package serialization
 
 const INIT int64 = -4513414715797952619
 
-func RabinFingerPrintSchema(schema Schema) int64 {
-	fingerprint := rabinFingerPrintString(INIT, schema.TypeName())
+type RabinFingerPrint struct {
+	table []int64
 }
 
-func rabinFingerPrintString(fp int64, value string) int64 {
+func NewRabinFingerPrint() RabinFingerPrint {
+	return RabinFingerPrint{
+		table: make([]int64, 256),
+	}
+}
+
+func (r RabinFingerPrint) Init() {
+	for i := 0; i < 256; i++ {
+		fp := int64(i)
+		for j := 0; j < 8; j++ {
+			fp = (int64(uint64(fp)>>1) ^ (INIT & -(fp & 1)))
+		}
+		r.table[i] = fp
+	}
+}
+
+func (r RabinFingerPrint) OfSchema(schema Schema) int64 {
+	fingerprint := r.ofString(INIT, schema.TypeName())
+	fingerprint = r.ofInt32(fingerprint, int32(schema.FieldCount()))
+	for _, descriptor := range schema.FieldDefinitionMap() {
+		fingerprint = r.ofString(fingerprint, descriptor.fieldName)
+		fingerprint = r.ofInt32(fingerprint, int32(descriptor.fieldKind))
+	}
+	return fingerprint
+}
+
+func (r RabinFingerPrint) ofString(fp int64, value string) int64 {
 	
 }
 
-func rabinFingerPrintInt(fp int64, value int32) int64 {
-	
+func (r RabinFingerPrint) ofInt32(fp int64, value int32) int64 {
+
 }

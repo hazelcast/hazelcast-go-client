@@ -32,8 +32,8 @@ func (s SchemaWriter) addField(fd FieldDescriptor) {
 	s.fieldDefinitionMap[fd.fieldName] = fd
 }
 
-func (s SchemaWriter) Build() Schema {
-	return NewSchema(s.typeName, s.fieldDefinitionMap)
+func (s SchemaWriter) Build(rabin RabinFingerPrint) Schema {
+	return NewSchema(s.typeName, s.fieldDefinitionMap, rabin)
 }
 
 func (s SchemaWriter) WriteInt32(fieldName string, value int32) {
