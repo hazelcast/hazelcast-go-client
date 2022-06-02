@@ -409,6 +409,14 @@ type PortableReader interface {
 	ReadDecimalArray(fieldName string) (ds []types.Decimal)
 }
 
+type FieldKind int32
+
+const (
+	FieldKindInt32        FieldKind = 8
+	FieldKindString       FieldKind = 16
+	FieldKindNotAvailable FieldKind = 46
+)
+
 type CompactSerializer interface {
 	Type() reflect.Type
 	TypeName() string
@@ -417,11 +425,92 @@ type CompactSerializer interface {
 }
 
 type CompactReader interface {
+	ReadBoolean(fieldName string) bool
+	ReadInt8(fieldName string) int8
+	ReadInt16(fieldName string) int16
 	ReadInt32(fieldName string) int32
-	ReadString(fieldName string) *string
+	ReadInt64(fieldName string) int64
+	ReadFloat32(fieldName string) float32
+	ReadFloat64(fieldName string) float64
+	ReadNullableString(fieldName string) *string
+	ReadNullableDecimal(fieldName string) *types.Decimal
+	ReadNullableTime(fieldName string) *types.LocalTime
+	ReadNullableDate(fieldName string) *types.LocalDate
+	ReadNullableTimestamp(fieldName string) *types.LocalDateTime
+	ReadNullableTimestampWithTimezone(fieldName string) *types.OffsetDateTime
+	ReadNullableCompact(fieldName string) interface{}
+	ReadArrayOfBoolean(fieldName string) []bool
+	ReadArrayOfInt8(fieldName string) []int8
+	ReadArrayOfInt16(fieldName string) []int16
+	ReadArrayOfInt32(fieldName string) []int32
+	ReadArrayOfInt64(fieldName string) []int64
+	ReadArrayOfFloat32(fieldName string) []float32
+	ReadArrayOfFloat64(fieldName string) []float64
+	ReadArrayOfNullableString(fieldName string) []*string
+	ReadArrayOfNullableDecimal(fieldName string) []*types.Decimal
+	ReadArrayOfNullableTime(fieldName string) []*types.LocalTime
+	ReadArrayOfNullableDate(fieldName string) []*types.LocalDate
+	ReadArrayOfNullableTimestamp(fieldName string) []*types.LocalDateTime
+	ReadArrayOfNullableTimestampWithTimezone(fieldName string) []*types.OffsetDateTime
+	ReadArrayOfNullableCompact(fieldName string) []interface{}
+	ReadNullableBoolean(fieldName string) *bool
+	ReadNullableInt8(fieldName string) *int8
+	ReadNullableInt16(fieldName string) *int16
+	ReadNullableInt32(fieldName string) *int32
+	ReadNullableInt64(fieldName string) *int64
+	ReadNullableFloat32(fieldName string) *float32
+	ReadNullableFloat64(fieldName string) *float64
+	ReadArrayOfNullableBoolean(fieldName string) []*bool
+	ReadArrayOfNullableInt8(fieldName string) []*int8
+	ReadArrayOfNullableInt16(fieldName string) []*int16
+	ReadArrayOfNullableInt32(fieldName string) []*int32
+	ReadArrayOfNullableInt64(fieldName string) []*int64
+	ReadArrayOfNullableFloat32(fieldName string) []*float32
+	ReadArrayOfNullableFloat64(fieldName string) []*float64
+	getFieldKind(fieldName string) FieldKind
 }
 
 type CompactWriter interface {
+	WriteBoolean(fieldName string, value bool)
+	WriteInt8(fieldName string, value int8)
+	WriteInt16(fieldName string, value int16)
 	WriteInt32(fieldName string, value int32)
-	WriteString(fieldName string, value *string)
+	WriteInt64(fieldName string, value int64)
+	WriteFloat32(fieldName string, value float32)
+	WriteFloat64(fieldName string, value float64)
+	WriteNullableString(fieldName string, value *string)
+	WriteNullableDecimal(fieldName string, value *types.Decimal)
+	WriteNullableTime(fieldName string, value *types.LocalTime)
+	WriteNullableDate(fieldName string, value *types.LocalDate)
+	WriteNullableTimestamp(fieldName string, value *types.LocalDateTime)
+	WriteNullableTimestampWithTimezone(fieldName string, value *types.OffsetDateTime)
+	WriteNullableCompact(fieldName string, value interface{})
+	WriteArrayOfBoolean(fieldName string, value []bool)
+	WriteArrayOfInt8(fieldName string, value []int8)
+	WriteArrayOfInt16(fieldName string, value []int16)
+	WriteArrayOfInt32(fieldName string, value []int32)
+	WriteArrayOfInt64(fieldName string, value []int64)
+	WriteArrayOfFloat32(fieldName string, value []float32)
+	WriteArrayOfFloat64(fieldName string, value []float64)
+	WriteArrayOfNullableString(fieldName string, value []*string)
+	WriteArrayOfNullableDecimal(fieldName string, value []*types.Decimal)
+	WriteArrayOfNullableTime(fieldName string, value []*types.LocalTime)
+	WriteArrayOfNullableDate(fieldName string, value []*types.LocalDate)
+	WriteArrayOfNullableTimestamp(fieldName string, value []*types.LocalDateTime)
+	WriteArrayOfNullableTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime)
+	WriteArrayOfNullableCompact(fieldName string, value []interface{})
+	WriteNullableBoolean(fieldName string, value *bool)
+	WriteNullableInt8(fieldName string, value *int8)
+	WriteNullableInt16(fieldName string, value *int16)
+	WriteNullableInt32(fieldName string, value *int32)
+	WriteNullableInt64(fieldName string, value *int64)
+	WriteNullableFloat32(fieldName string, value *float32)
+	WriteNullableFloat64(fieldName string, value *float64)
+	WriteArrayOfNullableBoolean(fieldName string, value []*bool)
+	WriteArrayOfNullableInt8(fieldName string, value []*int8)
+	WriteArrayOfNullableInt16(fieldName string, value []*int16)
+	WriteArrayOfNullableInt32(fieldName string, value []*int32)
+	WriteArrayOfNullableInt64(fieldName string, value []*int64)
+	WriteArrayOfNullableFloat32(fieldName string, value []*float32)
+	WriteArrayOfNullableFloat64(fieldName string, value []*float64)
 }
