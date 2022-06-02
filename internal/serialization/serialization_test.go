@@ -406,9 +406,12 @@ func TestCompactSerializer(t *testing.T) {
 	}
 	service, _ := iserialization.NewService(c)
 	obj := student{Age: 12, Name: "S"}
+	a := reflect.TypeOf(obj).Name()
+	t.Logf("%s", a)
 
 	data, err := service.ToData(obj)
-	// Assert that the data is serialized as a compact
+
+	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
 
 	if err != nil {
