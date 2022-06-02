@@ -72,7 +72,7 @@ func (c *CompactStreamSerializer) Write(output serialization.DataOutput, object 
 
 	schema, ok := c.typeToSchema[t]
 	if !ok {
-		schemaWriter := NewSchemaWriter(t.Name())
+		schemaWriter := NewSchemaWriter(serializer.TypeName())
 		serializer.Write(schemaWriter, object)
 		schema = schemaWriter.Build(c.rabin)
 		c.schemaService.PutLocal(schema)
