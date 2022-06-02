@@ -16,18 +16,19 @@
 
 package nearcache
 
+import "fmt"
+
 type MaxSizePolicy int32
 
+func (p MaxSizePolicy) String() string {
+	switch p {
+	case MaxSizePolicyEntryCount:
+		return "ENTRY_COUNT"
+	}
+	panic(fmt.Errorf("unknown max size policy: %d", p))
+}
+
 const (
-	MaxSizePolicyPerNode                MaxSizePolicy = 0
-	MaxSizePolicyPerPartition           MaxSizePolicy = 1
-	MaxSizePolicyUsedHeapPercentage     MaxSizePolicy = 2
-	MaxSizePolicyUsedHeapSize           MaxSizePolicy = 3
-	MaxSizePolicyHeapPercentage         MaxSizePolicy = 4
-	MaxSizePolicyHeapSize               MaxSizePolicy = 5
-	MaxSizePolicyEntryCount             MaxSizePolicy = 6
-	MaxSizePolicyUsedNativeMemorySize   MaxSizePolicy = 7
-	MaxSizePolicyNativeMemoryPercentage MaxSizePolicy = 8
-	MaxSizePolicyNativeMemorySize       MaxSizePolicy = 9
-	MaxSizePolicyFreeMemoryPercentage   MaxSizePolicy = 10
+	// MaxSizePolicyEntryCount is the policy based on maximum number of entries stored per data structure (map, etc).
+	MaxSizePolicyEntryCount MaxSizePolicy = 6
 )

@@ -18,6 +18,8 @@ package nearcache
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -27,22 +29,36 @@ const (
 	DefaultEvictionPolicy           = EvictionPolicyLRU
 	DefaultStoreInitialDelaySeconds = 600
 	DefaultStoreIntervalSeconds     = 600
+	DefaultMemoryFormat             = InMemoryFormatBinary
 )
 
 type Config struct {
 	invalidateOnChange *bool
 	Name               string
 	EvictionConfig     EvictionConfig
+	PreloaderConfig    PreloaderConfig
 	InMemoryFormat     InMemoryFormat
 	SerializeKeys      bool
 	LocalUpdatePolicy  LocalUpdatePolicy
 	TimeToLiveSeconds  int32
 	MaxIdleSeconds     int32
 	CacheLocalEntries  bool
-	PreloaderConfig    PreloaderConfig
+}
+
+func (c Config) Clone() Config {
+	return c
 }
 
 func (c *Config) Validate() error {
+	if err := c.EvictionConfig.Validate(); err != nil {
+		return err
+	}
+	if err := c.PreloaderConfig.Validate(); err != nil {
+		return err
+	}
+	if c.Name == "" {
+		c.Name = "default"
+	}
 	return nil
 }
 
@@ -61,32 +77,42 @@ type EvictionPolicyComparator interface {
 	Compare(a, b types.EvictableEntryView) int
 }
 
+/*
+EvictionConfig is the configuration for eviction.
+
+You can set a limit for number of entries or total memory cost of entries.
+The default values of the eviction configuration are:
+
+	* EvictionPolicyLRU as eviction policy
+	* MaxSizePolicyEntryCount as max size policy
+	* 2147483647 as maximum size for on-heap Map
+	* 10_000 as maximum size for all other data structures and configurations
+*/
 type EvictionConfig struct {
-	maxSizePolicy  *MaxSizePolicy
 	evictionPolicy *EvictionPolicy
 	size           *int32
 	comparator     EvictionPolicyComparator
 }
 
+// Validate validates the configuration and sets the defaults.
 func (c *EvictionConfig) Validate() error {
+	if c.evictionPolicy != nil && c.comparator != nil {
+		return ihzerrors.NewInvalidConfigurationError("only one of EvictionPolicy or Comparator can be configured", nil)
+	}
 	return nil
 }
 
-func (c *EvictionConfig) SetMaxSizePolicy(policy MaxSizePolicy) {
-	c.maxSizePolicy = &policy
-}
-
+// MaxSizePolicy returns the maximum size policy of this eviction configuration.
 func (c EvictionConfig) MaxSizePolicy() MaxSizePolicy {
-	if c.maxSizePolicy == nil {
-		return DefaultMaxSizePolicy
-	}
-	return *c.maxSizePolicy
+	return MaxSizePolicyEntryCount
 }
 
+// SetEvictionPolicy sets the eviction policy of this eviction configuration.
 func (c *EvictionConfig) SetEvictionPolicy(policy EvictionPolicy) {
 	c.evictionPolicy = &policy
 }
 
+// EvictionPolicy returns the eviction policy of this eviction configuration.
 func (c EvictionConfig) EvictionPolicy() EvictionPolicy {
 	if c.evictionPolicy == nil {
 		return DefaultEvictionPolicy
@@ -94,6 +120,10 @@ func (c EvictionConfig) EvictionPolicy() EvictionPolicy {
 	return *c.evictionPolicy
 }
 
+// SetSize sets the size the size which is used by the MaxSizePolicy.
+// The interpretation of the value depends on the configured MaxSizePolicy.
+// Accepts any non-negative number.
+// The default value is 10_000.
 func (c *EvictionConfig) SetSize(size int) error {
 	s, err := check.NonNegativeInt32(size)
 	if err != nil {
@@ -103,19 +133,45 @@ func (c *EvictionConfig) SetSize(size int) error {
 	return nil
 }
 
+// Size returns the size the size which is used by the MaxSizePolicy.
 func (c EvictionConfig) Size() int {
 	if c.size == nil {
-		return 0
+		return DefaultMaxEntryCount
 	}
 	return int(*c.size)
 }
 
+// SetComparator sets the eviction policy comparator.
 func (c *EvictionConfig) SetComparator(cmp EvictionPolicyComparator) {
 	c.comparator = cmp
 }
 
+// Comparator returns the eviction policy comparator.
 func (c EvictionConfig) Comparator() EvictionPolicyComparator {
 	return c.comparator
+}
+
+// EvictionConfig implements IdentifiedDataSerializable
+
+func (c *EvictionConfig) FactoryID() int32 {
+	return -31
+}
+
+func (c *EvictionConfig) ClassID() int32 {
+	return 60
+}
+
+func (c *EvictionConfig) WriteData(output serialization.DataOutput) {
+	output.WriteInt32(int32(c.Size()))
+	output.WriteString(c.MaxSizePolicy().String())
+	output.WriteString(c.EvictionPolicy().String())
+	output.WriteString("")
+
+}
+
+func (c *EvictionConfig) ReadData(input serialization.DataInput) {
+	//TODO implement me
+	panic("implement me")
 }
 
 type PreloaderConfig struct {

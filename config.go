@@ -18,12 +18,14 @@ package hazelcast
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -33,6 +35,7 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
+	nearcacheConfigs    map[string]nearcache.Config
 	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 	Labels              []string                          `json:",omitempty"`
 	ClientName          string                            `json:",omitempty"`
@@ -67,6 +70,31 @@ func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHand
 	id := types.NewUUID()
 	c.membershipListeners[id] = handler
 	return id
+}
+
+// AddNearCacheConfig adds a near cache configuration.
+func (c *Config) AddNearCacheConfig(cfg nearcache.Config) {
+	c.nearcacheConfigs[cfg.Name] = cfg.Clone()
+}
+
+// GetNearCacheConfig returns the first configuration that matches the given pattern.
+// Note that the order of configurations is not defined.
+// The pattern should
+func (c *Config) GetNearCacheConfig(pattern string) (nearcache.Config, bool) {
+	for k, v := range c.nearcacheConfigs {
+		match, err := filepath.Match(pattern, k)
+		if err != nil {
+			panic(fmt.Errorf("invalid pattern to GetNearCacheConfig: %s: %w", pattern, err))
+		}
+		if match {
+			return
+		}
+	}
+	cfg, ok := c.nearcacheConfigs[pattern]
+	if !ok {
+		return nearcache.Config{}, false
+	}
+	return cfg, true
 }
 
 // SetLabels sets the labels for the client.

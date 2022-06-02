@@ -16,7 +16,23 @@
 
 package nearcache
 
+import "fmt"
+
 type EvictionPolicy int32
+
+func (p EvictionPolicy) String() string {
+	switch p {
+	case EvictionPolicyLRU:
+		return "LRU"
+	case EvictionPolicyLFU:
+		return "LFU"
+	case EvictionPolicyNone:
+		return "NONE"
+	case EvictionPolicyRandom:
+		return "RANDOM"
+	}
+	panic(fmt.Errorf("unknown eviction policy: %d", p))
+}
 
 const (
 	EvictionPolicyLRU    EvictionPolicy = 0

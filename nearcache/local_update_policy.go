@@ -19,6 +19,7 @@ package nearcache
 type LocalUpdatePolicy int32
 
 const (
-	LocalUpdatePolicyInvalidate    LocalUpdatePolicy = 0
-	LocalUpdatePolicyCacheOnUpdate LocalUpdatePolicy = 1
+	LocalUpdatePolicyInvalidate LocalUpdatePolicy = 0
+	// LocalUpdatePolicyCacheOnUpdate is not supported on the client side.
+	//LocalUpdatePolicyCacheOnUpdate LocalUpdatePolicy = 1
 )
