@@ -405,7 +405,8 @@ func TestWithExplicitSerializer(t *testing.T) {
 		Compact: compactConfig,
 	}
 	service, _ := iserialization.NewService(c)
-	obj := student{Age: 12, Name: "S"}
+	name := "S"
+	obj := student{Age: 12, Name: &name}
 
 	data, err := service.ToData(obj)
 
