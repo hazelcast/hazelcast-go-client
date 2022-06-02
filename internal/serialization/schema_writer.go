@@ -17,13 +17,13 @@
 package serialization
 
 type SchemaWriter struct {
-	typeName string
 	fieldDefinitionMap map[string]*FieldDescriptor
+	typeName           string
 }
 
 func NewSchemaWriter(typeName string) SchemaWriter {
 	return SchemaWriter{
-		typeName: typeName,
+		typeName:           typeName,
 		fieldDefinitionMap: make(map[string]*FieldDescriptor),
 	}
 }

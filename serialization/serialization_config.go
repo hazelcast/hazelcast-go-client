@@ -26,6 +26,7 @@ import (
 type Config struct {
 	globalSerializer                    Serializer
 	customSerializers                   map[reflect.Type]Serializer
+	Compact                             CompactConfig
 	identifiedDataSerializableFactories []IdentifiedDataSerializableFactory
 	portableFactories                   []PortableFactory
 	classDefinitions                    []*ClassDefinition
@@ -34,7 +35,6 @@ type Config struct {
 	PortableVersion int32 `json:",omitempty"`
 	// LittleEndian sets byte order to Little Endian. Default is false.
 	LittleEndian bool `json:",omitempty"`
-	Compact      CompactConfig
 }
 
 func (c *Config) Clone() Config {

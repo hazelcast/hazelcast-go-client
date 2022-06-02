@@ -24,11 +24,11 @@ import (
 )
 
 type DefaultCompactWriter struct {
-	dataStartPosition int32
-	schema            Schema
 	out               *PositionalObjectDataOutput
-	fieldOffsets      []int32
 	serializer        CompactStreamSerializer
+	fieldOffsets      []int32
+	schema            Schema
+	dataStartPosition int32
 }
 
 func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *PositionalObjectDataOutput, schema Schema) DefaultCompactWriter {

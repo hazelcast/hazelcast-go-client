@@ -39,12 +39,12 @@ func (ByteOffsetReader) getOffset(input *ObjectDataInput, variableOffsetsPos int
 }
 
 type DefaultCompactReader struct {
-	schema                  Schema
+	offsetReader            OffsetReader
 	in                      *ObjectDataInput
+	serializer              CompactStreamSerializer
+	schema                  Schema
 	dataStartPosition       int32
 	variableOffsetsPosition int32
-	serializer              CompactStreamSerializer
-	offsetReader            OffsetReader
 }
 
 func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
