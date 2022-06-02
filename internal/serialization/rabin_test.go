@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRabin(t *testing.T) {
+func TestRabinFingerprintIsConsistentWithWrittenData(t *testing.T) {
 	rabin := serialization.NewRabinFingerPrint()
 	rabin.Init()
 	fieldDefinitionMap := make(map[string]*serialization.FieldDescriptor)
@@ -34,5 +34,13 @@ func TestRabin(t *testing.T) {
 
 	schema := serialization.NewSchema("student", fieldDefinitionMap, rabin)
 	schemaId := schema.ID()
+	// The magic number is generated using the following code snippet:
+	/*
+		SchemaWriter writer = new SchemaWriter("student");
+        writer.addField(new FieldDescriptor("age", FieldKind.INT32));
+        writer.addField(new FieldDescriptor("name", FieldKind.STRING));
+        Schema schema = writer.build();
+        System.out.println(schema.getSchemaId());
+	*/
 	assert.Equal(t, int64(6299127804903769351), schemaId)
 }
