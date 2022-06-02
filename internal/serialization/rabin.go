@@ -41,7 +41,7 @@ func (r RabinFingerPrint) Init() {
 func (r RabinFingerPrint) OfSchema(schema Schema) int64 {
 	fingerprint := r.ofString(INIT, schema.TypeName())
 	fingerprint = r.ofInt32(fingerprint, int32(schema.FieldCount()))
-	for _, descriptor := range schema.FieldDefinitionMap() {
+	for _, descriptor := range schema.fieldDefinitionMap {
 		fingerprint = r.ofString(fingerprint, descriptor.fieldName)
 		fingerprint = r.ofInt32(fingerprint, int32(descriptor.fieldKind))
 	}
@@ -49,9 +49,28 @@ func (r RabinFingerPrint) OfSchema(schema Schema) int64 {
 }
 
 func (r RabinFingerPrint) ofString(fp int64, value string) int64 {
-	
+	bytes := []byte(value)
+	fingerprint := r.ofInt32(fp, int32(len(bytes)))
+	for _, b := range bytes {
+		fingerprint = r.ofByte(fingerprint, b)
+	}
+	return fingerprint
 }
 
 func (r RabinFingerPrint) ofInt32(fp int64, value int32) int64 {
+	fingerprint := r.ofByte(fp, byte(value&0xff))
+	fingerprint = r.ofByte(fingerprint, byte((value>>8)&0xff))
+	fingerprint = r.ofByte(fingerprint, byte((value>>16)&0xff))
+	fingerprint = r.ofByte(fingerprint, byte((value>>24)&0xff))
+	return fingerprint
+}
 
+func (r RabinFingerPrint) ofByte(fp int64, value byte) int64 {
+	var rightShifted int64
+	if fp >= 0 {
+		rightShifted = fp >> 8
+	} else {
+		rightShifted = int64(uint64(fp) >> 8)
+	}
+	return rightShifted ^ r.table[(fp^int64(value))&0xff]
 }

@@ -16,55 +16,55 @@
 
 package serialization
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 type Schema struct {
-	fieldDefinitionMap    map[string]FieldDescriptor
+	fieldDefinitionMap    map[string]*FieldDescriptor
 	typeName              string
-	id 		   		      int64
-	numberVarSizeFields   int32
+	id                    int64
+	numberOfVarSizeFields int32
 	fixedSizeFieldsLength int32
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor, rabin RabinFingerPrint) Schema {
+func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, rabin RabinFingerPrint) Schema {
 	schema := Schema{
-		typeName: typeName,
+		typeName:           typeName,
 		fieldDefinitionMap: fieldDefinitionMap,
 	}
 	schema.init(rabin)
 	return schema
 }
 
-func (s *Schema) FieldDefinitionMap() map[string]FieldDescriptor {
-	return s.fieldDefinitionMap
-}
-
 func (s *Schema) GetField(fieldName string) *FieldDescriptor {
 	if fieldDefinition, ok := s.fieldDefinitionMap[fieldName]; ok {
-		return &fieldDefinition
+		return fieldDefinition
 	}
 	return nil
 }
 
 func (s Schema) ID() int64 {
-	return s.id 
+	return s.id
 }
 
 func (s Schema) FieldCount() int {
 	return len(s.fieldDefinitionMap)
 }
 
-func (Schema) ToString() string {
-	return ""
+func (s Schema) ToString() string {
+	return fmt.Sprintf("Schema{typeName=%s, numberOfComplexFields=%d, primitivesLength=%d, fieldDefinitionMap=%v}",
+		s.typeName, s.numberOfVarSizeFields, s.fixedSizeFieldsLength, s.fieldDefinitionMap)
 }
 
 func (s *Schema) TypeName() string {
 	return s.typeName
 }
 
-func (s Schema) init(rabin RabinFingerPrint) {
-	fixedSizeFields := make([]FieldDescriptor, 0)
-	variableSizeFields := make([]FieldDescriptor, 0)
+func (s *Schema) init(rabin RabinFingerPrint) {
+	fixedSizeFields := make([]*FieldDescriptor, 0)
+	variableSizeFields := make([]*FieldDescriptor, 0)
 
 	for _, descriptor := range s.fieldDefinitionMap {
 		fieldKind := descriptor.fieldKind
@@ -92,8 +92,7 @@ func (s Schema) init(rabin RabinFingerPrint) {
 		descriptor.index = index
 		index += 1
 	}
-	s.numberVarSizeFields = index
-	
-	s.id = rabin.OfSchema(s)
-}
+	s.numberOfVarSizeFields = index
 
+	s.id = rabin.OfSchema(*s)
+}

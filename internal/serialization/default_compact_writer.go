@@ -32,10 +32,26 @@ type DefaultCompactWriter struct {
 }
 
 func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *PositionalObjectDataOutput, schema Schema) DefaultCompactWriter {
+	var fieldOffsets []int32
+	var dataStartPosition int32
+	if schema.numberOfVarSizeFields != 0 {
+		fieldOffsets = make([]int32, schema.numberOfVarSizeFields)
+		dataStartPosition = out.Position() + Int32SizeInBytes
+		// Skip for length and primitives.
+		out.WriteZeroBytes(int(schema.fixedSizeFieldsLength + Int32SizeInBytes))
+	} else {
+		dataStartPosition = out.Position()
+		// Skip for primitives. No need to write data length, when there is no
+		// variable-size fields.
+		out.WriteZeroBytes(int(schema.fixedSizeFieldsLength))
+	}
+
 	return DefaultCompactWriter{
-		serializer: serializer,
-		out:        out,
-		schema:     schema,
+		serializer:        serializer,
+		out:               out,
+		schema:            schema,
+		fieldOffsets:      fieldOffsets,
+		dataStartPosition: dataStartPosition,
 	}
 }
 
@@ -108,12 +124,12 @@ func (r DefaultCompactWriter) WriteString(fieldName string, value string) {
  * data length, if there are some variable-size fields.
  */
 func (r DefaultCompactWriter) End() {
-	if r.schema.numberVarSizeFields == 0 {
-		return;
+	if r.schema.numberOfVarSizeFields == 0 {
+		return
 	}
 	position := r.out.Position()
 	dataLength := position - r.dataStartPosition
 	r.writeOffsets(dataLength, r.fieldOffsets)
 	//write dataLength
-	r.out.PWriteInt32(r.dataStartPosition - Int32SizeInBytes, dataLength)
+	r.out.PWriteInt32(r.dataStartPosition-Int32SizeInBytes, dataLength)
 }

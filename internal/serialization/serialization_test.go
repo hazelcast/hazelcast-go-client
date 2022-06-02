@@ -371,27 +371,24 @@ type student struct {
 	Name string
 }
 
-type studentCompactSerializer struct {
-	readCalled  bool
-	writeCalled bool
-}
+type studentCompactSerializer struct{}
 
 func (studentCompactSerializer) Type() reflect.Type {
 	return reflect.TypeOf(student{})
 }
 
-func (c studentCompactSerializer) TypeName() string {
-	return c.Type().Name()
+func (s studentCompactSerializer) TypeName() string {
+	return s.Type().Name()
 }
 
-func (studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+func (s studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
 	return student{
 		Age:  reader.ReadInt32("age"),
 		Name: reader.ReadString("name"),
 	}
 }
 
-func (studentCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+func (s studentCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
 	c, ok := value.(student)
 	if !ok {
 		panic("not a student")
@@ -410,14 +407,21 @@ func TestCompactSerializer(t *testing.T) {
 	service, _ := iserialization.NewService(c)
 	obj := student{Age: 12, Name: "S"}
 
-	data, _ := service.ToData(obj)
-	ret, _ := service.ToObject(data)
+	data, err := service.ToData(obj)
+	// Assert that the data is serialized as a compact
+	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ret, err := service.ToObject(data)
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !reflect.DeepEqual(obj, ret) {
 		t.Error("compact serialization failed")
-	}
-
-	if !serializer.readCalled || !serializer.writeCalled {
-		t.Fatalf("compact serializer is not used")
 	}
 }

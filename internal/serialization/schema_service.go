@@ -21,7 +21,9 @@ type SchemaService struct {
 }
 
 func NewSchemaService() *SchemaService {
-	return &SchemaService{}
+	return &SchemaService{
+		schemaMap: make(map[int64]Schema),
+	}
 }
 
 func (s *SchemaService) Get(schemaId int64) (Schema, bool) {
