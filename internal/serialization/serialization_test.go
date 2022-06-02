@@ -397,7 +397,7 @@ func (s studentCompactSerializer) Write(writer serialization.CompactWriter, valu
 	writer.WriteString("name", c.Name)
 }
 
-func TestCompactSerializer(t *testing.T) {
+func TestWithExplicitSerializer(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
 	serializer := studentCompactSerializer{}
 	compactConfig.SetSerializers(serializer)
@@ -406,8 +406,6 @@ func TestCompactSerializer(t *testing.T) {
 	}
 	service, _ := iserialization.NewService(c)
 	obj := student{Age: 12, Name: "S"}
-	a := reflect.TypeOf(obj).Name()
-	t.Logf("%s", a)
 
 	data, err := service.ToData(obj)
 
