@@ -368,7 +368,7 @@ func mustData(value interface{}, err error) iserialization.Data {
 
 type student struct {
 	Age  int32
-	Name string
+	Name *string
 }
 
 type studentCompactSerializer struct{}

@@ -59,13 +59,19 @@ func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 	}
 }
 
-func (r DefaultCompactReader) ReadString(fieldName string) string {
+func (r DefaultCompactReader) ReadString(fieldName string) *string {
 	fd := r.getFieldDefinitionChecked(fieldName, FieldKindString)
 
 	value := r.getVariableSize(fd, func(in *ObjectDataInput) interface{} {
-		return in.ReadString()
+		value := in.ReadString()
+		return &value
 	})
-	return value.(string)
+
+	if value == nil {
+		return nil
+	} else {
+		return value.(*string)
+	}
 }
 
 func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDataInput, schema Schema) DefaultCompactReader {

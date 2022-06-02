@@ -40,6 +40,6 @@ func (s SchemaWriter) WriteInt32(fieldName string, value int32) {
 	s.addField(NewFieldDescriptor(fieldName, FieldKindInt32))
 }
 
-func (s SchemaWriter) WriteString(fieldName string, value string) {
+func (s SchemaWriter) WriteString(fieldName string, value *string) {
 	s.addField(NewFieldDescriptor(fieldName, FieldKindString))
 }
