@@ -20,9 +20,9 @@ type CompactConfig struct {
 	serializers map[string]CompactSerializer
 }
 
-func (cc CompactConfig) Clone() CompactConfig {
-	clone := CompactConfig{}
-	m := make(map[string]CompactSerializer)
+func (cc *CompactConfig) Clone() CompactConfig {
+	var clone CompactConfig
+	m := make(map[string]CompactSerializer, len(cc.serializers))
 	for k, v := range cc.serializers {
 		m[k] = v
 	}

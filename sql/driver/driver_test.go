@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -53,7 +54,7 @@ func TestSetSSLConfig(t *testing.T) {
 
 func TestSetSerializationConfig(t *testing.T) {
 	config := &serialization.Config{PortableVersion: 2}
-	config.Validate()
+	it.Must(config.Validate())
 	if err := SetSerializationConfig(config); err != nil {
 		t.Fatal(err)
 	}

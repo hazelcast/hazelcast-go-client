@@ -18,6 +18,7 @@ package serialization
 
 import (
 	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -51,7 +52,7 @@ func (s SchemaWriter) WriteInt16(fieldName string, value int16) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt16))
 }
 func (s SchemaWriter) WriteInt32(fieldName string, value int32) {
-	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
+	s.addField(NewFieldDescriptor(fieldName, pubserialization.FieldKindInt32))
 }
 func (s SchemaWriter) WriteInt64(fieldName string, value int64) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt64))
@@ -63,7 +64,7 @@ func (s SchemaWriter) WriteFloat64(fieldName string, value float64) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindFloat64))
 }
 func (s SchemaWriter) WriteString(fieldName string, value *string) {
-	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindString))
+	s.addField(NewFieldDescriptor(fieldName, pubserialization.FieldKindString))
 }
 func (s SchemaWriter) WriteDecimal(fieldName string, value *types.Decimal) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindDecimal))
