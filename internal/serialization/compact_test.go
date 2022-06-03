@@ -23,8 +23,8 @@ import (
 )
 
 type MainDTO struct {
-	i   int32
 	str *string
+	i   int32
 }
 
 func NewMainDTO() MainDTO {
