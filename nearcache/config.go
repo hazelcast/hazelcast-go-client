@@ -104,6 +104,7 @@ func (c *EvictionConfig) Validate() error {
 
 // MaxSizePolicy returns the maximum size policy of this eviction configuration.
 func (c EvictionConfig) MaxSizePolicy() MaxSizePolicy {
+	// The only valid max size policy for a client is EntryCount
 	return MaxSizePolicyEntryCount
 }
 
