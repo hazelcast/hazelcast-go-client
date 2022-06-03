@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,8 +28,8 @@ func TestRabinFingerprintIsConsistentWithWrittenData(t *testing.T) {
 	rabin := serialization.NewRabinFingerPrint()
 	rabin.Init()
 	fieldDefinitionMap := make(map[string]*serialization.FieldDescriptor)
-	ageField := serialization.NewFieldDescriptor("age", serialization.FieldKindInt32)
-	nameField := serialization.NewFieldDescriptor("name", serialization.FieldKindString)
+	ageField := serialization.NewFieldDescriptor("age", pserialization.FieldKindInt32)
+	nameField := serialization.NewFieldDescriptor("name", pserialization.FieldKindString)
 	fieldDefinitionMap["age"] = &ageField
 	fieldDefinitionMap["name"] = &nameField
 

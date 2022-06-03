@@ -367,8 +367,8 @@ func mustData(value interface{}, err error) iserialization.Data {
 }
 
 type student struct {
-	Age  int32
 	Name *string
+	Age  int32
 }
 
 type studentCompactSerializer struct{}
@@ -384,7 +384,7 @@ func (s studentCompactSerializer) TypeName() string {
 func (s studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
 	return student{
 		Age:  reader.ReadInt32("age"),
-		Name: reader.ReadString("name"),
+		Name: reader.ReadNullableString("name"),
 	}
 }
 
@@ -394,7 +394,7 @@ func (s studentCompactSerializer) Write(writer serialization.CompactWriter, valu
 		panic("not a student")
 	}
 	writer.WriteInt32("age", c.Age)
-	writer.WriteString("name", c.Name)
+	writer.WriteNullableString("name", c.Name)
 }
 
 func TestWithExplicitSerializer(t *testing.T) {

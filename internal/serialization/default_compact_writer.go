@@ -21,6 +21,8 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type DefaultCompactWriter struct {
@@ -55,16 +57,175 @@ func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *Positional
 	}
 }
 
+func (r DefaultCompactWriter) WriteBoolean(fieldName string, value bool) {
+
+}
+
+func (r DefaultCompactWriter) WriteInt8(fieldName string, value int8) {
+
+}
+
+func (r DefaultCompactWriter) WriteInt16(fieldName string, value int16) {
+
+}
 
 func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) {
-	position := r.getFixedSizeFieldPosition(fieldName, FieldKindInt32)
+	position := r.getFixedSizeFieldPosition(fieldName, pserialization.FieldKindInt32)
 	r.out.PWriteInt32(position, value)
 }
 
-func (r DefaultCompactWriter) WriteString(fieldName string, value *string) {
-	r.writeVariableSizeField(fieldName, FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
+func (r DefaultCompactWriter) WriteInt64(fieldName string, value int64) {
+
+}
+
+func (r DefaultCompactWriter) WriteFloat32(fieldName string, value float32) {
+
+}
+
+func (r DefaultCompactWriter) WriteFloat64(fieldName string, value float64) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableString(fieldName string, value *string) {
+	r.writeVariableSizeField(fieldName, pserialization.FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteString(*v.(*string))
 	})
+}
+
+func (r DefaultCompactWriter) WriteNullableDecimal(fieldName string, value *types.Decimal) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableTime(fieldName string, value *types.LocalTime) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableDate(fieldName string, value *types.LocalDate) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableTimestamp(fieldName string, value *types.LocalDateTime) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableCompact(fieldName string, value interface{}) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfBoolean(fieldName string, value []bool) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfInt8(fieldName string, value []int8) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfInt16(fieldName string, value []int16) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfInt32(fieldName string, value []int32) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfInt64(fieldName string, value []int64) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfFloat32(fieldName string, value []float32) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfFloat64(fieldName string, value []float64) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableString(fieldName string, value []*string) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableDecimal(fieldName string, value []*types.Decimal) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableTime(fieldName string, value []*types.LocalTime) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableDate(fieldName string, value []*types.LocalDate) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableTimestamp(fieldName string, value []*types.LocalDateTime) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableCompact(fieldName string, value []interface{}) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableBoolean(fieldName string, value *bool) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableInt8(fieldName string, value *int8) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableInt16(fieldName string, value *int16) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableInt32(fieldName string, value *int32) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableInt64(fieldName string, value *int64) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableFloat32(fieldName string, value *float32) {
+
+}
+
+func (r DefaultCompactWriter) WriteNullableFloat64(fieldName string, value *float64) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableBoolean(fieldName string, value []*bool) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableInt8(fieldName string, value []*int8) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableInt16(fieldName string, value []*int16) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableInt32(fieldName string, value []*int32) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableInt64(fieldName string, value []*int64) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableFloat32(fieldName string, value []*float32) {
+
+}
+
+func (r DefaultCompactWriter) WriteArrayOfNullableFloat64(fieldName string, value []*float64) {
+
 }
 
 /**
@@ -83,7 +244,7 @@ func (r DefaultCompactWriter) End() {
 	r.out.PWriteInt32(r.dataStartPosition-Int32SizeInBytes, dataLength)
 }
 
-func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind FieldKind) FieldDescriptor {
+func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.ToString()), nil))
@@ -94,12 +255,12 @@ func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, field
 	return *fd
 }
 
-func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind FieldKind) int32 {
+func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pserialization.FieldKind) int32 {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	return fd.offset + r.dataStartPosition
 }
 
-func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind FieldKind) error {
+func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind pserialization.FieldKind) error {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	position := r.out.Position()
 	fieldPosition := position - r.dataStartPosition
@@ -108,14 +269,14 @@ func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind FieldKind
 	return nil
 }
 
-func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind FieldKind) error {
+func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind pserialization.FieldKind) error {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	index := fd.index
 	r.fieldOffsets[index] = -1
 	return nil
 }
 
-func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKind FieldKind, value interface{}, writer func(*PositionalObjectDataOutput, interface{})) error {
+func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKind pserialization.FieldKind, value interface{}, writer func(*PositionalObjectDataOutput, interface{})) error {
 	if check.Nil(value) {
 		err := r.setPositionAsNull(fieldName, fieldKind)
 		if err != nil {

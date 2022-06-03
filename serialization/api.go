@@ -467,7 +467,7 @@ type CompactReader interface {
 	ReadArrayOfNullableInt64(fieldName string) []*int64
 	ReadArrayOfNullableFloat32(fieldName string) []*float32
 	ReadArrayOfNullableFloat64(fieldName string) []*float64
-	getFieldKind(fieldName string) FieldKind
+	GetFieldKind(fieldName string) FieldKind
 }
 
 type CompactWriter interface {

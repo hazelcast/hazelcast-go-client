@@ -18,8 +18,12 @@ package serialization
 
 import (
 	"fmt"
+	"math/big"
+	"time"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const NULL_OFFSET = -1
@@ -47,11 +51,23 @@ type DefaultCompactReader struct {
 	variableOffsetsPosition int32
 }
 
+func (r DefaultCompactReader) ReadBoolean(fieldName string) bool {
+	return false
+}
+
+func (r DefaultCompactReader) ReadInt8(fieldName string) int8 {
+	return 0
+}
+
+func (r DefaultCompactReader) ReadInt16(fieldName string) int16 {
+	return 0
+}
+
 func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 	fd := r.getFieldDefinition(fieldName)
 	fieldKind := fd.fieldKind
 	switch fieldKind {
-	case FieldKindInt32:
+	case pserialization.FieldKindInt32:
 		position := r.readFixedSizePosition(fd)
 		return r.in.ReadInt32AtPosition(position)
 	default:
@@ -59,8 +75,20 @@ func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 	}
 }
 
-func (r DefaultCompactReader) ReadString(fieldName string) *string {
-	fd := r.getFieldDefinitionChecked(fieldName, FieldKindString)
+func (r DefaultCompactReader) ReadInt64(fieldName string) int64 {
+	return 0
+}
+
+func (r DefaultCompactReader) ReadFloat32(fieldName string) float32 {
+	return 0
+}
+
+func (r DefaultCompactReader) ReadFloat64(fieldName string) float64 {
+	return 0
+}
+
+func (r DefaultCompactReader) ReadNullableString(fieldName string) *string {
+	fd := r.getFieldDefinitionChecked(fieldName, pserialization.FieldKindString)
 
 	value := r.getVariableSize(fd, func(in *ObjectDataInput) interface{} {
 		value := in.ReadString()
@@ -72,6 +100,151 @@ func (r DefaultCompactReader) ReadString(fieldName string) *string {
 	} else {
 		return value.(*string)
 	}
+}
+
+func (r DefaultCompactReader) ReadNullableDecimal(fieldName string) *types.Decimal {
+	dec := types.NewDecimal(big.NewInt(0), 0)
+	return &dec
+}
+
+func (r DefaultCompactReader) ReadNullableTime(fieldName string) *types.LocalTime {
+	time := types.LocalTime(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
+	return &time
+}
+
+func (r DefaultCompactReader) ReadNullableDate(fieldName string) *types.LocalDate {
+	time := types.LocalDate(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
+	return &time
+}
+
+func (r DefaultCompactReader) ReadNullableTimestamp(fieldName string) *types.LocalDateTime {
+	time := types.LocalDateTime(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
+	return &time
+}
+
+func (r DefaultCompactReader) ReadNullableTimestampWithTimezone(fieldName string) *types.OffsetDateTime {
+	time := types.OffsetDateTime(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
+	return &time
+}
+
+func (r DefaultCompactReader) ReadNullableCompact(fieldName string) interface{} {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfBoolean(fieldName string) []bool {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfInt8(fieldName string) []int8 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfInt16(fieldName string) []int16 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfInt32(fieldName string) []int32 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfInt64(fieldName string) []int64 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfFloat32(fieldName string) []float32 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfFloat64(fieldName string) []float64 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableString(fieldName string) []*string {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableDecimal(fieldName string) []*types.Decimal {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableTime(fieldName string) []*types.LocalTime {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableDate(fieldName string) []*types.LocalDate {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableTimestamp(fieldName string) []*types.LocalDateTime {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableTimestampWithTimezone(fieldName string) []*types.OffsetDateTime {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableCompact(fieldName string) []interface{} {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadNullableBoolean(fieldName string) *bool {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadNullableInt8(fieldName string) *int8 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadNullableInt16(fieldName string) *int16 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadNullableInt32(fieldName string) *int32 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadNullableInt64(fieldName string) *int64 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadNullableFloat32(fieldName string) *float32 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadNullableFloat64(fieldName string) *float64 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableBoolean(fieldName string) []*bool {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableInt8(fieldName string) []*int8 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableInt16(fieldName string) []*int16 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableInt32(fieldName string) []*int32 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableInt64(fieldName string) []*int64 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableFloat32(fieldName string) []*float32 {
+	return nil
+}
+
+func (r DefaultCompactReader) ReadArrayOfNullableFloat64(fieldName string) []*float64 {
+	return nil
+}
+
+func (r DefaultCompactReader) GetFieldKind(fieldName string) pserialization.FieldKind {
+	return pserialization.FieldKindInt32
 }
 
 func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDataInput, schema Schema) DefaultCompactReader {
@@ -109,7 +282,7 @@ func (r *DefaultCompactReader) getFieldDefinition(fieldName string) FieldDescrip
 	return *fd
 }
 
-func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind FieldKind) FieldDescriptor {
+func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd.fieldKind != fieldKind {
 		panic(r.unexpectedFieldKind(fd.fieldKind, fieldName))
@@ -126,7 +299,7 @@ func (r *DefaultCompactReader) unknownField(fieldName string) error {
 	return ihzerrors.NewSerializationError(fmt.Sprintf("Unknown field name '%s' for %s", fieldName, r.schema.ToString()), nil)
 }
 
-func (r *DefaultCompactReader) unexpectedFieldKind(actualFieldKind FieldKind, fieldName string) error {
+func (r *DefaultCompactReader) unexpectedFieldKind(actualFieldKind pserialization.FieldKind, fieldName string) error {
 	return ihzerrors.NewSerializationError(fmt.Sprintf("Unexpected field kind '%d' for field %s", actualFieldKind, fieldName), nil)
 }
 

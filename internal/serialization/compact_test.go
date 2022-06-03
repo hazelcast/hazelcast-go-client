@@ -23,8 +23,8 @@ import (
 )
 
 type MainDTO struct {
-	i   int32
 	str *string
+	i   int32
 }
 
 func NewMainDTO() MainDTO {
@@ -49,7 +49,7 @@ func (MainDTOSerializer) TypeName() string {
 func (MainDTOSerializer) Read(reader serialization.CompactReader) interface{} {
 	return MainDTO{
 		i:   reader.ReadInt32("i"),
-		str: reader.ReadString("str"),
+		str: reader.ReadNullableString("str"),
 	}
 }
 
@@ -59,5 +59,5 @@ func (MainDTOSerializer) Write(writer serialization.CompactWriter, value interfa
 		panic("not a MainDTO")
 	}
 	writer.WriteInt32("i", c.i)
-	writer.WriteString("str", c.str)
+	writer.WriteNullableString("str", c.str)
 }
