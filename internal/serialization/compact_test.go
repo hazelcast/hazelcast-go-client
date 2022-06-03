@@ -49,7 +49,7 @@ func (MainDTOSerializer) TypeName() string {
 func (MainDTOSerializer) Read(reader serialization.CompactReader) interface{} {
 	return MainDTO{
 		i:   reader.ReadInt32("i"),
-		str: reader.ReadNullableString("str"),
+		str: reader.ReadString("str"),
 	}
 }
 
@@ -59,5 +59,5 @@ func (MainDTOSerializer) Write(writer serialization.CompactWriter, value interfa
 		panic("not a MainDTO")
 	}
 	writer.WriteInt32("i", c.i)
-	writer.WriteNullableString("str", c.str)
+	writer.WriteString("str", c.str)
 }

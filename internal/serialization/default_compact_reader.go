@@ -253,12 +253,12 @@ func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDa
 	var variableOffsetsPosition, dataStartPosition, finalPosition int32
 
 	if numberOfVarSizeFields == 0 {
-		dataStartPosition = input.Position()
+		dataStartPosition = input.position
 		finalPosition = dataStartPosition + schema.fixedSizeFieldsLength
 		variableOffsetsPosition = 0
 	} else {
 		dataLength := input.readInt32()
-		dataStartPosition = input.Position()
+		dataStartPosition = input.position
 		variableOffsetsPosition = dataStartPosition + dataLength
 		finalPosition = variableOffsetsPosition + numberOfVarSizeFields
 	}
@@ -304,7 +304,7 @@ func (r *DefaultCompactReader) unexpectedFieldKind(actualFieldKind pserializatio
 }
 
 func (r *DefaultCompactReader) getVariableSize(fd FieldDescriptor, reader func(*ObjectDataInput) interface{}) interface{} {
-	currentPos := r.in.Position()
+	currentPos := r.in.position
 	defer r.in.SetPosition(currentPos)
 	position := r.readVariableSizeFieldPosition(fd)
 	if position == NULL_OFFSET {

@@ -29,6 +29,7 @@ import (
 )
 
 const (
+	BitsInAByte        = 8
 	ByteSizeInBytes    = 1
 	BoolSizeInBytes    = 1
 	Uint8SizeInBytes   = 1
@@ -101,8 +102,18 @@ func (o *ObjectDataOutput) WriteByte(v byte) {
 	o.writeByte(v)
 }
 
+func (o *ObjectDataOutput) WriteSignedByte(v int8) {
+	o.EnsureAvailable(ByteSizeInBytes)
+	o.writeSignedByte(v)
+}
+
 func (o *ObjectDataOutput) writeByte(v byte) {
 	o.buffer[o.position] = v
+	o.position += ByteSizeInBytes
+}
+
+func (o *ObjectDataOutput) writeSignedByte(v int8) {
+	o.buffer[o.position] = byte(v)
 	o.position += ByteSizeInBytes
 }
 
@@ -164,6 +175,19 @@ func (o *ObjectDataOutput) WriteString(v string) {
 
 func (o *ObjectDataOutput) WriteObject(object interface{}) {
 	o.service.WriteObject(o, object)
+}
+
+func (o *ObjectDataOutput) WriteInt8Array(signedByteArray []int8) {
+	if signedByteArray == nil {
+		o.WriteInt32(nilArrayLength)
+		return
+	}
+	length := len(signedByteArray)
+	o.WriteInt32(int32(length))
+	o.EnsureAvailable(length)
+	for _, signedByte := range signedByteArray {
+		o.writeSignedByte(signedByte)
+	}
 }
 
 func (o *ObjectDataOutput) WriteByteArray(v []byte) {
@@ -659,6 +683,16 @@ func (p *PositionalObjectDataOutput) PWriteByte(pos int32, v byte) {
 
 func (p *PositionalObjectDataOutput) PWriteBool(pos int32, v bool) {
 	WriteBool(p.buffer, pos, v)
+}
+
+func (p *PositionalObjectDataOutput) PWriteBoolBit(pos int32, bitIndex int32, v bool) {
+	b := p.buffer[pos]
+	if v {
+		b = b | (1 << bitIndex)
+	} else {
+		b = b & ^(1 << bitIndex)
+	}
+	p.buffer[pos] = b
 }
 
 func (p *PositionalObjectDataOutput) PWriteUInt16(pos int32, v uint16) {
