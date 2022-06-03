@@ -86,33 +86,33 @@ func (r DefaultCompactWriter) WriteFloat64(fieldName string, value float64) {
 
 }
 
-func (r DefaultCompactWriter) WriteNullableString(fieldName string, value *string) {
+func (r DefaultCompactWriter) WriteString(fieldName string, value *string) {
 	r.writeVariableSizeField(fieldName, pserialization.FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteString(*v.(*string))
 	})
 }
 
-func (r DefaultCompactWriter) WriteNullableDecimal(fieldName string, value *types.Decimal) {
+func (r DefaultCompactWriter) WriteDecimal(fieldName string, value *types.Decimal) {
 
 }
 
-func (r DefaultCompactWriter) WriteNullableTime(fieldName string, value *types.LocalTime) {
+func (r DefaultCompactWriter) WriteTime(fieldName string, value *types.LocalTime) {
 
 }
 
-func (r DefaultCompactWriter) WriteNullableDate(fieldName string, value *types.LocalDate) {
+func (r DefaultCompactWriter) WriteDate(fieldName string, value *types.LocalDate) {
 
 }
 
-func (r DefaultCompactWriter) WriteNullableTimestamp(fieldName string, value *types.LocalDateTime) {
+func (r DefaultCompactWriter) WriteTimestamp(fieldName string, value *types.LocalDateTime) {
 
 }
 
-func (r DefaultCompactWriter) WriteNullableTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
+func (r DefaultCompactWriter) WriteTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
 
 }
 
-func (r DefaultCompactWriter) WriteNullableCompact(fieldName string, value interface{}) {
+func (r DefaultCompactWriter) WriteCompact(fieldName string, value interface{}) {
 
 }
 
@@ -144,31 +144,31 @@ func (r DefaultCompactWriter) WriteArrayOfFloat64(fieldName string, value []floa
 
 }
 
-func (r DefaultCompactWriter) WriteArrayOfNullableString(fieldName string, value []*string) {
+func (r DefaultCompactWriter) WriteArrayOfString(fieldName string, value []*string) {
 
 }
 
-func (r DefaultCompactWriter) WriteArrayOfNullableDecimal(fieldName string, value []*types.Decimal) {
+func (r DefaultCompactWriter) WriteArrayOfDecimal(fieldName string, value []*types.Decimal) {
 
 }
 
-func (r DefaultCompactWriter) WriteArrayOfNullableTime(fieldName string, value []*types.LocalTime) {
+func (r DefaultCompactWriter) WriteArrayOfTime(fieldName string, value []*types.LocalTime) {
 
 }
 
-func (r DefaultCompactWriter) WriteArrayOfNullableDate(fieldName string, value []*types.LocalDate) {
+func (r DefaultCompactWriter) WriteArrayOfDate(fieldName string, value []*types.LocalDate) {
 
 }
 
-func (r DefaultCompactWriter) WriteArrayOfNullableTimestamp(fieldName string, value []*types.LocalDateTime) {
+func (r DefaultCompactWriter) WriteArrayOfTimestamp(fieldName string, value []*types.LocalDateTime) {
 
 }
 
-func (r DefaultCompactWriter) WriteArrayOfNullableTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime) {
+func (r DefaultCompactWriter) WriteArrayOfTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime) {
 
 }
 
-func (r DefaultCompactWriter) WriteArrayOfNullableCompact(fieldName string, value []interface{}) {
+func (r DefaultCompactWriter) WriteArrayOfCompact(fieldName string, value []interface{}) {
 
 }
 

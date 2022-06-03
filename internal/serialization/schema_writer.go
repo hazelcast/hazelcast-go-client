@@ -62,25 +62,25 @@ func (s SchemaWriter) WriteFloat32(fieldName string, value float32) {
 func (s SchemaWriter) WriteFloat64(fieldName string, value float64) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteNullableString(fieldName string, value *string) {
+func (s SchemaWriter) WriteString(fieldName string, value *string) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindString))
 }
-func (s SchemaWriter) WriteNullableDecimal(fieldName string, value *types.Decimal) {
+func (s SchemaWriter) WriteDecimal(fieldName string, value *types.Decimal) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteNullableTime(fieldName string, value *types.LocalTime) {
+func (s SchemaWriter) WriteTime(fieldName string, value *types.LocalTime) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteNullableDate(fieldName string, value *types.LocalDate) {
+func (s SchemaWriter) WriteDate(fieldName string, value *types.LocalDate) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteNullableTimestamp(fieldName string, value *types.LocalDateTime) {
+func (s SchemaWriter) WriteTimestamp(fieldName string, value *types.LocalDateTime) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteNullableTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
+func (s SchemaWriter) WriteTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteNullableCompact(fieldName string, value interface{}) {
+func (s SchemaWriter) WriteCompact(fieldName string, value interface{}) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
 func (s SchemaWriter) WriteArrayOfBoolean(fieldName string, value []bool) {
@@ -104,25 +104,25 @@ func (s SchemaWriter) WriteArrayOfFloat32(fieldName string, value []float32) {
 func (s SchemaWriter) WriteArrayOfFloat64(fieldName string, value []float64) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteArrayOfNullableString(fieldName string, value []*string) {
+func (s SchemaWriter) WriteArrayOfString(fieldName string, value []*string) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteArrayOfNullableDecimal(fieldName string, value []*types.Decimal) {
+func (s SchemaWriter) WriteArrayOfDecimal(fieldName string, value []*types.Decimal) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteArrayOfNullableTime(fieldName string, value []*types.LocalTime) {
+func (s SchemaWriter) WriteArrayOfTime(fieldName string, value []*types.LocalTime) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteArrayOfNullableDate(fieldName string, value []*types.LocalDate) {
+func (s SchemaWriter) WriteArrayOfDate(fieldName string, value []*types.LocalDate) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteArrayOfNullableTimestamp(fieldName string, value []*types.LocalDateTime) {
+func (s SchemaWriter) WriteArrayOfTimestamp(fieldName string, value []*types.LocalDateTime) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteArrayOfNullableTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime) {
+func (s SchemaWriter) WriteArrayOfTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
-func (s SchemaWriter) WriteArrayOfNullableCompact(fieldName string, value []interface{}) {
+func (s SchemaWriter) WriteArrayOfCompact(fieldName string, value []interface{}) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
 func (s SchemaWriter) WriteNullableBoolean(fieldName string, value *bool) {

@@ -87,7 +87,7 @@ func (r DefaultCompactReader) ReadFloat64(fieldName string) float64 {
 	return 0
 }
 
-func (r DefaultCompactReader) ReadNullableString(fieldName string) *string {
+func (r DefaultCompactReader) ReadString(fieldName string) *string {
 	fd := r.getFieldDefinitionChecked(fieldName, pserialization.FieldKindString)
 
 	value := r.getVariableSize(fd, func(in *ObjectDataInput) interface{} {
@@ -102,32 +102,32 @@ func (r DefaultCompactReader) ReadNullableString(fieldName string) *string {
 	}
 }
 
-func (r DefaultCompactReader) ReadNullableDecimal(fieldName string) *types.Decimal {
+func (r DefaultCompactReader) ReadDecimal(fieldName string) *types.Decimal {
 	dec := types.NewDecimal(big.NewInt(0), 0)
 	return &dec
 }
 
-func (r DefaultCompactReader) ReadNullableTime(fieldName string) *types.LocalTime {
+func (r DefaultCompactReader) ReadTime(fieldName string) *types.LocalTime {
 	time := types.LocalTime(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
 	return &time
 }
 
-func (r DefaultCompactReader) ReadNullableDate(fieldName string) *types.LocalDate {
+func (r DefaultCompactReader) ReadDate(fieldName string) *types.LocalDate {
 	time := types.LocalDate(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
 	return &time
 }
 
-func (r DefaultCompactReader) ReadNullableTimestamp(fieldName string) *types.LocalDateTime {
+func (r DefaultCompactReader) ReadTimestamp(fieldName string) *types.LocalDateTime {
 	time := types.LocalDateTime(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
 	return &time
 }
 
-func (r DefaultCompactReader) ReadNullableTimestampWithTimezone(fieldName string) *types.OffsetDateTime {
+func (r DefaultCompactReader) ReadTimestampWithTimezone(fieldName string) *types.OffsetDateTime {
 	time := types.OffsetDateTime(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC))
 	return &time
 }
 
-func (r DefaultCompactReader) ReadNullableCompact(fieldName string) interface{} {
+func (r DefaultCompactReader) ReadCompact(fieldName string) interface{} {
 	return nil
 }
 
@@ -159,31 +159,31 @@ func (r DefaultCompactReader) ReadArrayOfFloat64(fieldName string) []float64 {
 	return nil
 }
 
-func (r DefaultCompactReader) ReadArrayOfNullableString(fieldName string) []*string {
+func (r DefaultCompactReader) ReadArrayOfString(fieldName string) []*string {
 	return nil
 }
 
-func (r DefaultCompactReader) ReadArrayOfNullableDecimal(fieldName string) []*types.Decimal {
+func (r DefaultCompactReader) ReadArrayOfDecimal(fieldName string) []*types.Decimal {
 	return nil
 }
 
-func (r DefaultCompactReader) ReadArrayOfNullableTime(fieldName string) []*types.LocalTime {
+func (r DefaultCompactReader) ReadArrayOfTime(fieldName string) []*types.LocalTime {
 	return nil
 }
 
-func (r DefaultCompactReader) ReadArrayOfNullableDate(fieldName string) []*types.LocalDate {
+func (r DefaultCompactReader) ReadArrayOfDate(fieldName string) []*types.LocalDate {
 	return nil
 }
 
-func (r DefaultCompactReader) ReadArrayOfNullableTimestamp(fieldName string) []*types.LocalDateTime {
+func (r DefaultCompactReader) ReadArrayOfTimestamp(fieldName string) []*types.LocalDateTime {
 	return nil
 }
 
-func (r DefaultCompactReader) ReadArrayOfNullableTimestampWithTimezone(fieldName string) []*types.OffsetDateTime {
+func (r DefaultCompactReader) ReadArrayOfTimestampWithTimezone(fieldName string) []*types.OffsetDateTime {
 	return nil
 }
 
-func (r DefaultCompactReader) ReadArrayOfNullableCompact(fieldName string) []interface{} {
+func (r DefaultCompactReader) ReadArrayOfCompact(fieldName string) []interface{} {
 	return nil
 }
 

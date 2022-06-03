@@ -384,7 +384,7 @@ func (s studentCompactSerializer) TypeName() string {
 func (s studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
 	return student{
 		Age:  reader.ReadInt32("age"),
-		Name: reader.ReadNullableString("name"),
+		Name: reader.ReadString("name"),
 	}
 }
 
@@ -394,7 +394,7 @@ func (s studentCompactSerializer) Write(writer serialization.CompactWriter, valu
 		panic("not a student")
 	}
 	writer.WriteInt32("age", c.Age)
-	writer.WriteNullableString("name", c.Name)
+	writer.WriteString("name", c.Name)
 }
 
 func TestWithExplicitSerializer(t *testing.T) {
