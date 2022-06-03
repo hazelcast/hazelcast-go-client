@@ -20,8 +20,8 @@ type SchemaService struct {
 	schemaMap map[int64]Schema
 }
 
-func NewSchemaService() SchemaService {
-	return SchemaService{
+func NewSchemaService() *SchemaService {
+	return &SchemaService{
 		schemaMap: make(map[int64]Schema),
 	}
 }

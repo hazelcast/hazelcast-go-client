@@ -26,7 +26,7 @@ type FieldKindOperation interface {
 	KindSizeInBytes() int32
 }
 
-const VARIABLE_SIZE = -1
+const variableKindSize = -1
 
 type BooleanFieldKindOperation struct{}
 
@@ -38,7 +38,7 @@ func (BooleanFieldKindOperation) KindSizeInBytes() int32 {
 type ArrayOfBooleanFieldKindOperation struct{}
 
 func (ArrayOfBooleanFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type Int8FieldKindOperation struct{}
@@ -50,7 +50,7 @@ func (Int8FieldKindOperation) KindSizeInBytes() int32 {
 type ArrayOfInt8FieldKindOperation struct{}
 
 func (ArrayOfInt8FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type Int16FieldKindOperation struct{}
@@ -62,7 +62,7 @@ func (Int16FieldKindOperation) KindSizeInBytes() int32 {
 type ArrayOfInt16FieldKindOperation struct{}
 
 func (ArrayOfInt16FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type Int32FieldKindOperation struct{}
@@ -74,7 +74,7 @@ func (Int32FieldKindOperation) KindSizeInBytes() int32 {
 type ArrayOfInt32FieldKindOperation struct{}
 
 func (ArrayOfInt32FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type Int64FieldKindOperation struct{}
@@ -86,7 +86,7 @@ func (Int64FieldKindOperation) KindSizeInBytes() int32 {
 type ArrayOfInt64FieldKindOperation struct{}
 
 func (ArrayOfInt64FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type Float32FieldKindOperation struct{}
@@ -98,7 +98,7 @@ func (Float32FieldKindOperation) KindSizeInBytes() int32 {
 type ArrayOfFloat32FieldKindOperation struct{}
 
 func (ArrayOfFloat32FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type Float64FieldKindOperation struct{}
@@ -110,175 +110,175 @@ func (Float64FieldKindOperation) KindSizeInBytes() int32 {
 type ArrayOfFloat64FieldKindOperation struct{}
 
 func (ArrayOfFloat64FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type StringFieldKindOperation struct{}
 
 func (StringFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfStringFieldKindOperation struct{}
 
 func (ArrayOfStringFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type DecimalFieldKindOperation struct{}
 
 func (DecimalFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfDecimalFieldKindOperation struct{}
 
 func (ArrayOfDecimalFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type TimeFieldKindOperation struct{}
 
 func (TimeFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfTimeFieldKindOperation struct{}
 
 func (ArrayOfTimeFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type DateFieldKindOperation struct{}
 
 func (DateFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfDateFieldKindOperation struct{}
 
 func (ArrayOfDateFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type TimestampFieldKindOperation struct{}
 
 func (TimestampFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfTimestampFieldKindOperation struct{}
 
 func (ArrayOfTimestampFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type TimestampWithTimezoneFieldKindOperation struct{}
 
 func (TimestampWithTimezoneFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfTimestampWithTimezoneFieldKindOperation struct{}
 
 func (ArrayOfTimestampWithTimezoneFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type CompactFieldKindOperation struct{}
 
 func (CompactFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfCompactFieldKindOperation struct{}
 
 func (ArrayOfCompactFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type NullableBooleanFieldKindOperation struct{}
 
 func (NullableBooleanFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfNullableBooleanFieldKindOperation struct{}
 
 func (ArrayOfNullableBooleanFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type NullableInt8FieldKindOperation struct{}
 
 func (NullableInt8FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfNullableInt8FieldKindOperation struct{}
 
 func (ArrayOfNullableInt8FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type NullableInt16FieldKindOperation struct{}
 
 func (NullableInt16FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfNullableInt16FieldKindOperation struct{}
 
 func (ArrayOfNullableInt16FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type NullableInt32FieldKindOperation struct{}
 
 func (NullableInt32FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfNullableInt32FieldKindOperation struct{}
 
 func (ArrayOfNullableInt32FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type NullableInt64FieldKindOperation struct{}
 
 func (NullableInt64FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfNullableInt64FieldKindOperation struct{}
 
 func (ArrayOfNullableInt64FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type NullableFloat32FieldKindOperation struct{}
 
 func (NullableFloat32FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfNullableFloat32FieldKindOperation struct{}
 
 func (ArrayOfNullableFloat32FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type NullableFloat64FieldKindOperation struct{}
 
 func (NullableFloat64FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 type ArrayOfNullableFloat64FieldKindOperation struct{}
 
 func (ArrayOfNullableFloat64FieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 func FieldOperations(fieldKind pserialization.FieldKind) FieldKindOperation {

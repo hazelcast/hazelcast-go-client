@@ -20,34 +20,31 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type CompactStreamSerializer struct {
 	typeToSchema         map[reflect.Type]Schema
-	typeToSerializer     map[reflect.Type]serialization.CompactSerializer
-	typeNameToSerializer map[string]serialization.CompactSerializer
-	schemaService        SchemaService
-	rabin                RabinFingerPrint
+	typeToSerializer     map[reflect.Type]pubserialization.CompactSerializer
+	typeNameToSerializer map[string]pubserialization.CompactSerializer
+	ss                   *SchemaService
+	fingerprint          RabinFingerPrint
 }
 
-func NewCompactStreamSerializer(compactConfig serialization.CompactConfig) *CompactStreamSerializer {
-	typeToSchema := make(map[reflect.Type]Schema)
-	typeToSerializer := make(map[reflect.Type]serialization.CompactSerializer)
-	typeNameToSerializer := make(map[string]serialization.CompactSerializer)
-	serializers := compactConfig.Serializers()
-	for typeName, serializer := range serializers {
+func NewCompactStreamSerializer(cfg pubserialization.CompactConfig) *CompactStreamSerializer {
+	typeToSerializer := make(map[reflect.Type]pubserialization.CompactSerializer)
+	typeNameToSerializer := make(map[string]pubserialization.CompactSerializer)
+	for typeName, serializer := range cfg.Serializers() {
 		typeNameToSerializer[typeName] = serializer
 		typeToSerializer[serializer.Type()] = serializer
 	}
-	rabin := NewRabinFingerPrint()
-	rabin.Init()
 	return &CompactStreamSerializer{
-		schemaService:        NewSchemaService(),
-		typeToSchema:         typeToSchema,
+		ss:                   NewSchemaService(),
+		typeToSchema:         make(map[reflect.Type]Schema),
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
-		rabin:                rabin,
+		fingerprint:          NewRabinFingerPrint(),
 	}
 }
 
@@ -55,45 +52,44 @@ func (CompactStreamSerializer) ID() int32 {
 	return TypeCompact
 }
 
-func (c *CompactStreamSerializer) Read(input serialization.DataInput) interface{} {
+func (c CompactStreamSerializer) Read(input pubserialization.DataInput) interface{} {
 	schema := c.getOrReadSchema(input)
 	typeName := schema.TypeName()
 	serializer, ok := c.typeNameToSerializer[typeName]
 	if !ok {
-		panic("No compact serializer found for type: " + typeName)
+		panic(fmt.Sprintf("no compact serializer found for type: %s", typeName))
 	}
-	reader := NewDefaultCompactReader(*c, input.(*ObjectDataInput), schema)
+	reader := NewDefaultCompactReader(c, input.(*ObjectDataInput), schema)
 	return serializer.Read(reader)
 }
 
-func (c *CompactStreamSerializer) Write(output serialization.DataOutput, object interface{}) {
+func (c CompactStreamSerializer) Write(output pubserialization.DataOutput, object interface{}) {
 	t := reflect.TypeOf(object)
 	serializer := c.typeToSerializer[t]
-
 	schema, ok := c.typeToSchema[t]
 	if !ok {
-		schemaWriter := NewSchemaWriter(serializer.TypeName())
-		serializer.Write(schemaWriter, object)
-		schema = schemaWriter.Build(c.rabin)
-		c.schemaService.PutLocal(schema)
+		sw := NewSchemaWriter(serializer.TypeName())
+		serializer.Write(sw, object)
+		schema = sw.Build(c.fingerprint)
+		c.ss.PutLocal(schema)
 		c.typeToSchema[t] = schema
 	}
 	output.WriteInt64(schema.ID())
-	writer := NewDefaultCompactWriter(*c, output.(*PositionalObjectDataOutput), schema)
-	serializer.Write(writer, object)
-	writer.End()
+	w := NewDefaultCompactWriter(c, output.(*PositionalObjectDataOutput), schema)
+	serializer.Write(w, object)
+	w.End()
 }
 
-func (c *CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
+func (c CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
 	_, ok := c.typeToSerializer[t]
 	return ok
 }
 
-func (c *CompactStreamSerializer) getOrReadSchema(input serialization.DataInput) Schema {
+func (c CompactStreamSerializer) getOrReadSchema(input pubserialization.DataInput) Schema {
 	schemaId := input.ReadInt64()
-	schema, ok := c.schemaService.Get(schemaId)
-	if ok {
-		return schema
+	schema, ok := c.ss.Get(schemaId)
+	if !ok {
+		panic(hzerrors.NewSerializationError(fmt.Sprintf("the schema cannot be found with id: %d", schemaId), nil))
 	}
-	panic(fmt.Sprintf("The schema cannot be found with id: %d", schemaId))
+	return schema
 }
