@@ -24,15 +24,28 @@ import (
 type Schema struct {
 	fieldDefinitionMap    map[string]*FieldDescriptor
 	typeName              string
+	// Go does not have TreeMap, so we use a slice to store sorted fields
+	fieldDefinitions      []*FieldDescriptor
 	id                    int64
 	numberOfVarSizeFields int32
 	fixedSizeFieldsLength int32
 }
 
 func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, rabin RabinFingerPrint) Schema {
+	fieldDefinitions := make([]*FieldDescriptor, len(fieldDefinitionMap))
+	c := 0
+	for _, fd := range fieldDefinitionMap {
+		fieldDefinitions[c] = fd
+		c += 1
+	}
+	// Sort according to field name
+	sort.SliceStable(fieldDefinitions, func(i, j int) bool {
+		return fieldDefinitions[i].fieldName < fieldDefinitions[j].fieldName
+	})
 	schema := Schema{
 		typeName:           typeName,
 		fieldDefinitionMap: fieldDefinitionMap,
+		fieldDefinitions:   fieldDefinitions,
 	}
 	schema.init(rabin)
 	return schema
@@ -50,7 +63,7 @@ func (s Schema) ID() int64 {
 }
 
 func (s Schema) FieldCount() int {
-	return len(s.fieldDefinitionMap)
+	return len(s.fieldDefinitions)
 }
 
 func (s Schema) ToString() string {
