@@ -16,6 +16,8 @@
 
 package serialization
 
+import pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+
 type SchemaWriter struct {
 	fieldDefinitionMap map[string]*FieldDescriptor
 	typeName           string
@@ -37,9 +39,9 @@ func (s SchemaWriter) Build(rabin RabinFingerPrint) Schema {
 }
 
 func (s SchemaWriter) WriteInt32(fieldName string, value int32) {
-	s.addField(NewFieldDescriptor(fieldName, FieldKindInt32))
+	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindInt32))
 }
 
 func (s SchemaWriter) WriteString(fieldName string, value *string) {
-	s.addField(NewFieldDescriptor(fieldName, FieldKindString))
+	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindString))
 }

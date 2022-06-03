@@ -16,7 +16,11 @@
 
 package serialization
 
-import "fmt"
+import (
+	"fmt"
+
+	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+)
 
 type FieldKindOperation interface {
 	KindSizeInBytes() int32
@@ -36,11 +40,11 @@ func (StringFieldKindOperation) KindSizeInBytes() int32 {
 	return VARIABLE_SIZE
 }
 
-func FieldOperations(fieldKind FieldKind) FieldKindOperation {
+func FieldOperations(fieldKind pserialization.FieldKind) FieldKindOperation {
 	switch fieldKind {
-	case FieldKindInt32:
+	case pserialization.FieldKindInt32:
 		return &Int32FieldKindOperation{}
-	case FieldKindString:
+	case pserialization.FieldKindString:
 		return &StringFieldKindOperation{}
 	default:
 		panic(fmt.Sprintf("Unknown field kind for field operations: %d", fieldKind))

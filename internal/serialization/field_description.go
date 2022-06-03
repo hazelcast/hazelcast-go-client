@@ -16,15 +16,17 @@
 
 package serialization
 
+import pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+
 type FieldDescriptor struct {
 	fieldName string
-	fieldKind FieldKind
+	fieldKind pserialization.FieldKind
 	index     int32
 	offset    int32
 	bitOffset int8
 }
 
-func NewFieldDescriptor(fieldName string, fieldKind FieldKind) FieldDescriptor {
+func NewFieldDescriptor(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
 	return FieldDescriptor{
 		fieldName: fieldName,
 		fieldKind: fieldKind,
@@ -33,10 +35,3 @@ func NewFieldDescriptor(fieldName string, fieldKind FieldKind) FieldDescriptor {
 		bitOffset: -1,
 	}
 }
-
-type FieldKind int32
-
-const (
-	FieldKindInt32  FieldKind = 8
-	FieldKindString FieldKind = 16
-)

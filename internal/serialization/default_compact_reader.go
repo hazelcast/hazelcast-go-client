@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 const NULL_OFFSET = -1
@@ -51,7 +52,7 @@ func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 	fd := r.getFieldDefinition(fieldName)
 	fieldKind := fd.fieldKind
 	switch fieldKind {
-	case FieldKindInt32:
+	case pserialization.FieldKindInt32:
 		position := r.readFixedSizePosition(fd)
 		return r.in.ReadInt32AtPosition(position)
 	default:
@@ -60,7 +61,7 @@ func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 }
 
 func (r DefaultCompactReader) ReadString(fieldName string) *string {
-	fd := r.getFieldDefinitionChecked(fieldName, FieldKindString)
+	fd := r.getFieldDefinitionChecked(fieldName, pserialization.FieldKindString)
 
 	value := r.getVariableSize(fd, func(in *ObjectDataInput) interface{} {
 		value := in.ReadString()
@@ -109,7 +110,7 @@ func (r *DefaultCompactReader) getFieldDefinition(fieldName string) FieldDescrip
 	return *fd
 }
 
-func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind FieldKind) FieldDescriptor {
+func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd.fieldKind != fieldKind {
 		panic(r.unexpectedFieldKind(fd.fieldKind, fieldName))
@@ -126,7 +127,7 @@ func (r *DefaultCompactReader) unknownField(fieldName string) error {
 	return ihzerrors.NewSerializationError(fmt.Sprintf("Unknown field name '%s' for %s", fieldName, r.schema.ToString()), nil)
 }
 
-func (r *DefaultCompactReader) unexpectedFieldKind(actualFieldKind FieldKind, fieldName string) error {
+func (r *DefaultCompactReader) unexpectedFieldKind(actualFieldKind pserialization.FieldKind, fieldName string) error {
 	return ihzerrors.NewSerializationError(fmt.Sprintf("Unexpected field kind '%d' for field %s", actualFieldKind, fieldName), nil)
 }
 

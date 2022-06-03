@@ -21,6 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type DefaultCompactWriter struct {
@@ -57,12 +58,12 @@ func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *Positional
 
 
 func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) {
-	position := r.getFixedSizeFieldPosition(fieldName, FieldKindInt32)
+	position := r.getFixedSizeFieldPosition(fieldName, pserialization.FieldKindInt32)
 	r.out.PWriteInt32(position, value)
 }
 
 func (r DefaultCompactWriter) WriteString(fieldName string, value *string) {
-	r.writeVariableSizeField(fieldName, FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeVariableSizeField(fieldName, pserialization.FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteString(*v.(*string))
 	})
 }
@@ -83,7 +84,7 @@ func (r DefaultCompactWriter) End() {
 	r.out.PWriteInt32(r.dataStartPosition-Int32SizeInBytes, dataLength)
 }
 
-func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind FieldKind) FieldDescriptor {
+func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.ToString()), nil))
@@ -94,12 +95,12 @@ func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, field
 	return *fd
 }
 
-func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind FieldKind) int32 {
+func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pserialization.FieldKind) int32 {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	return fd.offset + r.dataStartPosition
 }
 
-func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind FieldKind) error {
+func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind pserialization.FieldKind) error {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	position := r.out.Position()
 	fieldPosition := position - r.dataStartPosition
@@ -108,14 +109,14 @@ func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind FieldKind
 	return nil
 }
 
-func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind FieldKind) error {
+func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind pserialization.FieldKind) error {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	index := fd.index
 	r.fieldOffsets[index] = -1
 	return nil
 }
 
-func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKind FieldKind, value interface{}, writer func(*PositionalObjectDataOutput, interface{})) error {
+func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKind pserialization.FieldKind, value interface{}, writer func(*PositionalObjectDataOutput, interface{})) error {
 	if check.Nil(value) {
 		err := r.setPositionAsNull(fieldName, fieldKind)
 		if err != nil {

@@ -425,3 +425,11 @@ type CompactWriter interface {
 	WriteInt32(fieldName string, value int32)
 	WriteString(fieldName string, value *string)
 }
+
+type FieldKind int32
+
+const (
+	FieldKindInt32        FieldKind = 8
+	FieldKindString       FieldKind = 16
+	FieldKindNotAvailable FieldKind = 46
+)
