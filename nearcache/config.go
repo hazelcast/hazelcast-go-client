@@ -25,7 +25,6 @@ import (
 
 const (
 	DefaultMaxEntryCount            = 10_000
-	DefaultMaxSizePolicy            = MaxSizePolicyEntryCount
 	DefaultEvictionPolicy           = EvictionPolicyLRU
 	DefaultStoreInitialDelaySeconds = 600
 	DefaultStoreIntervalSeconds     = 600
@@ -39,7 +38,6 @@ type Config struct {
 	PreloaderConfig    PreloaderConfig
 	InMemoryFormat     InMemoryFormat
 	SerializeKeys      bool
-	LocalUpdatePolicy  LocalUpdatePolicy
 	TimeToLiveSeconds  int32
 	MaxIdleSeconds     int32
 	CacheLocalEntries  bool
@@ -71,6 +69,10 @@ func (c Config) InvalidateOnChange() bool {
 		return true
 	}
 	return *c.invalidateOnChange
+}
+
+func (c Config) LocalUpdatePolicy() LocalUpdatePolicy {
+	return LocalUpdatePolicyInvalidate
 }
 
 type EvictionPolicyComparator interface {

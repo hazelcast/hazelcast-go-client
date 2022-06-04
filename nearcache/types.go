@@ -18,6 +18,28 @@ package nearcache
 
 import "fmt"
 
+type MaxSizePolicy int32
+
+func (p MaxSizePolicy) String() string {
+	switch p {
+	case MaxSizePolicyEntryCount:
+		return "ENTRY_COUNT"
+	}
+	panic(fmt.Errorf("unknown max size policy: %d", p))
+}
+
+const (
+	// MaxSizePolicyEntryCount is the policy based on maximum number of entries stored per data structure (map, etc).
+	MaxSizePolicyEntryCount MaxSizePolicy = 6
+)
+
+type InMemoryFormat int8
+
+const (
+	InMemoryFormatBinary InMemoryFormat = 0
+	InMemoryFormatObject InMemoryFormat = 1
+)
+
 type EvictionPolicy int32
 
 func (p EvictionPolicy) String() string {
@@ -39,4 +61,10 @@ const (
 	EvictionPolicyLFU    EvictionPolicy = 1
 	EvictionPolicyNone   EvictionPolicy = 2
 	EvictionPolicyRandom EvictionPolicy = 3
+)
+
+type LocalUpdatePolicy int32
+
+const (
+	LocalUpdatePolicyInvalidate LocalUpdatePolicy = 0
 )
