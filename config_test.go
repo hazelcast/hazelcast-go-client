@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -351,6 +352,89 @@ func TestConfig_AddExistingFlakeIDGenerator(t *testing.T) {
 	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
 }
 
+func TestNearCacheConfigWithoutWildcard(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWithoutWildcard
+	config, ncs := configWithNearCacheNames("someNearCache")
+	assert.Equal(t, ncs[0], assertTrueGetNearCacheConfig(t, config, "someNearCache"))
+	assertFalseGetNearCacheConfig(t, config, "doesNotExist")
+	assertFalseGetNearCacheConfig(t, config, "SomeNearCache")
+}
+
+func TestNearCacheConfigWildcard1(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcard1
+	config, ncs := configWithNearCacheNames("*hazelcast.test.myNearCache")
+	assert.Equal(t, ncs[0], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.test.myNearCache"))
+}
+
+func TestNearCacheConfigWildcard2(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcard2
+	config, ncs := configWithNearCacheNames("com.hazelcast.*.myNearCache")
+	assert.Equal(t, ncs[0], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.test.myNearCache"))
+}
+
+func TestNearCacheConfigWildcard3(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcard3
+	config, ncs := configWithNearCacheNames("com.hazelcast.test.*")
+	assert.Equal(t, ncs[0], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.test.myNearCache"))
+}
+
+func TestNearCacheConfigWildcardMultipleConfigs(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcardMultipleConfigs
+	config, ncs := configWithNearCacheNames(
+		"com.hazelcast.*",
+		"com.hazelcast.test.*",
+		"com.hazelcast.test.sub.*",
+	)
+	assert.Equal(t, ncs[0], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.myNearCache"))
+	assert.Equal(t, ncs[1], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.test.myNearCache"))
+	assert.Equal(t, ncs[2], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.test.sub.myNearCache"))
+}
+
+func TestMapConfigWildcardMultipleAmbiguousConfigs(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testMapConfigWildcardMultipleAmbiguousConfigs
+	config, _ := configWithNearCacheNames("com.hazelcast*", "*com.hazelcast")
+	_, _, err := config.GetNearCacheConfig("com.hazelcast")
+	if !errors.Is(err, hzerrors.ErrInvalidConfiguration) {
+		t.Fatalf("expected invalid configuration error, but got: %v", err)
+	}
+}
+
+func TestNearCacheConfigWildcardMatchingPointStartsWith(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcardMatchingPointStartsWith
+	config, _ := configWithNearCacheNames(
+		"hazelcast.*",
+		"hazelcast.test.*",
+		"hazelcast.test.sub.*",
+	)
+	assertFalseGetNearCacheConfig(t, config, "com.hazelcast.myNearCache")
+	assertFalseGetNearCacheConfig(t, config, "com.hazelcast.test.myNearCache")
+	assertFalseGetNearCacheConfig(t, config, "com.hazelcast.test.sub.myNearCache")
+}
+
+func TestNearCacheConfigWildcardMatchingPointEndsWith(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcardMatchingPointEndsWith
+	config, _ := configWithNearCacheNames(
+		"*.sub",
+		"*.test.sub",
+		"*.hazelcast.test.sub",
+	)
+	assertFalseGetNearCacheConfig(t, config, "com.hazelFast.Fast.sub.myNearCache")
+	assertFalseGetNearCacheConfig(t, config, "hazelFast.test.sub.myNearCache")
+	assertFalseGetNearCacheConfig(t, config, "test.sub.myNearCache")
+}
+
+func TestNearCacheConfigWildcardOnly(t *testing.T) {
+	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcardOnly
+	config, ncs := configWithNearCacheNames("*")
+	assert.Equal(t, ncs[0], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.myNearCache"))
+}
+
+func TestNearCacheConfigWildcardOnlyMultipleConfigs(t *testing.T) {
+	// com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testNearCacheConfigWildcardOnlyMultipleConfigs
+	config, ncs := configWithNearCacheNames("*", "com.hazelcast.*")
+	assert.Equal(t, ncs[1], assertTrueGetNearCacheConfig(t, config, "com.hazelcast.myNearCache"))
+}
+
 func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, "", c.ClientName)
 	assert.Equal(t, []string(nil), c.Labels)
@@ -405,4 +489,36 @@ func assertStringEquivalent(t *testing.T, s1, s2 string) {
 		return s2sl[i] < s2sl[j]
 	})
 	assert.Equal(t, s1sl, s2sl)
+}
+
+func assertTrueGetNearCacheConfig(t *testing.T, config hazelcast.Config, pattern string) nearcache.Config {
+	nc, ok, err := config.GetNearCacheConfig(pattern)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatalf("%s: GetNearCacheConfig expected to return true for: %s", t.Name(), pattern)
+	}
+	return nc
+}
+
+func assertFalseGetNearCacheConfig(t *testing.T, config hazelcast.Config, pattern string) {
+	_, ok, err := config.GetNearCacheConfig(pattern)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatalf("%s: GetNearCacheConfig expected to return false for: %s", t.Name(), pattern)
+	}
+}
+
+func configWithNearCacheNames(names ...string) (hazelcast.Config, []nearcache.Config) {
+	config := hazelcast.Config{}
+	var ncs []nearcache.Config
+	for _, name := range names {
+		nc := nearcache.Config{Name: name}
+		config.AddNearCacheConfig(nc)
+		ncs = append(ncs, nc)
+	}
+	return config, ncs
 }

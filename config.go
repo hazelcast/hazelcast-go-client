@@ -18,7 +18,7 @@ package hazelcast
 
 import (
 	"fmt"
-	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -36,6 +36,7 @@ type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
 	nearcacheConfigs    map[string]nearcache.Config
+	nearCacheNames      []string
 	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 	Labels              []string                          `json:",omitempty"`
 	ClientName          string                            `json:",omitempty"`
@@ -74,27 +75,25 @@ func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHand
 
 // AddNearCacheConfig adds a near cache configuration.
 func (c *Config) AddNearCacheConfig(cfg nearcache.Config) {
+	c.ensureNearCacheConfigs()
 	c.nearcacheConfigs[cfg.Name] = cfg.Clone()
+	c.nearCacheNames = append(c.nearCacheNames, cfg.Name)
 }
 
 // GetNearCacheConfig returns the first configuration that matches the given pattern.
-// Note that the order of configurations is not defined.
-// The pattern should
-func (c *Config) GetNearCacheConfig(pattern string) (nearcache.Config, bool) {
-	for k, v := range c.nearcacheConfigs {
-		match, err := filepath.Match(pattern, k)
-		if err != nil {
-			panic(fmt.Errorf("invalid pattern to GetNearCacheConfig: %s: %w", pattern, err))
-		}
-		if match {
-			return
-		}
+// Returns hzerrors.ErrInvalidConfiguration if the pattern matches more than one configuration.
+func (c *Config) GetNearCacheConfig(pattern string) (nearcache.Config, bool, error) {
+	c.ensureNearCacheConfigs()
+	nc, ok, err := c.lookupNearCacheByPattern(pattern)
+	if err != nil {
+		return nc, false, err
 	}
-	cfg, ok := c.nearcacheConfigs[pattern]
-	if !ok {
-		return nearcache.Config{}, false
+	if ok {
+		return nc, true, nil
 	}
-	return cfg, true
+	// config not found, return the default if it exists
+	nc, ok = c.nearcacheConfigs["default"]
+	return nc, ok, nil
 }
 
 // SetLabels sets the labels for the client.
@@ -107,6 +106,7 @@ func (c *Config) SetLabels(labels ...string) {
 func (c *Config) Clone() Config {
 	c.ensureLifecycleListeners()
 	c.ensureMembershipListeners()
+	c.ensureNearCacheConfigs()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
 	newFlakeIDConfigs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGenerators))
@@ -173,6 +173,27 @@ func (c *Config) ensureFlakeIDGenerators() {
 	}
 }
 
+func (c *Config) ensureNearCacheConfigs() {
+	if c.nearcacheConfigs == nil {
+		c.nearcacheConfigs = map[string]nearcache.Config{}
+	}
+}
+
+func (c *Config) lookupNearCacheByPattern(itemName string) (nearcache.Config, bool, error) {
+	if candidate, ok := c.nearcacheConfigs[itemName]; ok {
+		return candidate, true, nil
+	}
+	key, err := matchingPointMatches(c.nearCacheNames, itemName)
+	if err != nil {
+		return nearcache.Config{}, false, err
+	}
+	if key == "" {
+		// not found
+		return nearcache.Config{}, false, nil
+	}
+	return c.nearcacheConfigs[key], true, nil
+}
+
 // AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
 func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchExpiry types.Duration) error {
 	if _, ok := c.FlakeIDGenerators[name]; ok {
@@ -232,4 +253,45 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func matchingPointMatches(patterns []string, itemName string) (string, error) {
+	var candidate, duplicate string
+	var hasDup bool
+	last := -1
+	for _, p := range patterns {
+		mp := getMatchingPoint(p, itemName)
+		if mp > -1 && mp >= last {
+			if mp == last {
+				duplicate = candidate
+				hasDup = true
+			} else {
+				hasDup = false
+			}
+			last = mp
+			candidate = p
+		}
+	}
+	if hasDup {
+		msg := fmt.Sprintf(`ambiguous configuration for item: "%s": "%s" vs "%s"`, itemName, candidate, duplicate)
+		return "", hzerrors.NewInvalidConfigurationError(msg, nil)
+	}
+	return candidate, nil
+}
+
+func getMatchingPoint(pattern, itemName string) int {
+	// port of: com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher#getMatchingPoint
+	index := strings.Index(pattern, "*")
+	if index == -1 {
+		return -1
+	}
+	first := pattern[:index]
+	if !strings.HasPrefix(itemName, first) {
+		return -1
+	}
+	second := pattern[index+1:]
+	if !strings.HasSuffix(itemName, second) {
+		return -1
+	}
+	return len(first) + len(second)
 }

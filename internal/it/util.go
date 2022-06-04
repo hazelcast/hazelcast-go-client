@@ -230,7 +230,7 @@ func SSLEnabled() bool {
 func HzVersion() string {
 	version := os.Getenv(EnvHzVersion)
 	if version == "" {
-		version = "4.2"
+		version = "5.1"
 	}
 	return version
 }
