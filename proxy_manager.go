@@ -112,6 +112,16 @@ func (m *proxyManager) getList(ctx context.Context, name string) (*List, error) 
 	return p.(*List), nil
 }
 
+func (m *proxyManager) getRingBuffer(ctx context.Context, name string) (*RingBuffer, error) {
+	p, err := m.proxyFor(ctx, ServiceNameRingBuffer, name, func(p *proxy) (interface{}, error) {
+		return newRingBuffer(p)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return p.(*RingBuffer), nil
+}
+
 func (m *proxyManager) getSet(ctx context.Context, name string) (*Set, error) {
 	p, err := m.proxyFor(ctx, ServiceNameSet, name, func(p *proxy) (interface{}, error) {
 		return newSet(p)

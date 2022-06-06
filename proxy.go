@@ -46,6 +46,7 @@ const (
 	ServiceNameQueue            = "hz:impl:queueService"
 	ServiceNameTopic            = "hz:impl:topicService"
 	ServiceNameList             = "hz:impl:listService"
+	ServiceNameRingBuffer       = "hz:impl:ringbufferService"
 	ServiceNameSet              = "hz:impl:setService"
 	ServiceNamePNCounter        = "hz:impl:PNCounterService"
 	ServiceNameFlakeIDGenerator = "hz:impl:flakeIdGeneratorService"
