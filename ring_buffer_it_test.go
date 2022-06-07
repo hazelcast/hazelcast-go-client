@@ -18,7 +18,6 @@ package hazelcast_test
 
 import (
 	"context"
-	"github.com/hazelcast/hazelcast-go-client/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,25 +26,39 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
-func TestRingBuffer_Add(t *testing.T) {
-	it.RingBufferTester(t, func(t *testing.T, rb *hz.RingBuffer) {
-		sequence, err := rb.Add(context.Background(), "test1", types.OverflowPolicyOverwrite)
+func TestRingbuffer_Add(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		sequence, err := rb.Add(context.Background(), "foo", hz.OverflowPolicyOverwrite)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), sequence)
 
-		sequence, err = rb.Add(context.Background(), "test2", types.OverflowPolicyOverwrite)
+		actualItem, err := rb.ReadOne(context.Background(), 0)
 		assert.NoError(t, err)
-		assert.Equal(t, int64(1), sequence)
-
-		sequence, err = rb.Add(context.Background(), "test2", types.OverflowPolicyOverwrite)
-		assert.NoError(t, err)
-		assert.Equal(t, int64(2), sequence)
+		assert.Equal(t, "foo", actualItem)
 	})
 }
 
-func TestRingBuffer_AddNilElement(t *testing.T) {
-	it.RingBufferTester(t, func(t *testing.T, rb *hz.RingBuffer) {
-		_, err := rb.Add(context.Background(), nil, types.OverflowPolicyOverwrite)
+func TestRingbuffer_AddNilElement(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		_, err := rb.Add(context.Background(), nil, hz.OverflowPolicyFail)
 		assert.Error(t, err)
+	})
+}
+
+func TestRingbuffer_Size(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		_, err := rb.Add(context.Background(), "one", hz.OverflowPolicyOverwrite)
+		assert.NoError(t, err)
+		size, err := rb.Size(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), size)
+	})
+}
+
+func TestRingbuffer_Capacity(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		capacity, err := rb.Capacity(context.Background())
+		assert.NoError(t, err)
+		assert.GreaterOrEqual(t, capacity, int64(9999), "There should be a capacity of at least 9999 items.")
 	})
 }

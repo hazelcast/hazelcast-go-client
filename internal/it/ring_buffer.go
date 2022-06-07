@@ -25,17 +25,17 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 )
 
-func RingBufferTester(t *testing.T, f func(t *testing.T, rb *hz.RingBuffer)) {
+func RingbufferTester(t *testing.T, f func(t *testing.T, rb *hz.Ringbuffer)) {
 	makeListName := func() string {
 		return NewUniqueObjectName("list")
 	}
-	RingBufferTesterWithConfigAndName(t, makeListName, nil, f)
+	RingbufferTesterWithConfigAndName(t, makeListName, nil, f)
 }
 
-func RingBufferTesterWithConfigAndName(t *testing.T, ringBufferName func() string, cbCallback func(*hz.Config), f func(*testing.T, *hz.RingBuffer)) {
+func RingbufferTesterWithConfigAndName(t *testing.T, ringBufferName func() string, cbCallback func(*hz.Config), f func(*testing.T, *hz.Ringbuffer)) {
 	var (
 		client *hz.Client
-		rb     *hz.RingBuffer
+		rb     *hz.Ringbuffer
 	)
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
@@ -48,7 +48,7 @@ func RingBufferTesterWithConfigAndName(t *testing.T, ringBufferName func() strin
 			cbCallback(&config)
 		}
 		config.Cluster.Unisocket = !smart
-		client, rb = getClientRingBufferWithConfig(ringBufferName(), &config)
+		client, rb = getClientRingbufferWithConfig(ringBufferName(), &config)
 		defer func() {
 			ctx := context.Background()
 			if err := rb.Destroy(ctx); err != nil {
@@ -72,9 +72,9 @@ func RingBufferTesterWithConfigAndName(t *testing.T, ringBufferName func() strin
 	}
 }
 
-func getClientRingBufferWithConfig(name string, config *hz.Config) (*hz.Client, *hz.RingBuffer) {
+func getClientRingbufferWithConfig(name string, config *hz.Config) (*hz.Client, *hz.Ringbuffer) {
 	client := getDefaultClient(config)
-	if l, err := client.GetRingBuffer(context.Background(), name); err != nil {
+	if l, err := client.GetRingbuffer(context.Background(), name); err != nil {
 		panic(err)
 	} else {
 		return client, l

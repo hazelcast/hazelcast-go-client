@@ -114,9 +114,9 @@ func (c *Client) GetList(ctx context.Context, name string) (*List, error) {
 	return c.proxyManager.getList(ctx, name)
 }
 
-// GetRingBuffer returns a ring buffer instance
-func (c *Client) GetRingBuffer(ctx context.Context, name string) (*RingBuffer, error) {
-	return c.proxyManager.getRingBuffer(ctx, name)
+// GetRingbuffer returns a ring buffer instance
+func (c *Client) GetRingbuffer(ctx context.Context, name string) (*Ringbuffer, error) {
+	return c.proxyManager.getRingbuffer(ctx, name)
 }
 
 // GetMap returns a distributed map instance.
