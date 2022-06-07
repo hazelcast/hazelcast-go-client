@@ -371,14 +371,30 @@ func (i *ObjectDataInput) ReadByte() byte {
 	return i.readByte()
 }
 
+func (i *ObjectDataInput) ReadSignedByte() int8 {
+	i.AssertAvailable(ByteSizeInBytes)
+	return i.readSignedByte()
+}
+
 func (i *ObjectDataInput) readByte() byte {
 	ret := i.buffer[i.position]
 	i.position += ByteSizeInBytes
 	return ret
 }
 
+func (i *ObjectDataInput) readSignedByte() int8 {
+	ret := i.buffer[i.position]
+	i.position += ByteSizeInBytes
+	return int8(ret)
+}
+
 func (i *ObjectDataInput) ReadByteAtPosition(pos int32) byte {
 	return i.buffer[pos]
+}
+
+func (i *ObjectDataInput) ReadSignedByteAtPosition(pos int32) int8 {
+	ret := i.buffer[pos]
+	return int8(ret)
 }
 
 func (i *ObjectDataInput) ReadBool() bool {
@@ -498,6 +514,18 @@ func (i *ObjectDataInput) ReadByteArray() []byte {
 	}
 	arr := i.buffer[i.position : i.position+length]
 	i.position += length
+	return arr
+}
+
+func (i *ObjectDataInput) ReadInt8Array() []int8 {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
+		return nil
+	}
+	arr := make([]int8, length)
+	for j := 0; j < length; j++ {
+		arr[j] = i.ReadSignedByte()
+	}
 	return arr
 }
 
