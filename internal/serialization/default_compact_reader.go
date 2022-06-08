@@ -25,6 +25,7 @@ import (
 )
 
 const (
+	NULL_ARRAY_LENGTH = -1
 	NULL_OFFSET               = -1
 	BYTE_OFFSET_READER_RANGE  = 127 - (-128)
 	SHORT_OFFSET_READER_RANGE = 32767 - (-32768)

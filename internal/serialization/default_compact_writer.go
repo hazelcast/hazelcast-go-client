@@ -26,8 +26,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-const NULL_ARRAY_LENGTH = -1
-
 type DefaultCompactWriter struct {
 	out               *PositionalObjectDataOutput
 	serializer        CompactStreamSerializer
