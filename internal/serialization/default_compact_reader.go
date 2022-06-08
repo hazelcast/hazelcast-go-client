@@ -388,13 +388,13 @@ func (r DefaultCompactReader) ReadArrayOfTimestampWithTimezone(fieldName string)
 	}).([]*types.OffsetDateTime)
 }
 
-func (r DefaultCompactReader) ReadArrayOfCompact(fieldName string) []interface{} {
+func (r DefaultCompactReader) ReadArrayOfCompact(fieldName string) interface{} {
 	return r.readArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfCompact, func(len int32) interface{} {
 		return make([]interface{}, len)
 	}, func(inp *ObjectDataInput) interface{} {
 		compact := r.serializer.Read(inp)
 		return &compact
-	}).([]interface{})
+	})
 }
 
 func (r DefaultCompactReader) ReadNullableBoolean(fieldName string) *bool {

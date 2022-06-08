@@ -19,6 +19,8 @@ package serialization
 import (
 	"fmt"
 	"sort"
+
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type Schema struct {
@@ -77,6 +79,7 @@ func (s *Schema) TypeName() string {
 
 func (s *Schema) init(rabin RabinFingerPrint) {
 	fixedSizeFields := make([]*FieldDescriptor, 0)
+	booleanFields := make([]*FieldDescriptor, 0)
 	variableSizeFields := make([]*FieldDescriptor, 0)
 
 	for _, descriptor := range s.fieldDefinitionMap {
@@ -84,7 +87,11 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		if FieldOperations(fieldKind).KindSizeInBytes() == VARIABLE_SIZE {
 			variableSizeFields = append(variableSizeFields, descriptor)
 		} else {
-			fixedSizeFields = append(fixedSizeFields, descriptor)
+			if fieldKind == serialization.FieldKindBoolean {
+				booleanFields = append(booleanFields, descriptor)
+			} else {
+				fixedSizeFields = append(fixedSizeFields, descriptor)
+			}
 		}
 	}
 
@@ -98,6 +105,20 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		offset += FieldOperations(descriptor.fieldKind).KindSizeInBytes()
 	}
 
+	bitOffset := 0
+	for _, descriptor := range booleanFields {
+		descriptor.offset = offset
+		descriptor.bitOffset = int8(bitOffset % BitsInAByte)
+		bitOffset += 1
+		if bitOffset % BitsInAByte == 0 {
+			offset += 1
+		}
+	}
+
+	if bitOffset % BitsInAByte != 0 {
+		offset += 1
+	}
+
 	s.fixedSizeFieldsLength = offset
 
 	index := int32(0)
@@ -105,7 +126,7 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		descriptor.index = index
 		index += 1
 	}
+	
 	s.numberOfVarSizeFields = index
-
 	s.id = rabin.OfSchema(*s)
 }

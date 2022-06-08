@@ -429,8 +429,8 @@ func TestWithExplicitSerializer(t *testing.T) {
 
 func TestAllTypesWithCustomSerializer(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
-	serializer := MainDTOSerializer{}
-	compactConfig.SetSerializers(serializer)
+	compactConfig.SetSerializers(MainDTOSerializer{}, InnerDTOSerializer{}, NamedDTOSerializer{})
+	
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}

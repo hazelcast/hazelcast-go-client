@@ -18,6 +18,7 @@ package serialization
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
@@ -134,7 +135,7 @@ func (r DefaultCompactWriter) WriteTimestampWithTimezone(fieldName string, value
 
 func (r DefaultCompactWriter) WriteCompact(fieldName string, value interface{}) {
 	r.writeVariableSizeField(fieldName, pserialization.FieldKindCompact, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		r.serializer.Write(out, *v.(*interface{}))
+		r.serializer.Write(out, reflect.ValueOf(v).Elem().Interface())
 	})
 }
 
@@ -206,7 +207,7 @@ func (r DefaultCompactWriter) WriteArrayOfTime(fieldName string, value []*types.
 		interfaceValue[i] = v
 	}
 	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTime, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteTime(out, *v.(*time.Time))
+		WriteTime(out, time.Time(*v.(*types.LocalTime)))
 	})
 }
 
@@ -216,7 +217,7 @@ func (r DefaultCompactWriter) WriteArrayOfDate(fieldName string, value []*types.
 		interfaceValue[i] = v
 	}
 	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfDate, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteDate(out, *v.(*time.Time))
+		WriteDate(out, time.Time(*v.(*types.LocalDate)))
 	})
 }
 
@@ -226,7 +227,7 @@ func (r DefaultCompactWriter) WriteArrayOfTimestamp(fieldName string, value []*t
 		interfaceValue[i] = v
 	}
 	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTimestamp, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteTimestamp(out, *v.(*time.Time))
+		WriteTimestamp(out, time.Time(*v.(*types.LocalDateTime)))
 	})
 }
 
@@ -236,13 +237,13 @@ func (r DefaultCompactWriter) WriteArrayOfTimestampWithTimezone(fieldName string
 		interfaceValue[i] = v
 	}
 	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTimestampWithTimezone, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteTimestampWithTimezone(out, *v.(*time.Time))
+		WriteTimestampWithTimezone(out, time.Time(*v.(*types.OffsetDateTime)))
 	})
 }
 
-func (r DefaultCompactWriter) WriteArrayOfCompact(fieldName string, value []interface{}) {
+func (r DefaultCompactWriter) WriteArrayOfCompact(fieldName string, value interface{}) {
 	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfCompact, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		r.serializer.Write(out, *v.(*interface{}))
+		r.serializer.Write(out, reflect.ValueOf(v).Elem().Interface())
 	})
 }
 
@@ -413,24 +414,27 @@ func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKin
 	}
 }
 
-func (r *DefaultCompactWriter) writeArrayOfVariableSize(fieldName string, fieldKind pserialization.FieldKind, values []interface{}, writer func(*PositionalObjectDataOutput, interface{})) {
+func (r *DefaultCompactWriter) writeArrayOfVariableSize(fieldName string, fieldKind pserialization.FieldKind, values interface{}, writer func(*PositionalObjectDataOutput, interface{})) {
 	if values == nil {
 		r.setPositionAsNull(fieldName, fieldKind)
 		return
 	}
 
+	value := reflect.ValueOf(values)
+
 	r.setPosition(fieldName, fieldKind)
 	dataLengthOffset := r.out.position
 	r.out.WriteZeroBytes(Int32SizeInBytes)
-	itemCount := len(values)
+	itemCount := value.Len()
 	r.out.WriteInt32(int32(itemCount))
 
 	offset := r.out.position
 	offsets := make([]int32, itemCount)
 	for i := 0; i < itemCount; i++ {
-		if values[i] != nil {
+		element := value.Index(i).Interface()
+		if !check.Nil(element) {
 			offsets[i] = r.out.position - offset
-			writer(r.out, values[i])
+			writer(r.out, element)
 		} else {
 			offsets[i] = -1
 		}
