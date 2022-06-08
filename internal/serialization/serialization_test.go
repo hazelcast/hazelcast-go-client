@@ -366,47 +366,46 @@ func mustData(value interface{}, err error) iserialization.Data {
 	return value.(iserialization.Data)
 }
 
-type student struct {
-	Name *string
-	Age  int32
+type employeeDTO struct {
+	age int32
+	id  int64
 }
 
-type studentCompactSerializer struct{}
+type employeeDTOCompactSerializer struct{}
 
-func (studentCompactSerializer) Type() reflect.Type {
-	return reflect.TypeOf(student{})
+func (employeeDTOCompactSerializer) Type() reflect.Type {
+	return reflect.TypeOf(employeeDTO{})
 }
 
-func (s studentCompactSerializer) TypeName() string {
-	return s.Type().Name()
+func (s employeeDTOCompactSerializer) TypeName() string {
+	return "employee"
 }
 
-func (s studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
-	return student{
-		Age:  reader.ReadInt32("age"),
-		Name: reader.ReadString("name"),
+func (s employeeDTOCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+	return employeeDTO{
+		age: reader.ReadInt32("age"),
+		id:  reader.ReadInt64("id"),
 	}
 }
 
-func (s studentCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
-	c, ok := value.(student)
+func (s employeeDTOCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(employeeDTO)
 	if !ok {
-		panic("not a student")
+		panic("not an employeeDTO")
 	}
-	writer.WriteInt32("age", c.Age)
-	writer.WriteString("name", c.Name)
+	writer.WriteInt32("age", c.age)
+	writer.WriteInt64("id", c.id)
 }
 
 func TestWithExplicitSerializer(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
-	serializer := studentCompactSerializer{}
+	serializer := employeeDTOCompactSerializer{}
 	compactConfig.SetSerializers(serializer)
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
 	service, _ := iserialization.NewService(c)
-	name := "S"
-	obj := student{Age: 12, Name: &name}
+	obj := employeeDTO{age: 22, id: 12345678901}
 
 	data, err := service.ToData(obj)
 
