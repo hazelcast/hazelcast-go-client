@@ -45,17 +45,32 @@ import (
 // Tests that require the hazelcastinternal tag.
 
 func TestListenersAfterClientDisconnected(t *testing.T) {
-	t.Run("MemberHostname_ClientIP", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501)
+	t.Run("MemberHostname_ClientIP_AddEntryListener", func(t *testing.T) {
+		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501, addEntryListener)
 	})
-	t.Run("MemberHostname_ClientHostname", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501)
+	t.Run("MemberHostname_ClientIP_AddListener", func(t *testing.T) {
+		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501, addListener)
 	})
+
+	t.Run("MemberHostname_ClientHostname_AddEntryListener", func(t *testing.T) {
+		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501, addEntryListener)
+	})
+	t.Run("MemberHostname_ClientHostname_AddListener", func(t *testing.T) {
+		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501, addListener)
+	})
+
 	t.Run("MemberIP_ClientIP", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501)
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501, addEntryListener)
 	})
-	t.Run("MemberIP_ClientHostname", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501)
+	t.Run("MemberIP_ClientIP_AddListener_AddEntryListener", func(t *testing.T) {
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501, addListener)
+	})
+
+	t.Run("MemberIP_ClientHostname_AddEntryListener", func(t *testing.T) {
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501, addEntryListener)
+	})
+	t.Run("MemberIP_ClientHostname_AddListener", func(t *testing.T) {
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501, addListener)
 	})
 }
 
@@ -95,7 +110,23 @@ func TestNotReceivedInvocation(t *testing.T) {
 	})
 }
 
-func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clientHost string, port int) {
+func addEntryListener(ctx context.Context, m *hz.Map, counter *int64) {
+	lc := hz.MapEntryListenerConfig{}
+	lc.NotifyEntryAdded(true)
+	it.MustValue(m.AddEntryListener(ctx, lc, func(event *hz.EntryNotified) {
+		atomic.AddInt64(counter, 1)
+	}))
+}
+
+func addListener(ctx context.Context, m *hz.Map, counter *int64) {
+	it.MustValue(m.AddListener(ctx, hz.MapListener{
+		EntryAdded: func(event *hz.EntryNotified) {
+			atomic.AddInt64(counter, 1)
+		},
+	}, false))
+}
+
+func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clientHost string, port int, f func(context.Context, *hz.Map, *int64)) {
 	const heartBeatSec = 6
 	// launch the cluster
 	memberConfig := listenersAfterClientDisconnectedXMLConfig(t.Name(), memberHost, port, heartBeatSec)
@@ -114,11 +145,7 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 	defer client.Shutdown(ctx)
 	ec := int64(0)
 	m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
-	lc := hz.MapEntryListenerConfig{}
-	lc.NotifyEntryAdded(true)
-	it.MustValue(m.AddEntryListener(ctx, lc, func(event *hz.EntryNotified) {
-		atomic.AddInt64(&ec, 1)
-	}))
+	f(ctx, m, &ec)	
 	ci := hz.NewClientInternal(client)
 	// make sure the client connected to the member
 	it.Eventually(t, func() bool {

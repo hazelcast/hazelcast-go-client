@@ -35,7 +35,8 @@ import (
 )
 
 const (
-	ClientVersion = internal.ClientVersion
+	// ClientVersion is the semantic versioning compatible client version.
+	ClientVersion = internal.CurrentClientVersion
 )
 
 // StartNewClient creates and starts a new client with the default configuration.

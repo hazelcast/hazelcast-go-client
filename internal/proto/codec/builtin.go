@@ -366,7 +366,7 @@ func DecodeEntryListUUIDListInteger(frameIterator *proto.ForwardFrameIterator) [
 	keySize := len(keys)
 	result := make([]proto.Pair, keySize)
 	for i := 0; i < keySize; i++ {
-		result[i] = proto.NewPair(keys, values)
+		result[i] = proto.NewPair(keys[i], values[i])
 	}
 	return result
 }
@@ -631,13 +631,11 @@ func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []is
 	return result
 }
 
-func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterator) []int32 {
-	result := make([]int32, 0)
-	frameIterator.Next()
-	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, DecodeListInteger(frameIterator)...)
-	}
-	frameIterator.Next()
+func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterator) [][]int32 {
+	var result [][]int32
+	DecodeListMultiFrame(frameIterator, func(fi *proto.ForwardFrameIterator) {
+		result = append(result, DecodeListInteger(fi))
+	})
 	return result
 }
 

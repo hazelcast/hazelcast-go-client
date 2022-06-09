@@ -772,10 +772,17 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == totalCallCount
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 		atomic.StoreInt32(&callCount, 0)
 		if err := m.RemoveEntryListener(context.Background(), subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		// Clear the map to get entry added events
+		err = m.Clear(context.Background())
+		if err != nil {
 			t.Fatal(err)
 		}
 		for i := 0; i < int(totalCallCount); i++ {
@@ -789,10 +796,60 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 	})
 }
 
+func TestMap_EntryNotifiedEventWithAddListener(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(100)
+		callCount := int32(0)
+		subscriptionID, err := m.AddListener(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(m.Put(context.Background(), key, value))
+		}
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+		atomic.StoreInt32(&callCount, 0)
+		// Remove the listener and test that entry added events are not received anymore
+		if err := m.RemoveListener(context.Background(), subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		// Clear the map to get entry added events
+		err = m.Clear(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(m.Put(context.Background(), key, value))
+		}
+		cc := atomic.LoadInt32(&callCount)
+		if !assert.Equal(t, int32(0), cc) {
+			t.Fatalf("call count target: %d, current: %d", 0, cc)
+		}
+	})
+}
+
 func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
+			if event.EventType != hz.EntryAdded {
+				t.Fatalf("unexpected event type: %v", event.EventType)
+			}
 			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
@@ -805,7 +862,33 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 		}
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == int32(1)
+			cc := atomic.LoadInt32(&callCount)
+			totalCallCount := int32(1)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+	})
+}
+
+func TestMap_EntryNotifiedEventToKeyWithAddListenerWithKey(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(1)
+		callCount := int32(0)
+		if _, err := m.AddListenerWithKey(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, "k1", true); err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(m.Put(context.Background(), "k1", "v1"))
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }
@@ -818,6 +901,9 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 		const totalCallCount = int32(100)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
+			if event.EventType != hz.EntryAdded {
+				t.Fatalf("unexpected event type: %v", event.EventType)
+			}
 			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
@@ -843,6 +929,38 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 	})
 }
 
+func TestMap_EntryNotifiedEventWithPredicateWithAddListenerWithPredicate(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(100)
+		callCount := int32(0)
+		subID, err := m.AddListenerWithPredicate(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, predicate.Equal("A", "foo"), true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("TestMap_EntryNotifiedEventWithPredicateWithAddListenerWithPredicate subscriptionID: %s", subID)
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := &it.SamplePortable{A: "foo", B: int32(i)}
+			it.MustValue(m.Put(context.Background(), key, value))
+		}
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+	})
+}
+
 func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
@@ -850,6 +968,9 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
+			if event.EventType != hz.EntryAdded {
+				t.Fatalf("unexpected event type: %v", event.EventType)
+			}
 			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
@@ -865,7 +986,40 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
 		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == 1
+			cc := atomic.LoadInt32(&callCount)
+			totalCallCount := int32(1)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+	})
+}
+
+func TestMap_EntryNotifiedEventToKeyAndPredicateWithAddListenerWithPredicateAndKey(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(1)
+		callCount := int32(0)
+		_, err := m.AddListenerWithPredicateAndKey(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, predicate.Equal("A", "foo"), "k1", true)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }

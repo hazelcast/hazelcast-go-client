@@ -411,23 +411,29 @@ func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingVal
 }
 
 func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) entryNotifiedHandler {
-	return func(
-		binKey, binValue, binOldValue, binMergingValue iserialization.Data,
-		binEventType int32,
-		binUUID types.UUID,
-		affectedEntries int32) {
-		key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
+	return func(binKey, binValue, binOldValue, binMergingValue iserialization.Data, binEventType int32, binUUID types.UUID, affectedEntries int32) {
+		event, err := p.prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMergingValue, binEventType, binUUID, affectedEntries)
 		if err != nil {
-			p.logger.Errorf("error at AddEntryListener: %w", err)
+			p.logger.Errorf("error while preparing entry notified event: %w", err)
 			return
 		}
-		// prevent panic if member not found
-		var member pubcluster.MemberInfo
-		if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
-			member = *m
-		}
-		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
+		handler(event)
 	}
+}
+
+func (p *proxy) prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMergingValue iserialization.Data, binEventType int32, binUUID types.UUID, affectedEntries int32) (*EntryNotified, error) {
+	key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
+	if err != nil {
+		return nil, err
+	}
+	// prevent panic if member not found
+	var member pubcluster.MemberInfo
+	if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
+		member = *m
+	}
+	eventType := EntryEventType(binEventType)
+	event := newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), eventType)
+	return event, nil
 }
 
 func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
