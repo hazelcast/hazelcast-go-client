@@ -240,16 +240,16 @@ func (rrs *ReadResultSet) ReadCount() int32 {
 }
 
 // Get one item from List of items that have been read.
-func (rrs *ReadResultSet) Get(index int32) (interface{}, error) {
-	if index < 0 || index >= rrs.readCount {
+func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
+	if index < 0 || int32(index) >= rrs.readCount {
 		return nil, errors.New(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount))
 	}
 	return rrs.rb.convertToObject(rrs.items[index])
 }
 
 // GetSequence one sequence number from List of sequence numbers for the items that have been read.
-func (rrs *ReadResultSet) GetSequence(index int32) (int64, error) {
-	if index < 0 || index >= rrs.readCount {
+func (rrs *ReadResultSet) GetSequence(index int) (int64, error) {
+	if index < 0 || int32(index) >= rrs.readCount {
 		return ReadResultSetSequenceUnavailable, errors.New(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount))
 	}
 	return rrs.itemSeqs[index], nil
