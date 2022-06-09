@@ -217,7 +217,7 @@ func (r DefaultCompactWriter) WriteArrayOfTimestampWithTimezone(fieldName string
 	})
 }
 
-func (r DefaultCompactWriter) WriteArrayOfCompact(fieldName string, value interface{}) {
+func (r DefaultCompactWriter) WriteArrayOfCompact(fieldName string, value []interface{}) {
 	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfCompact, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		r.serializer.Write(out, reflect.ValueOf(v).Elem().Interface())
 	})

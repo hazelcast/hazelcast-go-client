@@ -496,7 +496,7 @@ type CompactReader interface {
 	ReadArrayOfDate(fieldName string) []*types.LocalDate
 	ReadArrayOfTimestamp(fieldName string) []*types.LocalDateTime
 	ReadArrayOfTimestampWithTimezone(fieldName string) []*types.OffsetDateTime
-	ReadArrayOfCompact(fieldName string) interface{}
+	ReadArrayOfCompact(fieldName string) []interface{}
 	ReadNullableBoolean(fieldName string) *bool
 	ReadNullableInt8(fieldName string) *int8
 	ReadNullableInt16(fieldName string) *int16
@@ -542,7 +542,7 @@ type CompactWriter interface {
 	WriteArrayOfDate(fieldName string, value []*types.LocalDate)
 	WriteArrayOfTimestamp(fieldName string, value []*types.LocalDateTime)
 	WriteArrayOfTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime)
-	WriteArrayOfCompact(fieldName string, value interface{})
+	WriteArrayOfCompact(fieldName string, value []interface{})
 	WriteNullableBoolean(fieldName string, value *bool)
 	WriteNullableInt8(fieldName string, value *int8)
 	WriteNullableInt16(fieldName string, value *int16)

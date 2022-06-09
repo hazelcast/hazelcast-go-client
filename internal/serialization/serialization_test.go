@@ -21,6 +21,7 @@ import (
 	"encoding/gob"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -404,24 +405,21 @@ func TestWithExplicitSerializer(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service, _ := iserialization.NewService(c)
+	service, err := iserialization.NewService(c)
+	if err != nil {
+		t.Fatal(err)
+	}
 	obj := employeeDTO{age: 22, id: 12345678901}
-
 	data, err := service.ToData(obj)
-
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	ret, err := service.ToObject(data)
-
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if !reflect.DeepEqual(obj, ret) {
 		t.Error("compact serialization failed")
 	}
@@ -430,29 +428,84 @@ func TestWithExplicitSerializer(t *testing.T) {
 func TestAllTypesWithCustomSerializer(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
 	compactConfig.SetSerializers(MainDTOSerializer{}, InnerDTOSerializer{}, NamedDTOSerializer{})
-	
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service, _ := iserialization.NewService(c)
+	service, err := iserialization.NewService(c)
+	if err != nil {
+		t.Fatal(err)
+	}
 	mainDTO := NewMainDTO()
-
 	data, err := service.ToData(mainDTO)
-
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	ret, err := service.ToObject(data)
-
+	returnedMainDTO := ret.(MainDTO)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if !reflect.DeepEqual(mainDTO, ret) {
-		t.Error("compact serialization failed")
+	assert.Equal(t, mainDTO.b, returnedMainDTO.b)
+	assert.Equal(t, mainDTO.boolean, returnedMainDTO.boolean)
+	assert.Equal(t, mainDTO.s, returnedMainDTO.s)
+	assert.Equal(t, mainDTO.i, returnedMainDTO.i)
+	assert.Equal(t, mainDTO.l, returnedMainDTO.l)
+	assert.Equal(t, mainDTO.f, returnedMainDTO.f)
+	assert.Equal(t, mainDTO.d, returnedMainDTO.d)
+	assert.Equal(t, mainDTO.str, returnedMainDTO.str)
+	assert.Equal(t, mainDTO.p.bools, returnedMainDTO.p.bools)
+	assert.Equal(t, mainDTO.p.bytes, returnedMainDTO.p.bytes)
+	assert.Equal(t, mainDTO.p.shorts, returnedMainDTO.p.shorts)
+	assert.Equal(t, mainDTO.p.ints, returnedMainDTO.p.ints)
+	assert.Equal(t, mainDTO.p.longs, returnedMainDTO.p.longs)
+	assert.Equal(t, mainDTO.p.floats, returnedMainDTO.p.floats)
+	assert.Equal(t, mainDTO.p.doubles, returnedMainDTO.p.doubles)
+	assert.Equal(t, mainDTO.p.strings, returnedMainDTO.p.strings)
+	assert.Equal(t, mainDTO.p.nn, returnedMainDTO.p.nn)
+	assert.Equal(t, mainDTO.p.bigDecimals, returnedMainDTO.p.bigDecimals)
+	assert.Equal(t, mainDTO.p.localTimes, returnedMainDTO.p.localTimes)
+	assert.Equal(t, mainDTO.p.localDates, returnedMainDTO.p.localDates)
+	assert.Equal(t, mainDTO.p.localDateTimes, returnedMainDTO.p.localDateTimes)
+	if len(mainDTO.p.offsetDateTimes) != len(returnedMainDTO.p.offsetDateTimes) {
+		t.Error("innerDTO.offsetDateTimes is not equal")
 	}
+
+	for i := 0; i < len(mainDTO.p.offsetDateTimes); i++ {
+		if mainDTO.p.offsetDateTimes[i] == nil && returnedMainDTO.p.offsetDateTimes[i] == nil {
+			continue
+		}
+		odt1 := time.Time(*mainDTO.p.offsetDateTimes[i])
+		odt2 := time.Time(*returnedMainDTO.p.offsetDateTimes[i])
+
+		if !odt1.Equal(odt2) {
+			t.Errorf("One of offsetDateTimes in innerDTO.offsetDateTimes is not equal, %s != %s", odt1, odt2)
+		}
+	}
+	assert.Equal(t, mainDTO.p.nullableBools, returnedMainDTO.p.nullableBools)
+	assert.Equal(t, mainDTO.p.nullableBytes, returnedMainDTO.p.nullableBytes)
+	assert.Equal(t, mainDTO.p.nullableShorts, returnedMainDTO.p.nullableShorts)
+	assert.Equal(t, mainDTO.p.nullableIntegers, returnedMainDTO.p.nullableIntegers)
+	assert.Equal(t, mainDTO.p.nullableLongs, returnedMainDTO.p.nullableLongs)
+	assert.Equal(t, mainDTO.p.nullableFloats, returnedMainDTO.p.nullableFloats)
+	assert.Equal(t, mainDTO.p.nullableDoubles, returnedMainDTO.p.nullableDoubles)
+	assert.Equal(t, mainDTO.bigDecimal, returnedMainDTO.bigDecimal)
+	assert.Equal(t, mainDTO.localTime, returnedMainDTO.localTime)
+	assert.Equal(t, mainDTO.localDate, returnedMainDTO.localDate)
+	assert.Equal(t, mainDTO.localDateTime, returnedMainDTO.localDateTime)
+	offsetDateTimesEqual := false
+	if mainDTO.offsetDateTime == nil && returnedMainDTO.offsetDateTime == nil {
+		offsetDateTimesEqual = true
+	} else {
+		offsetDateTimesEqual = time.Time(*mainDTO.offsetDateTime).Equal(time.Time(*returnedMainDTO.offsetDateTime))
+	}
+	assert.True(t, offsetDateTimesEqual, "MainDTO.offsetDateTimes are not equal")
+	assert.Equal(t, mainDTO.nullableB, returnedMainDTO.nullableB)
+	assert.Equal(t, mainDTO.nullableBool, returnedMainDTO.nullableBool)
+	assert.Equal(t, mainDTO.nullableS, returnedMainDTO.nullableS)
+	assert.Equal(t, mainDTO.nullableI, returnedMainDTO.nullableI)
+	assert.Equal(t, mainDTO.nullableL, returnedMainDTO.nullableL)
+	assert.Equal(t, mainDTO.nullableF, returnedMainDTO.nullableF)
+	assert.Equal(t, mainDTO.nullableD, returnedMainDTO.nullableD)
 }

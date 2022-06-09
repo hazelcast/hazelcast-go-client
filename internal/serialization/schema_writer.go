@@ -122,7 +122,7 @@ func (s SchemaWriter) WriteArrayOfTimestamp(fieldName string, value []*types.Loc
 func (s SchemaWriter) WriteArrayOfTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindArrayOfTimestampWithTimezone))
 }
-func (s SchemaWriter) WriteArrayOfCompact(fieldName string, value interface{}) {
+func (s SchemaWriter) WriteArrayOfCompact(fieldName string, value []interface{}) {
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindArrayOfCompact))
 }
 func (s SchemaWriter) WriteNullableBoolean(fieldName string, value *bool) {

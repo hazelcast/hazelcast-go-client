@@ -183,13 +183,33 @@ func (MainDTOSerializer) TypeName() string {
 }
 
 func (MainDTOSerializer) Read(reader serialization.CompactReader) interface{} {
-	return MainDTO{boolean: reader.ReadBoolean("bool"), b: reader.ReadInt8("b"), s: reader.ReadInt16("s"),
-		i: reader.ReadInt32("i"), l: reader.ReadInt64("l"), f: reader.ReadFloat32("f"), d: reader.ReadFloat64("d"),
-		str: reader.ReadString("str"), p: reader.ReadCompact("p").(*InnerDTO), bigDecimal: reader.ReadDecimal("bigDecimal"),
-		localTime: reader.ReadTime("localTime"), localDate: reader.ReadDate("localDate"), localDateTime: reader.ReadTimestamp("localDateTime"),
-		offsetDateTime: reader.ReadTimestampWithTimezone("offsetDateTime"), nullableB: reader.ReadNullableInt8("nullableB"),
-		nullableBool: reader.ReadNullableBoolean("nullableBool"), nullableS: reader.ReadNullableInt16("nullableS"), nullableI: reader.ReadNullableInt32("nullableI"),
-		nullableL: reader.ReadNullableInt64("nullableL"), nullableF: reader.ReadNullableFloat32("nullableF"), nullableD: reader.ReadNullableFloat64("nullableD"),
+	boolean := reader.ReadBoolean("bool")
+	b := reader.ReadInt8("b")
+	s := reader.ReadInt16("s")
+	i := reader.ReadInt32("i")
+	l := reader.ReadInt64("l")
+	f := reader.ReadFloat32("f")
+	d := reader.ReadFloat64("d")
+	str := reader.ReadString("str")
+	p := reader.ReadCompact("p").(InnerDTO)
+	bigDecimal := reader.ReadDecimal("bigDecimal")
+	localTime := reader.ReadTime("localTime")
+	localDate := reader.ReadDate("localDate")
+	localDateTime := reader.ReadTimestamp("localDateTime")
+	offsetDateTime := reader.ReadTimestampWithTimezone("offsetDateTime")
+	nullableB := reader.ReadNullableInt8("nullableB")
+	nullableBool := reader.ReadNullableBoolean("nullableBool")
+	nullableS := reader.ReadNullableInt16("nullableS")
+	nullableI := reader.ReadNullableInt32("nullableI")
+	nullableL := reader.ReadNullableInt64("nullableL")
+	nullableF := reader.ReadNullableFloat32("nullableF")
+	nullableD := reader.ReadNullableFloat64("nullableD")
+
+	return MainDTO{
+		boolean: boolean, b: b, s: s, i: i, l: l, f: f, d: d, str: str, p: &p, bigDecimal: bigDecimal,
+		localTime: localTime, localDate: localDate, localDateTime: localDateTime, offsetDateTime: offsetDateTime,
+		nullableB: nullableB, nullableBool: nullableBool, nullableS: nullableS, nullableI: nullableI, nullableL: nullableL,
+		nullableF: nullableF, nullableD: nullableD,
 	}
 }
 
@@ -233,15 +253,42 @@ func (InnerDTOSerializer) TypeName() string {
 }
 
 func (InnerDTOSerializer) Read(reader serialization.CompactReader) interface{} {
-	return InnerDTO{bools: reader.ReadArrayOfBoolean("bools"), bytes: reader.ReadArrayOfInt8("bytes"), shorts: reader.ReadArrayOfInt16("shorts"),
-		ints: reader.ReadArrayOfInt32("ints"), longs: reader.ReadArrayOfInt64("longs"), floats: reader.ReadArrayOfFloat32("floats"),
-		doubles: reader.ReadArrayOfFloat64("doubles"), strings: reader.ReadArrayOfString("strings"), nn: reader.ReadArrayOfCompact("nn").([]*NamedDTO),
-		bigDecimals: reader.ReadArrayOfDecimal("bigDecimals"), localTimes: reader.ReadArrayOfTime("localTimes"), localDates: reader.ReadArrayOfDate("localDates"),
-		localDateTimes: reader.ReadArrayOfTimestamp("localDateTimes"), offsetDateTimes: reader.ReadArrayOfTimestampWithTimezone("offsetDateTimes"),
-		nullableBools: reader.ReadArrayOfNullableBoolean("nullableBools"), nullableBytes: reader.ReadArrayOfNullableInt8("nullableBytes"),
-		nullableShorts: reader.ReadArrayOfNullableInt16("nullableShorts"), nullableIntegers: reader.ReadArrayOfNullableInt32("nullableIntegers"),
-		nullableLongs: reader.ReadArrayOfNullableInt64("nullableLongs"), nullableFloats: reader.ReadArrayOfNullableFloat32("nullableFloats"),
-		nullableDoubles: reader.ReadArrayOfNullableFloat64("nullableDoubles"),
+	bools := reader.ReadArrayOfBoolean("bools")
+	bytes := reader.ReadArrayOfInt8("bytes")
+	shorts := reader.ReadArrayOfInt16("shorts")
+	ints := reader.ReadArrayOfInt32("ints")
+	longs := reader.ReadArrayOfInt64("longs")
+	floats := reader.ReadArrayOfFloat32("floats")
+	doubles := reader.ReadArrayOfFloat64("doubles")
+	strings := reader.ReadArrayOfString("strings")
+	nn := reader.ReadArrayOfCompact("nn")
+	namedDTOs := make([]*NamedDTO, len(nn))
+	for i, n := range nn {
+		if n == nil {
+			namedDTOs[i] = nil
+		} else {
+			np := n.(NamedDTO)
+			namedDTOs[i] = &np
+		}
+	}
+	bigDecimals := reader.ReadArrayOfDecimal("bigDecimals")
+	localTimes := reader.ReadArrayOfTime("localTimes")
+	localDates := reader.ReadArrayOfDate("localDates")
+	localDateTimes := reader.ReadArrayOfTimestamp("localDateTimes")
+	offsetDateTimes := reader.ReadArrayOfTimestampWithTimezone("offsetDateTimes")
+	nullableBools := reader.ReadArrayOfNullableBoolean("nullableBools")
+	nullableBytes := reader.ReadArrayOfNullableInt8("nullableBytes")
+	nullableShorts := reader.ReadArrayOfNullableInt16("nullableShorts")
+	nullableIntegers := reader.ReadArrayOfNullableInt32("nullableIntegers")
+	nullableLongs := reader.ReadArrayOfNullableInt64("nullableLongs")
+	nullableFloats := reader.ReadArrayOfNullableFloat32("nullableFloats")
+	nullableDoubles := reader.ReadArrayOfNullableFloat64("nullableDoubles")
+	return InnerDTO{
+		bools: bools, bytes: bytes, shorts: shorts, ints: ints, longs: longs, floats: floats, doubles: doubles,
+		strings: strings, nn: namedDTOs, bigDecimals: bigDecimals, localTimes: localTimes, localDates: localDates,
+		localDateTimes: localDateTimes, offsetDateTimes: offsetDateTimes, nullableBools: nullableBools,
+		nullableBytes: nullableBytes, nullableShorts: nullableShorts, nullableIntegers: nullableIntegers,
+		nullableLongs: nullableLongs, nullableFloats: nullableFloats, nullableDoubles: nullableDoubles,
 	}
 }
 
@@ -259,7 +306,11 @@ func (InnerDTOSerializer) Write(writer serialization.CompactWriter, value interf
 	writer.WriteArrayOfFloat32("floats", innerDTO.floats)
 	writer.WriteArrayOfFloat64("doubles", innerDTO.doubles)
 	writer.WriteArrayOfString("strings", innerDTO.strings)
-	writer.WriteArrayOfCompact("nn", innerDTO.nn)
+	interfaceValues := make([]interface{}, len(innerDTO.nn))
+	for i, n := range innerDTO.nn {
+		interfaceValues[i] = n
+	}
+	writer.WriteArrayOfCompact("nn", interfaceValues)
 	writer.WriteArrayOfDecimal("bigDecimals", innerDTO.bigDecimals)
 	writer.WriteArrayOfTime("localTimes", innerDTO.localTimes)
 	writer.WriteArrayOfDate("localDates", innerDTO.localDates)
