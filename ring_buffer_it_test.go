@@ -98,3 +98,90 @@ func TestRingbuffer_HeadSequence_and_TailSequence(t *testing.T) {
 		assert.Equal(t, int64(2), tail-head)
 	})
 }
+
+func TestRingbuffer_ReadMany_ReadCount(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "0", "1", "2", "x")
+
+		rs, err := rb.ReadMany(context.Background(), 0, 3, 3, nil)
+		assert.NoError(t, err)
+
+		assert.Equal(t, int32(3), rs.ReadCount())
+	})
+}
+
+func TestRingbuffer_ReadMany_Get_with_startSequence(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "0", "1", "2", "y", "z")
+
+		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
+		assert.NoError(t, err)
+
+		item, _ := rs.Get(0)
+		assert.Equal(t, "0", item)
+		item, _ = rs.Get(1)
+		assert.Equal(t, "1", item)
+		item, _ = rs.Get(2)
+		assert.Equal(t, "2", item)
+	})
+}
+
+func TestRingbuffer_ReadMany_GetSequence_with_startSequence(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
+
+		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
+		assert.NoError(t, err)
+
+		seq, _ := rs.GetSequence(0)
+		assert.Equal(t, int64(1), seq)
+		seq, _ = rs.GetSequence(1)
+		assert.Equal(t, int64(2), seq)
+		seq, _ = rs.GetSequence(2)
+		assert.Equal(t, int64(3), seq)
+	})
+}
+
+func TestRingbuffer_ReadMany_Get_invalid_index(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
+
+		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
+		assert.NoError(t, err)
+
+		item, err := rs.Get(999)
+		assert.Nil(t, item)
+		assert.Error(t, err)
+
+		_, err = rs.Get(-1)
+		assert.Error(t, err)
+
+		_, err = rs.Get(3)
+		assert.Error(t, err)
+
+		_, err = rs.Get(2)
+		assert.NoError(t, err)
+	})
+}
+
+func TestRingbuffer_ReadMany_GetSequence_invalid_index(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
+
+		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
+		assert.NoError(t, err)
+
+		seq, err := rs.GetSequence(999)
+		assert.Equal(t, int64(-1), seq)
+		assert.Error(t, err)
+
+		_, err = rs.GetSequence(-1)
+		assert.Error(t, err)
+
+		_, err = rs.GetSequence(3)
+		assert.Error(t, err)
+
+		_, err = rs.GetSequence(2)
+		assert.NoError(t, err)
+	})
+}

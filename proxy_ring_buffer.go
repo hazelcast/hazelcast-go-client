@@ -18,7 +18,10 @@ package hazelcast
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 // A Ringbuffer is a data structure where the content is stored in a ring-like
@@ -40,7 +43,13 @@ type Ringbuffer struct {
 // Overflowing happens when a time-to-live is set and the oldest item in
 // the RingBuffer (the head) is not old enough to expire.
 type OverflowPolicy int
-type ReadResultSet struct{}
+type ReadResultSet struct {
+	rb        *Ringbuffer
+	readCount int32
+	items     []iserialization.Data
+	itemSeqs  []int64
+	nextSeq   int64
+}
 
 const (
 	// OverflowPolicyOverwrite
@@ -198,32 +207,60 @@ func (rb *Ringbuffer) RemainingCapacity(ctx context.Context) (int64, error) {
 	return codec.DecodeRingbufferRemainingCapacityResponse(response), nil
 }
 
-func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCount int64, maxCount int64, filter interface{}) (ReadResultSet, error) {
-	// TODO nitram509
-	return ReadResultSet{}, nil
+// ReadMany
+// Reads a batch of items from the Ringbuffer. If the number of available items after the first read item is smaller
+// than the maxCount, these items are returned. So it could be the number of items read is smaller than the maxCount.
+// If there are fewer items available than minCount, then this call blacks. Reading a batch of items is likely to
+// perform better because less overhead is involved. A filter can be provided to only select items that need to be read.
+// If the filter is null, all items are read. If the filter is not null, only items where the filter function returns
+// true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
+// This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
+func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCount int32, maxCount int32, filter interface{}) (ReadResultSet, error) {
+	if filter != nil {
+		return ReadResultSet{}, errors.New("filter functions are not yet supported in th Go client, please use 'nil' for now")
+	}
+	request := codec.EncodeRingbufferReadManyRequest(rb.name, startSequence, minCount, maxCount, nil)
+	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
+	if err != nil {
+		return ReadResultSet{}, err
+	}
+	readCount, items, itemSeqs, nextSeq := codec.DecodeRingbufferReadManyResponse(response)
+	return ReadResultSet{
+		rb:        rb,
+		readCount: readCount,
+		items:     items,
+		itemSeqs:  itemSeqs,
+		nextSeq:   nextSeq,
+	}, nil
 }
 
+// ReadCount Number of items that have been read before filtering.
 func (rrs *ReadResultSet) ReadCount() int32 {
-	// TODO nitram509
-	return 0
+	return rrs.readCount
 }
 
-func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
-	// TODO nitram509
-	return nil, nil
+// Get one item from List of items that have been read.
+func (rrs *ReadResultSet) Get(index int32) (interface{}, error) {
+	if index < 0 || index >= rrs.readCount {
+		return nil, errors.New(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount))
+	}
+	return rrs.rb.convertToObject(rrs.items[index])
 }
 
-func (rrs *ReadResultSet) GetSequence(index int) (int64, error) {
-	// TODO nitram509
-	return 0, nil
+// GetSequence one sequence number from List of sequence numbers for the items that have been read.
+func (rrs *ReadResultSet) GetSequence(index int32) (int64, error) {
+	if index < 0 || index >= rrs.readCount {
+		return ReadResultSetSequenceUnavailable, errors.New(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount))
+	}
+	return rrs.itemSeqs[index], nil
 }
 
+// Size the total size of
 func (rrs *ReadResultSet) Size() int {
-	// TODO nitram509
-	return 0
+	return len(rrs.items)
 }
 
+// GetNextSequenceToReadFrom sequence number of the item following the last read item.
 func (rrs *ReadResultSet) GetNextSequenceToReadFrom() int64 {
-	// TODO nitram509
-	return 0
+	return rrs.nextSeq
 }
