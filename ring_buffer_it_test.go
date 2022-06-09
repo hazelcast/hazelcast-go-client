@@ -45,6 +45,21 @@ func TestRingbuffer_AddNilElement(t *testing.T) {
 	})
 }
 
+func TestRingbuffer_AddAll(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		_, err := rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "foo", "bar")
+		assert.NoError(t, err)
+
+		foo, err := rb.ReadOne(context.Background(), 0)
+		assert.NoError(t, err)
+		assert.Equal(t, "foo", foo)
+
+		bar, err := rb.ReadOne(context.Background(), 1)
+		assert.NoError(t, err)
+		assert.Equal(t, "bar", bar)
+	})
+}
+
 func TestRingbuffer_Size(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		_, err := rb.Add(context.Background(), "one", hz.OverflowPolicyOverwrite)
@@ -60,5 +75,26 @@ func TestRingbuffer_Capacity(t *testing.T) {
 		capacity, err := rb.Capacity(context.Background())
 		assert.NoError(t, err)
 		assert.GreaterOrEqual(t, capacity, int64(9999), "There should be a capacity of at least 9999 items.")
+	})
+}
+
+func TestRingbuffer_RemainingCapacity(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		capacity, err := rb.RemainingCapacity(context.Background())
+		assert.NoError(t, err)
+		assert.GreaterOrEqual(t, capacity, int64(9999), "There should be a remaining capacity of at least 9999 items.")
+	})
+}
+
+func TestRingbuffer_HeadSequence_and_TailSequence(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "one", "two", "three")
+
+		head, err := rb.HeadSequence(context.Background())
+		assert.NoError(t, err)
+		tail, err := rb.TailSequence(context.Background())
+		assert.NoError(t, err)
+
+		assert.Equal(t, int64(2), tail-head)
 	})
 }

@@ -68,6 +68,7 @@ const (
 	// going to overwrite that item for the next 29 seconds.
 	OverflowPolicyFail OverflowPolicy = 1
 
+	// ReadResultSetSequenceUnavailable is used when error happened
 	ReadResultSetSequenceUnavailable int64 = -1
 )
 
@@ -113,10 +114,18 @@ func (rb *Ringbuffer) Add(ctx context.Context, item interface{}, overflowPolicy 
 // If the collection is larger than the capacity of the Ringbuffer, then the items that were written first will be
 // overwritten. Therefor this call will not block. The items are inserted in the order of the Iterator of the collection.
 // If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
-// The result of the future contains the sequenceId of the last written item
+// The result of the future contains the sequenceId of the last written item.
 func (rb *Ringbuffer) AddAll(ctx context.Context, overflowPolicy OverflowPolicy, items ...interface{}) (int64, error) {
-	// TODO nitram509
-	return ReadResultSetSequenceUnavailable, nil
+	elementData, err := rb.validateAndSerializeValues(items)
+	if err != nil {
+		return ReadResultSetSequenceUnavailable, err
+	}
+	request := codec.EncodeRingbufferAddAllRequest(rb.name, elementData, int32(overflowPolicy))
+	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
+	if err != nil {
+		return ReadResultSetSequenceUnavailable, err
+	}
+	return codec.DecodeRingbufferAddAllResponse(response), nil
 }
 
 // ReadOne
@@ -154,19 +163,39 @@ func (rb *Ringbuffer) Size(ctx context.Context) (int64, error) {
 	return codec.DecodeRingbufferSizeResponse(response), nil
 }
 
+// TailSequence returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
+// The initial value of the tail is -1.
 func (rb *Ringbuffer) TailSequence(ctx context.Context) (int64, error) {
-	// TODO nitram509
-	return ReadResultSetSequenceUnavailable, nil
+	request := codec.EncodeRingbufferTailSequenceRequest(rb.name)
+	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
+	if err != nil {
+		return ReadResultSetSequenceUnavailable, err
+	}
+	return codec.DecodeRingbufferTailSequenceResponse(response), nil
 }
 
+// HeadSequence returns the sequence of the head. The head is the side of the ringbuffer where the oldest items in the ringbuffer
+// are found. If the RingBuffer is empty, the head will be one more than the tail.
+// The initial value of the head is 0 (1 more than tail).
 func (rb *Ringbuffer) HeadSequence(ctx context.Context) (int64, error) {
-	// TODO nitram509
-	return ReadResultSetSequenceUnavailable, nil
+	request := codec.EncodeRingbufferHeadSequenceRequest(rb.name)
+	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
+	if err != nil {
+		return ReadResultSetSequenceUnavailable, err
+	}
+	return codec.DecodeRingbufferHeadSequenceResponse(response), nil
 }
 
+// RemainingCapacity
+// Returns the remaining capacity of the Ringbuffer. The returned value could be stale as soon as it is returned.
+// If ttl is not set, the remaining capacity will always be the capacity.
 func (rb *Ringbuffer) RemainingCapacity(ctx context.Context) (int64, error) {
-	// TODO nitram509
-	return ReadResultSetSequenceUnavailable, nil
+	request := codec.EncodeRingbufferRemainingCapacityRequest(rb.name)
+	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
+	if err != nil {
+		return ReadResultSetSequenceUnavailable, err
+	}
+	return codec.DecodeRingbufferRemainingCapacityResponse(response), nil
 }
 
 func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCount int64, maxCount int64, filter interface{}) (ReadResultSet, error) {
