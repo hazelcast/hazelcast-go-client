@@ -111,25 +111,25 @@ func (r DefaultCompactWriter) WriteDecimal(fieldName string, value *types.Decima
 
 func (r DefaultCompactWriter) WriteTime(fieldName string, value *types.LocalTime) {
 	r.writeVariableSizeField(fieldName, pserialization.FieldKindTime, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteTime(out, *v.(*time.Time))
+		WriteTime(out, time.Time(*v.(*types.LocalTime)))
 	})
 }
 
 func (r DefaultCompactWriter) WriteDate(fieldName string, value *types.LocalDate) {
 	r.writeVariableSizeField(fieldName, pserialization.FieldKindDate, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteDate(out, *v.(*time.Time))
+		WriteDate(out, time.Time(*v.(*types.LocalDate)))
 	})
 }
 
 func (r DefaultCompactWriter) WriteTimestamp(fieldName string, value *types.LocalDateTime) {
 	r.writeVariableSizeField(fieldName, pserialization.FieldKindTimestamp, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteTimestamp(out, *v.(*time.Time))
+		WriteTimestamp(out, time.Time(*v.(*types.LocalDateTime)))
 	})
 }
 
 func (r DefaultCompactWriter) WriteTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
 	r.writeVariableSizeField(fieldName, pserialization.FieldKindTimestampWithTimezone, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		WriteTimestampWithTimezone(out, *v.(*time.Time))
+		WriteTimestampWithTimezone(out, time.Time(*v.(*types.OffsetDateTime)))
 	})
 }
 
@@ -182,61 +182,37 @@ func (r DefaultCompactWriter) WriteArrayOfFloat64(fieldName string, value []floa
 }
 
 func (r DefaultCompactWriter) WriteArrayOfString(fieldName string, value []*string) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfString, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfString, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteString(*v.(*string))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfDecimal(fieldName string, value []*types.Decimal) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfDecimal, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfDecimal, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		WriteDecimal(out, *v.(*types.Decimal))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfTime(fieldName string, value []*types.LocalTime) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTime, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTime, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		WriteTime(out, time.Time(*v.(*types.LocalTime)))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfDate(fieldName string, value []*types.LocalDate) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfDate, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfDate, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		WriteDate(out, time.Time(*v.(*types.LocalDate)))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfTimestamp(fieldName string, value []*types.LocalDateTime) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTimestamp, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTimestamp, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		WriteTimestamp(out, time.Time(*v.(*types.LocalDateTime)))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTimestampWithTimezone, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfTimestampWithTimezone, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		WriteTimestampWithTimezone(out, time.Time(*v.(*types.OffsetDateTime)))
 	})
 }
@@ -290,71 +266,43 @@ func (r DefaultCompactWriter) WriteNullableFloat64(fieldName string, value *floa
 }
 
 func (r DefaultCompactWriter) WriteArrayOfNullableBoolean(fieldName string, value []*bool) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableBoolean, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableBoolean, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteBool(*v.(*bool))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfNullableInt8(fieldName string, value []*int8) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt8, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt8, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteSignedByte(*v.(*int8))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfNullableInt16(fieldName string, value []*int16) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt16, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt16, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteInt16(*v.(*int16))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfNullableInt32(fieldName string, value []*int32) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt32, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt32, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteInt32(*v.(*int32))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfNullableInt64(fieldName string, value []*int64) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt64, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableInt64, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteInt64(*v.(*int64))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfNullableFloat32(fieldName string, value []*float32) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableFloat32, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableFloat32, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteFloat32(*v.(*float32))
 	})
 }
 
 func (r DefaultCompactWriter) WriteArrayOfNullableFloat64(fieldName string, value []*float64) {
-	interfaceValue := make([]interface{}, len(value))
-	for i, v := range value {
-		interfaceValue[i] = v
-	}
-	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableFloat64, interfaceValue, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeArrayOfVariableSize(fieldName, pserialization.FieldKindArrayOfNullableFloat64, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteFloat64(*v.(*float64))
 	})
 }
@@ -445,9 +393,18 @@ func (r *DefaultCompactWriter) writeArrayOfVariableSize(fieldName string, fieldK
 }
 
 func (r DefaultCompactWriter) writeOffsets(dataLength int32, fieldOffsets []int32) {
-	// Write now we don't need other offset writers
-	for _, offset := range fieldOffsets {
-		r.out.WriteByte(byte(offset))
+	if dataLength < BYTE_OFFSET_READER_RANGE {
+		for _, offset := range fieldOffsets {
+			r.out.WriteByte(byte(offset))
+		}
+	} else if dataLength < SHORT_OFFSET_READER_RANGE {
+		for _, offset := range fieldOffsets {
+			r.out.WriteInt16(int16(offset))
+		}
+	} else {
+		for _, offset := range fieldOffsets {
+			r.out.WriteInt32(offset)
+		}
 	}
 }
 

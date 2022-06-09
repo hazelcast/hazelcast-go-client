@@ -82,7 +82,7 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 	booleanFields := make([]*FieldDescriptor, 0)
 	variableSizeFields := make([]*FieldDescriptor, 0)
 
-	for _, descriptor := range s.fieldDefinitionMap {
+	for _, descriptor := range s.fieldDefinitions {
 		fieldKind := descriptor.fieldKind
 		if FieldOperations(fieldKind).KindSizeInBytes() == VARIABLE_SIZE {
 			variableSizeFields = append(variableSizeFields, descriptor)

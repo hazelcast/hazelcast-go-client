@@ -162,8 +162,8 @@ func (s SchemaWriter) WriteArrayOfNullableInt64(fieldName string, value []*int64
 	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindArrayOfNullableInt64))
 }
 func (s SchemaWriter) WriteArrayOfNullableFloat32(fieldName string, value []*float32) {
-	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindArrayOfFloat32))
+	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindArrayOfNullableFloat32))
 }
 func (s SchemaWriter) WriteArrayOfNullableFloat64(fieldName string, value []*float64) {
-	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindArrayOfFloat64))
+	s.addField(NewFieldDescriptor(fieldName, pserialization.FieldKindArrayOfNullableFloat64))
 }

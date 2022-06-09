@@ -140,7 +140,7 @@ func NewInnerDTO() InnerDTO {
 		localDates: []*types.LocalDate{&nowLocalDate, nil, &nowLocalDate2}, localDateTimes: []*types.LocalDateTime{&nowLocalDateTime, nil},
 		offsetDateTimes: []*types.OffsetDateTime{&nowOffsetDateTime}, nullableBools: []*bool{&aBool, &aBool2, nil},
 		nullableBytes: []*int8{&aSignedByte, &aSignedByte2, &aSignedByte3, nil}, nullableShorts: []*int16{&aShort, &aShort2, &aShort3, nil},
-		nullableIntegers: []*int32{&anInt, &anInt2, &anInt3, &anInt4, nil}, nullableLongs: []*int64{&aLong, &aLong2, &aLong3, &aLong4, &aLong5, &aLong6, nil},
+		nullableIntegers: []*int32{&anInt, &anInt2, &anInt3, &anInt4, nil}, nullableLongs: []*int64{&aLong, &aLong2, &aLong3, &aLong4, &aLong5, &aLong6},
 		nullableFloats: []*float32{&aFloat, &aFloat2, &aFloat3}, nullableDoubles: []*float64{&aDouble, &aDouble2, &aDouble3},
 	}
 }
