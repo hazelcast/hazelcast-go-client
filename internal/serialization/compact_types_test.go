@@ -241,6 +241,285 @@ func (MainDTOSerializer) Write(writer serialization.CompactWriter, value interfa
 	writer.WriteNullableFloat64("nullableD", mainDTO.nullableD)
 }
 
+type CompactTest struct {
+	boolean  bool
+	b        int8
+	short    int16
+	i        int32
+	long     int64
+	float    float32
+	double   float64
+	booleans []bool
+	bytes    []int8
+	shorts   []int16
+	ints     []int32
+	longs    []int64
+	floats   []float32
+	doubles  []float64
+}
+
+func NewCompactTestObj() CompactTest {
+	return CompactTest{boolean: true, b: 2, short: 4, i: 8, long: 4444, float: 8321.321, double: 41231.32, booleans: []bool{true, false},
+		bytes: []int8{1, 2}, shorts: []int16{1, 4}, ints: []int32{1, 8}, longs: []int64{1, 4444}, floats: []float32{1, 8321.321}, doubles: []float64{41231.32, 2},
+	}
+}
+
+type CompactTestWritePrimitiveReadNullableSerializer struct {
+}
+
+func (CompactTestWritePrimitiveReadNullableSerializer) Type() reflect.Type {
+	return reflect.TypeOf(CompactTest{})
+}
+
+func (CompactTestWritePrimitiveReadNullableSerializer) TypeName() string {
+	return "Test"
+}
+
+func (CompactTestWritePrimitiveReadNullableSerializer) Read(reader serialization.CompactReader) interface{} {
+	boolean := reader.ReadNullableBoolean("boolean")
+	b := reader.ReadNullableInt8("b")
+	short := reader.ReadNullableInt16("short")
+	i := reader.ReadNullableInt32("i")
+	long := reader.ReadNullableInt64("long")
+	float := reader.ReadNullableFloat32("float")
+	double := reader.ReadNullableFloat64("double")
+	nullableBooleans := reader.ReadArrayOfNullableBoolean("booleans")
+	booleans := make([]bool, len(nullableBooleans))
+	for i, b := range nullableBooleans {
+		booleans[i] = *b
+	}
+	nullableBytes := reader.ReadArrayOfNullableInt8("bytes")
+	bytes := make([]int8, len(nullableBytes))
+	for i, b := range nullableBytes {
+		bytes[i] = *b
+	}
+	nullableShorts := reader.ReadArrayOfNullableInt16("shorts")
+	shorts := make([]int16, len(nullableShorts))
+	for i, b := range nullableShorts {
+		shorts[i] = *b
+	}
+	nullableInts := reader.ReadArrayOfNullableInt32("ints")
+	ints := make([]int32, len(nullableInts))
+	for i, b := range nullableInts {
+		ints[i] = *b
+	}
+	nullableLongs := reader.ReadArrayOfNullableInt64("longs")
+	longs := make([]int64, len(nullableLongs))
+	for i, b := range nullableLongs {
+		longs[i] = *b
+	}
+	nullableFloats := reader.ReadArrayOfNullableFloat32("floats")
+	floats := make([]float32, len(nullableFloats))
+	for i, b := range nullableFloats {
+		floats[i] = *b
+	}
+	nullableDoubles := reader.ReadArrayOfNullableFloat64("doubles")
+	doubles := make([]float64, len(nullableDoubles))
+	for i, b := range nullableDoubles {
+		doubles[i] = *b
+	}
+
+	return CompactTest{boolean: *boolean, b: *b, short: *short, i: *i, long: *long,
+		float: *float, double: *double, booleans: booleans, bytes: bytes, shorts: shorts,
+		ints: ints, longs: longs, floats: floats, doubles: doubles,
+	}
+}
+
+func (CompactTestWritePrimitiveReadNullableSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	test, ok := value.(CompactTest)
+	if !ok {
+		panic("not a Test")
+	}
+	writer.WriteBoolean("boolean", test.boolean)
+	writer.WriteInt8("b", test.b)
+	writer.WriteInt16("short", test.short)
+	writer.WriteInt32("i", test.i)
+	writer.WriteInt64("long", test.long)
+	writer.WriteFloat32("float", test.float)
+	writer.WriteFloat64("double", test.double)
+	writer.WriteArrayOfBoolean("booleans", test.booleans)
+	writer.WriteArrayOfInt8("bytes", test.bytes)
+	writer.WriteArrayOfInt16("shorts", test.shorts)
+	writer.WriteArrayOfInt32("ints", test.ints)
+	writer.WriteArrayOfInt64("longs", test.longs)
+	writer.WriteArrayOfFloat32("floats", test.floats)
+	writer.WriteArrayOfFloat64("doubles", test.doubles)
+}
+
+type CompactTestWriteNullableReadPrimitiveSerializer struct {
+}
+
+func (CompactTestWriteNullableReadPrimitiveSerializer) Type() reflect.Type {
+	return reflect.TypeOf(CompactTest{})
+}
+
+func (CompactTestWriteNullableReadPrimitiveSerializer) TypeName() string {
+	return "Test"
+}
+
+func (CompactTestWriteNullableReadPrimitiveSerializer) Read(reader serialization.CompactReader) interface{} {
+	boolean := reader.ReadBoolean("boolean")
+	b := reader.ReadInt8("b")
+	short := reader.ReadInt16("short")
+	i := reader.ReadInt32("i")
+	long := reader.ReadInt64("long")
+	float := reader.ReadFloat32("float")
+	double := reader.ReadFloat64("double")
+	booleans := reader.ReadArrayOfBoolean("booleans")
+	bytes := reader.ReadArrayOfInt8("bytes")
+	shorts := reader.ReadArrayOfInt16("shorts")
+	ints := reader.ReadArrayOfInt32("ints")
+	longs := reader.ReadArrayOfInt64("longs")
+	floats := reader.ReadArrayOfFloat32("floats")
+	doubles := reader.ReadArrayOfFloat64("doubles")
+
+	return CompactTest{boolean: boolean, b: b, short: short, i: i, long: long,
+		float: float, double: double, booleans: booleans, bytes: bytes, shorts: shorts,
+		ints: ints, longs: longs, floats: floats, doubles: doubles,
+	}
+}
+
+func (CompactTestWriteNullableReadPrimitiveSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	test, ok := value.(CompactTest)
+	if !ok {
+		panic("not a Test")
+	}
+	writer.WriteNullableBoolean("boolean", &test.boolean)
+	writer.WriteNullableInt8("b", &test.b)
+	writer.WriteNullableInt16("short", &test.short)
+	writer.WriteNullableInt32("i", &test.i)
+	writer.WriteNullableInt64("long", &test.long)
+	writer.WriteNullableFloat32("float", &test.float)
+	writer.WriteNullableFloat64("double", &test.double)
+	writer.WriteArrayOfBoolean("booleans", test.booleans)
+	nullableBytes := make([]*int8, len(test.bytes))
+	for i, b := range test.bytes {
+		value := b
+		nullableBytes[i] = &value
+	}
+	writer.WriteArrayOfNullableInt8("bytes", nullableBytes)
+	nullableShorts := make([]*int16, len(test.shorts))
+	for i, s := range test.shorts {
+		value := s
+		nullableShorts[i] = &value
+	}
+	writer.WriteArrayOfNullableInt16("shorts", nullableShorts)
+	nullableInts := make([]*int32, len(test.ints))
+	for i, v := range test.ints {
+		value := v
+		nullableInts[i] = &value
+	}
+	writer.WriteArrayOfNullableInt32("ints", nullableInts)
+	nullableLongs := make([]*int64, len(test.longs))
+	for i, v := range test.longs {
+		value := v
+		nullableLongs[i] = &value
+	}
+	writer.WriteArrayOfNullableInt64("longs", nullableLongs)
+	nullableFloats := make([]*float32, len(test.floats))
+	for i, v := range test.floats {
+		value := v
+		nullableFloats[i] = &value
+	}
+	writer.WriteArrayOfNullableFloat32("floats", nullableFloats)
+	nullableDoubles := make([]*float64, len(test.doubles))
+	for i, v := range test.doubles {
+		value := v
+		nullableDoubles[i] = &value
+	}
+	writer.WriteArrayOfNullableFloat64("doubles", nullableDoubles)
+}
+
+type CompactTestWriteNullReadPrimitiveSerializer struct {
+}
+
+func (CompactTestWriteNullReadPrimitiveSerializer) Type() reflect.Type {
+	return reflect.TypeOf(CompactTest{})
+}
+
+func (CompactTestWriteNullReadPrimitiveSerializer) TypeName() string {
+	return "Test"
+}
+
+func (CompactTestWriteNullReadPrimitiveSerializer) Read(reader serialization.CompactReader) interface{} {
+	boolean := reader.ReadBoolean("boolean")
+	b := reader.ReadInt8("b")
+	short := reader.ReadInt16("short")
+	i := reader.ReadInt32("i")
+	long := reader.ReadInt64("long")
+	float := reader.ReadFloat32("float")
+	double := reader.ReadFloat64("double")
+	booleans := reader.ReadArrayOfBoolean("booleans")
+	bytes := reader.ReadArrayOfInt8("bytes")
+	shorts := reader.ReadArrayOfInt16("shorts")
+	ints := reader.ReadArrayOfInt32("ints")
+	longs := reader.ReadArrayOfInt64("longs")
+	floats := reader.ReadArrayOfFloat32("floats")
+	doubles := reader.ReadArrayOfFloat64("doubles")
+
+	return CompactTest{boolean: boolean, b: b, short: short, i: i, long: long,
+		float: float, double: double, booleans: booleans, bytes: bytes, shorts: shorts,
+		ints: ints, longs: longs, floats: floats, doubles: doubles,
+	}
+}
+
+func (CompactTestWriteNullReadPrimitiveSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	test, ok := value.(CompactTest)
+	if !ok {
+		panic("not a Test")
+	}
+	writer.WriteNullableBoolean("boolean", nil)
+	writer.WriteNullableInt8("b", nil)
+	writer.WriteNullableInt16("short", nil)
+	writer.WriteNullableInt32("i", nil)
+	writer.WriteNullableInt64("long", nil)
+	writer.WriteNullableFloat32("float", nil)
+	writer.WriteNullableFloat64("double", nil)
+	writer.WriteArrayOfBoolean("booleans", nil)
+	nullableBytes := make([]*int8, len(test.bytes)+1)
+	for i, b := range test.bytes {
+		value := b
+		nullableBytes[i] = &value
+	}
+	nullableBytes = append(nullableBytes, nil)
+	writer.WriteArrayOfNullableInt8("bytes", nullableBytes)
+	nullableShorts := make([]*int16, len(test.shorts)+1)
+	for i, s := range test.shorts {
+		value := s
+		nullableShorts[i] = &value
+	}
+	nullableShorts = append(nullableShorts, nil)
+	writer.WriteArrayOfNullableInt16("shorts", nullableShorts)
+	nullableInts := make([]*int32, len(test.ints)+1)
+	for i, v := range test.ints {
+		value := v
+		nullableInts[i] = &value
+	}
+	nullableInts = append(nullableInts, nil)
+	writer.WriteArrayOfNullableInt32("ints", nullableInts)
+	nullableLongs := make([]*int64, len(test.longs)+1)
+	for i, v := range test.longs {
+		value := v
+		nullableLongs[i] = &value
+	}
+	nullableLongs = append(nullableLongs, nil)
+	writer.WriteArrayOfNullableInt64("longs", nullableLongs)
+	nullableFloats := make([]*float32, len(test.floats)+1)
+	for i, v := range test.floats {
+		value := v
+		nullableFloats[i] = &value
+	}
+	nullableFloats = append(nullableFloats, nil)
+	writer.WriteArrayOfNullableFloat32("floats", nullableFloats)
+	nullableDoubles := make([]*float64, len(test.doubles)+1)
+	for i, v := range test.doubles {
+		value := v
+		nullableDoubles[i] = &value
+	}
+	nullableDoubles = append(nullableDoubles, nil)
+	writer.WriteArrayOfNullableFloat64("doubles", nullableDoubles)
+}
+
 type InnerDTOSerializer struct {
 }
 

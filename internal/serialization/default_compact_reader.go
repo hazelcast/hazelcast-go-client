@@ -120,9 +120,9 @@ func (r DefaultCompactReader) ReadBoolean(fieldName string) bool {
 	case pserialization.FieldKindBoolean:
 		return r.readBoolean(fd)
 	case pserialization.FieldKindNullableBoolean:
-		return *r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
+		return r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
 			return inp.ReadBool()
-		}, "Boolean").(*bool)
+		}, "Boolean").(bool)
 	default:
 		panic(r.unexpectedFieldKind(fd.fieldKind, fieldName))
 	}
@@ -134,9 +134,9 @@ func (r DefaultCompactReader) ReadInt8(fieldName string) int8 {
 	case pserialization.FieldKindInt8:
 		return r.in.ReadSignedByteAtPosition(r.getFixedSizePosition(fd))
 	case pserialization.FieldKindNullableInt8:
-		return *r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
+		return r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
 			return inp.ReadSignedByte()
-		}, "Int8").(*int8)
+		}, "Int8").(int8)
 	default:
 		panic(r.unexpectedFieldKind(fd.fieldKind, fieldName))
 	}
@@ -148,9 +148,9 @@ func (r DefaultCompactReader) ReadInt16(fieldName string) int16 {
 	case pserialization.FieldKindInt16:
 		return r.in.ReadInt16AtPosition(r.getFixedSizePosition(fd))
 	case pserialization.FieldKindNullableInt16:
-		return *r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
+		return r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
 			return inp.ReadInt16()
-		}, "Int16").(*int16)
+		}, "Int16").(int16)
 	default:
 		panic(r.unexpectedFieldKind(fd.fieldKind, fieldName))
 	}
@@ -164,9 +164,9 @@ func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 		position := r.getFixedSizePosition(fd)
 		return r.in.ReadInt32AtPosition(position)
 	case pserialization.FieldKindNullableInt32:
-		return *r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
+		return r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
 			return inp.ReadInt32()
-		}, "Int32").(*int32)
+		}, "Int32").(int32)
 	default:
 		panic(r.unexpectedFieldKind(fieldKind, fieldName))
 	}
@@ -180,9 +180,9 @@ func (r DefaultCompactReader) ReadInt64(fieldName string) int64 {
 		position := r.getFixedSizePosition(fd)
 		return r.in.ReadInt64AtPosition(position)
 	case pserialization.FieldKindNullableInt64:
-		return *r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
+		return r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
 			return inp.ReadInt64()
-		}, "Int64").(*int64)
+		}, "Int64").(int64)
 	default:
 		panic(r.unexpectedFieldKind(fieldKind, fieldName))
 	}
@@ -196,9 +196,9 @@ func (r DefaultCompactReader) ReadFloat32(fieldName string) float32 {
 		position := r.getFixedSizePosition(fd)
 		return r.in.ReadFloat32AtPosition(position)
 	case pserialization.FieldKindNullableFloat32:
-		return *r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
+		return r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
 			return inp.ReadFloat32()
-		}, "Float32").(*float32)
+		}, "Float32").(float32)
 	default:
 		panic(r.unexpectedFieldKind(fieldKind, fieldName))
 	}
@@ -212,9 +212,9 @@ func (r DefaultCompactReader) ReadFloat64(fieldName string) float64 {
 		position := r.getFixedSizePosition(fd)
 		return r.in.ReadFloat64AtPosition(position)
 	case pserialization.FieldKindNullableFloat64:
-		return *r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
+		return r.readVariableSizeAsNonNull(fd, func(inp *ObjectDataInput) interface{} {
 			return inp.ReadFloat64()
-		}, "Float64").(*float64)
+		}, "Float64").(float64)
 	default:
 		panic(r.unexpectedFieldKind(fieldKind, fieldName))
 	}
