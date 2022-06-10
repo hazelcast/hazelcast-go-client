@@ -742,7 +742,7 @@ func (r DefaultCompactReader) ReadArrayOfNullableFloat64(fieldName string) []*fl
 func (r DefaultCompactReader) GetFieldKind(fieldName string) pserialization.FieldKind {
 	field := r.schema.GetField(fieldName)
 	if field == nil {
-		panic(ihzerrors.NewIllegalArgumentError(fmt.Sprintf("Field name %s does not exist in the schema", fieldName), nil))
+		return pserialization.FieldKindNotAvailable
 	}
 	return field.fieldKind
 }

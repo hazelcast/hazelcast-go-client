@@ -19,6 +19,7 @@ package serialization_test
 import (
 	"bytes"
 	"encoding/gob"
+	"math/big"
 	"reflect"
 	"testing"
 	"time"
@@ -28,6 +29,7 @@ import (
 
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -477,4 +479,47 @@ func TestAllTypesWithCustomSerializer(t *testing.T) {
 	assert.Equal(t, mainDTO.nullableL, returnedMainDTO.nullableL)
 	assert.Equal(t, mainDTO.nullableF, returnedMainDTO.nullableF)
 	assert.Equal(t, mainDTO.nullableD, returnedMainDTO.nullableD)
+}
+
+func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
+	compactConfig := serialization.CompactConfig{}
+	compactConfig.SetSerializers(NoWriteMainDTOSerializer{}, InnerDTOSerializer{}, NamedDTOSerializer{})
+	c := &serialization.Config{
+		Compact: compactConfig,
+	}
+	service, err := iserialization.NewService(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mainDTO := NewMainDTO()
+	data, err := service.ToData(mainDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service.ToObject(data)
+	returnedMainDTO := ret.(MainDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.EqualValues(t, 1, returnedMainDTO.b)
+	assert.False(t, returnedMainDTO.boolean)
+	assert.EqualValues(t, 1, returnedMainDTO.s)
+	assert.EqualValues(t, 1, returnedMainDTO.i)
+	assert.EqualValues(t, 1, returnedMainDTO.l)
+	assert.EqualValues(t, 1, returnedMainDTO.f)
+	assert.EqualValues(t, 1, returnedMainDTO.d)
+	assert.Equal(t, "NA", *returnedMainDTO.str)
+	assert.Equal(t, types.NewDecimal(big.NewInt(1), 0), *returnedMainDTO.bigDecimal)
+	assert.True(t, time.Date(0, 0, 0, 1, 1, 1, 0, time.Local).Equal(time.Time(*returnedMainDTO.localTime)))
+	assert.True(t, time.Date(1, 1, 1, 0, 0, 0, 0, time.Local).Equal(time.Time(*returnedMainDTO.localDate)))
+	assert.True(t, time.Date(1, 1, 1, 1, 1, 1, 0, time.Local).Equal(time.Time(*returnedMainDTO.localDateTime)))
+	assert.True(t, time.Date(1, 1, 1, 1, 1, 1, 1, time.FixedZone("", 3600)).Equal(time.Time(*returnedMainDTO.offsetDateTime)))
+	assert.EqualValues(t, 1, *returnedMainDTO.nullableB)
+	assert.False(t, *returnedMainDTO.nullableBool)
+	assert.EqualValues(t, 1, *returnedMainDTO.nullableS)
+	assert.EqualValues(t, 1, *returnedMainDTO.nullableI)
+	assert.EqualValues(t, 1, *returnedMainDTO.nullableL)
+	assert.EqualValues(t, 1, *returnedMainDTO.nullableF)
+	assert.EqualValues(t, 1, *returnedMainDTO.nullableD)
 }
