@@ -349,3 +349,34 @@ func (NamedDTOSerializer) Write(writer serialization.CompactWriter, value interf
 	writer.WriteString("name", namedDTO.name)
 	writer.WriteInt32("myint", namedDTO.myint)
 }
+
+type EmployeeDTO struct {
+	age int32
+	id  int64
+}
+
+type EmployeeDTOCompactSerializer struct{}
+
+func (EmployeeDTOCompactSerializer) Type() reflect.Type {
+	return reflect.TypeOf(EmployeeDTO{})
+}
+
+func (s EmployeeDTOCompactSerializer) TypeName() string {
+	return "employee"
+}
+
+func (s EmployeeDTOCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+	return EmployeeDTO{
+		age: reader.ReadInt32("age"),
+		id:  reader.ReadInt64("id"),
+	}
+}
+
+func (s EmployeeDTOCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(EmployeeDTO)
+	if !ok {
+		panic("not an employeeDTO")
+	}
+	writer.WriteInt32("age", c.age)
+	writer.WriteInt64("id", c.id)
+}

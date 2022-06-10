@@ -367,40 +367,9 @@ func mustData(value interface{}, err error) iserialization.Data {
 	return value.(iserialization.Data)
 }
 
-type employeeDTO struct {
-	age int32
-	id  int64
-}
-
-type employeeDTOCompactSerializer struct{}
-
-func (employeeDTOCompactSerializer) Type() reflect.Type {
-	return reflect.TypeOf(employeeDTO{})
-}
-
-func (s employeeDTOCompactSerializer) TypeName() string {
-	return "employee"
-}
-
-func (s employeeDTOCompactSerializer) Read(reader serialization.CompactReader) interface{} {
-	return employeeDTO{
-		age: reader.ReadInt32("age"),
-		id:  reader.ReadInt64("id"),
-	}
-}
-
-func (s employeeDTOCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
-	c, ok := value.(employeeDTO)
-	if !ok {
-		panic("not an employeeDTO")
-	}
-	writer.WriteInt32("age", c.age)
-	writer.WriteInt64("id", c.id)
-}
-
 func TestWithExplicitSerializer(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
-	serializer := employeeDTOCompactSerializer{}
+	serializer := EmployeeDTOCompactSerializer{}
 	compactConfig.SetSerializers(serializer)
 	c := &serialization.Config{
 		Compact: compactConfig,
@@ -409,7 +378,7 @@ func TestWithExplicitSerializer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	obj := employeeDTO{age: 22, id: 12345678901}
+	obj := EmployeeDTO{age: 22, id: 12345678901}
 	data, err := service.ToData(obj)
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
