@@ -67,6 +67,9 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
+	nearCacheMgrsMu         *sync.RWMutex
+	nearCacheMgrs           map[string]nearCacheManager
+	cfg                     *Config
 }
 
 func newClient(config Config) (*Client, error) {
@@ -94,6 +97,9 @@ func newClient(config Config) (*Client, error) {
 		lifecycleListenerMapMu:  &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
+		nearCacheMgrsMu:         &sync.RWMutex{},
+		nearCacheMgrs:           map[string]nearCacheManager{},
+		cfg:                     &config,
 	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
@@ -120,7 +126,25 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if c.ic.State() != client.Ready {
 		return nil, hzerrors.ErrClientNotActive
 	}
-	return c.proxyManager.getMap(ctx, name)
+	m, err := c.proxyManager.getMap(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	ncc, ok, err := c.cfg.GetNearCacheConfig(name)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		// there is a near cache config for this map
+		ncmgr := c.getNearCacheManager(ServiceNameMap)
+		nc := ncmgr.GetOrCreateNearCache(name, ncc)
+		m.ncm, err = newNearCacheMap(nc, &ncc, c.ic.SerializationService)
+		if err != nil {
+			return nil, err
+		}
+		m.hasNearCache = true
+	}
+	return m, nil
 }
 
 // GetReplicatedMap returns a replicated map instance.
@@ -370,4 +394,21 @@ func (c *Client) createComponents(config *Config) {
 	}
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+}
+
+func (c *Client) getNearCacheManager(service string) nearCacheManager {
+	c.nearCacheMgrsMu.RLock()
+	mgr, ok := c.nearCacheMgrs[service]
+	c.nearCacheMgrsMu.RUnlock()
+	if ok {
+		return mgr
+	}
+	c.nearCacheMgrsMu.Lock()
+	mgr, ok = c.nearCacheMgrs[service]
+	if !ok {
+		mgr = newNearCacheManager(c.ic.SerializationService)
+		c.nearCacheMgrs[service] = mgr
+	}
+	c.nearCacheMgrsMu.Unlock()
+	return mgr
 }

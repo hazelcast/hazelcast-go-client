@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
 
 func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
@@ -43,4 +44,21 @@ func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 
 func (ci *ClientInternal) ClusterService() *cluster.Service {
 	return ci.client.ic.ClusterService
+}
+
+func (ncm *nearCacheMap) GetLocalMapStats() LocalMapStats {
+	return LocalMapStats{
+		NearCacheStats: ncm.nc.Stats(),
+	}
+}
+
+func (m *Map) LocalMapStats() LocalMapStats {
+	if m.hasNearCache {
+		return m.ncm.GetLocalMapStats()
+	}
+	return LocalMapStats{}
+}
+
+type LocalMapStats struct {
+	NearCacheStats nearcache.Stats
 }

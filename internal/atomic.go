@@ -14,8 +14,29 @@
  * limitations under the License.
  */
 
-package proxy
+package internal
 
-type nearCacheStore interface {
-	Get(key interface{}) (interface{}, bool)
+import (
+	"sync/atomic"
+	"unsafe"
+)
+
+// AtomicValue keeps the pointer to an interface{}.
+// Storing and loading values is concurrency-safe.
+type AtomicValue struct {
+	value unsafe.Pointer
+}
+
+// Store stores the given interface{} pointer.
+func (a *AtomicValue) Store(v *interface{}) {
+	atomic.StorePointer(&a.value, unsafe.Pointer(v))
+}
+
+// Load loads the given interface{} pointer and returns an interface{}.
+func (a *AtomicValue) Load() interface{} {
+	v := (*interface{})(atomic.LoadPointer(&a.value))
+	if v == nil {
+		return v
+	}
+	return *v
 }

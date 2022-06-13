@@ -71,10 +71,6 @@ func (c Config) InvalidateOnChange() bool {
 	return *c.invalidateOnChange
 }
 
-func (c Config) LocalUpdatePolicy() LocalUpdatePolicy {
-	return LocalUpdatePolicyInvalidate
-}
-
 type EvictionPolicyComparator interface {
 	Compare(a, b types.EvictableEntryView) int
 }

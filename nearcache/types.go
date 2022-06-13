@@ -63,8 +63,10 @@ const (
 	EvictionPolicyRandom EvictionPolicy = 3
 )
 
-type LocalUpdatePolicy int32
-
-const (
-	LocalUpdatePolicyInvalidate LocalUpdatePolicy = 0
-)
+type Stats struct {
+	Hits            int64
+	Misses          int64
+	Expirations     int64
+	OwnedMemoryCost int64
+	OwnedEntryCount int64
+}

@@ -29,6 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -106,6 +107,8 @@ You can pass any context.Context to any Map function, but in that case lock owne
 */
 type Map struct {
 	*proxy
+	ncm          nearCacheMap
+	hasNearCache bool
 }
 
 func newMap(p *proxy) *Map {
@@ -179,6 +182,15 @@ func (m *Map) Clear(ctx context.Context) error {
 
 // ContainsKey returns true if the map contains an entry with the given key.
 func (m *Map) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
+	if m.hasNearCache {
+		found, err, handled := m.ncm.ContainsKey(key)
+		if err != nil {
+			return false, err
+		}
+		if handled {
+			return found, nil
+		}
+	}
 	lid := extractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
@@ -348,21 +360,27 @@ func (m *Map) ForceUnlock(ctx context.Context, key interface{}) error {
 }
 
 // Get returns the value for the specified key, or nil if this map does not contain this key.
-// Warning:
-// This method returns a clone of original value, modifying the returned value does not change the
-// actual value in the map. One should put modified value back to make changes visible to all nodes.
+// Warning: This method returns a clone of original value, modifying the returned value does not change the actual value in the map.
+// One should put modified value back to make changes visible to all nodes.
 func (m *Map) Get(ctx context.Context, key interface{}) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapGetRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapGetResponse(response))
-		}
+	if m.hasNearCache {
+		return m.ncm.Get(ctx, m, key)
 	}
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+	return m.getFromRemote(ctx, keyData, lid)
+}
+
+func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data, lockID int64) (interface{}, error) {
+	request := codec.EncodeMapGetRequest(m.name, keyData, lockID)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapGetResponse(response))
 }
 
 // GetAll returns the entries for the given keys.
@@ -616,18 +634,33 @@ func (m *Map) LockWithLease(ctx context.Context, key interface{}, leaseTime time
 
 // Put sets the value for the given key and returns the old value.
 func (m *Map) Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.Put(ctx, key, func(ctx context.Context) (interface{}, error) {
+			return m.putWithTTL(ctx, key, value, ttlUnset)
+		})
+	}
 	return m.putWithTTL(ctx, key, value, ttlUnset)
 }
 
 // PutWithTTL sets the value for the given key and returns the old value.
 // Entry will expire and get evicted after the ttl.
 func (m *Map) PutWithTTL(ctx context.Context, key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.Put(ctx, key, func(ctx context.Context) (interface{}, error) {
+			return m.putWithTTL(ctx, key, value, ttl.Milliseconds())
+		})
+	}
 	return m.putWithTTL(ctx, key, value, ttl.Milliseconds())
 }
 
 // PutWithMaxIdle sets the value for the given key and returns the old value.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *Map) PutWithMaxIdle(ctx context.Context, key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.Put(ctx, key, func(ctx context.Context) (interface{}, error) {
+			return m.putMaxIdle(ctx, key, value, ttlUnset, maxIdle.Milliseconds())
+		})
+	}
 	return m.putMaxIdle(ctx, key, value, ttlUnset, maxIdle.Milliseconds())
 }
 
@@ -635,6 +668,11 @@ func (m *Map) PutWithMaxIdle(ctx context.Context, key interface{}, value interfa
 // Entry will expire and get evicted after the ttl.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *Map) PutWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.Put(ctx, key, func(ctx context.Context) (interface{}, error) {
+			return m.putMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
+		})
+	}
 	return m.putMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
@@ -1016,7 +1054,7 @@ func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
 	}
 }
 
-func (m *Map) putWithTTL(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
+func (m *Map) putWithTTL(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
 	lid := extractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return nil, err
@@ -1292,4 +1330,138 @@ func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
 // NotifyEntryLoaded enables receiving an entry event when an entry is loaded.
 func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
+}
+
+type nearCacheMap struct {
+	nc             *nearCache
+	ncc            *nearcache.Config
+	toNearCacheKey func(key interface{}) (interface{}, error)
+	ss             *serialization.Service
+}
+
+func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Service) (nearCacheMap, error) {
+	ncm := nearCacheMap{
+		nc:  nc,
+		ncc: ncc,
+		ss:  ss,
+	}
+	// the only valid local policy on the client side is invalidate.
+	ncm.registerInvalidationListener()
+	if ncc.PreloaderConfig.Enabled {
+		if err := ncm.preload(); err != nil {
+			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
+		}
+	}
+	// toNearCacheKey returns the raw key if SerializeKeys is not true.
+	if ncc.SerializeKeys {
+		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
+			return ss.ToData(key)
+		}
+	} else {
+		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
+			return key, nil
+		}
+	}
+	return ncm, nil
+}
+
+func (ncm *nearCacheMap) registerInvalidationListener() {
+	fmt.Println("IMPLEMENT ME: registerInvalidationListener")
+}
+
+func (ncm *nearCacheMap) preload() error {
+	panic("implement me!")
+}
+
+func (ncm *nearCacheMap) ContainsKey(key interface{}) (found bool, err error, handled bool) {
+	key, err = ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err, true
+	}
+	cached, ok, err := ncm.getCachedValue(key, false)
+	if err != nil {
+		return false, err, true
+	}
+	if ok {
+		return cached != nil, nil, true
+	}
+	return false, nil, false
+}
+
+func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return nil, err
+	}
+	cached, ok, err := ncm.getCachedValue(key, false)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return cached, nil
+	}
+	// value not found in local cache.
+	// get it from remote.
+	value, err := ncm.getFromRemote(ctx, m, key)
+	if err != nil {
+		ncm.nc.Invalidate(key)
+		return nil, err
+	}
+	return value, nil
+}
+
+func (ncm *nearCacheMap) getFromRemote(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+	rid, err := ncm.nc.TryReserveForUpdate(key, keyData, nearCacheUpdateSemanticReadUpdate)
+	if err != nil {
+		return nil, err
+	}
+	value, err := m.getFromRemote(ctx, keyData, lid)
+	if err != nil {
+		return nil, err
+	}
+	if rid != nearCacheRecordNotReserved {
+		value, err = ncm.nc.TryPublishReserved(key, value, rid)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return value, nil
+}
+
+func (ncm *nearCacheMap) Put(ctx context.Context, key interface{}, f func(ctx context.Context) (interface{}, error)) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return nil, err
+	}
+	prev, err := f(ctx)
+	ncm.nc.Invalidate(key)
+	if err != nil {
+		return nil, err
+	}
+	return prev, nil
+}
+
+func (ncm *nearCacheMap) getCachedValue(key interface{}, deserialize bool) (value interface{}, found bool, err error) {
+	value, found, err = ncm.nc.Get(key)
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+	if value == nil {
+		return nil, true, nil
+	}
+	if deserialize {
+		value, err = ncm.ss.ToObject(value.(serialization.Data))
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	return value, true, nil
 }

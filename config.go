@@ -113,6 +113,12 @@ func (c *Config) Clone() Config {
 	for k, v := range c.FlakeIDGenerators {
 		newFlakeIDConfigs[k] = v
 	}
+	nearCacheConfigs := make(map[string]nearcache.Config, len(c.nearcacheConfigs))
+	for k, v := range c.nearcacheConfigs {
+		nearCacheConfigs[k] = v.Clone()
+	}
+	nearCacheNames := make([]string, len(c.nearCacheNames))
+	copy(nearCacheNames, c.nearCacheNames)
 	return Config{
 		ClientName:        c.ClientName,
 		Labels:            newLabels,
@@ -126,6 +132,8 @@ func (c *Config) Clone() Config {
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
 		membershipListeners: c.membershipListeners,
+		nearcacheConfigs:    nearCacheConfigs,
+		nearCacheNames:      nearCacheNames,
 	}
 }
 
