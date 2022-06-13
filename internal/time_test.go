@@ -27,7 +27,7 @@ import (
 
 func TestTimeMillis(t *testing.T) {
 	tm := time.Date(2022, 6, 14, 1, 43, 12, 56, time.UTC)
-	target := 1655170992000
+	target := int64(1655170992000)
 	millis := internal.TimeMillis(tm)
 	assert.Equal(t, target, millis)
 }
