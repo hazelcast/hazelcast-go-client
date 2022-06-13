@@ -164,7 +164,7 @@ func (rs *nearCacheRecordStore) Get(key interface{}) (interface{}, bool, error) 
 	       return null;
 	   }
 	*/
-	nowMS := time.Now().UnixMilli()
+	nowMS := internal.TimeMillis(time.Now())
 	if rs.recordExpired(rec, nowMS) {
 		rs.Invalidate(key)
 		rs.incrementExpirations()
@@ -419,7 +419,7 @@ func (rs *nearCacheRecordStore) createRecord(value interface{}) (*nearCacheRecor
 			return nil, err
 		}
 	}
-	created := time.Now().UnixMilli()
+	created := internal.TimeMillis(time.Now())
 	expired := nearCacheRecordStoreTimeNotSet
 	if rs.timeToLiveMillis > 0 {
 		expired = created + rs.timeToLiveMillis

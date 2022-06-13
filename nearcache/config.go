@@ -174,10 +174,10 @@ func (c *EvictionConfig) ReadData(input serialization.DataInput) {
 }
 
 type PreloaderConfig struct {
-	Enabled                  bool
 	Directory                string
 	StoreInitialDelaySeconds int32
 	StoreIntervalSeconds     int32
+	Enabled                  bool
 }
 
 func (c *PreloaderConfig) Validate() error {
