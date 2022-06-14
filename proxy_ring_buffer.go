@@ -34,6 +34,7 @@ import (
 type Ringbuffer struct {
 	*proxy
 	partitionID int32
+	capacity    int64
 }
 
 // OverflowPolicy
@@ -87,7 +88,7 @@ func newRingbuffer(p *proxy) (*Ringbuffer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Ringbuffer{proxy: p, partitionID: partitionID}, nil
+	return &Ringbuffer{proxy: p, partitionID: partitionID, capacity: ReadResultSetSequenceUnavailable}, nil
 }
 
 // Add an item to the tail of the Ringbuffer. If there is space in the Ringbuffer, the call
@@ -154,12 +155,15 @@ func (rb *Ringbuffer) ReadOne(ctx context.Context, sequence int64) (interface{},
 
 // Capacity returns the capacity of this Ringbuffer.
 func (rb *Ringbuffer) Capacity(ctx context.Context) (int64, error) {
-	request := codec.EncodeRingbufferCapacityRequest(rb.name)
-	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
-	if err != nil {
-		return ReadResultSetSequenceUnavailable, err
+	if rb.capacity == ReadResultSetSequenceUnavailable {
+		request := codec.EncodeRingbufferCapacityRequest(rb.name)
+		response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
+		if err != nil {
+			return ReadResultSetSequenceUnavailable, err
+		}
+		rb.capacity = codec.DecodeRingbufferCapacityResponse(response)
 	}
-	return codec.DecodeRingbufferCapacityResponse(response), nil
+	return rb.capacity, nil
 }
 
 // Size returns number of items in the Ringbuffer. If no ttl is set, the size will always be equal to capacity after the
