@@ -53,6 +53,7 @@ func TestSetSSLConfig(t *testing.T) {
 
 func TestSetSerializationConfig(t *testing.T) {
 	config := &serialization.Config{PortableVersion: 2}
+	config.Validate()
 	if err := SetSerializationConfig(config); err != nil {
 		t.Fatal(err)
 	}
