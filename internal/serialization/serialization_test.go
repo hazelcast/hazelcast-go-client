@@ -376,11 +376,8 @@ func TestWithExplicitSerializer(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service, err := iserialization.NewService(c)
-	if err != nil {
-		t.Fatal(err)
-	}
-	obj := EmployeeDTO{age: 22, id: 12345678901}
+	service := mustSerializationService(iserialization.NewService(c))
+	obj := EmployeeDTO{age: 30, id: 102310312}
 	data, err := service.ToData(obj)
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
@@ -402,10 +399,7 @@ func TestAllTypesWithCustomSerializer(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service, err := iserialization.NewService(c)
-	if err != nil {
-		t.Fatal(err)
-	}
+	service := mustSerializationService(iserialization.NewService(c))
 	mainDTO := NewMainDTO()
 	data, err := service.ToData(mainDTO)
 	if err != nil {
@@ -487,10 +481,7 @@ func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service, err := iserialization.NewService(c)
-	if err != nil {
-		t.Fatal(err)
-	}
+	service := mustSerializationService(iserialization.NewService(c))
 	mainDTO := NewMainDTO()
 	data, err := service.ToData(mainDTO)
 	if err != nil {
@@ -553,4 +544,80 @@ func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	assert.Equal(t, returnedInnerDTO.nullableLongs, []*int64{})
 	assert.Equal(t, returnedInnerDTO.nullableFloats, []*float32{})
 	assert.Equal(t, returnedInnerDTO.nullableDoubles, []*float64{})
+}
+
+func TestBits(t *testing.T) {
+	compactConfig := serialization.CompactConfig{}
+	compactConfig.SetSerializers(BitsDTOSerializer{})
+	c := &serialization.Config{
+		Compact: compactConfig,
+	}
+	service := mustSerializationService(iserialization.NewService(c))
+	service2 := mustSerializationService(iserialization.NewService(c))
+	booleans := make([]bool, 8)
+	booleans[0] = true
+	booleans[4] = true
+	bitsDTO := BitsDTO{a: true, h: true, id: 121, booleans: booleans}
+	data, err := service.ToData(bitsDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// hash(4) + typeid(4) + schemaId(8) + (4 byte length) + (1 bytes for 8 bits) + (4 bytes for int)
+	// (4 byte length of byte array) + (1 byte for booleans array of 8 bits) + (1 byte offset bytes)
+	assert.Equal(t, 31, len(data.ToByteArray()))
+	// To create schema in service2
+	_, err = service2.ToData(BitsDTO{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service2.ToObject(data)
+	returnedBitsDTO := ret.(BitsDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(returnedBitsDTO, bitsDTO) {
+		t.Fatal("BitsDTOs are not equal")
+	}
+}
+
+func TestWithExplicitSerializerNested(t *testing.T) {
+	compactConfig := serialization.CompactConfig{}
+	compactConfig.SetSerializers(EmployeeDTOCompactSerializer{}, EmployerDTOCompactSerializer{})
+	c := &serialization.Config{
+		Compact: compactConfig,
+	}
+	service := mustSerializationService(iserialization.NewService(c))
+	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
+	ids := make([]int64, 2)
+	ids[0] = 22
+	ids[1] = 44
+	employeeDTOs := make([]*EmployeeDTO, 5)
+	for i := 0; i < len(employeeDTOs); i++ {
+		employeeDTOs[i] = &EmployeeDTO{
+			age: int32(20 + i),
+			id:  int64(i * 100),
+		}
+	}
+	hiringStatus := "HIRING"
+	name := "nbss"
+	employerDTO := EmployerDTO{
+		name:           &name,
+		zcode:          40,
+		hiringStatus:   &hiringStatus,
+		ids:            ids,
+		singleEmployee: &employeeDTO,
+		otherEmployees: employeeDTOs,
+	}
+	data, err := service.ToData(employerDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	returnedEmployerDTO := ret.(EmployerDTO)
+	if !reflect.DeepEqual(returnedEmployerDTO, employerDTO) {
+		t.Fatal("EmployerDTOs are not equal")
+	}
 }

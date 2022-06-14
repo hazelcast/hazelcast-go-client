@@ -54,6 +54,54 @@ type InnerDTO struct {
 	nullableDoubles  []*float64
 }
 
+type BitsDTO struct {
+	a, b, c, d, e, f, g, h bool
+	id                     int32
+	booleans               []bool
+}
+
+type BitsDTOSerializer struct {
+}
+
+func (BitsDTOSerializer) Type() reflect.Type {
+	return reflect.TypeOf(BitsDTO{})
+}
+
+func (BitsDTOSerializer) TypeName() string {
+	return "BitsDTO"
+}
+
+func (BitsDTOSerializer) Read(reader serialization.CompactReader) interface{} {
+	a := reader.ReadBoolean("a")
+	b := reader.ReadBoolean("b")
+	c := reader.ReadBoolean("c")
+	d := reader.ReadBoolean("d")
+	e := reader.ReadBoolean("e")
+	f := reader.ReadBoolean("f")
+	g := reader.ReadBoolean("g")
+	h := reader.ReadBoolean("h")
+	id := reader.ReadInt32("id")
+	booleans := reader.ReadArrayOfBoolean("booleans")
+	return BitsDTO{a, b, c, d, e, f, g, h, id, booleans}
+}
+
+func (BitsDTOSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	bitsDTO, ok := value.(BitsDTO)
+	if !ok {
+		panic("not a BitsDTO")
+	}
+	writer.WriteBoolean("a", bitsDTO.a)
+	writer.WriteBoolean("b", bitsDTO.b)
+	writer.WriteBoolean("c", bitsDTO.c)
+	writer.WriteBoolean("d", bitsDTO.d)
+	writer.WriteBoolean("e", bitsDTO.e)
+	writer.WriteBoolean("f", bitsDTO.f)
+	writer.WriteBoolean("g", bitsDTO.g)
+	writer.WriteBoolean("h", bitsDTO.h)
+	writer.WriteInt32("id", bitsDTO.id)
+	writer.WriteArrayOfBoolean("booleans", bitsDTO.booleans)
+}
+
 type MainDTO struct {
 	b              int8
 	boolean        bool
@@ -376,11 +424,11 @@ func readInnerDTO(reader serialization.CompactReader) InnerDTO {
 		strings = reader.ReadArrayOfString("strings")
 	}
 	var namedDTOs []*NamedDTO
-	if reader.GetFieldKind("namedDTOs") == serialization.FieldKindNotAvailable {
+	if reader.GetFieldKind("nn") == serialization.FieldKindNotAvailable {
 		namedDTOs = make([]*NamedDTO, 0)
 	} else {
 		nn := reader.ReadArrayOfCompact("nn")
-		namedDTOs := make([]*NamedDTO, len(nn))
+		namedDTOs = make([]*NamedDTO, len(nn))
 		for i, n := range nn {
 			if n == nil {
 				namedDTOs[i] = nil
@@ -409,10 +457,10 @@ func readInnerDTO(reader serialization.CompactReader) InnerDTO {
 		localDates = reader.ReadArrayOfDate("localDates")
 	}
 	var localDateTimes []*types.LocalDateTime
-	if reader.GetFieldKind("localDatesTimes") == serialization.FieldKindNotAvailable {
+	if reader.GetFieldKind("localDateTimes") == serialization.FieldKindNotAvailable {
 		localDateTimes = make([]*types.LocalDateTime, 0)
 	} else {
-		localDateTimes = reader.ReadArrayOfTimestamp("localDatesTimes")
+		localDateTimes = reader.ReadArrayOfTimestamp("localDateTimes")
 	}
 	var offsetDateTimes []*types.OffsetDateTime
 	if reader.GetFieldKind("offsetDateTimes") == serialization.FieldKindNotAvailable {
@@ -439,10 +487,10 @@ func readInnerDTO(reader serialization.CompactReader) InnerDTO {
 		nullableShorts = reader.ReadArrayOfNullableInt16("nullableShorts")
 	}
 	var nullableIntegers []*int32
-	if reader.GetFieldKind("nullableInts") == serialization.FieldKindNotAvailable {
+	if reader.GetFieldKind("nullableIntegers") == serialization.FieldKindNotAvailable {
 		nullableIntegers = make([]*int32, 0)
 	} else {
-		nullableIntegers = reader.ReadArrayOfNullableInt32("nullableInts")
+		nullableIntegers = reader.ReadArrayOfNullableInt32("nullableIntegers")
 	}
 	var nullableLongs []*int64
 	if reader.GetFieldKind("nullableLongs") == serialization.FieldKindNotAvailable {
@@ -902,6 +950,60 @@ func (NamedDTOSerializer) Write(writer serialization.CompactWriter, value interf
 	writer.WriteInt32("myint", namedDTO.myint)
 }
 
+type EmployerDTO struct {
+	name           *string
+	zcode          int32
+	ids            []int64
+	hiringStatus   *string
+	singleEmployee *EmployeeDTO
+	otherEmployees []*EmployeeDTO
+}
+
+type EmployerDTOCompactSerializer struct{}
+
+func (EmployerDTOCompactSerializer) Type() reflect.Type {
+	return reflect.TypeOf(EmployerDTO{})
+}
+
+func (s EmployerDTOCompactSerializer) TypeName() string {
+	return "EmployerDTO"
+}
+
+func (s EmployerDTOCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+	singleEmployee := reader.ReadCompact("singleEmployee").(EmployeeDTO)
+	var otherEmployees []*EmployeeDTO
+	readOtherEmployees := reader.ReadArrayOfCompact("otherEmployees")
+	for _, v := range readOtherEmployees {
+		employeeDTO := v.(EmployeeDTO)
+		otherEmployees = append(otherEmployees, &employeeDTO)
+	}
+	return EmployerDTO{
+		name:           reader.ReadString("name"),
+		zcode:          reader.ReadInt32("zcode"),
+		ids:            reader.ReadArrayOfInt64("ids"),
+		hiringStatus:   reader.ReadString("hiringStatus"),
+		singleEmployee: &singleEmployee,
+		otherEmployees: otherEmployees,
+	}
+}
+
+func (s EmployerDTOCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(EmployerDTO)
+	if !ok {
+		panic("not an EmployerDTO")
+	}
+	writer.WriteString("name", c.name)
+	writer.WriteInt32("zcode", c.zcode)
+	writer.WriteArrayOfInt64("ids", c.ids)
+	writer.WriteString("hiringStatus", c.hiringStatus)
+	writer.WriteCompact("singleEmployee", c.singleEmployee)
+	var otherEmployees []interface{}
+	for _, v := range c.otherEmployees {
+		otherEmployees = append(otherEmployees, v)
+	}
+	writer.WriteArrayOfCompact("otherEmployees", otherEmployees)
+}
+
 type EmployeeDTO struct {
 	age int32
 	id  int64
@@ -914,7 +1016,7 @@ func (EmployeeDTOCompactSerializer) Type() reflect.Type {
 }
 
 func (s EmployeeDTOCompactSerializer) TypeName() string {
-	return "employee"
+	return "EmployeeDTO"
 }
 
 func (s EmployeeDTOCompactSerializer) Read(reader serialization.CompactReader) interface{} {
@@ -927,7 +1029,7 @@ func (s EmployeeDTOCompactSerializer) Read(reader serialization.CompactReader) i
 func (s EmployeeDTOCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
 	c, ok := value.(EmployeeDTO)
 	if !ok {
-		panic("not an employeeDTO")
+		panic("not an EmployeeDTO")
 	}
 	writer.WriteInt32("age", c.age)
 	writer.WriteInt64("id", c.id)
