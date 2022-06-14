@@ -115,7 +115,7 @@ func (c *Client) GetList(ctx context.Context, name string) (*List, error) {
 	return c.proxyManager.getList(ctx, name)
 }
 
-// GetRingbuffer returns a ring buffer instance
+// GetRingbuffer returns a Ringbuffer instance
 func (c *Client) GetRingbuffer(ctx context.Context, name string) (*Ringbuffer, error) {
 	return c.proxyManager.getRingbuffer(ctx, name)
 }
