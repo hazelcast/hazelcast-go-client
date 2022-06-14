@@ -1020,9 +1020,21 @@ func (s EmployeeDTOCompactSerializer) TypeName() string {
 }
 
 func (s EmployeeDTOCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+	var age int32
+	if reader.GetFieldKind("age") == serialization.FieldKindNotAvailable {
+		age = 0
+	} else {
+		age = reader.ReadInt32("age")
+	}
+	var id int64
+	if reader.GetFieldKind("id") == serialization.FieldKindNotAvailable {
+		id = 0
+	} else {
+		id = reader.ReadInt64("id")
+	}
 	return EmployeeDTO{
-		age: reader.ReadInt32("age"),
-		id:  reader.ReadInt64("id"),
+		age: age,
+		id:  id,
 	}
 }
 
@@ -1033,4 +1045,53 @@ func (s EmployeeDTOCompactSerializer) Write(writer serialization.CompactWriter, 
 	}
 	writer.WriteInt32("age", c.age)
 	writer.WriteInt64("id", c.id)
+}
+
+type EmployeeDTOCompactSerializerV2 struct{}
+
+func (EmployeeDTOCompactSerializerV2) Type() reflect.Type {
+	return reflect.TypeOf(EmployeeDTO{})
+}
+
+func (s EmployeeDTOCompactSerializerV2) TypeName() string {
+	return "EmployeeDTO"
+}
+
+func (s EmployeeDTOCompactSerializerV2) Read(reader serialization.CompactReader) interface{} {
+	// The serializer won't be used for reading
+	return nil
+}
+
+func (s EmployeeDTOCompactSerializerV2) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(EmployeeDTO)
+	if !ok {
+		panic("not an EmployeeDTO")
+	}
+	writer.WriteInt32("age", c.age)
+	writer.WriteInt64("id", c.id)
+	surname := "sir"
+	writer.WriteString("surname", &surname)
+}
+
+type EmployeeDTOCompactSerializerV3 struct{}
+
+func (EmployeeDTOCompactSerializerV3) Type() reflect.Type {
+	return reflect.TypeOf(EmployeeDTO{})
+}
+
+func (s EmployeeDTOCompactSerializerV3) TypeName() string {
+	return "EmployeeDTO"
+}
+
+func (s EmployeeDTOCompactSerializerV3) Read(reader serialization.CompactReader) interface{} {
+	// The serializer won't be used for reading
+	return nil
+}
+
+func (s EmployeeDTOCompactSerializerV3) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(EmployeeDTO)
+	if !ok {
+		panic("not an EmployeeDTO")
+	}
+	writer.WriteInt32("age", c.age)
 }

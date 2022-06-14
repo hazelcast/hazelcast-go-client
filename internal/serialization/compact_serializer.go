@@ -43,7 +43,7 @@ func NewCompactStreamSerializer(compactConfig serialization.CompactConfig) *Comp
 	rabin := NewRabinFingerPrint()
 	rabin.Init()
 	return &CompactStreamSerializer{
-		schemaService:        *NewSchemaService(),
+		schemaService:        NewSchemaService(),
 		typeToSchema:         typeToSchema,
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,

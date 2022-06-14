@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -620,4 +621,56 @@ func TestWithExplicitSerializerNested(t *testing.T) {
 	if !reflect.DeepEqual(returnedEmployerDTO, employerDTO) {
 		t.Fatal("EmployerDTOs are not equal")
 	}
+}
+
+func TestSchemaEvolution_fieldAdded(t *testing.T) {
+	schemaService := iserialization.NewSchemaService()
+	compactConfig := serialization.CompactConfig{}
+	compactConfig.SetSerializers(EmployeeDTOCompactSerializerV2{})
+	c := &serialization.Config{
+		Compact: compactConfig,
+	}
+	service := mustSerializationService(iserialization.NewService(c))
+	service.SetSchemaService(schemaService)
+	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
+	data := it.MustValue(service.ToData(employeeDTO)).(iserialization.Data)
+
+	compactConfig2 := serialization.CompactConfig{}
+	compactConfig2.SetSerializers(EmployeeDTOCompactSerializer{})
+	c2 := &serialization.Config{
+		Compact: compactConfig2,
+	}
+	service2 := mustSerializationService(iserialization.NewService(c2))
+	service2.SetSchemaService(schemaService)
+	
+	ret := it.MustValue(service2.ToObject(data))
+	returnedEmployeeDTO := ret.(EmployeeDTO)
+	assert.Equal(t, employeeDTO.age, returnedEmployeeDTO.age)
+	assert.Equal(t, employeeDTO.id, returnedEmployeeDTO.id)
+}
+
+func TestSchemaEvolution_fieldRemoved(t *testing.T) {
+	schemaService := iserialization.NewSchemaService()
+	compactConfig := serialization.CompactConfig{}
+	compactConfig.SetSerializers(EmployeeDTOCompactSerializerV3{})
+	c := &serialization.Config{
+		Compact: compactConfig,
+	}
+	service := mustSerializationService(iserialization.NewService(c))
+	service.SetSchemaService(schemaService)
+	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
+	data := it.MustValue(service.ToData(employeeDTO)).(iserialization.Data)
+
+	compactConfig2 := serialization.CompactConfig{}
+	compactConfig2.SetSerializers(EmployeeDTOCompactSerializer{})
+	c2 := &serialization.Config{
+		Compact: compactConfig2,
+	}
+	service2 := mustSerializationService(iserialization.NewService(c2))
+	service2.SetSchemaService(schemaService)
+	
+	ret := it.MustValue(service2.ToObject(data))
+	returnedEmployeeDTO := ret.(EmployeeDTO)
+	assert.Equal(t, employeeDTO.age, returnedEmployeeDTO.age)
+	assert.EqualValues(t, 0, returnedEmployeeDTO.id)
 }
