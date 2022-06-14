@@ -40,19 +40,38 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// *** Example adding and retrieving single items
 	// Add an item to the Ringbuffer
 	sequence, err := rb.Add(ctx, "item 1", hazelcast.OverflowPolicyOverwrite)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Added item 1 with sequence number=%d\n", sequence)
-
 	// Get an item by a known sequence number
 	item, err := rb.ReadOne(ctx, sequence)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(item)
+
+	// *** Example adding and reading multiple items
+	// Add an item to the Ringbuffer
+	lastSequence, err := rb.AddAll(ctx, hazelcast.OverflowPolicyOverwrite, "One", "Two", "Three")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Added 3 items, and the last item's sequence number=%d\n", lastSequence)
+	// Get multiple items
+	resultSet, err := rb.ReadMany(ctx, sequence+1, 3, 3, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for i := 0; i < int(resultSet.ReadCount()); i++ {
+		item, _ := resultSet.Get(i)
+		fmt.Println(item)
+	}
+
 	// Shutdown client
 	client.Shutdown(ctx)
 }
