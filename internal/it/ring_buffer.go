@@ -26,7 +26,7 @@ import (
 )
 
 func RingbufferTester(t *testing.T, f func(t *testing.T, rb *hz.Ringbuffer)) {
-	makeListName := func() string {
+	makeRingbufferName := func() string {
 		return NewUniqueObjectName("list")
 	}
 	RingbufferTesterWithConfigAndName(t, makeListName, nil, f)
