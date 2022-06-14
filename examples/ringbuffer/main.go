@@ -69,9 +69,15 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Added 3 items, and the last item's sequence number=%d\n", lastSequence)
+	// Good practice to define explicit timeouts for larger readings
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	// Get multiple items
-	resultSet, err := rb.ReadMany(ctx, sequence+1, 3, 3, nil)
+	resultSet, err := rb.ReadMany(ctxWithTimeout, sequence+1, 3, 3, nil)
 	if err != nil {
+		if ctxWithTimeout.Err() != nil {
+			log.Fatal("timed out ... you might want to retry in a few seconds?")
+		}
 		log.Fatal(err)
 	}
 	for i := 0; i < int(resultSet.ReadCount()); i++ {
