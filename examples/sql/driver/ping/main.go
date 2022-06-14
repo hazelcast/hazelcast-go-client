@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-package internal
+package main
 
-const (
-	AggregateFactoryID = -29
-	// CurrentClientVersion should be manually set
-	CurrentClientVersion = "1.3.0"
+import (
+	"database/sql"
+	"log"
+
+	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
 )
 
-// ClientType is used in the Management Center
-var ClientType = "GOO"
-
-// ClientVersion is the effective client version.
-// It is sent to the member during authentication.
-var ClientVersion = CurrentClientVersion
+func main() {
+	log.Println("Creating the database value.")
+	db, err := sql.Open("hazelcast", "hz://?logger.level=info")
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	log.Println("The database value was created. Note that the connection to Hazelcast is not established at this point.")
+	log.Println("Sending a ping request to establish the connection...")
+	if err := db.Ping(); err != nil {
+		panic(err)
+	}
+	log.Println("Connection established, and the ping was successful. Time to exit.")
+}
