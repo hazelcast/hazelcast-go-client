@@ -29,7 +29,7 @@ import (
 // that capacity and endanger the stability of the system. If that capacity
 // is exceeded, the oldest item in the Ringbuffer is overwritten.
 //
-// For details see https://docs.hazelcast.com/imdg/latest/data-structures/ringbuffer
+// For details see https://docs.hazelcast.com/hazelcast/latest/data-structures/ringbuffer
 type Ringbuffer struct {
 	*proxy
 	partitionID int32
@@ -82,11 +82,11 @@ const (
 )
 
 func newRingbuffer(p *proxy) (*Ringbuffer, error) {
-	if partitionID, err := p.stringToPartitionID(p.name); err != nil {
+	partitionID, err := p.stringToPartitionID(p.name)
+	if err != nil {
 		return nil, err
-	} else {
-		return &Ringbuffer{proxy: p, partitionID: partitionID}, nil
 	}
+	return &Ringbuffer{proxy: p, partitionID: partitionID}, nil
 }
 
 // Add an item to the tail of the Ringbuffer. If there is space in the Ringbuffer, the call
@@ -242,7 +242,7 @@ func (rrs *ReadResultSet) ReadCount() int32 {
 // Get one item from List of items that have been read.
 func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
 	if index < 0 || int32(index) >= rrs.readCount {
-		return nil, errors.New(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount))
+		return nil, hzcerrors.NewIllegalArgumentError(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount), nil)
 	}
 	return rrs.rb.convertToObject(rrs.items[index])
 }
