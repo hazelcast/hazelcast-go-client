@@ -242,7 +242,7 @@ func (rrs *ReadResultSet) ReadCount() int32 {
 // Get one item from List of items that have been read.
 func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
 	if index < 0 || int32(index) >= rrs.readCount {
-		return nil, errors.New(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount))
+		return nil, hzcerrors.NewIllegalArgumentError(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount), nil)
 	}
 	return rrs.rb.convertToObject(rrs.items[index])
 }
