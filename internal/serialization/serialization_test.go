@@ -483,7 +483,7 @@ func TestAllTypesWithCustomSerializer(t *testing.T) {
 
 func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
-	compactConfig.SetSerializers(NoWriteMainDTOSerializer{}, InnerDTOSerializer{}, NamedDTOSerializer{})
+	compactConfig.SetSerializers(NoWriteMainDTOSerializer{}, NoWriteInnerDTOSerializer{}, NamedDTOSerializer{})
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
@@ -501,7 +501,6 @@ func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	assert.EqualValues(t, 1, returnedMainDTO.b)
 	assert.False(t, returnedMainDTO.boolean)
 	assert.EqualValues(t, 1, returnedMainDTO.s)
@@ -522,4 +521,36 @@ func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	assert.EqualValues(t, 1, *returnedMainDTO.nullableL)
 	assert.EqualValues(t, 1, *returnedMainDTO.nullableF)
 	assert.EqualValues(t, 1, *returnedMainDTO.nullableD)
+	// Test InnerDTO
+	innerDTO := NewInnerDTO()
+	data, err = service.ToData(innerDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret, err = service.ToObject(data)
+	returnedInnerDTO := ret.(InnerDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, returnedInnerDTO.bools, []bool{})
+	assert.Equal(t, returnedInnerDTO.bytes, []int8{})
+	assert.Equal(t, returnedInnerDTO.shorts, []int16{})
+	assert.Equal(t, returnedInnerDTO.ints, []int32{})
+	assert.Equal(t, returnedInnerDTO.longs, []int64{})
+	assert.Equal(t, returnedInnerDTO.floats, []float32{})
+	assert.Equal(t, returnedInnerDTO.doubles, []float64{})
+	assert.Equal(t, returnedInnerDTO.strings, []*string{})
+	assert.Equal(t, returnedInnerDTO.nn, []*NamedDTO{})
+	assert.Equal(t, returnedInnerDTO.bigDecimals, []*types.Decimal{})
+	assert.Equal(t, returnedInnerDTO.localTimes, []*types.LocalTime{})
+	assert.Equal(t, returnedInnerDTO.localDates, []*types.LocalDate{})
+	assert.Equal(t, returnedInnerDTO.localDateTimes, []*types.LocalDateTime{})
+	assert.Equal(t, returnedInnerDTO.offsetDateTimes, []*types.OffsetDateTime{})
+	assert.Equal(t, returnedInnerDTO.nullableBools, []*bool{})
+	assert.Equal(t, returnedInnerDTO.nullableBytes, []*int8{})
+	assert.Equal(t, returnedInnerDTO.nullableShorts, []*int16{})
+	assert.Equal(t, returnedInnerDTO.nullableIntegers, []*int32{})
+	assert.Equal(t, returnedInnerDTO.nullableLongs, []*int64{})
+	assert.Equal(t, returnedInnerDTO.nullableFloats, []*float32{})
+	assert.Equal(t, returnedInnerDTO.nullableDoubles, []*float64{})
 }

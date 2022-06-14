@@ -326,6 +326,151 @@ func readMainDTO(reader serialization.CompactReader) MainDTO {
 	}
 }
 
+func readInnerDTO(reader serialization.CompactReader) InnerDTO {
+	var bools []bool
+	if reader.GetFieldKind("bools") == serialization.FieldKindNotAvailable {
+		bools = make([]bool, 0)
+	} else {
+		bools = reader.ReadArrayOfBoolean("bools")
+	}
+	var bytes []int8
+	if reader.GetFieldKind("bytes") == serialization.FieldKindNotAvailable {
+		bytes = make([]int8, 0)
+	} else {
+		bytes = reader.ReadArrayOfInt8("bytes")
+	}
+	var shorts []int16
+	if reader.GetFieldKind("shorts") == serialization.FieldKindNotAvailable {
+		shorts = make([]int16, 0)
+	} else {
+		shorts = reader.ReadArrayOfInt16("shorts")
+	}
+	var ints []int32
+	if reader.GetFieldKind("ints") == serialization.FieldKindNotAvailable {
+		ints = make([]int32, 0)
+	} else {
+		ints = reader.ReadArrayOfInt32("ints")
+	}
+	var longs []int64
+	if reader.GetFieldKind("longs") == serialization.FieldKindNotAvailable {
+		longs = make([]int64, 0)
+	} else {
+		longs = reader.ReadArrayOfInt64("longs")
+	}
+	var floats []float32
+	if reader.GetFieldKind("floats") == serialization.FieldKindNotAvailable {
+		floats = make([]float32, 0)
+	} else {
+		floats = reader.ReadArrayOfFloat32("floats")
+	}
+	var doubles []float64
+	if reader.GetFieldKind("doubles") == serialization.FieldKindNotAvailable {
+		doubles = make([]float64, 0)
+	} else {
+		doubles = reader.ReadArrayOfFloat64("doubles")
+	}
+	var strings []*string
+	if reader.GetFieldKind("strings") == serialization.FieldKindNotAvailable {
+		strings = make([]*string, 0)
+	} else {
+		strings = reader.ReadArrayOfString("strings")
+	}
+	var namedDTOs []*NamedDTO
+	if reader.GetFieldKind("namedDTOs") == serialization.FieldKindNotAvailable {
+		namedDTOs = make([]*NamedDTO, 0)
+	} else {
+		nn := reader.ReadArrayOfCompact("nn")
+		namedDTOs := make([]*NamedDTO, len(nn))
+		for i, n := range nn {
+			if n == nil {
+				namedDTOs[i] = nil
+			} else {
+				np := n.(NamedDTO)
+				namedDTOs[i] = &np
+			}
+		}
+	}
+	var bigDecimals []*types.Decimal
+	if reader.GetFieldKind("bigDecimals") == serialization.FieldKindNotAvailable {
+		bigDecimals = make([]*types.Decimal, 0)
+	} else {
+		bigDecimals = reader.ReadArrayOfDecimal("bigDecimals")
+	}
+	var localTimes []*types.LocalTime
+	if reader.GetFieldKind("localTimes") == serialization.FieldKindNotAvailable {
+		localTimes = make([]*types.LocalTime, 0)
+	} else {
+		localTimes = reader.ReadArrayOfTime("localTimes")
+	}
+	var localDates []*types.LocalDate
+	if reader.GetFieldKind("localDates") == serialization.FieldKindNotAvailable {
+		localDates = make([]*types.LocalDate, 0)
+	} else {
+		localDates = reader.ReadArrayOfDate("localDates")
+	}
+	var localDateTimes []*types.LocalDateTime
+	if reader.GetFieldKind("localDatesTimes") == serialization.FieldKindNotAvailable {
+		localDateTimes = make([]*types.LocalDateTime, 0)
+	} else {
+		localDateTimes = reader.ReadArrayOfTimestamp("localDatesTimes")
+	}
+	var offsetDateTimes []*types.OffsetDateTime
+	if reader.GetFieldKind("offsetDateTimes") == serialization.FieldKindNotAvailable {
+		offsetDateTimes = make([]*types.OffsetDateTime, 0)
+	} else {
+		offsetDateTimes = reader.ReadArrayOfTimestampWithTimezone("offsetDateTimes")
+	}
+	var nullableBools []*bool
+	if reader.GetFieldKind("nullableBools") == serialization.FieldKindNotAvailable {
+		nullableBools = make([]*bool, 0)
+	} else {
+		nullableBools = reader.ReadArrayOfNullableBoolean("nullableBools")
+	}
+	var nullableBytes []*int8
+	if reader.GetFieldKind("nullableBytes") == serialization.FieldKindNotAvailable {
+		nullableBytes = make([]*int8, 0)
+	} else {
+		nullableBytes = reader.ReadArrayOfNullableInt8("nullableBytes")
+	}
+	var nullableShorts []*int16
+	if reader.GetFieldKind("nullableShorts") == serialization.FieldKindNotAvailable {
+		nullableShorts = make([]*int16, 0)
+	} else {
+		nullableShorts = reader.ReadArrayOfNullableInt16("nullableShorts")
+	}
+	var nullableIntegers []*int32
+	if reader.GetFieldKind("nullableInts") == serialization.FieldKindNotAvailable {
+		nullableIntegers = make([]*int32, 0)
+	} else {
+		nullableIntegers = reader.ReadArrayOfNullableInt32("nullableInts")
+	}
+	var nullableLongs []*int64
+	if reader.GetFieldKind("nullableLongs") == serialization.FieldKindNotAvailable {
+		nullableLongs = make([]*int64, 0)
+	} else {
+		nullableLongs = reader.ReadArrayOfNullableInt64("nullableLongs")
+	}
+	var nullableFloats []*float32
+	if reader.GetFieldKind("nullableFloats") == serialization.FieldKindNotAvailable {
+		nullableFloats = make([]*float32, 0)
+	} else {
+		nullableFloats = reader.ReadArrayOfNullableFloat32("nullableFloats")
+	}
+	var nullableDoubles []*float64
+	if reader.GetFieldKind("nullableDoubles") == serialization.FieldKindNotAvailable {
+		nullableDoubles = make([]*float64, 0)
+	} else {
+		nullableDoubles = reader.ReadArrayOfNullableFloat64("nullableDoubles")
+	}
+	return InnerDTO{
+		bools: bools, bytes: bytes, shorts: shorts, ints: ints, longs: longs, floats: floats, doubles: doubles,
+		strings: strings, nn: namedDTOs, bigDecimals: bigDecimals, localTimes: localTimes, localDates: localDates,
+		localDateTimes: localDateTimes, offsetDateTimes: offsetDateTimes, nullableBools: nullableBools,
+		nullableBytes: nullableBytes, nullableShorts: nullableShorts, nullableIntegers: nullableIntegers,
+		nullableLongs: nullableLongs, nullableFloats: nullableFloats, nullableDoubles: nullableDoubles,
+	}
+}
+
 type NoWriteMainDTOSerializer struct {
 }
 
@@ -342,7 +487,6 @@ func (NoWriteMainDTOSerializer) Read(reader serialization.CompactReader) interfa
 }
 
 func (NoWriteMainDTOSerializer) Write(writer serialization.CompactWriter, value interface{}) {
-	print("Hi")
 }
 
 type MainDTOSerializer struct {
@@ -679,43 +823,7 @@ func (InnerDTOSerializer) TypeName() string {
 }
 
 func (InnerDTOSerializer) Read(reader serialization.CompactReader) interface{} {
-	bools := reader.ReadArrayOfBoolean("bools")
-	bytes := reader.ReadArrayOfInt8("bytes")
-	shorts := reader.ReadArrayOfInt16("shorts")
-	ints := reader.ReadArrayOfInt32("ints")
-	longs := reader.ReadArrayOfInt64("longs")
-	floats := reader.ReadArrayOfFloat32("floats")
-	doubles := reader.ReadArrayOfFloat64("doubles")
-	strings := reader.ReadArrayOfString("strings")
-	nn := reader.ReadArrayOfCompact("nn")
-	namedDTOs := make([]*NamedDTO, len(nn))
-	for i, n := range nn {
-		if n == nil {
-			namedDTOs[i] = nil
-		} else {
-			np := n.(NamedDTO)
-			namedDTOs[i] = &np
-		}
-	}
-	bigDecimals := reader.ReadArrayOfDecimal("bigDecimals")
-	localTimes := reader.ReadArrayOfTime("localTimes")
-	localDates := reader.ReadArrayOfDate("localDates")
-	localDateTimes := reader.ReadArrayOfTimestamp("localDateTimes")
-	offsetDateTimes := reader.ReadArrayOfTimestampWithTimezone("offsetDateTimes")
-	nullableBools := reader.ReadArrayOfNullableBoolean("nullableBools")
-	nullableBytes := reader.ReadArrayOfNullableInt8("nullableBytes")
-	nullableShorts := reader.ReadArrayOfNullableInt16("nullableShorts")
-	nullableIntegers := reader.ReadArrayOfNullableInt32("nullableIntegers")
-	nullableLongs := reader.ReadArrayOfNullableInt64("nullableLongs")
-	nullableFloats := reader.ReadArrayOfNullableFloat32("nullableFloats")
-	nullableDoubles := reader.ReadArrayOfNullableFloat64("nullableDoubles")
-	return InnerDTO{
-		bools: bools, bytes: bytes, shorts: shorts, ints: ints, longs: longs, floats: floats, doubles: doubles,
-		strings: strings, nn: namedDTOs, bigDecimals: bigDecimals, localTimes: localTimes, localDates: localDates,
-		localDateTimes: localDateTimes, offsetDateTimes: offsetDateTimes, nullableBools: nullableBools,
-		nullableBytes: nullableBytes, nullableShorts: nullableShorts, nullableIntegers: nullableIntegers,
-		nullableLongs: nullableLongs, nullableFloats: nullableFloats, nullableDoubles: nullableDoubles,
-	}
+	return readInnerDTO(reader)
 }
 
 func (InnerDTOSerializer) Write(writer serialization.CompactWriter, value interface{}) {
@@ -749,6 +857,24 @@ func (InnerDTOSerializer) Write(writer serialization.CompactWriter, value interf
 	writer.WriteArrayOfNullableInt64("nullableLongs", innerDTO.nullableLongs)
 	writer.WriteArrayOfNullableFloat32("nullableFloats", innerDTO.nullableFloats)
 	writer.WriteArrayOfNullableFloat64("nullableDoubles", innerDTO.nullableDoubles)
+}
+
+type NoWriteInnerDTOSerializer struct {
+}
+
+func (NoWriteInnerDTOSerializer) Type() reflect.Type {
+	return reflect.TypeOf(InnerDTO{})
+}
+
+func (NoWriteInnerDTOSerializer) TypeName() string {
+	return "InnerDTO"
+}
+
+func (NoWriteInnerDTOSerializer) Read(reader serialization.CompactReader) interface{} {
+	return readInnerDTO(reader)
+}
+
+func (NoWriteInnerDTOSerializer) Write(writer serialization.CompactWriter, value interface{}) {
 }
 
 type NamedDTOSerializer struct {
