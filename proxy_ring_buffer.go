@@ -29,7 +29,7 @@ import (
 // that capacity and endanger the stability of the system. If that capacity
 // is exceeded, the oldest item in the Ringbuffer is overwritten.
 //
-// For details see https://docs.hazelcast.com/imdg/latest/data-structures/ringbuffer
+// For details see https://docs.hazelcast.com/hazelcast/latest/data-structures/ringbuffer
 type Ringbuffer struct {
 	*proxy
 	partitionID int32
