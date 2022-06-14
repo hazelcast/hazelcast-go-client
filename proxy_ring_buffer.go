@@ -82,11 +82,11 @@ const (
 )
 
 func newRingbuffer(p *proxy) (*Ringbuffer, error) {
-	if partitionID, err := p.stringToPartitionID(p.name); err != nil {
+	partitionID, err := p.stringToPartitionID(p.name)
+	if err != nil {
 		return nil, err
-	} else {
-		return &Ringbuffer{proxy: p, partitionID: partitionID}, nil
 	}
+	return &Ringbuffer{proxy: p, partitionID: partitionID}, nil
 }
 
 // Add an item to the tail of the Ringbuffer. If there is space in the Ringbuffer, the call
