@@ -18,7 +18,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"log"
 	"math/rand"
 	"time"
@@ -51,7 +53,12 @@ func main() {
 	// Get an item by a known sequence number
 	item, err := rb.ReadOne(ctx, sequence)
 	if err != nil {
-		log.Fatal(err)
+		// example of validating for stale items
+		if errors.Is(err, hzerrors.ErrStaleSequence) {
+			log.Printf("The item with the sequence number = %d is no longer in the Ringbuffer", sequence)
+		} else {
+			log.Fatal(err)
+		}
 	}
 	fmt.Println(item)
 

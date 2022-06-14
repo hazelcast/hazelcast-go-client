@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	hzcerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
