@@ -35,7 +35,7 @@ jobs:
       - name: "Install Go tools"
         run: |
           go get -u golang.org/x/tools/...
-          go get honnef.co/go/tools/cmd/staticcheck@latest
+          go get honnef.co/go/tools/cmd/staticcheck@v0.2.2
 
       - name: "Run Checkers"
         run: |
