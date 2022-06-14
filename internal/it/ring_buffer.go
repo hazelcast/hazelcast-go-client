@@ -52,7 +52,7 @@ func RingbufferTesterWithConfigAndName(t *testing.T, ringBufferName func() strin
 		defer func() {
 			ctx := context.Background()
 			if err := rb.Destroy(ctx); err != nil {
-				t.Logf("test warning, could not destroy list: %s", err.Error())
+				t.Logf("test warning, could not destroy ringbuffer: %s", err.Error())
 			}
 			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("test warning, client not shutdown: %s", err.Error())
