@@ -26,7 +26,7 @@ import (
 type Config struct {
 	globalSerializer                    Serializer
 	customSerializers                   map[reflect.Type]Serializer
-	Compact                             CompactConfig
+	Compact                             CompactSerializationConfig
 	identifiedDataSerializableFactories []IdentifiedDataSerializableFactory
 	portableFactories                   []PortableFactory
 	classDefinitions                    []*ClassDefinition

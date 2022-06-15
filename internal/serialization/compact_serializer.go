@@ -31,11 +31,11 @@ type CompactStreamSerializer struct {
 	rabin                RabinFingerPrint
 }
 
-func NewCompactStreamSerializer(compactConfig serialization.CompactConfig) *CompactStreamSerializer {
+func NewCompactStreamSerializer(compactSerializationConfig serialization.CompactSerializationConfig) *CompactStreamSerializer {
 	typeToSchema := make(map[reflect.Type]Schema)
 	typeToSerializer := make(map[reflect.Type]serialization.CompactSerializer)
 	typeNameToSerializer := make(map[string]serialization.CompactSerializer)
-	serializers := compactConfig.Serializers()
+	serializers := compactSerializationConfig.Serializers()
 	for typeName, serializer := range serializers {
 		typeNameToSerializer[typeName] = serializer
 		typeToSerializer[serializer.Type()] = serializer

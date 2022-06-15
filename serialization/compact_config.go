@@ -16,12 +16,12 @@
 
 package serialization
 
-type CompactConfig struct {
+type CompactSerializationConfig struct {
 	serializers map[string]CompactSerializer
 }
 
-func (cc CompactConfig) Clone() CompactConfig {
-	clone := CompactConfig{}
+func (cc CompactSerializationConfig) Clone() CompactSerializationConfig {
+	clone := CompactSerializationConfig{}
 	m := make(map[string]CompactSerializer)
 	for k, v := range cc.serializers {
 		m[k] = v
@@ -30,23 +30,23 @@ func (cc CompactConfig) Clone() CompactConfig {
 	return clone
 }
 
-func (cc *CompactConfig) Serializers() map[string]CompactSerializer {
+func (cc *CompactSerializationConfig) Serializers() map[string]CompactSerializer {
 	return cc.serializers
 }
 
-func (cc *CompactConfig) Validate() error {
+func (cc *CompactSerializationConfig) Validate() error {
 	cc.ensureSerializers()
 	return nil
 }
 
-func (cc *CompactConfig) SetSerializers(serializers ...CompactSerializer) {
+func (cc *CompactSerializationConfig) SetSerializers(serializers ...CompactSerializer) {
 	cc.ensureSerializers()
 	for _, ser := range serializers {
 		cc.serializers[ser.TypeName()] = ser
 	}
 }
 
-func (cc *CompactConfig) ensureSerializers() {
+func (cc *CompactSerializationConfig) ensureSerializers() {
 	if cc.serializers == nil {
 		cc.serializers = make(map[string]CompactSerializer)
 	}
