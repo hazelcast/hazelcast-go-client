@@ -66,7 +66,7 @@ func (s Schema) FieldCount() int {
 	return len(s.fieldDefinitions)
 }
 
-func (s Schema) ToString() string {
+func (s *Schema) String() string {
 	return fmt.Sprintf("Schema{typeName=%s, numberOfComplexFields=%d, primitivesLength=%d, fieldDefinitionMap=%v}",
 		s.typeName, s.numberOfVarSizeFields, s.fixedSizeFieldsLength, s.fieldDefinitionMap)
 }
@@ -78,7 +78,6 @@ func (s *Schema) TypeName() string {
 func (s *Schema) init(rabin RabinFingerPrint) {
 	fixedSizeFields := make([]*FieldDescriptor, 0)
 	variableSizeFields := make([]*FieldDescriptor, 0)
-
 	for _, descriptor := range s.fieldDefinitionMap {
 		fieldKind := descriptor.fieldKind
 		if FieldOperations(fieldKind).KindSizeInBytes() == VARIABLE_SIZE {
@@ -87,25 +86,18 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 			fixedSizeFields = append(fixedSizeFields, descriptor)
 		}
 	}
-
 	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
 		return FieldOperations(fixedSizeFields[j].fieldKind).KindSizeInBytes() < FieldOperations(fixedSizeFields[i].fieldKind).KindSizeInBytes()
 	})
-
-	offset := int32(0)
+	var offset int32
 	for _, descriptor := range fixedSizeFields {
 		descriptor.offset = offset
 		offset += FieldOperations(descriptor.fieldKind).KindSizeInBytes()
 	}
-
 	s.fixedSizeFieldsLength = offset
-
-	index := int32(0)
-	for _, descriptor := range variableSizeFields {
-		descriptor.index = index
-		index += 1
+	for i, descriptor := range variableSizeFields {
+		descriptor.index = int32(i)
 	}
-	s.numberOfVarSizeFields = index
-
-	s.id = rabin.OfSchema(*s)
+	s.numberOfVarSizeFields = int32(len(variableSizeFields))
+	s.id = rabin.OfSchema(s)
 }

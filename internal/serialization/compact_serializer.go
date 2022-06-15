@@ -55,18 +55,18 @@ func (CompactStreamSerializer) ID() int32 {
 	return TypeCompact
 }
 
-func (c *CompactStreamSerializer) Read(input serialization.DataInput) interface{} {
+func (c CompactStreamSerializer) Read(input serialization.DataInput) interface{} {
 	schema := c.getOrReadSchema(input)
 	typeName := schema.TypeName()
 	serializer, ok := c.typeNameToSerializer[typeName]
 	if !ok {
 		panic("No compact serializer found for type: " + typeName)
 	}
-	reader := NewDefaultCompactReader(*c, input.(*ObjectDataInput), schema)
+	reader := NewDefaultCompactReader(c, input.(*ObjectDataInput), schema)
 	return serializer.Read(reader)
 }
 
-func (c *CompactStreamSerializer) Write(output serialization.DataOutput, object interface{}) {
+func (c CompactStreamSerializer) Write(output serialization.DataOutput, object interface{}) {
 	t := reflect.TypeOf(object)
 	serializer := c.typeToSerializer[t]
 
@@ -79,17 +79,17 @@ func (c *CompactStreamSerializer) Write(output serialization.DataOutput, object 
 		c.typeToSchema[t] = schema
 	}
 	output.WriteInt64(schema.ID())
-	writer := NewDefaultCompactWriter(*c, output.(*PositionalObjectDataOutput), schema)
+	writer := NewDefaultCompactWriter(c, output.(*PositionalObjectDataOutput), schema)
 	serializer.Write(writer, object)
 	writer.End()
 }
 
-func (c *CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
+func (c CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
 	_, ok := c.typeToSerializer[t]
 	return ok
 }
 
-func (c *CompactStreamSerializer) getOrReadSchema(input serialization.DataInput) Schema {
+func (c CompactStreamSerializer) getOrReadSchema(input serialization.DataInput) Schema {
 	schemaId := input.ReadInt64()
 	schema, ok := c.schemaService.Get(schemaId)
 	if ok {

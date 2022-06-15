@@ -87,10 +87,10 @@ func (r DefaultCompactWriter) End() {
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.ToString()), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.String()), nil))
 	}
 	if fd.fieldKind != fieldKind {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %s", fieldName, r.schema.ToString()), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %s", fieldName, r.schema.String()), nil))
 	}
 	return *fd
 }
@@ -130,7 +130,7 @@ func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKin
 }
 
 func (r DefaultCompactWriter) writeOffsets(dataLength int32, fieldOffsets []int32) {
-	// Write now we don't need other offset writers
+	// Right now we don't need other offset writers
 	for _, offset := range fieldOffsets {
 		r.out.WriteByte(byte(offset))
 	}

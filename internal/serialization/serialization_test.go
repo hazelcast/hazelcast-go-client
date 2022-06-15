@@ -407,22 +407,16 @@ func TestWithExplicitSerializer(t *testing.T) {
 	service, _ := iserialization.NewService(c)
 	name := "S"
 	obj := student{Age: 12, Name: &name}
-
 	data, err := service.ToData(obj)
-
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	ret, err := service.ToObject(data)
-
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if !reflect.DeepEqual(obj, ret) {
 		t.Error("compact serialization failed")
 	}
@@ -437,22 +431,16 @@ func TestAllTypesWithCustomSerializer(t *testing.T) {
 	}
 	service, _ := iserialization.NewService(c)
 	mainDTO := NewMainDTO()
-
 	data, err := service.ToData(mainDTO)
-
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	ret, err := service.ToObject(data)
-
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if !reflect.DeepEqual(mainDTO, ret) {
 		t.Error("compact serialization failed")
 	}

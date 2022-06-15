@@ -38,7 +38,7 @@ func (r RabinFingerPrint) Init() {
 	}
 }
 
-func (r RabinFingerPrint) OfSchema(schema Schema) int64 {
+func (r RabinFingerPrint) OfSchema(schema *Schema) int64 {
 	fingerprint := r.ofString(INIT, schema.TypeName())
 	fingerprint = r.ofInt32(fingerprint, int32(schema.FieldCount()))
 	for _, descriptor := range schema.fieldDefinitions {
