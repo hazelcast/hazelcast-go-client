@@ -378,7 +378,7 @@ func (studentCompactSerializer) Type() reflect.Type {
 }
 
 func (s studentCompactSerializer) TypeName() string {
-	return s.Type().Name()
+	return "student"
 }
 
 func (s studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {

@@ -55,7 +55,6 @@ func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *Positional
 	}
 }
 
-
 func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) {
 	position := r.getFixedSizeFieldPosition(fieldName, pserialization.FieldKindInt32)
 	r.out.PWriteInt32(position, value)
@@ -68,7 +67,7 @@ func (r DefaultCompactWriter) WriteString(fieldName string, value *string) {
 }
 
 /**
- * Ends the serialization of the compact objects by writing
+ * End ends the serialization of the compact objects by writing
  * the offsets of the variable-size fields as well as the
  * data length, if there are some variable-size fields.
  */
@@ -86,10 +85,10 @@ func (r DefaultCompactWriter) End() {
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %s", fieldName, r.schema.String()), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %v", fieldName, r.schema), nil))
 	}
 	if fd.fieldKind != fieldKind {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %s", fieldName, r.schema.String()), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %v", fieldName, r.schema), nil))
 	}
 	return *fd
 }

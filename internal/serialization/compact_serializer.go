@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -95,5 +96,5 @@ func (c CompactStreamSerializer) getOrReadSchema(input serialization.DataInput) 
 	if ok {
 		return schema
 	}
-	panic(fmt.Sprintf("The schema cannot be found with id: %d", schemaId))
+	panic(hzerrors.NewSerializationError(fmt.Sprintf("The schema cannot be found with id: %d", schemaId),  nil))
 }

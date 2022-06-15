@@ -58,11 +58,11 @@ func (s *Schema) GetField(fieldName string) *FieldDescriptor {
 	return nil
 }
 
-func (s Schema) ID() int64 {
+func (s *Schema) ID() int64 {
 	return s.id
 }
 
-func (s Schema) FieldCount() int {
+func (s *Schema) FieldCount() int {
 	return len(s.fieldDefinitions)
 }
 
