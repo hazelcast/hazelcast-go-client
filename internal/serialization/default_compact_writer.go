@@ -46,7 +46,6 @@ func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *Positional
 		// variable-size fields.
 		out.WriteZeroBytes(int(schema.fixedSizeFieldsLength))
 	}
-
 	return DefaultCompactWriter{
 		serializer:        serializer,
 		out:               out,

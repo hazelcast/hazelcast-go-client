@@ -62,12 +62,10 @@ func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 
 func (r DefaultCompactReader) ReadString(fieldName string) *string {
 	fd := r.getFieldDefinitionChecked(fieldName, pserialization.FieldKindString)
-
 	value := r.getVariableSize(fd, func(in *ObjectDataInput) interface{} {
 		str := in.ReadString()
 		return &str
 	})
-
 	if value == nil {
 		return nil
 	}
@@ -76,9 +74,7 @@ func (r DefaultCompactReader) ReadString(fieldName string) *string {
 
 func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDataInput, schema Schema) DefaultCompactReader {
 	numberOfVarSizeFields := schema.numberOfVarSizeFields
-
 	var variableOffsetsPosition, dataStartPosition, finalPosition int32
-
 	if numberOfVarSizeFields == 0 {
 		dataStartPosition = input.Position()
 		finalPosition = dataStartPosition + schema.fixedSizeFieldsLength
@@ -90,7 +86,6 @@ func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDa
 		finalPosition = variableOffsetsPosition + numberOfVarSizeFields
 	}
 	input.SetPosition(finalPosition)
-
 	return DefaultCompactReader{
 		schema:                  schema,
 		in:                      input,
