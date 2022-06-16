@@ -93,7 +93,7 @@ func (c *CompactStreamSerializer) getOrReadSchema(input serialization.DataInput)
 	schemaId := input.ReadInt64()
 	schema, ok := c.schemaService.Get(schemaId)
 	if ok {
-		return schema
+		panic(fmt.Sprintf("The schema cannot be found with id: %d", schemaId))
 	}
-	panic(fmt.Sprintf("The schema cannot be found with id: %d", schemaId))
+	return schema
 }

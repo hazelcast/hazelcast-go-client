@@ -367,9 +367,7 @@ func (r *DefaultCompactWriter) writeArrayOfVariableSize(fieldName string, fieldK
 		r.setPositionAsNull(fieldName, fieldKind)
 		return
 	}
-
 	value := reflect.ValueOf(values)
-
 	r.setPosition(fieldName, fieldKind)
 	dataLengthOffset := r.out.position
 	r.out.WriteZeroBytes(Int32SizeInBytes)
@@ -417,17 +415,18 @@ func (r DefaultCompactWriter) writeBooleanBits(out *PositionalObjectDataOutput, 
 	}
 	r.out.WriteInt32(int32(length))
 	position := r.out.position
-	if length > 0 {
-		index := int32(0)
-		r.out.WriteZeroBytes(1)
-		for _, bool := range booleans {
-			if index == BitsInAByte {
-				index = 0
-				r.out.WriteZeroBytes(1)
-				position += 1
-			}
-			r.out.PWriteBoolBit(position, index, bool)
-			index += 1
+	if length <= 0  {
+		return
+	}
+	index := int32(0)
+	r.out.WriteZeroBytes(1)
+	for _, bool := range booleans {
+		if index == BitsInAByte {
+			index = 0
+			r.out.WriteZeroBytes(1)
+			position += 1
 		}
+		r.out.PWriteBoolBit(position, index, bool)
+		index += 1
 	}
 }
