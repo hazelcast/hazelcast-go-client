@@ -21,7 +21,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type DefaultCompactWriter struct {
@@ -56,21 +56,17 @@ func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *Positional
 }
 
 func (r DefaultCompactWriter) WriteInt32(fieldName string, value int32) {
-	position := r.getFixedSizeFieldPosition(fieldName, pserialization.FieldKindInt32)
+	position := r.getFixedSizeFieldPosition(fieldName, pubserialization.FieldKindInt32)
 	r.out.PWriteInt32(position, value)
 }
 
 func (r DefaultCompactWriter) WriteString(fieldName string, value *string) {
-	r.writeVariableSizeField(fieldName, pserialization.FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
+	r.writeVariableSizeField(fieldName, pubserialization.FieldKindString, value, func(out *PositionalObjectDataOutput, v interface{}) {
 		out.WriteString(*v.(*string))
 	})
 }
 
-/**
- * End ends the serialization of the compact objects by writing
- * the offsets of the variable-size fields as well as the
- * data length, if there are some variable-size fields.
- */
+// End ends the serialization of the compact objects by writing the offsets of the variable-size fields as well as the data length, if there are some variable-size fields.
 func (r DefaultCompactWriter) End() {
 	if r.schema.numberOfVarSizeFields == 0 {
 		return
@@ -78,11 +74,10 @@ func (r DefaultCompactWriter) End() {
 	position := r.out.Position()
 	dataLength := position - r.dataStartPosition
 	r.writeOffsets(dataLength, r.fieldOffsets)
-	//write dataLength
 	r.out.PWriteInt32(r.dataStartPosition-Int32SizeInBytes, dataLength)
 }
 
-func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
+func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %v", fieldName, r.schema), nil))
@@ -93,12 +88,12 @@ func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, field
 	return *fd
 }
 
-func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pserialization.FieldKind) int32 {
+func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pubserialization.FieldKind) int32 {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	return fd.offset + r.dataStartPosition
 }
 
-func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind pserialization.FieldKind) error {
+func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind pubserialization.FieldKind) error {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	position := r.out.Position()
 	fieldPosition := position - r.dataStartPosition
@@ -107,14 +102,14 @@ func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind pserializ
 	return nil
 }
 
-func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind pserialization.FieldKind) error {
+func (r *DefaultCompactWriter) setPositionAsNull(fieldName string, fieldKind pubserialization.FieldKind) error {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	index := fd.index
 	r.fieldOffsets[index] = -1
 	return nil
 }
 
-func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKind pserialization.FieldKind, value interface{}, writer func(*PositionalObjectDataOutput, interface{})) error {
+func (r *DefaultCompactWriter) writeVariableSizeField(fieldName string, fieldKind pubserialization.FieldKind, value interface{}, writer func(*PositionalObjectDataOutput, interface{})) error {
 	if check.Nil(value) {
 		err := r.setPositionAsNull(fieldName, fieldKind)
 		if err != nil {

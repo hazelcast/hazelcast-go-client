@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const NULL_OFFSET = -1
+const NullOffset = -1
 
 type OffsetReader interface {
 	getOffset(input *ObjectDataInput, variableOffsetsPos, index int32) int32
@@ -34,35 +34,34 @@ type ByteOffsetReader struct{}
 func (ByteOffsetReader) getOffset(input *ObjectDataInput, variableOffsetsPos, index int32) int32 {
 	offset := input.ReadByteAtPosition(variableOffsetsPos + index)
 	if offset == 0xFF {
-		return NULL_OFFSET
+		return NullOffset
 	}
 	return int32(offset)
 }
 
 type DefaultCompactReader struct {
-	offsetReader            OffsetReader
-	in                      *ObjectDataInput
-	serializer              CompactStreamSerializer
-	schema                  Schema
-	dataStartPosition       int32
-	variableOffsetsPosition int32
+	offsetReader OffsetReader
+	in           *ObjectDataInput
+	serializer   CompactStreamSerializer
+	schema       Schema
+	startPos     int32
+	offsetsPos   int32
 }
 
 func (r DefaultCompactReader) ReadInt32(fieldName string) int32 {
 	fd := r.getFieldDefinition(fieldName)
-	fieldKind := fd.fieldKind
-	switch fieldKind {
-	case pserialization.FieldKindInt32:
-		position := r.readFixedSizePosition(fd)
-		return r.in.ReadInt32AtPosition(position)
+	switch fd.fieldKind {
+	case pubserialization.FieldKindInt32:
+		p := r.readFixedSizePosition(fd)
+		return r.in.ReadInt32AtPosition(p)
 	default:
-		panic(r.unexpectedFieldKind(fieldKind, fieldName))
+		panic(newUnexpectedFieldKind(fd.fieldKind, fieldName))
 	}
 }
 
 func (r DefaultCompactReader) ReadString(fieldName string) *string {
-	fd := r.getFieldDefinitionChecked(fieldName, pserialization.FieldKindString)
-	value := r.getVariableSize(fd, func(in *ObjectDataInput) interface{} {
+	fd := r.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindString)
+	value := r.readVariableSizeField(fd, func(in *ObjectDataInput) interface{} {
 		str := in.ReadString()
 		return &str
 	})
@@ -73,63 +72,60 @@ func (r DefaultCompactReader) ReadString(fieldName string) *string {
 }
 
 func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDataInput, schema Schema) DefaultCompactReader {
-	numberOfVarSizeFields := schema.numberOfVarSizeFields
-	var variableOffsetsPosition, dataStartPosition, finalPosition int32
-	if numberOfVarSizeFields == 0 {
-		dataStartPosition = input.Position()
-		finalPosition = dataStartPosition + schema.fixedSizeFieldsLength
-		variableOffsetsPosition = 0
+	var offsetsPosition, startPos, finalPos int32
+	if schema.numberOfVarSizeFields == 0 {
+		startPos = input.Position()
+		finalPos = startPos + schema.fixedSizeFieldsLength
 	} else {
 		dataLength := input.readInt32()
-		dataStartPosition = input.Position()
-		variableOffsetsPosition = dataStartPosition + dataLength
-		finalPosition = variableOffsetsPosition + numberOfVarSizeFields
+		startPos = input.Position()
+		offsetsPosition = startPos + dataLength
+		finalPos = offsetsPosition + schema.numberOfVarSizeFields
 	}
-	input.SetPosition(finalPosition)
+	input.SetPosition(finalPos)
 	return DefaultCompactReader{
-		schema:                  schema,
-		in:                      input,
-		serializer:              serializer,
-		dataStartPosition:       dataStartPosition,
-		offsetReader:            &ByteOffsetReader{},
-		variableOffsetsPosition: variableOffsetsPosition,
+		schema:       schema,
+		in:           input,
+		serializer:   serializer,
+		startPos:     startPos,
+		offsetReader: &ByteOffsetReader{},
+		offsetsPos:   offsetsPosition,
 	}
 }
 
 func (r *DefaultCompactReader) getFieldDefinition(fieldName string) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
-		panic(r.unknownField(fieldName))
+		panic(newUnknownField(fieldName, r.schema))
 	}
 	return *fd
 }
 
-func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
+func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
 	fd := r.getFieldDefinition(fieldName)
 	if fd.fieldKind != fieldKind {
-		panic(r.unexpectedFieldKind(fd.fieldKind, fieldName))
+		panic(newUnexpectedFieldKind(fd.fieldKind, fieldName))
 	}
 	return fd
 }
 
 func (r *DefaultCompactReader) readFixedSizePosition(fd FieldDescriptor) int32 {
-	primitiveOffset := fd.offset
-	return primitiveOffset + r.dataStartPosition
+	return fd.offset + r.startPos
 }
 
-func (r *DefaultCompactReader) unknownField(fieldName string) error {
-	return ihzerrors.NewSerializationError(fmt.Sprintf("Unknown field name '%s' for %v", fieldName, r.schema), nil)
+func newUnknownField(fieldName string, schema Schema) error {
+	return ihzerrors.NewSerializationError(fmt.Sprintf("unknown field name '%s' for %v", fieldName, schema), nil)
 }
 
-func (r *DefaultCompactReader) unexpectedFieldKind(actualFieldKind pserialization.FieldKind, fieldName string) error {
-	return ihzerrors.NewSerializationError(fmt.Sprintf("Unexpected field kind '%d' for field %s", actualFieldKind, fieldName), nil)
+func newUnexpectedFieldKind(actualFieldKind pubserialization.FieldKind, fieldName string) error {
+	return ihzerrors.NewSerializationError(fmt.Sprintf("unexpected field kind '%d' for field %s", actualFieldKind, fieldName), nil)
 }
 
-func (r *DefaultCompactReader) getVariableSize(fd FieldDescriptor, reader func(*ObjectDataInput) interface{}) interface{} {
+func (r *DefaultCompactReader) readVariableSizeField(fd FieldDescriptor, reader func(*ObjectDataInput) interface{}) interface{} {
 	currentPos := r.in.Position()
 	defer r.in.SetPosition(currentPos)
 	position := r.readVariableSizeFieldPosition(fd)
-	if position == NULL_OFFSET {
+	if position == NullOffset {
 		return nil
 	}
 	r.in.SetPosition(position)
@@ -137,10 +133,9 @@ func (r *DefaultCompactReader) getVariableSize(fd FieldDescriptor, reader func(*
 }
 
 func (r *DefaultCompactReader) readVariableSizeFieldPosition(fd FieldDescriptor) int32 {
-	index := fd.index
-	offset := r.offsetReader.getOffset(r.in, r.variableOffsetsPosition, index)
-	if offset == NULL_OFFSET {
-		return NULL_OFFSET
+	offset := r.offsetReader.getOffset(r.in, r.offsetsPos, fd.index)
+	if offset == NullOffset {
+		return NullOffset
 	}
-	return offset + r.dataStartPosition
+	return offset + r.startPos
 }
