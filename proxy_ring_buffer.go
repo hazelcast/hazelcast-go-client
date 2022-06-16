@@ -246,16 +246,16 @@ func (rrs *ReadResultSet) ReadCount() int32 {
 
 // Get one item from List of items that have been read.
 func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
-	if index < 0 || int32(index) >= rrs.readCount {
-		return nil, hzcerrors.NewIllegalArgumentError(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount), nil)
+	if err := rrs.validateIndexInRange(index); err != nil {
+		return nil, err
 	}
 	return rrs.rb.convertToObject(rrs.items[index])
 }
 
 // GetSequence one sequence number from List of sequence numbers for the items that have been read.
 func (rrs *ReadResultSet) GetSequence(index int) (int64, error) {
-	if index < 0 || int32(index) >= rrs.readCount {
-		return ReadResultSetSequenceUnavailable, errors.New(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount))
+	if err := rrs.validateIndexInRange(index); err != nil {
+		return ReadResultSetSequenceUnavailable, err
 	}
 	return rrs.itemSeqs[index], nil
 }
@@ -268,4 +268,11 @@ func (rrs *ReadResultSet) Size() int {
 // GetNextSequenceToReadFrom sequence number of the item following the last read item.
 func (rrs *ReadResultSet) GetNextSequenceToReadFrom() int64 {
 	return rrs.nextSeq
+}
+
+func (rrs *ReadResultSet) validateIndexInRange(index int) error {
+	if index < 0 || int32(index) >= rrs.readCount {
+		return hzcerrors.NewIllegalArgumentError(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount), nil)
+	}
+	return nil
 }
