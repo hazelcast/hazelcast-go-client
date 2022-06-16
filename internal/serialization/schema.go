@@ -66,7 +66,7 @@ func (s *Schema) FieldCount() int {
 	return len(s.fieldDefinitions)
 }
 
-func (s *Schema) String() string {
+func (s Schema) String() string {
 	return fmt.Sprintf("Schema{typeName=%s, numberOfComplexFields=%d, primitivesLength=%d, fieldDefinitionMap=%v}",
 		s.typeName, s.numberOfVarSizeFields, s.fixedSizeFieldsLength, s.fieldDefinitionMap)
 }

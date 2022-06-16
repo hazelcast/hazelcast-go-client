@@ -114,7 +114,7 @@ func (r *DefaultCompactReader) readFixedSizePosition(fd FieldDescriptor) int32 {
 }
 
 func newUnknownField(fieldName string, schema Schema) error {
-	return ihzerrors.NewSerializationError(fmt.Sprintf("unknown field name '%s' for %v", fieldName, schema), nil)
+	return ihzerrors.NewSerializationError(fmt.Sprintf("unknown field name '%s' for %s", fieldName, schema), nil)
 }
 
 func newUnexpectedFieldKind(actualFieldKind pubserialization.FieldKind, fieldName string) error {
