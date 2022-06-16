@@ -79,14 +79,16 @@ func newNearCache(cfg *nearcache.Config, ss *serialization.Service) *nearCache {
 }
 
 func (nc *nearCache) Get(key interface{}) (interface{}, bool, error) {
-	_, ok := key.(serialization.Data)
-	if nc.cfg.SerializeKeys {
-		if !ok {
-			panic("key must be of type serialization.Data!")
+	/*
+		_, ok := key.(serialization.Data)
+		if nc.cfg.SerializeKeys {
+			if !ok {
+				panic("key must be of type serialization.Data!")
+			}
+		} else if ok {
+			panic("key cannot be of type Data!")
 		}
-	} else if ok {
-		panic("key cannot be of type Data!")
-	}
+	*/
 	return nc.store.Get(key)
 }
 
@@ -94,12 +96,16 @@ func (nc *nearCache) Invalidate(key interface{}) {
 	nc.store.Invalidate(key)
 }
 
-func (nc *nearCache) Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data) {
+func (nc *nearCache) Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data) error {
 	nc.store.DoEviction(false)
-	nc.store.Put(key, keyData, value, valueData)
+	return nc.store.Put(key, keyData, value, valueData)
 }
 
-func (nc *nearCache) Stats() nearcache.Stats {
+func (nc nearCache) Size() int {
+	return nc.store.Size()
+}
+
+func (nc nearCache) Stats() nearcache.Stats {
 	return nc.store.Stats()
 }
 
@@ -125,13 +131,13 @@ const (
 
 type nearCacheRecordStore struct {
 	stats            nearcache.Stats
+	maxIdleMillis    int64
+	reservationID    int64
+	timeToLiveMillis int64
 	recordsMu        *sync.Mutex
 	records          map[interface{}]*nearCacheRecord
-	maxIdleMillis    int64
 	ss               *serialization.Service
-	reservationID    int64
 	serializeValues  bool
-	timeToLiveMillis int64
 }
 
 func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service) nearCacheRecordStore {
@@ -225,6 +231,28 @@ func (rs *nearCacheRecordStore) TryPublishReserved(key interface{}, value interf
 	return cached, nil
 }
 
+func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) bool {
+	// TODO: implement this
+	return false
+}
+
+func (rs nearCacheRecordStore) Stats() nearcache.Stats {
+	return nearcache.Stats{
+		Hits:            atomic.LoadInt64(&rs.stats.Hits),
+		Misses:          atomic.LoadInt64(&rs.stats.Misses),
+		Expirations:     atomic.LoadInt64(&rs.stats.Expirations),
+		OwnedMemoryCost: atomic.LoadInt64(&rs.stats.OwnedMemoryCost),
+		OwnedEntryCount: atomic.LoadInt64(&rs.stats.OwnedEntryCount),
+	}
+}
+
+func (rs nearCacheRecordStore) Size() int {
+	rs.recordsMu.Lock()
+	size := len(rs.records)
+	rs.recordsMu.Unlock()
+	return size
+}
+
 func (rs *nearCacheRecordStore) publishReserved(key, value interface{}, rec *nearCacheRecord, reservationID int64) (*nearCacheRecord, error) {
 	if rec.ReservationID() != reservationID {
 		return rec, nil
@@ -270,21 +298,6 @@ func (rs *nearCacheRecordStore) getKeyStorageMemoryCost(key interface{}) int64 {
 func (rs *nearCacheRecordStore) getRecordStorageMemoryCost(rec *nearCacheRecord) int64 {
 	// TODO:
 	return 0
-}
-
-func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) bool {
-	// TODO: implement this
-	return false
-}
-
-func (rs nearCacheRecordStore) Stats() nearcache.Stats {
-	return nearcache.Stats{
-		Hits:            atomic.LoadInt64(&rs.stats.Hits),
-		Misses:          atomic.LoadInt64(&rs.stats.Misses),
-		Expirations:     atomic.LoadInt64(&rs.stats.Expirations),
-		OwnedMemoryCost: atomic.LoadInt64(&rs.stats.OwnedMemoryCost),
-		OwnedEntryCount: atomic.LoadInt64(&rs.stats.OwnedEntryCount),
-	}
 }
 
 func (rs *nearCacheRecordStore) incrementHits() {

@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -40,7 +39,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/logger"
-	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -353,85 +351,6 @@ func TestClientInternal_EncodeData(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, "foo", v)
-	})
-}
-
-// ==== NearCache Tests ====
-
-/*
-func TestGetAllChecksNearCacheFirst(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAllChecksNearCacheFirst
-	var mapName string
-	makeName := func(p ...string) string {
-		p = append([]string{"nearcache"}, p...)
-		mapName = strings.Join(p, "-")
-		return mapName
-	}
-	configCB := func(cfg *hz.Config) {
-		ncc := nearcache.Config{Name: "nearcache*"}
-		cfg.AddNearCacheConfig(ncc)
-	}
-	it.MapTesterWithConfigAndName(t, makeName, configCB, func(t *testing.T, m *hz.Map) {
-		const size = 1003
-		ctx := context.Background()
-		var keys []interface{}
-		for i := 0; i < size; i++ {
-			it.MustValue(m.Put(ctx, i, i))
-			keys = append(keys, i)
-		}
-		// populate near cache
-		for i := 0; i < size; i++ {
-			it.MustValue(m.Get(ctx, i))
-		}
-		// GetAll generates the near cache hits
-		it.MustValue(m.GetAll(ctx, keys))
-		stats := m.localMapStats().NearCacheStats
-		assert.Equal(t, size, stats.Hits)
-		//assert.Equal(t, size, stats.OwnedEntryCount)
-	})
-}
-*/
-
-func TestGetNearCache(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAsync
-	// this test is in this file, since it requires hazelcastinternaltest tag.
-	testName := t.Name()
-	makeName := func(p ...string) string {
-		p = append([]string{testName}, p...)
-		return strings.Join(p, "-")
-	}
-	configCB := func(cfg *hz.Config) {
-		ncc := nearcache.Config{
-			Name:           "*",
-			InMemoryFormat: nearcache.InMemoryFormatObject,
-		}
-		ncc.SetInvalidateOnChange(false)
-		cfg.AddNearCacheConfig(ncc)
-	}
-	it.MapTesterWithConfigAndName(t, makeName, configCB, func(t *testing.T, m *hz.Map) {
-		const size = 1009
-		ctx := context.Background()
-		// populate map
-		for i := 0; i < size; i++ {
-			it.MustValue(m.Put(ctx, i, i))
-		}
-		// populate near cache
-		for i := 0; i < size; i++ {
-			v := it.MustValue(m.Get(ctx, i))
-			if !assert.Equal(t, int64(i), v) {
-				t.FailNow()
-			}
-		}
-		// generate near cache hits
-		for i := 0; i < size; i++ {
-			v := it.MustValue(m.Get(ctx, i))
-			if !assert.Equal(t, int64(i), v) {
-				t.FailNow()
-			}
-		}
-		stats := m.LocalMapStats().NearCacheStats
-		assert.Equal(t, int64(size), stats.Hits)
-		assert.Equal(t, int64(size), stats.OwnedEntryCount)
 	})
 }
 

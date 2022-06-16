@@ -26,6 +26,77 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 )
 
+type MapTestContext struct {
+	T              *testing.T
+	M              *hz.Map
+	MapName        string
+	Client         *hz.Client
+	Config         *hz.Config
+	ConfigCallback func(*hz.Config)
+	NameMaker      func(...string) string
+}
+
+func MapTesterWithContext(tcx *MapTestContext, f func(*MapTestContext)) {
+	ensureRemoteController(true)
+	runner := func(t *testing.T, smart bool) {
+		if LeakCheckEnabled() {
+			t.Logf("enabled leak check")
+			defer goleak.VerifyNone(t)
+		}
+		config := defaultTestCluster.DefaultConfig()
+		if tcx.Config != nil {
+			config = *tcx.Config
+		}
+		if tcx.ConfigCallback != nil {
+			tcx.ConfigCallback(&config)
+		}
+		config.Cluster.Unisocket = !smart
+		tcx.Config = &config
+		ls := "smart"
+		if !smart {
+			ls = "unisocket"
+		}
+		if tcx.NameMaker == nil {
+			tcx.NameMaker = func(labels ...string) string {
+				return NewUniqueObjectName("map", labels...)
+			}
+		}
+		if tcx.MapName == "" {
+			tcx.MapName = tcx.NameMaker(ls)
+		}
+		if tcx.Client == nil {
+			tcx.Client = getDefaultClient(tcx.Config)
+		}
+		if tcx.M == nil {
+			m, err := tcx.Client.GetMap(context.Background(), tcx.MapName)
+			if err != nil {
+				panic(err)
+			}
+			tcx.M = m
+		}
+		defer func() {
+			ctx := context.Background()
+			if err := tcx.M.Destroy(ctx); err != nil {
+				t.Logf("test warning, could not destroy map: %s", err.Error())
+			}
+			if err := tcx.Client.Shutdown(ctx); err != nil {
+				t.Logf("Test warning, client not shutdown: %s", err.Error())
+			}
+		}()
+		f(tcx)
+	}
+	if SmartEnabled() {
+		tcx.T.Run("Smart Client", func(t *testing.T) {
+			runner(t, true)
+		})
+	}
+	if NonSmartEnabled() {
+		tcx.T.Run("Non-Smart Client", func(t *testing.T) {
+			runner(t, false)
+		})
+	}
+}
+
 func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 	MapTesterWithConfig(t, nil, f)
 }
@@ -38,47 +109,16 @@ func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t
 }
 
 func MapTesterWithConfigAndName(t *testing.T, makeMapName func(...string) string, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
-	var (
-		client *hz.Client
-		m      *hz.Map
-	)
-	ensureRemoteController(true)
-	runner := func(t *testing.T, smart bool) {
-		if LeakCheckEnabled() {
-			t.Logf("enabled leak check")
-			defer goleak.VerifyNone(t)
-		}
-		config := defaultTestCluster.DefaultConfig()
-		if configCallback != nil {
-			configCallback(&config)
-		}
-		config.Cluster.Unisocket = !smart
-		ls := "smart"
-		if !smart {
-			ls = "unisocket"
-		}
-		client, m = GetClientMapWithConfig(makeMapName(ls), &config)
-		defer func() {
-			ctx := context.Background()
-			if err := m.Destroy(ctx); err != nil {
-				t.Logf("test warning, could not destroy map: %s", err.Error())
-			}
-			if err := client.Shutdown(ctx); err != nil {
-				t.Logf("Test warning, client not shutdown: %s", err.Error())
-			}
-		}()
-		f(t, m)
+	cfg := defaultTestCluster.DefaultConfig()
+	tcx := &MapTestContext{
+		T:              t,
+		Config:         &cfg,
+		NameMaker:      makeMapName,
+		ConfigCallback: configCallback,
 	}
-	if SmartEnabled() {
-		t.Run("Smart Client", func(t *testing.T) {
-			runner(t, true)
-		})
-	}
-	if NonSmartEnabled() {
-		t.Run("Non-Smart Client", func(t *testing.T) {
-			runner(t, false)
-		})
-	}
+	MapTesterWithContext(tcx, func(tcx *MapTestContext) {
+		f(tcx.T, tcx.M)
+	})
 }
 
 func GetClientMapWithConfig(mapName string, config *hz.Config) (*hz.Client, *hz.Map) {

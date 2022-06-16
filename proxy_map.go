@@ -979,6 +979,13 @@ func (m *Map) Unlock(ctx context.Context, key interface{}) error {
 	}
 }
 
+func (m *Map) LocalMapStats() LocalMapStats {
+	if m.hasNearCache {
+		return m.ncm.GetLocalMapStats()
+	}
+	return LocalMapStats{}
+}
+
 func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error {
 	if err := validateAndNormalizeIndexConfig(&indexConfig); err != nil {
 		return err
@@ -1332,6 +1339,10 @@ func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
 }
 
+type LocalMapStats struct {
+	NearCacheStats nearcache.Stats
+}
+
 type nearCacheMap struct {
 	nc             *nearCache
 	ncc            *nearcache.Config
@@ -1355,7 +1366,12 @@ func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Ser
 	// toNearCacheKey returns the raw key if SerializeKeys is not true.
 	if ncc.SerializeKeys {
 		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
-			return ss.ToData(key)
+			data, err := ss.ToData(key)
+			if err != nil {
+				return nil, err
+			}
+			// byte slices cannot be map keys
+			return string(data), nil
 		}
 	} else {
 		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
@@ -1444,6 +1460,12 @@ func (ncm *nearCacheMap) Put(ctx context.Context, key interface{}, f func(ctx co
 		return nil, err
 	}
 	return prev, nil
+}
+
+func (ncm *nearCacheMap) GetLocalMapStats() LocalMapStats {
+	return LocalMapStats{
+		NearCacheStats: ncm.nc.Stats(),
+	}
 }
 
 func (ncm *nearCacheMap) getCachedValue(key interface{}, deserialize bool) (value interface{}, found bool, err error) {

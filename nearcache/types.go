@@ -64,9 +64,13 @@ const (
 )
 
 type Stats struct {
-	Hits            int64
-	Misses          int64
-	Expirations     int64
-	OwnedMemoryCost int64
-	OwnedEntryCount int64
+	OwnedEntryCount      int64
+	OwnedMemoryCost      int64
+	Hits                 int64
+	Misses               int64
+	Evictions            int64
+	Expirations          int64
+	Invalidations        int64
+	InvalidationRequests int64
+	PersistenceCount     int64
 }
