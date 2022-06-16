@@ -67,8 +67,8 @@ const (
 )
 
 type nearCache struct {
-	cfg   *nearcache.Config
 	store nearCacheRecordStore
+	cfg   *nearcache.Config
 }
 
 func newNearCache(cfg *nearcache.Config, ss *serialization.Service) *nearCache {
