@@ -34,11 +34,12 @@ type MapTestContext struct {
 	Config         *hz.Config
 	ConfigCallback func(*hz.Config)
 	NameMaker      func(...string) string
+	Smart          bool
 }
 
 func MapTesterWithContext(tcx *MapTestContext, f func(*MapTestContext)) {
 	ensureRemoteController(true)
-	runner := func(tcx MapTestContext, smart bool) {
+	runner := func(tcx MapTestContext) {
 		if LeakCheckEnabled() {
 			tcx.T.Logf("enabled leak check")
 			defer goleak.VerifyNone(tcx.T)
@@ -50,10 +51,10 @@ func MapTesterWithContext(tcx *MapTestContext, f func(*MapTestContext)) {
 		if tcx.ConfigCallback != nil {
 			tcx.ConfigCallback(&config)
 		}
-		config.Cluster.Unisocket = !smart
+		config.Cluster.Unisocket = !tcx.Smart
 		tcx.Config = &config
 		ls := "smart"
-		if !smart {
+		if !tcx.Smart {
 			ls = "unisocket"
 		}
 		if tcx.NameMaker == nil {
@@ -87,12 +88,16 @@ func MapTesterWithContext(tcx *MapTestContext, f func(*MapTestContext)) {
 	}
 	if SmartEnabled() {
 		tcx.T.Run("Smart Client", func(t *testing.T) {
-			runner(*tcx, true)
+			tt := *tcx
+			tt.Smart = true
+			runner(tt)
 		})
 	}
 	if NonSmartEnabled() {
 		tcx.T.Run("Non-Smart Client", func(t *testing.T) {
-			runner(*tcx, false)
+			tt := *tcx
+			tt.Smart = false
+			runner(tt)
 		})
 	}
 }
