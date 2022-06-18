@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	"go.uber.org/goleak"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 )
 
@@ -30,41 +28,43 @@ type MapTestContext struct {
 	T              *testing.T
 	M              *hz.Map
 	MapName        string
+	Cluster        *TestCluster
 	Client         *hz.Client
 	Config         *hz.Config
-	ConfigCallback func(*hz.Config)
+	ConfigCallback func(testContext MapTestContext)
 	NameMaker      func(...string) string
 	Smart          bool
 }
 
-func MapTesterWithContext(tcx *MapTestContext, f func(*MapTestContext)) {
+func (tcx MapTestContext) Properties() []string {
+	var mode string
+	if tcx.Smart {
+		mode = "smart"
+	} else {
+		mode = "unisocket"
+	}
+	return []string{mode}
+}
+
+func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 	ensureRemoteController(true)
 	runner := func(tcx MapTestContext) {
-		if LeakCheckEnabled() {
-			tcx.T.Logf("enabled leak check")
-			defer goleak.VerifyNone(tcx.T)
-		}
-		config := defaultTestCluster.DefaultConfig()
-		if tcx.Config != nil {
-			config = *tcx.Config
-		}
-		if tcx.ConfigCallback != nil {
-			tcx.ConfigCallback(&config)
-		}
-		config.Cluster.Unisocket = !tcx.Smart
-		tcx.Config = &config
-		ls := "smart"
-		if !tcx.Smart {
-			ls = "unisocket"
-		}
 		if tcx.NameMaker == nil {
 			tcx.NameMaker = func(labels ...string) string {
 				return NewUniqueObjectName("map", labels...)
 			}
 		}
 		if tcx.MapName == "" {
-			tcx.MapName = tcx.NameMaker(ls)
+			tcx.MapName = tcx.NameMaker(tcx.Properties()...)
 		}
+		if tcx.Config == nil {
+			cfg := defaultTestCluster.DefaultConfig()
+			tcx.Config = &cfg
+		}
+		if tcx.ConfigCallback != nil {
+			tcx.ConfigCallback(tcx)
+		}
+		tcx.Config.Cluster.Unisocket = !tcx.Smart
 		if tcx.Client == nil {
 			tcx.Client = getDefaultClient(tcx.Config)
 		}
@@ -84,19 +84,21 @@ func MapTesterWithContext(tcx *MapTestContext, f func(*MapTestContext)) {
 				tcx.T.Logf("Test warning, client not shutdown: %s", err.Error())
 			}
 		}()
-		f(&tcx)
+		f(tcx)
 	}
 	if SmartEnabled() {
 		tcx.T.Run("Smart Client", func(t *testing.T) {
-			tt := *tcx
+			tt := tcx
 			tt.Smart = true
+			tt.T = t
 			runner(tt)
 		})
 	}
 	if NonSmartEnabled() {
 		tcx.T.Run("Non-Smart Client", func(t *testing.T) {
-			tt := *tcx
+			tt := tcx
 			tt.Smart = false
+			tt.T = t
 			runner(tt)
 		})
 	}
@@ -114,12 +116,18 @@ func MapTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t
 }
 
 func MapTesterWithConfigAndName(t *testing.T, makeMapName func(...string) string, configCallback func(*hz.Config), f func(t *testing.T, m *hz.Map)) {
+	var cb func(testContext MapTestContext)
+	if configCallback != nil {
+		cb = func(tcx MapTestContext) {
+			configCallback(tcx.Config)
+		}
+	}
 	tcx := &MapTestContext{
 		T:              t,
 		NameMaker:      makeMapName,
-		ConfigCallback: configCallback,
+		ConfigCallback: cb,
 	}
-	MapTesterWithContext(tcx, func(tcx *MapTestContext) {
+	tcx.Tester(func(tcx MapTestContext) {
 		f(tcx.T, tcx.M)
 	})
 }

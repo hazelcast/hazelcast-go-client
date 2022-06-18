@@ -72,9 +72,20 @@ type nearCache struct {
 }
 
 func newNearCache(cfg *nearcache.Config, ss *serialization.Service) *nearCache {
+	var rc nearCacheRecordValueConverter
+	var se nearCacheStorageEstimator
+	if cfg.InMemoryFormat == nearcache.InMemoryFormatBinary {
+		adapter := nearCacheDataStoreAdapter{ss: ss}
+		rc = adapter
+		se = adapter
+	} else {
+		adapter := nearCacheValueStoreAdapter{ss: ss}
+		rc = adapter
+		se = adapter
+	}
 	return &nearCache{
 		cfg:   cfg,
-		store: newNearCacheRecordStore(cfg, ss),
+		store: newNearCacheRecordStore(cfg, ss, rc, se),
 	}
 }
 
@@ -129,6 +140,42 @@ const (
 	nearCacheRecordStoreTimeNotSet int64 = -1
 )
 
+type nearCacheRecordValueConverter interface {
+	ConvertValue(value interface{}) (interface{}, error)
+}
+
+type nearCacheStorageEstimator interface {
+	GetRecordStorageMemoryCost(rec *nearCacheRecord) int64
+}
+
+type nearCacheDataStoreAdapter struct {
+	ss *serialization.Service
+}
+
+func (n nearCacheDataStoreAdapter) ConvertValue(value interface{}) (interface{}, error) {
+	return n.ss.ToData(value)
+}
+
+func (n nearCacheDataStoreAdapter) GetRecordStorageMemoryCost(rec *nearCacheRecord) int64 {
+	return 0
+}
+
+type nearCacheValueStoreAdapter struct {
+	ss *serialization.Service
+}
+
+func (n nearCacheValueStoreAdapter) ConvertValue(value interface{}) (interface{}, error) {
+	data, ok := value.(serialization.Data)
+	if !ok {
+		return value, nil
+	}
+	return n.ss.ToObject(data)
+}
+
+func (n nearCacheValueStoreAdapter) GetRecordStorageMemoryCost(rec *nearCacheRecord) int64 {
+	return 0
+}
+
 type nearCacheRecordStore struct {
 	stats            nearcache.Stats
 	maxIdleMillis    int64
@@ -137,28 +184,31 @@ type nearCacheRecordStore struct {
 	recordsMu        *sync.Mutex
 	records          map[interface{}]*nearCacheRecord
 	ss               *serialization.Service
-	serializeValues  bool
+	valueConverter   nearCacheRecordValueConverter
+	estimator        nearCacheStorageEstimator
 }
 
-func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service) nearCacheRecordStore {
+func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) nearCacheRecordStore {
 	return nearCacheRecordStore{
-		recordsMu:        &sync.Mutex{},
-		records:          map[interface{}]*nearCacheRecord{},
-		maxIdleMillis:    int64(cfg.MaxIdleSeconds * 1000),
-		ss:               ss,
-		serializeValues:  cfg.InMemoryFormat == nearcache.InMemoryFormatBinary,
+		recordsMu:     &sync.Mutex{},
+		records:       map[interface{}]*nearCacheRecord{},
+		maxIdleMillis: int64(cfg.MaxIdleSeconds * 1000),
+		ss:            ss,
+		//serializeValues:  cfg.InMemoryFormat == nearcache.InMemoryFormatBinary,
 		timeToLiveMillis: int64(cfg.TimeToLiveSeconds * 1000),
+		valueConverter:   rc,
+		estimator:        se,
 	}
 }
 
-func (rs *nearCacheRecordStore) Get(key interface{}) (interface{}, bool, error) {
+func (rs *nearCacheRecordStore) Get(key interface{}) (value interface{}, found bool, err error) {
 	// checkAvailable()
 	rec, ok := rs.getRecord(key)
 	if !ok {
 		rs.incrementMisses()
 		return nil, false, nil
 	}
-	value := rec.Value()
+	value = rec.Value()
 	if rec.ReservationID() != nearCacheRecordReadPermitted && !rec.CachedAsNil() && value == nil {
 		rs.incrementMisses()
 		return nil, false, nil
@@ -173,27 +223,41 @@ func (rs *nearCacheRecordStore) Get(key interface{}) (interface{}, bool, error) 
 	nowMS := internal.TimeMillis(time.Now())
 	if rs.recordExpired(rec, nowMS) {
 		rs.Invalidate(key)
+		// onExpire
 		rs.incrementExpirations()
 		return nil, false, nil
 	}
+	// onRecordAccess
 	rec.SetLastAccessTimeMS(nowMS)
 	rec.IncrementHits()
 	rs.incrementHits()
+	// recordToValue
 	if value == nil {
+		// CACHED_AS_NULL
 		return nil, true, nil
 	}
-	//v, err := rs.ss.ToObject(value.(serialization.Data))
-	//if err != nil {
-	//	return nil, false, err
-	//}
-	//return v, true, nil
+	value, err = rs.toValue(value)
+	if err != nil {
+		return nil, false, err
+	}
 	return value, true, nil
 }
 
 func (rs *nearCacheRecordStore) Invalidate(key interface{}) {
+	var canUpdateStats bool
 	rs.recordsMu.Lock()
-	delete(rs.records, key)
+	rec, keyExists := rs.records[key]
+	if keyExists {
+		delete(rs.records, key)
+		canUpdateStats = rec.ReservationID() == nearCacheRecordReadPermitted
+	}
 	rs.recordsMu.Unlock()
+	if canUpdateStats {
+		rs.decrementOwnedEntryCount()
+		rs.decrementOwnedEntryMemoryCost(rs.getTotalStorageMemoryCost(key, rec))
+		rs.incrementInvalidations()
+	}
+	rs.incrementInvalidationRequests()
 }
 
 func (rs *nearCacheRecordStore) Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data) error {
@@ -214,7 +278,7 @@ func (rs *nearCacheRecordStore) TryPublishReserved(key interface{}, value interf
 	defer rs.recordsMu.Unlock()
 	existing, ok := rs.records[key]
 	if ok {
-		rec, err := rs.publishReserved(key, value, existing, reservationID)
+		rec, err := rs.publishReservedRecord(key, value, existing, reservationID)
 		if err != nil {
 			return nil, err
 		}
@@ -253,27 +317,25 @@ func (rs nearCacheRecordStore) Size() int {
 	return size
 }
 
-func (rs *nearCacheRecordStore) publishReserved(key, value interface{}, rec *nearCacheRecord, reservationID int64) (*nearCacheRecord, error) {
+func (rs *nearCacheRecordStore) toValue(v interface{}) (interface{}, error) {
+	data, ok := v.(serialization.Data)
+	if !ok {
+		return v, nil
+	}
+	return rs.ss.ToObject(data)
+}
+
+func (rs *nearCacheRecordStore) publishReservedRecord(key, value interface{}, rec *nearCacheRecord, reservationID int64) (*nearCacheRecord, error) {
 	if rec.ReservationID() != reservationID {
 		return rec, nil
 	}
-	cost := rs.getKeyStorageMemoryCost(key) + rs.getRecordStorageMemoryCost(rec)
+	cost := rs.getTotalStorageMemoryCost(key, rec)
 	update := rec.Value() != nil || rec.CachedAsNil()
 	if update {
 		rs.incrementOwnedEntryMemoryCost(-cost)
 	}
-	if rs.serializeValues {
-		data, err := rs.ss.ToData(value)
-		if err != nil {
-			return nil, err
-		}
-		rec.SetValue(data)
-	} else {
-		//vv, err := rs.ss.ToObject(value.(serialization.Data))
-		//if err != nil {
-		//	return nil, err
-		//}
-		rec.SetValue(value)
+	if err := rs.updateRecordValue(rec, value); err != nil {
+		return nil, err
 	}
 	if value == nil {
 		rec.SetCachedAsNil(true)
@@ -297,7 +359,11 @@ func (rs *nearCacheRecordStore) getKeyStorageMemoryCost(key interface{}) int64 {
 
 func (rs *nearCacheRecordStore) getRecordStorageMemoryCost(rec *nearCacheRecord) int64 {
 	// TODO:
-	return 0
+	return rs.estimator.GetRecordStorageMemoryCost(rec)
+}
+
+func (rs *nearCacheRecordStore) getTotalStorageMemoryCost(key interface{}, rec *nearCacheRecord) int64 {
+	return rs.getKeyStorageMemoryCost(key) + rs.estimator.GetRecordStorageMemoryCost(rec)
 }
 
 func (rs *nearCacheRecordStore) incrementHits() {
@@ -316,8 +382,24 @@ func (rs *nearCacheRecordStore) incrementOwnedEntryMemoryCost(cost int64) {
 	atomic.AddInt64(&rs.stats.OwnedEntryMemoryCost, cost)
 }
 
+func (rs *nearCacheRecordStore) decrementOwnedEntryMemoryCost(cost int64) {
+	atomic.AddInt64(&rs.stats.OwnedEntryMemoryCost, -cost)
+}
+
 func (rs *nearCacheRecordStore) incrementOwnedEntryCount() {
 	atomic.AddInt64(&rs.stats.OwnedEntryCount, 1)
+}
+
+func (rs *nearCacheRecordStore) decrementOwnedEntryCount() {
+	atomic.AddInt64(&rs.stats.OwnedEntryCount, -1)
+}
+
+func (rs *nearCacheRecordStore) incrementInvalidations() {
+	atomic.AddInt64(&rs.stats.Invalidations, 1)
+}
+
+func (rs *nearCacheRecordStore) incrementInvalidationRequests() {
+	atomic.AddInt64(&rs.stats.InvalidationRequests, 1)
 }
 
 func (rs *nearCacheRecordStore) getRecord(key interface{}) (*nearCacheRecord, bool) {
@@ -426,11 +508,9 @@ func (rs *nearCacheRecordStore) reserveForReadUpdate(key interface{}, keyData se
 func (rs *nearCacheRecordStore) createRecord(value interface{}) (*nearCacheRecord, error) {
 	// assumes recordsMu was locked elsewhere
 	var err error
-	if rs.serializeValues {
-		value, err = rs.ss.ToData(value)
-		if err != nil {
-			return nil, err
-		}
+	value, err = rs.valueConverter.ConvertValue(value)
+	if err != nil {
+		return nil, err
 	}
 	created := internal.TimeMillis(time.Now())
 	expired := nearCacheRecordStoreTimeNotSet
@@ -438,6 +518,15 @@ func (rs *nearCacheRecordStore) createRecord(value interface{}) (*nearCacheRecor
 		expired = created + rs.timeToLiveMillis
 	}
 	return newNearCacheRecord(value, created, expired), nil
+}
+
+func (rs *nearCacheRecordStore) updateRecordValue(rec *nearCacheRecord, value interface{}) error {
+	value, err := rs.valueConverter.ConvertValue(value)
+	if err != nil {
+		return err
+	}
+	rec.SetValue(value)
+	return nil
 }
 
 const (

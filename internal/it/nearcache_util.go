@@ -109,10 +109,16 @@ func (tcx *NearCacheTestContext) AssertNearCacheInvalidationRequests(invalidatio
 	}
 }
 
-func (tcx *NearCacheTestContext) AssertNearCacheSize(target int64) {
-	assert.Equal(tcx.T, target, int64(tcx.NC.Size()), "Cache size didn't reach the desired value")
+func (tcx *NearCacheTestContext) AssertNearCacheSize(target int64) bool {
+	size := int64(tcx.NC.Size())
+	if !assert.Equal(tcx.T, target, size, "Cache size didn't reach the desired value") {
+		return false
+	}
 	c := tcx.Stats().OwnedEntryCount
-	assert.Equal(tcx.T, target, c, "Near Cache owned entry count didn't reach the desired value")
+	if !assert.Equal(tcx.T, target, c, "Near Cache owned entry count didn't reach the desired value") {
+		return false
+	}
+	return true
 }
 
 func (tcx *NearCacheTestContext) AssertNearCacheStats(target nearcache.Stats) {
