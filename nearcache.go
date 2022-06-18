@@ -194,20 +194,23 @@ type nearCacheRecordStore struct {
 }
 
 func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) nearCacheRecordStore {
+	stats := nearcache.Stats{
+		CreationTime: time.Now(),
+	}
 	return nearCacheRecordStore{
-		recordsMu:     &sync.Mutex{},
-		records:       map[interface{}]*nearCacheRecord{},
-		maxIdleMillis: int64(cfg.MaxIdleSeconds * 1000),
-		ss:            ss,
-		//serializeValues:  cfg.InMemoryFormat == nearcache.InMemoryFormatBinary,
+		recordsMu:        &sync.Mutex{},
+		records:          map[interface{}]*nearCacheRecord{},
+		maxIdleMillis:    int64(cfg.MaxIdleSeconds * 1000),
+		ss:               ss,
 		timeToLiveMillis: int64(cfg.TimeToLiveSeconds * 1000),
 		valueConverter:   rc,
 		estimator:        se,
+		stats:            stats,
 	}
 }
 
 func (rs *nearCacheRecordStore) Get(key interface{}) (value interface{}, found bool, err error) {
-	// checkAvailable()
+	// checkAvailable() does not apply since rs.records is always created
 	rec, ok := rs.getRecord(key)
 	if !ok {
 		rs.incrementMisses()
@@ -307,11 +310,21 @@ func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) bool {
 
 func (rs nearCacheRecordStore) Stats() nearcache.Stats {
 	return nearcache.Stats{
-		Hits:                 atomic.LoadInt64(&rs.stats.Hits),
-		Misses:               atomic.LoadInt64(&rs.stats.Misses),
-		Expirations:          atomic.LoadInt64(&rs.stats.Expirations),
-		OwnedEntryMemoryCost: atomic.LoadInt64(&rs.stats.OwnedEntryMemoryCost),
-		OwnedEntryCount:      atomic.LoadInt64(&rs.stats.OwnedEntryCount),
+		CreationTime:                rs.stats.CreationTime,
+		OwnedEntryCount:             atomic.LoadInt64(&rs.stats.OwnedEntryCount),
+		OwnedEntryMemoryCost:        atomic.LoadInt64(&rs.stats.OwnedEntryMemoryCost),
+		Hits:                        atomic.LoadInt64(&rs.stats.Hits),
+		Misses:                      atomic.LoadInt64(&rs.stats.Misses),
+		Evictions:                   atomic.LoadInt64(&rs.stats.Evictions),
+		Expirations:                 atomic.LoadInt64(&rs.stats.Expirations),
+		Invalidations:               atomic.LoadInt64(&rs.stats.Invalidations),
+		InvalidationRequests:        atomic.LoadInt64(&rs.stats.InvalidationRequests),
+		PersistenceCount:            atomic.LoadInt64(&rs.stats.PersistenceCount),
+		LastPersistenceWrittenBytes: atomic.LoadInt64(&rs.stats.LastPersistenceWrittenBytes),
+		LastPersistenceKeyCount:     atomic.LoadInt64(&rs.stats.LastPersistenceKeyCount),
+		LastPersistenceTime:         time.Time{},
+		LastPersistenceDuration:     0,
+		LastPersistenceFailure:      "",
 	}
 }
 
