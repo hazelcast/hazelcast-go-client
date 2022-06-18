@@ -153,6 +153,11 @@ type nearCacheDataStoreAdapter struct {
 }
 
 func (n nearCacheDataStoreAdapter) ConvertValue(value interface{}) (interface{}, error) {
+	if value == nil {
+		// have to check value manually here,
+		// otherwise n.ss.ToData returns type + nil, which is not recognized as nil
+		return nil, nil
+	}
 	return n.ss.ToData(value)
 }
 
@@ -338,7 +343,7 @@ func (rs *nearCacheRecordStore) publishReservedRecord(key, value interface{}, re
 		return nil, err
 	}
 	if value == nil {
-		rec.SetCachedAsNil(true)
+		rec.SetCachedAsNil()
 	}
 	rec.SetReservationID(nearCacheRecordReadPermitted)
 	rs.incrementOwnedEntryMemoryCost(cost)
@@ -616,10 +621,6 @@ func (r *nearCacheRecord) CachedAsNil() bool {
 	return atomic.LoadInt32(&r.cachedAsNil) == 1
 }
 
-func (r *nearCacheRecord) SetCachedAsNil(value bool) {
-	v := int32(0)
-	if value {
-		v = 1
-	}
-	atomic.StoreInt32(&r.cachedAsNil, v)
+func (r *nearCacheRecord) SetCachedAsNil() {
+	atomic.StoreInt32(&r.cachedAsNil, 1)
 }

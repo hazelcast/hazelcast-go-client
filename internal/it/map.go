@@ -104,6 +104,12 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 	}
 }
 
+func (tcx MapTestContext) OK(v bool) {
+	if !v {
+		tcx.T.FailNow()
+	}
+}
+
 func MapTester(t *testing.T, f func(t *testing.T, m *hz.Map)) {
 	MapTesterWithConfig(t, nil, f)
 }

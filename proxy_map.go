@@ -223,14 +223,14 @@ func (m *Map) ContainsValue(ctx context.Context, value interface{}) (bool, error
 // the returned value. If the removed value will not be used, a delete operation is preferred over a remove
 // operation for better performance.
 func (m *Map) Delete(ctx context.Context, key interface{}) error {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapDeleteRequest(m.name, keyData, lid)
-		_, err := m.invokeOnKey(ctx, request, keyData)
+	if m.hasNearCache {
+		return m.ncm.Delete(ctx, m, key)
+	}
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
 		return err
 	}
+	return m.deleteFromRemote(ctx, keyData)
 }
 
 // Evict evicts the mapping for a key from this map.
@@ -366,21 +366,50 @@ func (m *Map) Get(ctx context.Context, key interface{}) (interface{}, error) {
 	if m.hasNearCache {
 		return m.ncm.Get(ctx, m, key)
 	}
-	lid := extractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
 	}
-	return m.getFromRemote(ctx, keyData, lid)
+	return m.getFromRemote(ctx, keyData)
 }
 
-func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data, lockID int64) (interface{}, error) {
-	request := codec.EncodeMapGetRequest(m.name, keyData, lockID)
+func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapGetRequest(m.name, keyData, lid)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
 		return nil, err
 	}
 	return m.convertToObject(codec.DecodeMapGetResponse(response))
+}
+
+func (m *Map) deleteFromRemote(ctx context.Context, keyData serialization.Data) error {
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapDeleteRequest(m.name, keyData, lid)
+	if _, err := m.invokeOnKey(ctx, request, keyData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Map) removeFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapRemoveRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapRemoveResponse(response))
+}
+
+func (m *Map) removeIfSameFromRemote(ctx context.Context, keyData, valueData serialization.Data) (bool, error) {
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapRemoveIfSameResponse(response), nil
 }
 
 // GetAll returns the entries for the given keys.
@@ -767,17 +796,14 @@ func (m *Map) PutTransientWithTTLAndMaxIdle(ctx context.Context, key interface{}
 
 // Remove deletes the value for the given key and returns it.
 func (m *Map) Remove(ctx context.Context, key interface{}) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapRemoveRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapRemoveResponse(response))
-		}
+	if m.hasNearCache {
+		return m.ncm.Remove(ctx, m, key)
 	}
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+	return m.removeFromRemote(ctx, keyData)
 }
 
 // RemoveAll deletes all entries matching the given predicate.
@@ -809,17 +835,14 @@ func (m *Map) RemoveInterceptor(ctx context.Context, registrationID string) (boo
 // RemoveIfSame removes the entry for a key only if it is currently mapped to a given value.
 // Returns true if the entry was removed.
 func (m *Map) RemoveIfSame(ctx context.Context, key interface{}, value interface{}) (bool, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapRemoveIfSameResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.RemoveIfSame(ctx, m, key, value)
 	}
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
+	return m.removeIfSameFromRemote(ctx, keyData, valueData)
 }
 
 // Replace replaces the entry for a key only if it is currently mapped to some value and returns the previous value.
@@ -1341,149 +1364,4 @@ func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 
 type LocalMapStats struct {
 	NearCacheStats nearcache.Stats
-}
-
-type nearCacheMap struct {
-	nc             *nearCache
-	ncc            *nearcache.Config
-	toNearCacheKey func(key interface{}) (interface{}, error)
-	ss             *serialization.Service
-}
-
-func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Service) (nearCacheMap, error) {
-	ncm := nearCacheMap{
-		nc:  nc,
-		ncc: ncc,
-		ss:  ss,
-	}
-	// the only valid local policy on the client side is invalidate.
-	ncm.registerInvalidationListener()
-	if ncc.PreloaderConfig.Enabled {
-		if err := ncm.preload(); err != nil {
-			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
-		}
-	}
-	// toNearCacheKey returns the raw key if SerializeKeys is not true.
-	if ncc.SerializeKeys {
-		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
-			data, err := ss.ToData(key)
-			if err != nil {
-				return nil, err
-			}
-			// byte slices cannot be map keys
-			return string(data), nil
-		}
-	} else {
-		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
-			return key, nil
-		}
-	}
-	return ncm, nil
-}
-
-func (ncm *nearCacheMap) registerInvalidationListener() {
-	fmt.Println("IMPLEMENT ME: registerInvalidationListener")
-}
-
-func (ncm *nearCacheMap) preload() error {
-	panic("implement me!")
-}
-
-func (ncm *nearCacheMap) ContainsKey(key interface{}) (found bool, err error, handled bool) {
-	key, err = ncm.toNearCacheKey(key)
-	if err != nil {
-		return false, err, true
-	}
-	cached, ok, err := ncm.getCachedValue(key, false)
-	if err != nil {
-		return false, err, true
-	}
-	if ok {
-		return cached != nil, nil, true
-	}
-	return false, nil, false
-}
-
-func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
-	key, err := ncm.toNearCacheKey(key)
-	if err != nil {
-		return nil, err
-	}
-	cached, ok, err := ncm.getCachedValue(key, false)
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		return cached, nil
-	}
-	// value not found in local cache.
-	// get it from remote.
-	value, err := ncm.getFromRemote(ctx, m, key)
-	if err != nil {
-		ncm.nc.Invalidate(key)
-		return nil, err
-	}
-	return value, nil
-}
-
-func (ncm *nearCacheMap) getFromRemote(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
-	lid := extractLockID(ctx)
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return nil, err
-	}
-	rid, err := ncm.nc.TryReserveForUpdate(key, keyData, nearCacheUpdateSemanticReadUpdate)
-	if err != nil {
-		return nil, err
-	}
-	value, err := m.getFromRemote(ctx, keyData, lid)
-	if err != nil {
-		return nil, err
-	}
-	if rid != nearCacheRecordNotReserved {
-		value, err = ncm.nc.TryPublishReserved(key, value, rid)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return value, nil
-}
-
-func (ncm *nearCacheMap) Put(ctx context.Context, key interface{}, f func(ctx context.Context) (interface{}, error)) (interface{}, error) {
-	key, err := ncm.toNearCacheKey(key)
-	if err != nil {
-		return nil, err
-	}
-	prev, err := f(ctx)
-	ncm.nc.Invalidate(key)
-	if err != nil {
-		return nil, err
-	}
-	return prev, nil
-}
-
-func (ncm *nearCacheMap) GetLocalMapStats() LocalMapStats {
-	return LocalMapStats{
-		NearCacheStats: ncm.nc.Stats(),
-	}
-}
-
-func (ncm *nearCacheMap) getCachedValue(key interface{}, deserialize bool) (value interface{}, found bool, err error) {
-	value, found, err = ncm.nc.Get(key)
-	if err != nil {
-		return nil, false, err
-	}
-	if !found {
-		return nil, false, nil
-	}
-	if value == nil {
-		return nil, true, nil
-	}
-	if deserialize {
-		value, err = ncm.ss.ToObject(value.(serialization.Data))
-		if err != nil {
-			return nil, false, err
-		}
-	}
-	return value, true, nil
 }
