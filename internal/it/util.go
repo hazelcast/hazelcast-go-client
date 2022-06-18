@@ -105,12 +105,6 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 	}
 }
 
-func EnsureOK(t *testing.T, v bool) {
-	if !v {
-		t.FailNow()
-	}
-}
-
 func AssertEquals(t *testing.T, target, value interface{}) {
 	if !reflect.DeepEqual(target, value) {
 		t.Log(string(debug.Stack()))

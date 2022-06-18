@@ -272,6 +272,6 @@ func populateNearCache(tcx it.MapTestContext, size int64) {
 		if err != nil {
 			tcx.T.Fatal(err)
 		}
-		it.EnsureOK(tcx.T, assert.Equal(tcx.T, v, i))
+		tcx.OK(assert.Equal(tcx.T, v, i))
 	}
 }
