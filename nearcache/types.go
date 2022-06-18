@@ -16,7 +16,11 @@
 
 package nearcache
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+	"time"
+)
 
 type MaxSizePolicy int32
 
@@ -64,13 +68,29 @@ const (
 )
 
 type Stats struct {
-	OwnedEntryCount      int64
-	OwnedMemoryCost      int64
-	Hits                 int64
-	Misses               int64
-	Evictions            int64
-	Expirations          int64
-	Invalidations        int64
-	InvalidationRequests int64
-	PersistenceCount     int64
+	OwnedEntryCount             int64
+	OwnedEntryMemoryCost        int64
+	Hits                        int64
+	Misses                      int64
+	Evictions                   int64
+	Expirations                 int64
+	Invalidations               int64
+	InvalidationRequests        int64
+	PersistenceCount            int64
+	LastPersistenceWrittenBytes int64
+	LastPersistenceKeyCount     int64
+	CreationTime                time.Time
+	LastPersistenceTime         time.Time
+	LastPersistenceDuration     time.Duration
+	LastPersistenceFailure      string
+}
+
+func (s Stats) Ratio() float64 {
+	if s.Misses == 0 {
+		if s.Hits == 0 {
+			return math.NaN()
+		}
+		return math.Inf(1)
+	}
+	return (float64(s.Hits) / float64(s.Misses)) * 100.0
 }

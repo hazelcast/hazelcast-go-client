@@ -238,11 +238,11 @@ func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) bool {
 
 func (rs nearCacheRecordStore) Stats() nearcache.Stats {
 	return nearcache.Stats{
-		Hits:            atomic.LoadInt64(&rs.stats.Hits),
-		Misses:          atomic.LoadInt64(&rs.stats.Misses),
-		Expirations:     atomic.LoadInt64(&rs.stats.Expirations),
-		OwnedMemoryCost: atomic.LoadInt64(&rs.stats.OwnedMemoryCost),
-		OwnedEntryCount: atomic.LoadInt64(&rs.stats.OwnedEntryCount),
+		Hits:                 atomic.LoadInt64(&rs.stats.Hits),
+		Misses:               atomic.LoadInt64(&rs.stats.Misses),
+		Expirations:          atomic.LoadInt64(&rs.stats.Expirations),
+		OwnedEntryMemoryCost: atomic.LoadInt64(&rs.stats.OwnedEntryMemoryCost),
+		OwnedEntryCount:      atomic.LoadInt64(&rs.stats.OwnedEntryCount),
 	}
 }
 
@@ -313,7 +313,7 @@ func (rs *nearCacheRecordStore) incrementExpirations() {
 }
 
 func (rs *nearCacheRecordStore) incrementOwnedEntryMemoryCost(cost int64) {
-	atomic.AddInt64(&rs.stats.OwnedMemoryCost, cost)
+	atomic.AddInt64(&rs.stats.OwnedEntryMemoryCost, cost)
 }
 
 func (rs *nearCacheRecordStore) incrementOwnedEntryCount() {
