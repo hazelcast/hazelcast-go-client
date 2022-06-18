@@ -79,27 +79,15 @@ func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 				// assert that the Near Cache is empty
 				tcx.PopulateNearCacheDataAdapter(nearCacheDefaultRecordCount, valueFmt)
 				tcx.AssertNearCacheSize(0)
-				tcx.AssertNearCacheStats(nearcache.Stats{
-					OwnedEntryCount: 0,
-					Hits:            0,
-					Misses:          0,
-				})
+				tcx.AssertNearCacheStats(0, 0, 0)
 				// populate the Near Cache
 				f(tcx, nearCacheDefaultRecordCount, valueFmt)
 				mtcx.OK(tcx.AssertNearCacheSize(nearCacheDefaultRecordCount))
-				tcx.AssertNearCacheStats(nearcache.Stats{
-					OwnedEntryCount: nearCacheDefaultRecordCount,
-					Hits:            0,
-					Misses:          nearCacheDefaultRecordCount,
-				})
+				tcx.AssertNearCacheStats(nearCacheDefaultRecordCount, 0, nearCacheDefaultRecordCount)
 				// generate Near Cache hits
 				f(tcx, nearCacheDefaultRecordCount, valueFmt)
 				tcx.AssertNearCacheSize(nearCacheDefaultRecordCount)
-				tcx.AssertNearCacheStats(nearcache.Stats{
-					OwnedEntryCount: nearCacheDefaultRecordCount,
-					Hits:            nearCacheDefaultRecordCount,
-					Misses:          nearCacheDefaultRecordCount,
-				})
+				tcx.AssertNearCacheStats(nearCacheDefaultRecordCount, nearCacheDefaultRecordCount, nearCacheDefaultRecordCount)
 				tcx.AssertNearCacheContent(nearCacheDefaultRecordCount, valueFmt)
 				// TODO: assertNearCacheReferences
 			})

@@ -121,9 +121,11 @@ func (tcx *NearCacheTestContext) AssertNearCacheSize(target int64) bool {
 	return true
 }
 
-func (tcx *NearCacheTestContext) AssertNearCacheStats(target nearcache.Stats) {
+func (tcx *NearCacheTestContext) AssertNearCacheStats(owned, hits, misses int64) {
 	stats := tcx.Stats()
-	assert.Equal(tcx.T, target, stats)
+	assert.Equal(tcx.T, owned, stats.OwnedEntryCount)
+	assert.Equal(tcx.T, hits, stats.Hits)
+	assert.Equal(tcx.T, misses, stats.Misses)
 }
 
 func (tcx *NearCacheTestContext) AssertNearCacheContent(size int64, valueFmt string) {
