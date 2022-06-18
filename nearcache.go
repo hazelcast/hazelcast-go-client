@@ -90,16 +90,14 @@ func newNearCache(cfg *nearcache.Config, ss *serialization.Service) *nearCache {
 }
 
 func (nc *nearCache) Get(key interface{}) (interface{}, bool, error) {
-	/*
-		_, ok := key.(serialization.Data)
-		if nc.cfg.SerializeKeys {
-			if !ok {
-				panic("key must be of type serialization.Data!")
-			}
-		} else if ok {
-			panic("key cannot be of type Data!")
+	_, ok := key.(serialization.Data)
+	if nc.cfg.SerializeKeys {
+		if !ok {
+			panic("key must be of type serialization.Data!")
 		}
-	*/
+	} else if ok {
+		panic("key cannot be of type Data!")
+	}
 	return nc.store.Get(key)
 }
 
@@ -211,6 +209,7 @@ func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, r
 
 func (rs *nearCacheRecordStore) Get(key interface{}) (value interface{}, found bool, err error) {
 	// checkAvailable() does not apply since rs.records is always created
+	key = rs.makeMapKey(key)
 	rec, ok := rs.getRecord(key)
 	if !ok {
 		rs.incrementMisses()
@@ -252,6 +251,7 @@ func (rs *nearCacheRecordStore) Get(key interface{}) (value interface{}, found b
 }
 
 func (rs *nearCacheRecordStore) Invalidate(key interface{}) {
+	key = rs.makeMapKey(key)
 	var canUpdateStats bool
 	rs.recordsMu.Lock()
 	rec, keyExists := rs.records[key]
@@ -282,6 +282,7 @@ func (rs *nearCacheRecordStore) Put(key interface{}, keyData serialization.Data,
 }
 
 func (rs *nearCacheRecordStore) TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, error) {
+	key = rs.makeMapKey(key)
 	rs.recordsMu.Lock()
 	defer rs.recordsMu.Unlock()
 	existing, ok := rs.records[key]
@@ -333,6 +334,15 @@ func (rs nearCacheRecordStore) Size() int {
 	size := len(rs.records)
 	rs.recordsMu.Unlock()
 	return size
+}
+
+func (rs nearCacheRecordStore) makeMapKey(key interface{}) interface{} {
+	data, ok := key.(serialization.Data)
+	if ok {
+		// serialization.Data is not hashable, conver it to string
+		return string(data)
+	}
+	return key
 }
 
 func (rs *nearCacheRecordStore) toValue(v interface{}) (interface{}, error) {
@@ -507,6 +517,7 @@ func (rs *nearCacheRecordStore) reserveForWriteUpdate(key interface{}, keyData s
 }
 
 func (rs *nearCacheRecordStore) reserveForReadUpdate(key interface{}, keyData serialization.Data, reservationID int64) (*nearCacheRecord, error) {
+	key = rs.makeMapKey(key)
 	rs.recordsMu.Lock()
 	defer rs.recordsMu.Unlock()
 	rec, ok := rs.records[key]

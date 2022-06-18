@@ -52,7 +52,7 @@ func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Ser
 				return nil, err
 			}
 			// byte slices cannot be map keys
-			return string(data), nil
+			return data, nil
 		}
 	} else {
 		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {

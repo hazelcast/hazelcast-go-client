@@ -49,9 +49,9 @@ func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 		inMemoryFmt   nearcache.InMemoryFormat
 		serializeKeys bool
 	}{
-		//{inMemoryFmt: nearcache.InMemoryFormatBinary, serializeKeys: true},
+		{inMemoryFmt: nearcache.InMemoryFormatBinary, serializeKeys: true},
 		{inMemoryFmt: nearcache.InMemoryFormatBinary, serializeKeys: false},
-		//{inMemoryFmt: nearcache.InMemoryFormatObject, serializeKeys: true},
+		{inMemoryFmt: nearcache.InMemoryFormatObject, serializeKeys: true},
 		{inMemoryFmt: nearcache.InMemoryFormatObject, serializeKeys: false},
 	}
 	for _, tc := range testCases {
