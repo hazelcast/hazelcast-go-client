@@ -109,3 +109,23 @@ func (s Stats) Ratio() float64 {
 	}
 	return (float64(s.Hits) / float64(s.Misses)) * 100.0
 }
+
+// EvictionPolicyComparator is used for comparing entries to be evicted.
+type EvictionPolicyComparator interface {
+	// Compare returns a negative integer if a is less than b, 0 if a is equal to b or a positive integer if a is greater than b.
+	Compare(a, b EvictableEntryView) int
+}
+
+// EvictableEntryView is the contract point from the end user perspective for serving/accessing entries that can be evicted.
+type EvictableEntryView struct {
+	// Hits is the number of accesses to the entry.
+	Hits int64
+	// Key is the key of the entry.
+	Key interface{}
+	// Value is the value of the entry.
+	Value interface{}
+	// CreationTime is the creation time of the entry.
+	CreationTime time.Time
+	// LastAccessTime is the time when the entry was last accessed.
+	LastAccessTime time.Time
+}

@@ -27,7 +27,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestNearCacheConfigWithoutWildcard(t *testing.T) {
@@ -167,7 +166,7 @@ func TestConfigInvalid(t *testing.T) {
 
 type comparator struct{}
 
-func (c comparator) Compare(a, b types.EvictableEntryView) int {
+func (c comparator) Compare(a, b nearcache.EvictableEntryView) int {
 	return 0
 }
 

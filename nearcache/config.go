@@ -21,7 +21,6 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -125,12 +124,6 @@ func (c Config) InvalidateOnChange() bool {
 		return true
 	}
 	return *c.invalidateOnChange
-}
-
-// EvictionPolicyComparator is used for comparing entries to be evicted.
-type EvictionPolicyComparator interface {
-	// Compare returns a negative integer if a is less than b, 0 if a is equal to b or a positive integer if a is greater than b.
-	Compare(a, b types.EvictableEntryView) int
 }
 
 /*
