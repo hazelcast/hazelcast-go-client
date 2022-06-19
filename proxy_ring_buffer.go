@@ -18,8 +18,7 @@ package hazelcast
 
 import (
 	"context"
-	"fmt"
-	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -249,7 +248,7 @@ func (rrs *ReadResultSet) ReadCount() int32 {
 
 // Get one item from List of items that have been read.
 func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
-	if err := rrs.validateIndexInRange(index); err != nil {
+	if err := check.WithinRangeInt32(int32(index), 0, rrs.readCount-1); err != nil {
 		return nil, err
 	}
 	return rrs.rb.convertToObject(rrs.items[index])
@@ -257,7 +256,7 @@ func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
 
 // GetSequence one sequence number from List of sequence numbers for the items that have been read.
 func (rrs *ReadResultSet) GetSequence(index int) (int64, error) {
-	if err := rrs.validateIndexInRange(index); err != nil {
+	if err := check.WithinRangeInt32(int32(index), 0, rrs.readCount-1); err != nil {
 		return ReadResultSetSequenceUnavailable, err
 	}
 	return rrs.itemSeqs[index], nil
@@ -271,11 +270,4 @@ func (rrs *ReadResultSet) Size() int {
 // GetNextSequenceToReadFrom sequence number of the item following the last read item.
 func (rrs *ReadResultSet) GetNextSequenceToReadFrom() int64 {
 	return rrs.nextSeq
-}
-
-func (rrs *ReadResultSet) validateIndexInRange(index int) error {
-	if index < 0 || int32(index) >= rrs.readCount {
-		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount), nil)
-	}
-	return nil
 }
