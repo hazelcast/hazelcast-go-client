@@ -42,7 +42,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// *** Example adding and retrieving single items
+	// Example adding and retrieving single items
 	// Add an item to the Ringbuffer
 	sequence, err := rb.Add(ctx, "item 1", hazelcast.OverflowPolicyOverwrite)
 	if err != nil {
@@ -60,7 +60,7 @@ func main() {
 		}
 	}
 	fmt.Println(item)
-	// *** Example adding and reading multiple items
+	// Example adding and reading multiple items
 	// Add an item to the Ringbuffer
 	lastSequence, err := rb.AddAll(ctx, hazelcast.OverflowPolicyOverwrite, "One", "Two", "Three")
 	if err != nil {
