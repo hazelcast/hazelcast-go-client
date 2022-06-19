@@ -16,40 +16,38 @@
 
 package nearcache
 
-import "fmt"
-
-type MaxSizePolicy int32
-
-func (p MaxSizePolicy) String() string {
-	switch p {
-	case MaxSizePolicyEntryCount:
-		return "ENTRY_COUNT"
-	}
-	panic(fmt.Errorf("unknown max size policy: %d", p))
-}
-
-const (
-	// MaxSizePolicyEntryCount is the policy based on maximum number of entries stored per data structure (map, etc).
-	MaxSizePolicyEntryCount MaxSizePolicy = 6
+import (
+	"fmt"
+	"math"
+	"time"
 )
 
+// InMemoryFormat specifies how the entry values are stored in the Near Cache.
 type InMemoryFormat int8
 
 const (
+	// InMemoryFormatBinary stores the values after serializing them.
 	InMemoryFormatBinary InMemoryFormat = iota
+	// InMemoryFormatObject stores the values in their original form.
 	InMemoryFormatObject
 )
 
+// EvictionPolicy specifies which entry is evicted.
 type EvictionPolicy int32
 
 const (
+	// EvictionPolicyLRU removes the least recently used entry.
 	EvictionPolicyLRU EvictionPolicy = iota
+	// EvictionPolicyLFU removes the least frequently used entry.
 	EvictionPolicyLFU
+	// EvictionPolicyNone removes no entries.
 	EvictionPolicyNone
+	// EvictionPolicyRandom removes a random entry.
 	EvictionPolicyRandom
 	evictionPolicyCount // internal
 )
 
+// String returns a string representation of the eviction policy.
 func (p EvictionPolicy) String() string {
 	switch p {
 	case EvictionPolicyLRU:
@@ -64,8 +62,50 @@ func (p EvictionPolicy) String() string {
 	panic(fmt.Errorf("unknown eviction policy: %d", p))
 }
 
-type LocalUpdatePolicy int32
+// Stats contains statistics for a Near Cache instance.
+type Stats struct {
+	// Evictions is the number of evictions.
+	Evictions int64
+	// Evictions is the number of expirations.
+	Expirations int64
+	// Hits is the number of times a key was found in the Near Cache.
+	Hits int64
+	// InvalidationRequests is the number of invalidation requests.
+	// An invalidation request may be successful or not.
+	InvalidationRequests int64
+	// Invalidations is the number of successful invalidations.
+	Invalidations int64
+	// Misses is the number of times a key was not found in the Near Cache.
+	Misses int64
+	// OwnedEntryCount is the number of entries in the Near Cache.
+	OwnedEntryCount int64
+	// OwnedEntryMemoryCost is the estimated memory cost of the entries in the Near Cache.
+	OwnedEntryMemoryCost int64
+	// LastPersistenceKeyCount is the number of keys saved in the last persistence task.
+	LastPersistenceKeyCount int64
+	// LastPersistenceWrittenBytes is the size of the last persistence task.
+	LastPersistenceWrittenBytes int64
+	// PersistenceCount is the number of completed persistence tasks.
+	PersistenceCount int64
+	// LastPersistenceTime is the time of the last completed persistence task.
+	LastPersistenceTime time.Time
+	// LastPersistenceDuration is the duration of the last completed persistence task.
+	LastPersistenceDuration time.Duration
+	// LastPersistenceFailure is the error message of the last completed persistence task.
+	LastPersistenceFailure string
+	// CreationTime is the time the Near Cache was initialized.
+	CreationTime time.Time
+}
 
-const (
-	LocalUpdatePolicyInvalidate LocalUpdatePolicy = 0
-)
+// Ratio returns the ratio of hits to misses.
+// Returns math.Nan if there were no hits or misses.
+// Otherwise returns +math.Inf if there were no misses.
+func (s Stats) Ratio() float64 {
+	if s.Misses == 0 {
+		if s.Hits == 0 {
+			return math.NaN()
+		}
+		return math.Inf(1)
+	}
+	return (float64(s.Hits) / float64(s.Misses)) * 100.0
+}

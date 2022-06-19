@@ -184,8 +184,7 @@ func (c EvictionConfig) EvictionPolicy() EvictionPolicy {
 	return *c.evictionPolicy
 }
 
-// SetSize sets the size the size which is used by the MaxSizePolicy.
-// The interpretation of the value depends on the configured MaxSizePolicy.
+// SetSize sets the number of maximum entries before an eviction occurs.
 // Accepts any non-negative number.
 // The default value is 10_000.
 func (c *EvictionConfig) SetSize(size int) {
