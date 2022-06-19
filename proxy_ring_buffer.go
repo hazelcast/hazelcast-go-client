@@ -248,7 +248,7 @@ func (rrs *ReadResultSet) ReadCount() int32 {
 
 // Get one item from List of items that have been read.
 func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
-	if err := check.WithinRangeInt32(int32(index), 0, rrs.readCount-1); err != nil {
+	if err := check.WithinRangeInt32(int32(index), 0, int32(len(rrs.items)-1)-1); err != nil {
 		return nil, err
 	}
 	return rrs.rb.convertToObject(rrs.items[index])
@@ -256,7 +256,7 @@ func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
 
 // GetSequence one sequence number from List of sequence numbers for the items that have been read.
 func (rrs *ReadResultSet) GetSequence(index int) (int64, error) {
-	if err := check.WithinRangeInt32(int32(index), 0, rrs.readCount-1); err != nil {
+	if err := check.WithinRangeInt32(int32(index), 0, int32(len(rrs.itemSeqs)-1)); err != nil {
 		return ReadResultSetSequenceUnavailable, err
 	}
 	return rrs.itemSeqs[index], nil
