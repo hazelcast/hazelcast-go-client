@@ -96,40 +96,6 @@ func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 	}
 }
 
-/*
-func TestGetAllChecksNearCacheFirst(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAllChecksNearCacheFirst
-	var mapName string
-	makeName := func(p ...string) string {
-		p = append([]string{"nearcache"}, p...)
-		mapName = strings.Join(p, "-")
-		return mapName
-	}
-	configCB := func(cfg *hz.Config) {
-		ncc := nearcache.Config{Name: "nearcache*"}
-		cfg.AddNearCacheConfig(ncc)
-	}
-	it.MapTesterWithConfigAndName(t, makeName, configCB, func(t *testing.T, m *hz.Map) {
-		const size = 1003
-		ctx := context.Background()
-		var keys []interface{}
-		for i := 0; i < size; i++ {
-			it.MustValue(m.Put(ctx, i, i))
-			keys = append(keys, i)
-		}
-		// populate near cache
-		for i := 0; i < size; i++ {
-			it.MustValue(m.Get(ctx, i))
-		}
-		// GetAll generates the near cache hits
-		it.MustValue(m.GetAll(ctx, keys))
-		stats := m.localMapStats().NearCacheStats
-		assert.Equal(t, size, stats.Hits)
-		//assert.Equal(t, size, stats.OwnedEntryCount)
-	})
-}
-*/
-
 func TestNearCacheGet(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAsync
 	tcx := it.MapTestContext{

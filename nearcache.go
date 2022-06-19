@@ -105,11 +105,6 @@ func (nc *nearCache) Invalidate(key interface{}) {
 	nc.store.Invalidate(key)
 }
 
-func (nc *nearCache) Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data) error {
-	nc.store.DoEviction(false)
-	return nc.store.Put(key, keyData, value, valueData)
-}
-
 func (nc nearCache) Size() int {
 	return nc.store.Size()
 }
@@ -119,6 +114,7 @@ func (nc nearCache) Stats() nearcache.Stats {
 }
 
 func (nc *nearCache) TryReserveForUpdate(key interface{}, keyData serialization.Data, ups nearCacheUpdateSemantic) (int64, error) {
+	// eviction stuff will be implemented in another PR
 	// nearCacheRecordStore.doEviction(false);
 	return nc.store.TryReserveForUpdate(key, keyData, ups)
 }
@@ -160,7 +156,20 @@ func (n nearCacheDataStoreAdapter) ConvertValue(value interface{}) (interface{},
 }
 
 func (n nearCacheDataStoreAdapter) GetRecordStorageMemoryCost(rec *nearCacheRecord) int64 {
-	return 0
+	if rec == nil {
+		return 0
+	}
+	cost := pointerCostInBytes + // the record is stored as a pointer in the map
+		5*int64CostInBytes + // CreationTime, lastAccessTime, ExpirationTime, InvalidationSequence, reservationID
+		3*int32CostInBytes + // PartitionID, hits, cachedAsNil
+		1*atomicValueCostInBytes + // holder of the value
+		1*uuidCostInBytes // UUID
+	value := rec.Value()
+	data, ok := value.(serialization.Data)
+	if ok {
+		cost += data.DataSize()
+	}
+	return int64(cost)
 }
 
 type nearCacheValueStoreAdapter struct {
@@ -220,6 +229,7 @@ func (rs *nearCacheRecordStore) Get(key interface{}) (value interface{}, found b
 		rs.incrementMisses()
 		return nil, false, nil
 	}
+	// to be handled in another PR
 	/*
 	   if (staleReadDetector.isStaleRead(key, record)) {
 	       invalidate(key);
@@ -266,19 +276,6 @@ func (rs *nearCacheRecordStore) Invalidate(key interface{}) {
 		rs.incrementInvalidations()
 	}
 	rs.incrementInvalidationRequests()
-}
-
-func (rs *nearCacheRecordStore) Put(key interface{}, keyData serialization.Data, value interface{}, valueData serialization.Data) error {
-	rid, err := rs.TryReserveForUpdate(key, keyData, nearCacheUpdateSemanticReadUpdate)
-	if err != nil {
-		return err
-	}
-	if rid != nearCacheRecordNotReserved {
-		if _, err := rs.TryPublishReserved(key, value, rid, false); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (rs *nearCacheRecordStore) TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, error) {
@@ -559,6 +556,11 @@ func (rs *nearCacheRecordStore) updateRecordValue(rec *nearCacheRecord, value in
 }
 
 const (
+	pointerCostInBytes                 = (32 << uintptr(^uintptr(0)>>63)) >> 3
+	int32CostInBytes                   = 4
+	int64CostInBytes                   = 8
+	atomicValueCostInBytes             = 8
+	uuidCostInBytes                    = 16 // low uint64 + high uint64
 	numberOfLongFieldTypes             = 2
 	numberOfIntegerFieldTypes          = 5
 	numberOfBooleanFieldTypes          = 1
