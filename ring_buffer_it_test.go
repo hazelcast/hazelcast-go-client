@@ -57,6 +57,14 @@ func TestRingbuffer_AddAll(t *testing.T) {
 		bar, err := rb.ReadOne(context.Background(), 1)
 		assert.NoError(t, err)
 		assert.Equal(t, "bar", bar)
+
+		headSeq, err := rb.HeadSequence(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, int(64), headSeq)
+
+		tailSeq, err := rb.TailSequence(context.Background())
+		assert.NoError(t, err)
+		assert.Equal(t, int(64), tailSeq)
 	})
 }
 
