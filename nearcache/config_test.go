@@ -298,5 +298,8 @@ func configWithNearCacheNames(names ...string) (hazelcast.Config, []nearcache.Co
 		config.AddNearCacheConfig(nc)
 		ncs = append(ncs, nc)
 	}
+	if err := config.Validate(); err != nil {
+		panic(err)
+	}
 	return config, ncs
 }
