@@ -262,11 +262,9 @@ func matchingPointMatches(patterns []string, itemName string) (string, error) {
 	for _, p := range patterns {
 		mp := getMatchingPoint(p, itemName)
 		if mp > -1 && mp >= last {
-			if mp == last {
+			hasDup = mp == last
+			if hasDup {
 				duplicate = candidate
-				hasDup = true
-			} else {
-				hasDup = false
 			}
 			last = mp
 			candidate = p
