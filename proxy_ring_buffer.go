@@ -214,7 +214,7 @@ func (rb *Ringbuffer) RemainingCapacity(ctx context.Context) (int64, error) {
 // than the maxCount, these items are returned. So it could be the number of items read is smaller than the maxCount.
 // If there are fewer items available than minCount, then this call blacks. Reading a batch of items is likely to
 // perform better because less overhead is involved. A filter can be provided to only select items that need to be read.
-// If the filter is null, all items are read. If the filter is not null, only items where the filter function returns
+// If the filter is nil, all items are read. If the filter is not null, only items where the filter function returns
 // true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
 // This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
 func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCount int32, maxCount int32, filter interface{}) (ReadResultSet, error) {
