@@ -27,7 +27,7 @@ import (
 
 func RingbufferTester(t *testing.T, f func(t *testing.T, rb *hz.Ringbuffer)) {
 	name := func() string {
-		return NewUniqueObjectName("ringbuffer")
+		return NewUniqueObjectName("Ringbuffer")
 	}
 	RingbufferTesterWithConfigAndName(t, name, nil, f)
 }
@@ -52,7 +52,7 @@ func RingbufferTesterWithConfigAndName(t *testing.T, ringBufferName func() strin
 		defer func() {
 			ctx := context.Background()
 			if err := rb.Destroy(ctx); err != nil {
-				t.Logf("test warning, could not destroy ringbuffer: %s", err.Error())
+				t.Logf("test warning, could not destroy Ringbuffer: %s", err.Error())
 			}
 			if err := client.Shutdown(ctx); err != nil {
 				t.Logf("test warning, client not shutdown: %s", err.Error())

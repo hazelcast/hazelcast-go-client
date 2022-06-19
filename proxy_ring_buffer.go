@@ -39,11 +39,11 @@ type Ringbuffer struct {
 
 // OverflowPolicy
 // Using this OverflowPolicy one can control the behavior what should to be done
-// when an item is about to be added to the RingBuffer, but there is {@code 0}
+// when an item is about to be added to the Ringbuffer, but there is {@code 0}
 // remaining capacity.
 //
 // Overflowing happens when a time-to-live is set and the oldest item in
-// the RingBuffer (the head) is not old enough to expire.
+// the Ringbuffer (the head) is not old enough to expire.
 type OverflowPolicy int
 type ReadResultSet struct {
 	rb        *Ringbuffer
@@ -177,7 +177,7 @@ func (rb *Ringbuffer) Size(ctx context.Context) (int64, error) {
 	return codec.DecodeRingbufferSizeResponse(response), nil
 }
 
-// TailSequence returns the sequence of the tail. The tail is the side of the ringbuffer where the items are added to.
+// TailSequence returns the sequence of the tail. The tail is the side of the Ringbuffer where the items are added to.
 // The initial value of the tail is -1.
 func (rb *Ringbuffer) TailSequence(ctx context.Context) (int64, error) {
 	request := codec.EncodeRingbufferTailSequenceRequest(rb.name)
@@ -188,8 +188,8 @@ func (rb *Ringbuffer) TailSequence(ctx context.Context) (int64, error) {
 	return codec.DecodeRingbufferTailSequenceResponse(response), nil
 }
 
-// HeadSequence returns the sequence of the head. The head is the side of the ringbuffer where the oldest items in the ringbuffer
-// are found. If the RingBuffer is empty, the head will be one more than the tail.
+// HeadSequence returns the sequence of the head. The head is the side of the Ringbuffer where the oldest items in the Ringbuffer
+// are found. If the Ringbuffer is empty, the head will be one more than the tail.
 // The initial value of the head is 0 (1 more than tail).
 func (rb *Ringbuffer) HeadSequence(ctx context.Context) (int64, error) {
 	request := codec.EncodeRingbufferHeadSequenceRequest(rb.name)

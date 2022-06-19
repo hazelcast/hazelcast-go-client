@@ -30,7 +30,7 @@ const (
 )
 
 // Returns the sequence of the head. The head is the side of the ringbuffer where the oldest items in the ringbuffer
-// are found. If the RingBuffer is empty, the head will be one more than the tail.
+// are found. If the Ringbuffer is empty, the head will be one more than the tail.
 // The initial value of the head is 0 (1 more than tail).
 
 func EncodeRingbufferHeadSequenceRequest(name string) *proto.ClientMessage {
