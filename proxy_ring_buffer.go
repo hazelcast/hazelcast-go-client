@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	hzcerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -272,7 +272,7 @@ func (rrs *ReadResultSet) GetNextSequenceToReadFrom() int64 {
 
 func (rrs *ReadResultSet) validateIndexInRange(index int) error {
 	if index < 0 || int32(index) >= rrs.readCount {
-		return hzcerrors.NewIllegalArgumentError(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount), nil)
+		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("index out of range [%d] with length %d", index, rrs.readCount), nil)
 	}
 	return nil
 }

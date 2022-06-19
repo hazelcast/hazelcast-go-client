@@ -16,16 +16,16 @@
 
 package proto
 
-import "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+import ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 
 type ErrorHolder struct {
 	ClassName          string
 	Message            string
-	StackTraceElements []hzerrors.StackTraceElement
+	StackTraceElements []ihzerrors.StackTraceElement
 	ErrorCode          int32
 }
 
-func NewErrorHolder(errorCode int32, className, message string, stackTraceElements []hzerrors.StackTraceElement) ErrorHolder {
+func NewErrorHolder(errorCode int32, className, message string, stackTraceElements []ihzerrors.StackTraceElement) ErrorHolder {
 	return ErrorHolder{
 		ErrorCode:          errorCode,
 		ClassName:          className,

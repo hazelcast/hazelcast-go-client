@@ -22,7 +22,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -148,7 +148,7 @@ func (c *Config) ensureFlakeIDGenerators() {
 // AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
 func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchExpiry types.Duration) error {
 	if _, ok := c.FlakeIDGenerators[name]; ok {
-		return hzerrors.NewIllegalArgumentError(fmt.Sprintf("config already exists for %s", name), nil)
+		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("config already exists for %s", name), nil)
 	}
 	idConfig := FlakeIDGeneratorConfig{PrefetchCount: prefetchCount, PrefetchExpiry: prefetchExpiry}
 	if err := idConfig.Validate(); err != nil {

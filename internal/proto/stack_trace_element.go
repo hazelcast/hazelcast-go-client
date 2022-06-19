@@ -16,10 +16,10 @@
 
 package proto
 
-import "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+import ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 
-func NewStackTraceElement(className, methodName, fileName string, lineNumber int32) hzerrors.StackTraceElement {
-	return hzerrors.StackTraceElement{
+func NewStackTraceElement(className, methodName, fileName string, lineNumber int32) ihzerrors.StackTraceElement {
+	return ihzerrors.StackTraceElement{
 		ClassName:  className,
 		MethodName: methodName,
 		FileName:   fileName,

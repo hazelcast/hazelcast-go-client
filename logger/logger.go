@@ -19,7 +19,7 @@ package logger
 import (
 	"fmt"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 // Logger interface is used to provide a custom logger to the client.
@@ -69,6 +69,6 @@ func WeightForLogLevel(logLevel Level) (Weight, error) {
 	case OffLevel:
 		return WeightOff, nil
 	default:
-		return 0, hzerrors.NewIllegalArgumentError(fmt.Sprintf("no logger level found for %s", logLevel), nil)
+		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("no logger level found for %s", logLevel), nil)
 	}
 }
