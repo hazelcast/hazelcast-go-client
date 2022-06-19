@@ -26,10 +26,10 @@ import (
 )
 
 func RingbufferTester(t *testing.T, f func(t *testing.T, rb *hz.Ringbuffer)) {
-	name := func() string {
+	makeName := func() string {
 		return NewUniqueObjectName("Ringbuffer")
 	}
-	RingbufferTesterWithConfigAndName(t, name, nil, f)
+	RingbufferTesterWithConfigAndName(t, makeName, nil, f)
 }
 
 func RingbufferTesterWithConfigAndName(t *testing.T, ringBufferName func() string, cbCallback func(*hz.Config), f func(*testing.T, *hz.Ringbuffer)) {
