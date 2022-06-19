@@ -125,7 +125,7 @@ func (rb *Ringbuffer) Add(ctx context.Context, item interface{}, overflowPolicy 
 // If the collection is larger than the capacity of the Ringbuffer, then the items that were written first will be
 // overwritten. Therefore, this call will not block. The items are inserted in the order of the Iterator of the collection.
 // If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
-// The result of the future contains the sequenceId of the last written item.
+// The result contains the sequenceId of the last written item.
 func (rb *Ringbuffer) AddAll(ctx context.Context, overflowPolicy OverflowPolicy, items ...interface{}) (int64, error) {
 	elementData, err := rb.validateAndSerializeValues(items)
 	if err != nil {
