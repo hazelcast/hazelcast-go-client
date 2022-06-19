@@ -35,8 +35,8 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	nearcacheConfigs    map[string]nearcache.Config
 	nearCacheNames      []string
+	NearcacheConfigs    map[string]nearcache.Config       `json:",omitempty"`
 	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 	Labels              []string                          `json:",omitempty"`
 	ClientName          string                            `json:",omitempty"`
@@ -76,8 +76,7 @@ func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHand
 // AddNearCacheConfig adds a near cache configuration.
 func (c *Config) AddNearCacheConfig(cfg nearcache.Config) {
 	c.ensureNearCacheConfigs()
-	c.nearcacheConfigs[cfg.Name] = cfg.Clone()
-	c.nearCacheNames = append(c.nearCacheNames, cfg.Name)
+	c.NearcacheConfigs[cfg.Name] = cfg
 }
 
 // GetNearCacheConfig returns the first configuration that matches the given pattern.
@@ -92,7 +91,7 @@ func (c *Config) GetNearCacheConfig(pattern string) (nearcache.Config, bool, err
 		return nc, true, nil
 	}
 	// config not found, return the default if it exists
-	nc, ok = c.nearcacheConfigs["default"]
+	nc, ok = c.NearcacheConfigs["default"]
 	return nc, ok, nil
 }
 
@@ -106,23 +105,18 @@ func (c *Config) SetLabels(labels ...string) {
 func (c *Config) Clone() Config {
 	c.ensureLifecycleListeners()
 	c.ensureMembershipListeners()
-	c.ensureNearCacheConfigs()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
 	newFlakeIDConfigs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGenerators))
 	for k, v := range c.FlakeIDGenerators {
 		newFlakeIDConfigs[k] = v
 	}
-	nearCacheConfigs := make(map[string]nearcache.Config, len(c.nearcacheConfigs))
-	for k, v := range c.nearcacheConfigs {
-		nearCacheConfigs[k] = v.Clone()
-	}
-	nearCacheNames := make([]string, len(c.nearCacheNames))
-	copy(nearCacheNames, c.nearCacheNames)
+	nccs, names := c.copyNearCacheConfig()
 	return Config{
 		ClientName:        c.ClientName,
 		Labels:            newLabels,
 		FlakeIDGenerators: newFlakeIDConfigs,
+		NearcacheConfigs:  nccs,
 		Cluster:           c.Cluster.Clone(),
 		Failover:          c.Failover.Clone(),
 		Serialization:     c.Serialization.Clone(),
@@ -132,8 +126,7 @@ func (c *Config) Clone() Config {
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
 		membershipListeners: c.membershipListeners,
-		nearcacheConfigs:    nearCacheConfigs,
-		nearCacheNames:      nearCacheNames,
+		nearCacheNames:      names,
 	}
 }
 
@@ -160,6 +153,7 @@ func (c *Config) Validate() error {
 			return err
 		}
 	}
+	c.NearcacheConfigs, c.nearCacheNames = c.copyNearCacheConfig()
 	return nil
 }
 
@@ -182,13 +176,13 @@ func (c *Config) ensureFlakeIDGenerators() {
 }
 
 func (c *Config) ensureNearCacheConfigs() {
-	if c.nearcacheConfigs == nil {
-		c.nearcacheConfigs = map[string]nearcache.Config{}
+	if c.NearcacheConfigs == nil {
+		c.NearcacheConfigs = map[string]nearcache.Config{}
 	}
 }
 
 func (c *Config) lookupNearCacheByPattern(itemName string) (nearcache.Config, bool, error) {
-	if candidate, ok := c.nearcacheConfigs[itemName]; ok {
+	if candidate, ok := c.NearcacheConfigs[itemName]; ok {
 		return candidate, true, nil
 	}
 	key, err := matchingPointMatches(c.nearCacheNames, itemName)
@@ -199,7 +193,7 @@ func (c *Config) lookupNearCacheByPattern(itemName string) (nearcache.Config, bo
 		// not found
 		return nearcache.Config{}, false, nil
 	}
-	return c.nearcacheConfigs[key], true, nil
+	return c.NearcacheConfigs[key], true, nil
 }
 
 // AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
@@ -214,6 +208,16 @@ func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchE
 	c.ensureFlakeIDGenerators()
 	c.FlakeIDGenerators[name] = idConfig
 	return nil
+}
+
+func (c Config) copyNearCacheConfig() (configs map[string]nearcache.Config, names []string) {
+	c.ensureNearCacheConfigs()
+	configs = make(map[string]nearcache.Config)
+	for k, v := range c.NearcacheConfigs {
+		configs[k] = v.Clone()
+		names = append(names, v.Name)
+	}
+	return configs, names
 }
 
 // StatsConfig contains configuration for Management Center.
@@ -270,11 +274,9 @@ func matchingPointMatches(patterns []string, itemName string) (string, error) {
 	for _, p := range patterns {
 		mp := getMatchingPoint(p, itemName)
 		if mp > -1 && mp >= last {
-			if mp == last {
+			hasDup = mp == last
+			if hasDup {
 				duplicate = candidate
-				hasDup = true
-			} else {
-				hasDup = false
 			}
 			last = mp
 			candidate = p
