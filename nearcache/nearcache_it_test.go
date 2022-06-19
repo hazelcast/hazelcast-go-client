@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -201,6 +202,106 @@ func TestAfterDeleteNearCacheIsInvalidated(t *testing.T) {
 				if err := tcx.M.Delete(ctx, i); err != nil {
 					tcx.T.Fatal(err)
 				}
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterPutAsyncNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Put",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				if err := tcx.M.Delete(ctx, i); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterSetNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterSetAsyncNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Set",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				if err := tcx.M.Set(ctx, i, i); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "SetWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				if err := tcx.M.SetWithTTL(ctx, i, i, 1*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "SetWithTTLAndMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				if err := tcx.M.SetWithTTLAndMaxIdle(ctx, i, i, 1*time.Second, 2*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterTryRemoveNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "TryRemove",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				v, err := tcx.M.TryRemove(ctx, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.True(t, v.(bool)))
+			},
+		},
+		{
+			name: "TryRemoveWithTimeout",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				v, err := tcx.M.TryRemoveWithTimeout(ctx, i, 10*time.Second)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.True(t, v.(bool)))
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterTryPutNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Put",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				v, err := tcx.M.Put(ctx, i, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.Equal(tcx.T, i, v))
+			},
+		},
+		{
+			name: "PutWithMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
+				v, err := tcx.M.PutWithMaxIdle(ctx, i, i, 10*time.Minute)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.Equal(tcx.T, i, v))
 			},
 		},
 	}
