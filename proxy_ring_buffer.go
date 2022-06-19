@@ -262,7 +262,7 @@ func (rrs *ReadResultSet) GetSequence(index int) (int64, error) {
 	return rrs.itemSeqs[index], nil
 }
 
-// Size the total size of
+// Size the total size of result set
 func (rrs *ReadResultSet) Size() int {
 	return len(rrs.items)
 }
