@@ -28,12 +28,10 @@ import (
 
 func TestRingbuffer_Add(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
-		sequence, err := rb.Add(context.Background(), "foo", hz.OverflowPolicyOverwrite)
-		assert.NoError(t, err)
+		sequence := it.MustValue(rb.Add(context.Background(), "foo", hz.OverflowPolicyOverwrite))
 		assert.Equal(t, int64(0), sequence)
 
-		actualItem, err := rb.ReadOne(context.Background(), 0)
-		assert.NoError(t, err)
+		actualItem := it.MustValue(rb.ReadOne(context.Background(), 0))
 		assert.Equal(t, "foo", actualItem)
 	})
 }
@@ -50,20 +48,16 @@ func TestRingbuffer_AddAll(t *testing.T) {
 		_, err := rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "foo", "bar")
 		assert.NoError(t, err)
 
-		foo, err := rb.ReadOne(context.Background(), 0)
-		assert.NoError(t, err)
+		foo := it.MustValue(rb.ReadOne(context.Background(), 0))
 		assert.Equal(t, "foo", foo)
 
-		bar, err := rb.ReadOne(context.Background(), 1)
-		assert.NoError(t, err)
+		bar := it.MustValue(rb.ReadOne(context.Background(), 1))
 		assert.Equal(t, "bar", bar)
 
-		headSeq, err := rb.HeadSequence(context.Background())
-		assert.NoError(t, err)
+		headSeq := it.MustValue(rb.HeadSequence(context.Background()))
 		assert.Equal(t, int(64), headSeq)
 
-		tailSeq, err := rb.TailSequence(context.Background())
-		assert.NoError(t, err)
+		tailSeq := it.MustValue(rb.TailSequence(context.Background()))
 		assert.Equal(t, int(64), tailSeq)
 	})
 }
@@ -72,24 +66,21 @@ func TestRingbuffer_Size(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		_, err := rb.Add(context.Background(), "one", hz.OverflowPolicyOverwrite)
 		assert.NoError(t, err)
-		size, err := rb.Size(context.Background())
-		assert.NoError(t, err)
+		size := it.MustValue(rb.Size(context.Background()))
 		assert.Equal(t, int64(1), size)
 	})
 }
 
 func TestRingbuffer_Capacity(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
-		capacity, err := rb.Capacity(context.Background())
-		assert.NoError(t, err)
+		capacity := it.MustValue(rb.Capacity(context.Background()))
 		assert.GreaterOrEqual(t, capacity, int64(9999), "There should be a capacity of at least 9999 items.")
 	})
 }
 
 func TestRingbuffer_RemainingCapacity(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
-		capacity, err := rb.RemainingCapacity(context.Background())
-		assert.NoError(t, err)
+		capacity := it.MustValue(rb.RemainingCapacity(context.Background()))
 		assert.GreaterOrEqual(t, capacity, int64(9999), "There should be a remaining capacity of at least 9999 items.")
 	})
 }
@@ -98,11 +89,8 @@ func TestRingbuffer_HeadSequence_and_TailSequence(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "one", "two", "three")
 
-		head, err := rb.HeadSequence(context.Background())
-		assert.NoError(t, err)
-		tail, err := rb.TailSequence(context.Background())
-		assert.NoError(t, err)
-
+		head := it.MustValue(rb.HeadSequence(context.Background())).(int64)
+		tail:= it.MustValue(rb.TailSequence(context.Background())).(int64)
 		assert.Equal(t, int64(2), tail-head)
 	})
 }
@@ -111,9 +99,7 @@ func TestRingbuffer_ReadMany_ReadCount(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "0", "1", "2", "x")
 
-		rs, err := rb.ReadMany(context.Background(), 0, 3, 3, nil)
-		assert.NoError(t, err)
-
+		rs := it.MustValue(rb.ReadMany(context.Background(), 0, 3, 3, nil)).(hz.ReadResultSet)
 		assert.Equal(t, int32(3), rs.ReadCount())
 	})
 }
@@ -122,9 +108,7 @@ func TestRingbuffer_ReadMany_Get_with_startSequence(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "0", "1", "2", "y", "z")
 
-		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
-		assert.NoError(t, err)
-
+		rs := it.MustValue(rb.ReadMany(context.Background(), 1, 3, 3, nil)).(hz.ReadResultSet)
 		item, _ := rs.Get(0)
 		assert.Equal(t, "0", item)
 		item, _ = rs.Get(1)
@@ -138,9 +122,7 @@ func TestRingbuffer_ReadMany_GetSequence_with_startSequence(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
 
-		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
-		assert.NoError(t, err)
-
+		rs := it.MustValue(rb.ReadMany(context.Background(), 1, 3, 3, nil)).(hz.ReadResultSet)
 		seq, _ := rs.GetSequence(0)
 		assert.Equal(t, int64(1), seq)
 		seq, _ = rs.GetSequence(1)
@@ -154,8 +136,7 @@ func TestRingbuffer_ReadMany_Get_invalid_index(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
 
-		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
-		assert.NoError(t, err)
+		rs := it.MustValue(rb.ReadMany(context.Background(), 1, 3, 3, nil)).(hz.ReadResultSet)
 
 		item, err := rs.Get(999)
 		assert.Nil(t, item)
@@ -176,8 +157,7 @@ func TestRingbuffer_ReadMany_GetSequence_invalid_index(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
 
-		rs, err := rb.ReadMany(context.Background(), 1, 3, 3, nil)
-		assert.NoError(t, err)
+		rs := it.MustValue(rb.ReadMany(context.Background(), 1, 3, 3, nil)).(hz.ReadResultSet)
 
 		seq, err := rs.GetSequence(999)
 		assert.Equal(t, int64(-1), seq)
