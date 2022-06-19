@@ -136,13 +136,15 @@ type EvictionPolicyComparator interface {
 /*
 EvictionConfig is the configuration for eviction.
 
-You can set a limit for number of entries or total memory cost of entries.
+You can set a limit for number of entries.
 The default values of the eviction configuration are:
 
 	* EvictionPolicyLRU as eviction policy
 	* MaxSizePolicyEntryCount as max size policy
 	* 2147483647 as maximum size for on-heap Map
 	* 10_000 as maximum size for all other data structures and configurations
+
+Eviction policy and comparator are mutually exclusive.
 */
 type EvictionConfig struct {
 	evictionPolicy *EvictionPolicy
