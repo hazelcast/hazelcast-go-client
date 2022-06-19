@@ -143,7 +143,7 @@ func (rb *Ringbuffer) AddAll(ctx context.Context, overflowPolicy OverflowPolicy,
 // Reads one item from the Ringbuffer. If the sequence is one beyond the current tail, this call blocks until an
 // item is added. This method is not destructive unlike e.g. a queue.take. So the same item can be read by multiple
 // readers, or it can be read multiple times by the same reader. Currently, it isn't possible to control how long this
-// call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
+// call is going to block.
 func (rb *Ringbuffer) ReadOne(ctx context.Context, sequence int64) (interface{}, error) {
 	request := codec.EncodeRingbufferReadOneRequest(rb.name, sequence)
 	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)

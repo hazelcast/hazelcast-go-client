@@ -34,7 +34,6 @@ const (
 // this call blocks until an item is added. This method is not destructive unlike e.g. a queue.take.
 // So the same item can be read by multiple readers, or it can be read multiple times
 // by the same reader. Currently, it isn't possible to control how long this call is going to block.
-// In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
 func EncodeRingbufferReadOneRequest(name string, sequence int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
