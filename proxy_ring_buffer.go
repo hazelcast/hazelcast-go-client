@@ -18,7 +18,6 @@ package hazelcast
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -220,10 +219,15 @@ func (rb *Ringbuffer) RemainingCapacity(ctx context.Context) (int64, error) {
 // true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
 // This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
 func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCount int32, maxCount int32, filter interface{}) (ReadResultSet, error) {
+	var serializedFilterData iserialization.Data
 	if filter != nil {
-		return ReadResultSet{}, errors.New("filter functions are not yet supported in th Go client, please use 'nil' for now")
+		data, err := rb.validateAndSerialize(filter)
+		serializedFilterData = data
+		if err != nil {
+			return ReadResultSet{}, err
+		}
 	}
-	request := codec.EncodeRingbufferReadManyRequest(rb.name, startSequence, minCount, maxCount, nil)
+	request := codec.EncodeRingbufferReadManyRequest(rb.name, startSequence, minCount, maxCount, serializedFilterData)
 	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
 	if err != nil {
 		return ReadResultSet{}, err

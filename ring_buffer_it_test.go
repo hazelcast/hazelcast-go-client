@@ -55,10 +55,10 @@ func TestRingbuffer_AddAll(t *testing.T) {
 		assert.Equal(t, "bar", bar)
 
 		headSeq := it.MustValue(rb.HeadSequence(context.Background()))
-		assert.Equal(t, int(64), headSeq)
+		assert.Equal(t, int64(0), headSeq)
 
 		tailSeq := it.MustValue(rb.TailSequence(context.Background()))
-		assert.Equal(t, int(64), tailSeq)
+		assert.Equal(t, int64(1), tailSeq)
 	})
 }
 
@@ -90,7 +90,7 @@ func TestRingbuffer_HeadSequence_and_TailSequence(t *testing.T) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "one", "two", "three")
 
 		head := it.MustValue(rb.HeadSequence(context.Background())).(int64)
-		tail:= it.MustValue(rb.TailSequence(context.Background())).(int64)
+		tail := it.MustValue(rb.TailSequence(context.Background())).(int64)
 		assert.Equal(t, int64(2), tail-head)
 	})
 }
