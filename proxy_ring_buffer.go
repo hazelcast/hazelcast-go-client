@@ -123,7 +123,7 @@ func (rb *Ringbuffer) Add(ctx context.Context, item interface{}, overflowPolicy 
 // the call is ignored. When the collection is not empty, the content is copied into a different data-structure.
 // This means that: after this call completes, the collection can be re-used. the collection doesn't need to be serializable.
 // If the collection is larger than the capacity of the Ringbuffer, then the items that were written first will be
-// overwritten. Therefor this call will not block. The items are inserted in the order of the Iterator of the collection.
+// overwritten. Therefore, this call will not block. The items are inserted in the order of the Iterator of the collection.
 // If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
 // The result of the future contains the sequenceId of the last written item.
 func (rb *Ringbuffer) AddAll(ctx context.Context, overflowPolicy OverflowPolicy, items ...interface{}) (int64, error) {
