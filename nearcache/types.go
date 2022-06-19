@@ -36,11 +36,19 @@ const (
 type InMemoryFormat int8
 
 const (
-	InMemoryFormatBinary InMemoryFormat = 0
-	InMemoryFormatObject InMemoryFormat = 1
+	InMemoryFormatBinary InMemoryFormat = iota
+	InMemoryFormatObject
 )
 
 type EvictionPolicy int32
+
+const (
+	EvictionPolicyLRU EvictionPolicy = iota
+	EvictionPolicyLFU
+	EvictionPolicyNone
+	EvictionPolicyRandom
+	evictionPolicyCount // internal
+)
 
 func (p EvictionPolicy) String() string {
 	switch p {
@@ -55,13 +63,6 @@ func (p EvictionPolicy) String() string {
 	}
 	panic(fmt.Errorf("unknown eviction policy: %d", p))
 }
-
-const (
-	EvictionPolicyLRU    EvictionPolicy = 0
-	EvictionPolicyLFU    EvictionPolicy = 1
-	EvictionPolicyNone   EvictionPolicy = 2
-	EvictionPolicyRandom EvictionPolicy = 3
-)
 
 type LocalUpdatePolicy int32
 
