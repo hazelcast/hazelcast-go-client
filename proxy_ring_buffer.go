@@ -25,10 +25,9 @@ import (
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-// A Ringbuffer is a data structure where the content is stored in a ring-like
-// structure. A Ringbuffer has a fixed capacity, so it won't grow beyond
-// that capacity and endanger the stability of the system. If that capacity
-// is exceeded, the oldest item in the Ringbuffer is overwritten.
+// A Ringbuffer is a data structure where the content is stored in a ring-like structure.
+// A Ringbuffer has a fixed capacity, so it won't grow beyond that capacity and endanger the stability of the system.
+// If that capacity is exceeded, the oldest item in the Ringbuffer is overwritten.
 //
 // For details see https://docs.hazelcast.com/hazelcast/latest/data-structures/ringbuffer
 type Ringbuffer struct {
