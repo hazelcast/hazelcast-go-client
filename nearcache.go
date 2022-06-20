@@ -690,7 +690,3 @@ type nearCacheStats struct {
 func (st *nearCacheStats) InvalidationRequests() int64 {
 	return atomic.LoadInt64(&st.invalidationRequests)
 }
-
-func (st *nearCacheStats) ResetInvalidationRequests() {
-	atomic.StoreInt64(&st.invalidationRequests, 0)
-}
