@@ -64,37 +64,34 @@ func (p EvictionPolicy) String() string {
 
 // Stats contains statistics for a Near Cache instance.
 type Stats struct {
-	// Evictions is the number of evictions.
-	Evictions int64
-	// Evictions is the number of expirations.
-	Expirations int64
-	// Hits is the number of times a key was found in the Near Cache.
-	Hits int64
-	// InvalidationRequests is the number of invalidation requests.
-	// An invalidation request may be successful or not.
-	InvalidationRequests int64
-	// Invalidations is the number of successful invalidations.
-	Invalidations int64
+	// CreationTime is the time the Near Cache was initialized.
+	CreationTime time.Time
+	// LastPersistenceTime is the time of the last completed persistence task.
+	LastPersistenceTime time.Time
+	// LastPersistenceFailure is the error message of the last completed persistence task.
+	LastPersistenceFailure string
+	// LastPersistenceKeyCount is the number of keys saved in the last persistence task.
+	LastPersistenceKeyCount int64
 	// Misses is the number of times a key was not found in the Near Cache.
 	Misses int64
 	// OwnedEntryCount is the number of entries in the Near Cache.
 	OwnedEntryCount int64
 	// OwnedEntryMemoryCost is the estimated memory cost of the entries in the Near Cache.
 	OwnedEntryMemoryCost int64
-	// LastPersistenceKeyCount is the number of keys saved in the last persistence task.
-	LastPersistenceKeyCount int64
+	// Invalidations is the number of successful invalidations.
+	Invalidations int64
 	// LastPersistenceWrittenBytes is the size of the last persistence task.
 	LastPersistenceWrittenBytes int64
 	// PersistenceCount is the number of completed persistence tasks.
 	PersistenceCount int64
-	// LastPersistenceTime is the time of the last completed persistence task.
-	LastPersistenceTime time.Time
+	// Hits is the number of times a key was found in the Near Cache.
+	Hits int64
 	// LastPersistenceDuration is the duration of the last completed persistence task.
 	LastPersistenceDuration time.Duration
-	// LastPersistenceFailure is the error message of the last completed persistence task.
-	LastPersistenceFailure string
-	// CreationTime is the time the Near Cache was initialized.
-	CreationTime time.Time
+	// Expirations is the number of expirations.
+	Expirations int64
+	// Evictions is the number of evictions.
+	Evictions int64
 }
 
 // Ratio returns the ratio of hits to misses.
