@@ -78,10 +78,8 @@ type DefaultCompactReader struct {
 
 func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDataInput, schema Schema) DefaultCompactReader {
 	numberOfVarSizeFields := schema.numberOfVarSizeFields
-
 	var variableOffsetsPosition, dataStartPosition, finalPosition int32
 	var offsetReader OffsetReader
-
 	if numberOfVarSizeFields == 0 {
 		offsetReader = INT_OFFSET_READER
 		variableOffsetsPosition = 0
@@ -103,7 +101,6 @@ func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDa
 		}
 	}
 	input.SetPosition(finalPosition)
-
 	return DefaultCompactReader{
 		schema:                  schema,
 		in:                      input,
@@ -222,12 +219,10 @@ func (r DefaultCompactReader) ReadFloat64(fieldName string) float64 {
 
 func (r DefaultCompactReader) ReadString(fieldName string) *string {
 	fd := r.getFieldDefinitionChecked(fieldName, pserialization.FieldKindString)
-
 	value := r.readVariableSize(fd, func(in *ObjectDataInput) interface{} {
 		str := in.ReadString()
 		return &str
 	})
-
 	if value == nil {
 		return nil
 	} else {
@@ -335,7 +330,6 @@ func (r DefaultCompactReader) ReadArrayOfFloat64(fieldName string) []float64 {
 	return r.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
 		return inp.ReadFloat64Array()
 	}, pserialization.FieldKindArrayOfFloat64, pserialization.FieldKindArrayOfNullableFloat64, "Float64").([]float64)
-
 }
 
 func (r DefaultCompactReader) ReadArrayOfString(fieldName string) []*string {
@@ -817,7 +811,6 @@ func (r *DefaultCompactReader) readBooleanBitsAsNullables(inp *ObjectDataInput) 
 func (r *DefaultCompactReader) readNullableArrayAsPrimitiveArray(fd FieldDescriptor, reader Reader, methodSuffix string) interface{} {
 	currentPos := r.in.position
 	defer r.in.SetPosition(currentPos)
-
 	pos := r.readVariableSizeFieldPosition(fd)
 	if pos == NULL_ARRAY_LENGTH {
 		return nil
@@ -853,7 +846,6 @@ func (r *DefaultCompactReader) readArrayOfPrimitive(fieldName string, reader Rea
 
 func (r *DefaultCompactReader) readArrayOfVariableSize(fieldName string, fieldKind pserialization.FieldKind, reader SliceReader, sc SliceConstructor) {
 	fd := r.getFieldDefinition(fieldName)
-
 	currentPos := r.in.position
 	defer r.in.SetPosition(currentPos)
 	pos := r.readVariableSizeFieldPosition(fd)
@@ -864,11 +856,9 @@ func (r *DefaultCompactReader) readArrayOfVariableSize(fieldName string, fieldKi
 	dataLength := r.in.readInt32()
 	itemCount := r.in.readInt32()
 	dataStartPosition := r.in.position
-
 	sc(int(itemCount))
 	offsetReader := getOffsetReader(dataLength)
 	offsetsPosition := dataStartPosition + dataLength
-
 	for i := int32(0); i < itemCount; i++ {
 		offset := offsetReader.getOffset(r.in, offsetsPosition, i)
 		if offset != NULL_ARRAY_LENGTH {
@@ -883,7 +873,6 @@ func (r *DefaultCompactReader) readArrayOfVariableSize(fieldName string, fieldKi
 func (r *DefaultCompactReader) readArrayOfNullable(fieldName string, primitiveKind, nullableKind pserialization.FieldKind, sr SliceReader, sc SliceConstructor) {
 	fd := r.getFieldDefinition(fieldName)
 	fieldKind := fd.fieldKind
-
 	if fieldKind == primitiveKind {
 		r.readPrimitiveArrayAsNullableArray(fd, sr, sc)
 	} else if fieldKind == nullableKind {
@@ -896,7 +885,6 @@ func (r *DefaultCompactReader) readArrayOfNullable(fieldName string, primitiveKi
 func (r *DefaultCompactReader) readPrimitiveArrayAsNullableArray(fd FieldDescriptor, sr SliceReader, sc SliceConstructor) {
 	currentPos := r.in.position
 	defer r.in.SetPosition(currentPos)
-
 	pos := r.readVariableSizeFieldPosition(fd)
 	if pos == NULL_OFFSET {
 		return
@@ -904,7 +892,6 @@ func (r *DefaultCompactReader) readPrimitiveArrayAsNullableArray(fd FieldDescrip
 	r.in.SetPosition(pos)
 	itemCount := r.in.readInt32()
 	sc(int(itemCount))
-
 	for i := int32(0); i < itemCount; i++ {
 		sr(r.in, i, false)
 	}
