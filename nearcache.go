@@ -116,6 +116,10 @@ func (nc nearCache) Stats() nearcache.Stats {
 	return nc.store.Stats()
 }
 
+func (nc nearCache) InvalidationRequests() int64 {
+	return nc.store.InvalidationRequests()
+}
+
 func (nc *nearCache) TryReserveForUpdate(key interface{}, keyData serialization.Data, ups nearCacheUpdateSemantic) (int64, error) {
 	// eviction stuff will be implemented in another PR
 	nc.store.DoEviction(false)
@@ -192,7 +196,7 @@ func (n nearCacheValueStoreAdapter) GetRecordStorageMemoryCost(rec *nearCacheRec
 }
 
 type nearCacheRecordStore struct {
-	stats            nearcache.Stats
+	stats            nearCacheStats
 	maxIdleMillis    int64
 	reservationID    int64
 	timeToLiveMillis int64
@@ -205,7 +209,7 @@ type nearCacheRecordStore struct {
 }
 
 func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) nearCacheRecordStore {
-	stats := nearcache.Stats{
+	stats := nearCacheStats{
 		CreationTime: time.Now(),
 	}
 	return nearCacheRecordStore{
@@ -324,7 +328,6 @@ func (rs nearCacheRecordStore) Stats() nearcache.Stats {
 		Evictions:                   atomic.LoadInt64(&rs.stats.Evictions),
 		Expirations:                 atomic.LoadInt64(&rs.stats.Expirations),
 		Invalidations:               atomic.LoadInt64(&rs.stats.Invalidations),
-		InvalidationRequests:        atomic.LoadInt64(&rs.stats.InvalidationRequests),
 		PersistenceCount:            atomic.LoadInt64(&rs.stats.PersistenceCount),
 		LastPersistenceWrittenBytes: atomic.LoadInt64(&rs.stats.LastPersistenceWrittenBytes),
 		LastPersistenceKeyCount:     atomic.LoadInt64(&rs.stats.LastPersistenceKeyCount),
@@ -332,6 +335,10 @@ func (rs nearCacheRecordStore) Stats() nearcache.Stats {
 		LastPersistenceDuration:     0,
 		LastPersistenceFailure:      "",
 	}
+}
+
+func (rs nearCacheRecordStore) InvalidationRequests() int64 {
+	return atomic.LoadInt64(&rs.stats.invalidationRequests)
 }
 
 func (rs nearCacheRecordStore) Size() int {
@@ -432,7 +439,7 @@ func (rs *nearCacheRecordStore) incrementInvalidations() {
 }
 
 func (rs *nearCacheRecordStore) incrementInvalidationRequests() {
-	atomic.AddInt64(&rs.stats.InvalidationRequests, 1)
+	atomic.AddInt64(&rs.stats.invalidationRequests, 1)
 }
 
 func (rs *nearCacheRecordStore) getRecord(key interface{}) (*nearCacheRecord, bool) {
@@ -588,10 +595,6 @@ const (
 	int64CostInBytes                   = 8
 	atomicValueCostInBytes             = 8
 	uuidCostInBytes                    = 16 // low uint64 + high uint64
-	numberOfLongFieldTypes             = 2
-	numberOfIntegerFieldTypes          = 5
-	numberOfBooleanFieldTypes          = 1
-	nearCacheRecordTimeNotSet          = -1
 	nearCacheRecordNotReserved   int64 = -1
 	nearCacheRecordReadPermitted       = -2
 )
@@ -741,4 +744,45 @@ func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evict
 		}
 		// check if current candidate is more eligible than selected.
 	}
+}
+
+// nearCacheStats contains statistics for a Near Cache instance.
+type nearCacheStats struct {
+	invalidationRequests int64
+	// Misses is the number of times a key was not found in the Near Cache.
+	Misses int64
+	// Hits is the number of times a key was found in the Near Cache.
+	Hits int64
+	// Expirations is the number of expirations.
+	Expirations int64
+	// Evictions is the number of evictions.
+	Evictions int64
+	// OwnedEntryCount is the number of entries in the Near Cache.
+	OwnedEntryCount int64
+	// OwnedEntryMemoryCost is the estimated memory cost of the entries in the Near Cache.
+	OwnedEntryMemoryCost int64
+	// Invalidations is the number of successful invalidations.
+	Invalidations int64
+	// LastPersistenceKeyCount is the number of keys saved in the last persistence task.
+	LastPersistenceKeyCount int64
+	// LastPersistenceWrittenBytes is the size of the last persistence task.
+	LastPersistenceWrittenBytes int64
+	// PersistenceCount is the number of completed persistence tasks.
+	PersistenceCount int64
+	// CreationTime is the time the Near Cache was initialized.
+	CreationTime time.Time
+	// LastPersistenceTime is the time of the last completed persistence task.
+	LastPersistenceTime time.Time
+	// LastPersistenceFailure is the error message of the last completed persistence task.
+	LastPersistenceFailure string
+	// LastPersistenceDuration is the duration of the last completed persistence task.
+	LastPersistenceDuration time.Duration
+}
+
+func (st *nearCacheStats) InvalidationRequests() int64 {
+	return atomic.LoadInt64(&st.invalidationRequests)
+}
+
+func (st *nearCacheStats) ResetInvalidationRequests() {
+	atomic.StoreInt64(&st.invalidationRequests, 0)
 }
