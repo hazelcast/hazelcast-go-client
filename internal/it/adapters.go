@@ -28,27 +28,8 @@ type DataStructureAdapter interface {
 	LocalMapStats() hazelcast.LocalMapStats
 }
 
-type MapDataStructureAdapter struct {
-	m *hazelcast.Map
-}
-
-func NewMapDataStructureAdapter(m *hazelcast.Map) *MapDataStructureAdapter {
-	return &MapDataStructureAdapter{m: m}
-}
-
-func (m *MapDataStructureAdapter) Get(ctx context.Context, key interface{}) (interface{}, error) {
-	return m.m.Get(ctx, key)
-}
-
-func (m *MapDataStructureAdapter) Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	return m.m.Put(ctx, key, value)
-}
-
-func (m *MapDataStructureAdapter) LocalMapStats() hazelcast.LocalMapStats {
-	return m.m.LocalMapStats()
-}
-
 type NearCacheAdapter interface {
 	Size() int
 	Get(key interface{}) (interface{}, bool, error)
+	InvalidationRequests() int64
 }

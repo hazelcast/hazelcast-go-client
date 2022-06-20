@@ -27,6 +27,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
 
+type InvalidationRequestStore interface {
+	InvalidationRequests() int64
+}
+
 type NearCacheTestContext struct {
 	T                             *testing.T
 	NC                            NearCacheAdapter
@@ -46,17 +50,14 @@ func NewNearCacheTestContext(t *testing.T, nc NearCacheAdapter, dsa DataStructur
 	}
 }
 
-func (tcx *NearCacheTestContext) Stats() nearcache.Stats {
+func (tcx NearCacheTestContext) Stats() (nearcache.Stats, int64) {
 	stats := tcx.DSAdapter.LocalMapStats().NearCacheStats
-	// It is not possible to reset invalidation requests, since near cache stats is immutable.
-	// Simulate resetting it by keeping an inverse validation request cound and deduct it.
-	stats.InvalidationRequests -= tcx.decrementInvalidationRequests
-	return stats
+	inv := tcx.NC.InvalidationRequests() - tcx.decrementInvalidationRequests
+	return stats, inv
 }
 
 func (tcx *NearCacheTestContext) ResetInvalidationEvents() {
-	stats := tcx.DSAdapter.LocalMapStats().NearCacheStats
-	tcx.decrementInvalidationRequests = stats.InvalidationRequests
+	tcx.decrementInvalidationRequests = tcx.NC.InvalidationRequests()
 }
 
 func (tcx *NearCacheTestContext) GetKey(key interface{}) interface{} {
@@ -101,7 +102,7 @@ func (tcx *NearCacheTestContext) PopulateNearCacheWithGet(size int64, valueFmt s
 func (tcx *NearCacheTestContext) AssertNearCacheInvalidationRequests(invalidationRequests int64) {
 	if tcx.Config.InvalidateOnChange() && invalidationRequests > 0 {
 		Eventually(tcx.T, func() bool {
-			r := tcx.Stats().InvalidationRequests
+			r := tcx.NC.InvalidationRequests()
 			tcx.T.Logf("Expected %d received Near Cache invalidations, but found %d", invalidationRequests, r)
 			return invalidationRequests == r
 		})
@@ -114,15 +115,17 @@ func (tcx *NearCacheTestContext) AssertNearCacheSize(target int64) bool {
 	if !assert.Equal(tcx.T, target, size, "Cache size didn't reach the desired value") {
 		return false
 	}
-	c := tcx.Stats().OwnedEntryCount
-	if !assert.Equal(tcx.T, target, c, "Near Cache owned entry count didn't reach the desired value") {
+	// ignoring the invalidation requests here.
+	st, _ := tcx.Stats()
+	if !assert.Equal(tcx.T, target, st.OwnedEntryCount, "Near Cache owned entry count didn't reach the desired value") {
 		return false
 	}
 	return true
 }
 
 func (tcx *NearCacheTestContext) AssertNearCacheStats(owned, hits, misses int64) {
-	stats := tcx.Stats()
+	// ignoring the invalidation requests here.
+	stats, _ := tcx.Stats()
 	assert.Equal(tcx.T, owned, stats.OwnedEntryCount)
 	assert.Equal(tcx.T, hits, stats.Hits)
 	assert.Equal(tcx.T, misses, stats.Misses)

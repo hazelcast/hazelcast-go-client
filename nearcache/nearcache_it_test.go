@@ -74,9 +74,8 @@ func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 			}
 			mtcx.Tester(func(mtcx it.MapTestContext) {
 				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M)
-				dsa := it.NewMapDataStructureAdapter(mtcx.M)
 				ci := hz.NewClientInternal(mtcx.Client)
-				tcx := it.NewNearCacheTestContext(mtcx.T, nca.(it.NearCacheAdapter), dsa, &ncc, ci.SerializationService())
+				tcx := it.NewNearCacheTestContext(mtcx.T, nca.(it.NearCacheAdapter), mtcx.M, &ncc, ci.SerializationService())
 				// assert that the Near Cache is empty
 				tcx.PopulateNearCacheDataAdapter(nearCacheDefaultRecordCount, valueFmt)
 				tcx.AssertNearCacheSize(0)
