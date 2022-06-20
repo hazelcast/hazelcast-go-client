@@ -35,6 +35,7 @@ const (
 type Config struct {
 	invalidateOnChange *bool
 	// Name is the name of this Near Cache configuration.
+	// If the name is not specified, it is set to "default".
 	Name string
 	// EvictionConfig is the optional eviction configuration for the Near Cache.
 	EvictionConfig EvictionConfig
@@ -108,10 +109,10 @@ func (c *Config) Validate() error {
 
 /*
 SetInvalidateOnChange sets if Near Cache entries are invalidated when the entries in the backing data structure are changed (updated or removed).
-
 When this setting is enabled, a Hazelcast instance with a Near Cache listens for cluster-wide changes on the entries of the backing data structure.
 And invalidates its corresponding Near Cache entries.
 Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
+Invalidate on change is true by default.
 */
 func (c *Config) SetInvalidateOnChange(enabled bool) {
 	c.invalidateOnChange = &enabled
@@ -163,6 +164,7 @@ func (c *EvictionConfig) Validate() error {
 }
 
 // SetEvictionPolicy sets the eviction policy of this eviction configuration.
+// The default policy is EvictionPolicyLRU which evicts the least recently used entries.
 func (c *EvictionConfig) SetEvictionPolicy(policy EvictionPolicy) {
 	if policy < 0 || policy >= evictionPolicyCount {
 		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.EvictionConfig.SetEvictionPolicy: invalid policy", nil)
@@ -172,6 +174,7 @@ func (c *EvictionConfig) SetEvictionPolicy(policy EvictionPolicy) {
 }
 
 // EvictionPolicy returns the eviction policy of this eviction configuration.
+// See the documentation for SetEvictionPolicy.
 func (c EvictionConfig) EvictionPolicy() EvictionPolicy {
 	if c.evictionPolicy == nil {
 		return defaultEvictionPolicy
@@ -191,7 +194,8 @@ func (c *EvictionConfig) SetSize(size int) {
 	c.size = &s
 }
 
-// Size returns the size the size which is used by the MaxSizePolicy.
+// Size returns the number of maximum entries before an eviction occurs.
+// See the documentation for SetSize.
 func (c EvictionConfig) Size() int {
 	if c.size == nil {
 		return defaultMaxEntryCount
@@ -221,6 +225,8 @@ type PreloaderConfig struct {
 	// By default it is 600 seconds.
 	StoreInitialDelaySeconds int
 	// StoreIntervalSeconds is the time in seconds for the cache save period.
+	// Must be positive.
+	// By default it is 600 seconds.
 	StoreIntervalSeconds int
 	// Enabled enables the preloader.
 	Enabled bool
