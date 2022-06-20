@@ -757,9 +757,8 @@ func (r *DefaultCompactReader) readVariableSizeFieldPosition(fd FieldDescriptor)
 	offset := r.offsetReader.getOffset(r.in, r.variableOffsetsPosition, index)
 	if offset == NULL_OFFSET {
 		return NULL_OFFSET
-	} else {
-		return offset + r.dataStartPosition
 	}
+	return offset + r.dataStartPosition
 }
 
 func (r *DefaultCompactReader) readBooleanBits(inp *ObjectDataInput) []bool {
