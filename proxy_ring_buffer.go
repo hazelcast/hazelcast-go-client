@@ -88,7 +88,7 @@ func newRingbuffer(p *proxy) (*Ringbuffer, error) {
 	return &Ringbuffer{proxy: p, partitionID: partitionID, capacity: ReadResultSetSequenceUnavailable}, nil
 }
 
-// Add an item to the tail of the Ringbuffer. If there is space in the Ringbuffer, the call
+// Add adds an item to the tail of the Ringbuffer. If there is space in the Ringbuffer, the call
 // will return the sequence of the written item. If there is no space, it depends on the overflow policy what happens:
 // OverflowPolicy OverflowPolicyOverwrite  we just overwrite the oldest item in the Ringbuffer, and we violate the ttl
 // OverflowPolicy FAIL we return -1. The reason that FAIL exist is to give the opportunity to obey the ttl.
