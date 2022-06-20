@@ -117,15 +117,15 @@ type EvictionPolicyComparator interface {
 }
 
 // EvictableEntryView is the contract point from the end user perspective for serving/accessing entries that can be evicted.
-type EvictableEntryView struct {
-	// Hits is the number of accesses to the entry.
-	Hits int64
+type EvictableEntryView interface {
 	// Key is the key of the entry.
-	Key interface{}
+	Key() interface{}
 	// Value is the value of the entry.
-	Value interface{}
-	// CreationTime is the creation time of the entry.
-	CreationTime time.Time
-	// LastAccessTime is the time when the entry was last accessed.
-	LastAccessTime time.Time
+	Value() interface{}
+	// Hits is the number of accesses to the entry.
+	Hits() int64
+	// CreationTime is the creation time of the entry in milliseconds.
+	CreationTime() int64
+	// LastAccessTime is the time when the entry was last accessed in milliseconds.
+	LastAccessTime() int64
 }

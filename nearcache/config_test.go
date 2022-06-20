@@ -166,7 +166,7 @@ func TestConfigInvalid(t *testing.T) {
 
 type comparator struct{}
 
-func (c comparator) Compare(a, b nearcache.EvictableEntryView) int {
+func (c comparator) Compare(a, b nearcache.EvictableEntryView) int64 {
 	return 0
 }
 

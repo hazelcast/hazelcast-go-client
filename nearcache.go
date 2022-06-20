@@ -17,12 +17,15 @@
 package hazelcast
 
 import (
+	"fmt"
 	"math/bits"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -115,7 +118,7 @@ func (nc nearCache) Stats() nearcache.Stats {
 
 func (nc *nearCache) TryReserveForUpdate(key interface{}, keyData serialization.Data, ups nearCacheUpdateSemantic) (int64, error) {
 	// eviction stuff will be implemented in another PR
-	// nearCacheRecordStore.doEviction(false);
+	nc.store.DoEviction(false)
 	return nc.store.TryReserveForUpdate(key, keyData, ups)
 }
 
@@ -198,6 +201,7 @@ type nearCacheRecordStore struct {
 	ss               *serialization.Service
 	valueConverter   nearCacheRecordValueConverter
 	estimator        nearCacheStorageEstimator
+	evictionDisabled bool
 }
 
 func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) nearCacheRecordStore {
@@ -213,6 +217,7 @@ func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, r
 		valueConverter:   rc,
 		estimator:        se,
 		stats:            stats,
+		evictionDisabled: cfg.EvictionConfig.EvictionPolicy() == nearcache.EvictionPolicyNone,
 	}
 }
 
@@ -245,7 +250,7 @@ func (rs *nearCacheRecordStore) Get(key interface{}) (value interface{}, found b
 		return nil, false, nil
 	}
 	// onRecordAccess
-	rec.SetLastAccessTimeMS(nowMS)
+	rec.SetLastAccessTime(nowMS)
 	rec.IncrementHits()
 	rs.incrementHits()
 	// recordToValue
@@ -301,9 +306,12 @@ func (rs *nearCacheRecordStore) TryPublishReserved(key interface{}, value interf
 	return cached, nil
 }
 
-func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) bool {
-	// TODO: implement this
-	return false
+func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) {
+	// checkAvailable doesn't apply
+	if rs.evictionDisabled {
+		return
+	}
+
 }
 
 func (rs nearCacheRecordStore) Stats() nearcache.Stats {
@@ -440,10 +448,10 @@ func (rs *nearCacheRecordStore) recordExpired(rec *nearCacheRecord, nowMS int64)
 		// We can't check reserved records for expiry.
 		return false
 	}
-	if rec.IsExpiredAtMS(nowMS) {
+	if rec.IsExpiredAt(nowMS) {
 		return true
 	}
-	return rec.IsIdleAtMS(rs.maxIdleMillis, nowMS)
+	return rec.IsIdleAt(rs.maxIdleMillis, nowMS)
 }
 
 func (rs *nearCacheRecordStore) canUpdateStats(rec *nearCacheRecord) bool {
@@ -555,6 +563,25 @@ func (rs *nearCacheRecordStore) updateRecordValue(rec *nearCacheRecord, value in
 	return nil
 }
 
+func getEvictionPolicyComparator(cfg *nearcache.EvictionConfig) nearcache.EvictionPolicyComparator {
+	cmp := cfg.Comparator()
+	if cmp != nil {
+		return cmp
+	}
+	switch cfg.EvictionPolicy() {
+	case nearcache.EvictionPolicyLRU:
+		return inearcache.LRUEvictionPolicyComparator
+	case nearcache.EvictionPolicyLFU:
+		return inearcache.LFUEvictionPolicyComparator
+	case nearcache.EvictionPolicyRandom:
+		return inearcache.RandomEvictionPolicyComparator
+	case nearcache.EvictionPolicyNone:
+		return nil
+	}
+	msg := fmt.Sprintf("unknown eviction polcy: %d", cfg.EvictionPolicy())
+	panic(ihzerrors.NewIllegalArgumentError(msg, nil))
+}
+
 const (
 	pointerCostInBytes                 = (32 << uintptr(^uintptr(0)>>63)) >> 3
 	int32CostInBytes                   = 4
@@ -570,14 +597,14 @@ const (
 )
 
 type nearCacheRecord struct {
-	CreationTime         int64
 	value                internal.AtomicValue
 	UUID                 types.UUID
-	PartitionID          int32
-	lastAccessTime       int64
-	ExpirationTime       int64
 	InvalidationSequence int64
+	PartitionID          int32
 	reservationID        int64
+	creationTime         int32
+	lastAccessTime       int32
+	expirationTime       int32
 	hits                 int32
 	cachedAsNil          int32
 }
@@ -585,11 +612,10 @@ type nearCacheRecord struct {
 func newNearCacheRecord(value interface{}, creationTime, expirationTime int64) *nearCacheRecord {
 	av := internal.AtomicValue{}
 	av.Store(&value)
-	return &nearCacheRecord{
-		CreationTime:   creationTime,
-		value:          av,
-		ExpirationTime: expirationTime,
-	}
+	rec := &nearCacheRecord{value: av}
+	rec.SetCreationTime(creationTime)
+	rec.SetExpirationTIme(expirationTime)
+	return rec
 }
 
 func (r *nearCacheRecord) Value() interface{} {
@@ -620,27 +646,50 @@ func (r *nearCacheRecord) SetReservationID(rid int64) {
 	atomic.StoreInt64(&r.reservationID, rid)
 }
 
-func (r *nearCacheRecord) LastAccessTimeMS() int64 {
-	return atomic.LoadInt64(&r.lastAccessTime)
+func (r *nearCacheRecord) CreationTime() int64 {
+	t := atomic.LoadInt32(&r.creationTime)
+	return inearcache.RecomputeWithBaseTime(t)
 }
 
-func (r *nearCacheRecord) SetLastAccessTimeMS(ms int64) {
-	atomic.StoreInt64(&r.lastAccessTime, ms)
+func (r *nearCacheRecord) SetCreationTime(ms int64) {
+	secs := inearcache.StripBaseTime(ms)
+	atomic.StoreInt32(&r.creationTime, secs)
 }
 
-func (r *nearCacheRecord) IsExpiredAtMS(ms int64) bool {
-	return r.ExpirationTime > 0 && r.ExpirationTime <= ms
+func (r *nearCacheRecord) LastAccessTime() int64 {
+	t := atomic.LoadInt32(&r.lastAccessTime)
+	return inearcache.RecomputeWithBaseTime(t)
 }
 
-func (r *nearCacheRecord) IsIdleAtMS(maxIdleMS, nowMS int64) bool {
+func (r *nearCacheRecord) SetLastAccessTime(ms int64) {
+	secs := inearcache.StripBaseTime(ms)
+	atomic.StoreInt32(&r.lastAccessTime, secs)
+}
+
+func (r *nearCacheRecord) ExpirationTime() int64 {
+	t := atomic.LoadInt32(&r.expirationTime)
+	return inearcache.RecomputeWithBaseTime(t)
+}
+
+func (r *nearCacheRecord) SetExpirationTIme(ms int64) {
+	secs := inearcache.StripBaseTime(ms)
+	atomic.StoreInt32(&r.expirationTime, secs)
+}
+
+func (r *nearCacheRecord) IsExpiredAt(ms int64) bool {
+	t := r.ExpirationTime()
+	return t > 0 && t <= ms
+}
+
+func (r *nearCacheRecord) IsIdleAt(maxIdleMS, nowMS int64) bool {
 	if maxIdleMS <= 0 {
 		return false
 	}
-	lat := r.LastAccessTimeMS()
+	lat := r.LastAccessTime()
 	if lat > 0 {
 		return lat+maxIdleMS < nowMS
 	}
-	return r.CreationTime+maxIdleMS < nowMS
+	return r.CreationTime()+maxIdleMS < nowMS
 }
 
 func (r *nearCacheRecord) CachedAsNil() bool {
@@ -649,4 +698,47 @@ func (r *nearCacheRecord) CachedAsNil() bool {
 
 func (r *nearCacheRecord) SetCachedAsNil() {
 	atomic.StoreInt32(&r.cachedAsNil, 1)
+}
+
+type evictionCandidate struct {
+	key       interface{}
+	evictable *nearCacheRecord
+}
+
+func (e evictionCandidate) Key() interface{} {
+	return e.Key()
+}
+
+func (e evictionCandidate) Value() interface{} {
+	return e.evictable.Value()
+}
+
+func (e evictionCandidate) Hits() int64 {
+	return int64(e.evictable.Hits())
+}
+
+func (e evictionCandidate) CreationTime() int64 {
+	return e.evictable.CreationTime()
+}
+
+func (e evictionCandidate) LastAccessTime() int64 {
+	return e.evictable.LastAccessTime()
+}
+
+func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evictionCandidate) evictionCandidate {
+	now := internal.TimeMillis(time.Now())
+	var selected evictionCandidate
+	var hasSelected bool
+	for _, current := range candies {
+		// initialize selected by setting it to current candidate.
+		if !hasSelected {
+			selected = current
+			continue
+		}
+		// then check if current candidate is expired.
+		if current.evictable.IsExpiredAt(now) {
+			return current
+		}
+		// check if current candidate is more eligible than selected.
+	}
 }
