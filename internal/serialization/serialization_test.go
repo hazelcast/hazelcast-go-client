@@ -170,11 +170,11 @@ func TestCustomSerializer(t *testing.T) {
 	customSerializer := &CustomArtistSerializer{}
 	config := &serialization.Config{}
 	config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
-	service := mustValue(iserialization.NewService(config)).(*iserialization.Service)
-	data := mustValue(service.ToData(m)).(iserialization.Data)
-	ret := mustValue(service.ToObject(data))
-	data2 := mustValue(service.ToData(p)).(iserialization.Data)
-	ret2 := mustValue(service.ToObject(data2))
+	service := it.MustValue(iserialization.NewService(config)).(*iserialization.Service)
+	data := it.MustValue(service.ToData(m)).(iserialization.Data)
+	ret := it.MustValue(service.ToObject(data))
+	data2 := it.MustValue(service.ToData(p)).(iserialization.Data)
+	ret2 := it.MustValue(service.ToObject(data2))
 
 	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
 		t.Error("custom serialization failed")
@@ -275,7 +275,7 @@ func TestInt64SerializerWithInt(t *testing.T) {
 	config := &serialization.Config{}
 	service := mustSerializationService(iserialization.NewService(config))
 	data := mustData(service.ToData(id))
-	ret := mustValue(service.ToObject(data))
+	ret := it.MustValue(service.ToObject(data))
 	assert.Equal(t, int64(id), ret)
 }
 
@@ -284,7 +284,7 @@ func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	config := &serialization.Config{}
 	service := mustSerializationService(iserialization.NewService(config))
 	data := mustData(service.ToData(ids))
-	ret := mustValue(service.ToObject(data))
+	ret := it.MustValue(service.ToObject(data))
 	var ids64 = make([]int64, 5)
 	for k := 0; k < 5; k++ {
 		ids64[k] = int64(ids[k])
@@ -303,7 +303,7 @@ func TestDefaultSerializerWithUInt(t *testing.T) {
 	config := &serialization.Config{}
 	service := mustSerializationService(iserialization.NewService(config))
 	data := mustData(service.ToData(id))
-	ret := mustValue(service.ToObject(data))
+	ret := it.MustValue(service.ToObject(data))
 	assert.Equal(t, id, ret)
 }
 
@@ -312,7 +312,7 @@ func TestIntSerializer(t *testing.T) {
 	config := &serialization.Config{}
 	service := mustSerializationService(iserialization.NewService(config))
 	data := mustData(service.ToData(id))
-	ret := mustValue(service.ToObject(data))
+	ret := it.MustValue(service.ToObject(data))
 	assert.Equal(t, int64(id), ret)
 }
 
@@ -353,14 +353,6 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	data := iserialization.Data(dataOutput.ToBuffer())
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")
-}
-
-// mustValue returns value if err is nil, otherwise it panics.
-func mustValue(value interface{}, err error) interface{} {
-	if err != nil {
-		panic(err)
-	}
-	return value
 }
 
 func mustData(value interface{}, err error) iserialization.Data {
@@ -642,7 +634,7 @@ func TestSchemaEvolution_fieldAdded(t *testing.T) {
 	}
 	service2 := mustSerializationService(iserialization.NewService(c2))
 	service2.SetSchemaService(schemaService)
-	
+
 	ret := it.MustValue(service2.ToObject(data))
 	returnedEmployeeDTO := ret.(EmployeeDTO)
 	assert.Equal(t, employeeDTO.age, returnedEmployeeDTO.age)
@@ -668,7 +660,7 @@ func TestSchemaEvolution_fieldRemoved(t *testing.T) {
 	}
 	service2 := mustSerializationService(iserialization.NewService(c2))
 	service2.SetSchemaService(schemaService)
-	
+
 	ret := it.MustValue(service2.ToObject(data))
 	returnedEmployeeDTO := ret.(EmployeeDTO)
 	assert.Equal(t, employeeDTO.age, returnedEmployeeDTO.age)
