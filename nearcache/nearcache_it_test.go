@@ -42,10 +42,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 	tcx := it.MapTestContext{
 		T: t,
 		ConfigCallback: func(tcx it.MapTestContext) {
-			ncc := nearcache.Config{
-				Name:           tcx.MapName,
-				InMemoryFormat: nearcache.InMemoryFormatObject,
-			}
+			ncc := nearcache.Config{Name: tcx.MapName}
 			ncc.SetInvalidateOnChange(true)
 			tcx.Config.AddNearCacheConfig(ncc)
 		},
@@ -70,6 +67,24 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
 		tcx.OK(assert.Equal(t, mapSize, nca.Size()))
 	})
+}
+
+/*
+   public void testGetNearCacheStatsBeforePopulation() {
+       IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
+
+       int size = 101;
+       for (int i = 0; i < size; i++) {
+           map.put(i, i);
+       }
+
+       NearCacheStats stats = getNearCacheStats(map);
+       assertNotNull(stats);
+   }
+*/
+
+func TestGetNearCacheStatsBeforePopulation(t *testing.T) {
+
 }
 
 // TestWhenGetIsUsedThenNearCacheShouldBePopulated checks that the Near Cache is populated when Get is used.
