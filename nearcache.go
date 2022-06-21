@@ -273,8 +273,8 @@ func (rs *nearCacheRecordStore) Invalidate(key interface{}) {
 	key = rs.makeMapKey(key)
 	var canUpdateStats bool
 	rs.recordsMu.Lock()
-	rec, keyExists := rs.records[key]
-	if keyExists {
+	rec, exists := rs.records[key]
+	if exists {
 		delete(rs.records, key)
 		canUpdateStats = rec.ReservationID() == nearCacheRecordReadPermitted
 	}
@@ -315,7 +315,59 @@ func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) {
 	if rs.evictionDisabled {
 		return
 	}
+	panic("implement me")
+}
 
+func (rs *nearCacheRecordStore) OnEvict(key interface{}, rec *nearCacheRecord, expired bool) {
+	// port of: com.hazelcast.internal.nearcache.impl.store.BaseHeapNearCacheRecordStore#onEvict
+	if expired {
+		rs.incrementExpirations()
+	} else {
+		rs.incrementEvictions()
+	}
+	rs.decrementOwnedEntryCount()
+	rs.decrementOwnedEntryMemoryCost(rs.getTotalStorageMemoryCost(key, rec))
+}
+
+func (rs *nearCacheRecordStore) TryEvict(candidate evictionCandidate) bool {
+	// port of: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#tryEvict
+	if exists := rs.remove(candidate.Key()); !exists {
+		return false
+	}
+	rs.OnEvict(candidate.key, candidate.evictable, false)
+	return true
+}
+
+func (rs *nearCacheRecordStore) remove(key interface{}) bool {
+	// the key is already in the "made" form, so don't run on rs.makeMapKey on it
+	rs.recordsMu.Lock()
+	defer rs.recordsMu.Unlock()
+	if _, exists := rs.records[key]; !exists {
+		return false
+	}
+	delete(rs.records, key)
+	return true
+}
+
+func (rs *nearCacheRecordStore) Sample(count int) []evictionCandidate {
+	// port of: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap.NearCacheEvictableSamplingEntry
+	if count < 0 {
+		panic("nearCacheRecordStore.Sample: count cannot be negative")
+	}
+	if count == 0 {
+		return nil
+	}
+	samples := make([]evictionCandidate, count)
+	var idx int
+	rs.recordsMu.Lock()
+	for k, v := range rs.records {
+		// access to maps is random
+		samples[idx] = evictionCandidate{
+			key:       k,
+			evictable: v,
+		}
+		idx++
+	}
 }
 
 func (rs nearCacheRecordStore) Stats() nearcache.Stats {
@@ -440,6 +492,10 @@ func (rs *nearCacheRecordStore) incrementInvalidations() {
 
 func (rs *nearCacheRecordStore) incrementInvalidationRequests() {
 	atomic.AddInt64(&rs.stats.invalidationRequests, 1)
+}
+
+func (rs *nearCacheRecordStore) incrementEvictions() {
+	atomic.AddInt64(&rs.stats.Evictions, 1)
 }
 
 func (rs *nearCacheRecordStore) getRecord(key interface{}) (*nearCacheRecord, bool) {
@@ -743,7 +799,12 @@ func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evict
 			return current
 		}
 		// check if current candidate is more eligible than selected.
+		if cmp.Compare(current, selected) < 0 {
+			selected = current
+			hasSelected = true
+		}
 	}
+	return selected
 }
 
 // nearCacheStats contains statistics for a Near Cache instance.
