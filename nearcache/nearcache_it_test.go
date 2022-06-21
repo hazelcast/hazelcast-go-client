@@ -40,74 +40,14 @@ const (
 // And also the NearCacheStats are calculated correctly.
 func TestWhenGetIsUsedThenNearCacheShouldBePopulated(t *testing.T) {
 	// ported from: com.hazelcast.internal.nearcache.impl.AbstractNearCacheBasicTest#whenGetIsUsed_thenNearCacheShouldBePopulated()
-	ClientCacheNearCacheBasicSlowRunner(t, func(tcx *it.NearCacheTestContext, size int64, valueFmt string) {
+	clientCacheNearCacheBasicSlowRunner(t, func(tcx *it.NearCacheTestContext, size int64, valueFmt string) {
 		tcx.PopulateNearCacheWithGet(size, valueFmt)
 	})
 }
 
-func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheTestContext, size int64, valueFmt string)) {
-	testCases := []struct {
-		inMemoryFmt   nearcache.InMemoryFormat
-		serializeKeys bool
-	}{
-		{inMemoryFmt: nearcache.InMemoryFormatBinary, serializeKeys: true},
-		{inMemoryFmt: nearcache.InMemoryFormatBinary, serializeKeys: false},
-		{inMemoryFmt: nearcache.InMemoryFormatObject, serializeKeys: true},
-		{inMemoryFmt: nearcache.InMemoryFormatObject, serializeKeys: false},
-	}
-	for _, tc := range testCases {
-		testName := fmt.Sprintf("inMemoryFmt %s serializeKeys %t", inMemoryFmtToString(tc.inMemoryFmt), tc.serializeKeys)
-		t.Run(testName, func(t *testing.T) {
-			ncc := nearcache.Config{
-				Name:           "*",
-				InMemoryFormat: tc.inMemoryFmt,
-				SerializeKeys:  tc.serializeKeys,
-			}
-			ncc.SetInvalidateOnChange(false)
-			configCB := func(tcx it.MapTestContext) {
-				tcx.Config.AddNearCacheConfig(ncc)
-			}
-			valueFmt := "value-%d"
-			mtcx := &it.MapTestContext{
-				T:              t,
-				ConfigCallback: configCB,
-			}
-			mtcx.Tester(func(mtcx it.MapTestContext) {
-				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M)
-				ci := hz.NewClientInternal(mtcx.Client)
-				tcx := it.NewNearCacheTestContext(mtcx.T, nca.(it.NearCacheAdapter), mtcx.M, &ncc, ci.SerializationService())
-				// assert that the Near Cache is empty
-				tcx.PopulateNearCacheDataAdapter(nearCacheDefaultRecordCount, valueFmt)
-				tcx.AssertNearCacheSize(0)
-				tcx.AssertNearCacheStats(0, 0, 0)
-				// populate the Near Cache
-				f(tcx, nearCacheDefaultRecordCount, valueFmt)
-				mtcx.OK(tcx.AssertNearCacheSize(nearCacheDefaultRecordCount))
-				tcx.AssertNearCacheStats(nearCacheDefaultRecordCount, 0, nearCacheDefaultRecordCount)
-				// generate Near Cache hits
-				f(tcx, nearCacheDefaultRecordCount, valueFmt)
-				tcx.AssertNearCacheSize(nearCacheDefaultRecordCount)
-				tcx.AssertNearCacheStats(nearCacheDefaultRecordCount, nearCacheDefaultRecordCount, nearCacheDefaultRecordCount)
-				tcx.AssertNearCacheContent(nearCacheDefaultRecordCount, valueFmt)
-				// TODO: assertNearCacheReferences
-			})
-		})
-	}
-}
-
 func TestNearCacheGet(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAsync
-	tcx := it.MapTestContext{
-		T: t,
-		ConfigCallback: func(tcx it.MapTestContext) {
-			ncc := nearcache.Config{
-				Name:           tcx.MapName,
-				InMemoryFormat: nearcache.InMemoryFormatObject,
-			}
-			ncc.SetInvalidateOnChange(false)
-			tcx.Config.AddNearCacheConfig(ncc)
-		},
-	}
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
 	tcx.Tester(func(tcx it.MapTestContext) {
 		m := tcx.M
 		t := tcx.T
@@ -273,19 +213,60 @@ func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
 	invalidationRunner(t, testCases)
 }
 
+func clientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheTestContext, size int64, valueFmt string)) {
+	testCases := []struct {
+		inMemoryFmt   nearcache.InMemoryFormat
+		serializeKeys bool
+	}{
+		{inMemoryFmt: nearcache.InMemoryFormatBinary, serializeKeys: true},
+		{inMemoryFmt: nearcache.InMemoryFormatBinary, serializeKeys: false},
+		{inMemoryFmt: nearcache.InMemoryFormatObject, serializeKeys: true},
+		{inMemoryFmt: nearcache.InMemoryFormatObject, serializeKeys: false},
+	}
+	for _, tc := range testCases {
+		testName := fmt.Sprintf("inMemoryFmt %s serializeKeys %t", inMemoryFmtToString(tc.inMemoryFmt), tc.serializeKeys)
+		t.Run(testName, func(t *testing.T) {
+			ncc := nearcache.Config{
+				Name:           "*",
+				InMemoryFormat: tc.inMemoryFmt,
+				SerializeKeys:  tc.serializeKeys,
+			}
+			ncc.SetInvalidateOnChange(false)
+			configCB := func(tcx it.MapTestContext) {
+				tcx.Config.AddNearCacheConfig(ncc)
+			}
+			valueFmt := "value-%d"
+			mtcx := &it.MapTestContext{
+				T:              t,
+				ConfigCallback: configCB,
+			}
+			mtcx.Tester(func(mtcx it.MapTestContext) {
+				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M)
+				ci := hz.NewClientInternal(mtcx.Client)
+				tcx := it.NewNearCacheTestContext(mtcx.T, nca.(it.NearCacheAdapter), mtcx.M, &ncc, ci.SerializationService())
+				// assert that the Near Cache is empty
+				tcx.PopulateNearCacheDataAdapter(nearCacheDefaultRecordCount, valueFmt)
+				tcx.AssertNearCacheSize(0)
+				tcx.AssertNearCacheStats(0, 0, 0)
+				// populate the Near Cache
+				f(tcx, nearCacheDefaultRecordCount, valueFmt)
+				mtcx.OK(tcx.AssertNearCacheSize(nearCacheDefaultRecordCount))
+				tcx.AssertNearCacheStats(nearCacheDefaultRecordCount, 0, nearCacheDefaultRecordCount)
+				// generate Near Cache hits
+				f(tcx, nearCacheDefaultRecordCount, valueFmt)
+				tcx.AssertNearCacheSize(nearCacheDefaultRecordCount)
+				tcx.AssertNearCacheStats(nearCacheDefaultRecordCount, nearCacheDefaultRecordCount, nearCacheDefaultRecordCount)
+				tcx.AssertNearCacheContent(nearCacheDefaultRecordCount, valueFmt)
+				// TODO: assertNearCacheReferences
+			})
+		})
+	}
+}
+
 func invalidationRunner(t *testing.T, testCases []mapTestCase) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tcx := it.MapTestContext{
-				T: t,
-				ConfigCallback: func(tcx it.MapTestContext) {
-					ncc := nearcache.Config{
-						Name: tcx.MapName,
-					}
-					ncc.SetInvalidateOnChange(false)
-					tcx.Config.AddNearCacheConfig(ncc)
-				},
-			}
+			tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, false)
 			tcx.Tester(func(tcx it.MapTestContext) {
 				const size = int64(1000)
 				ctx := context.Background()
@@ -328,4 +309,19 @@ func populateNearCache(tcx it.MapTestContext, size int64) {
 		}
 		tcx.OK(assert.Equal(tcx.T, v, i))
 	}
+}
+
+func newNearCacheMapTestContext(t *testing.T, fmt nearcache.InMemoryFormat, invalidate bool) it.MapTestContext {
+	return it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{
+				Name:           tcx.MapName,
+				InMemoryFormat: fmt,
+			}
+			ncc.SetInvalidateOnChange(invalidate)
+			tcx.Config.AddNearCacheConfig(ncc)
+		},
+	}
+
 }
