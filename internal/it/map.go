@@ -57,8 +57,11 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 		if tcx.MapName == "" {
 			tcx.MapName = tcx.NameMaker(tcx.Properties()...)
 		}
+		if tcx.Cluster == nil {
+			tcx.Cluster = defaultTestCluster
+		}
 		if tcx.Config == nil {
-			cfg := defaultTestCluster.DefaultConfig()
+			cfg := tcx.Cluster.DefaultConfig()
 			tcx.Config = &cfg
 		}
 		if tcx.ConfigCallback != nil {

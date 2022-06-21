@@ -136,6 +136,13 @@ func (nc *nearCache) TryPublishReserved(key, value interface{}, reservationID in
 
 const (
 	nearCacheRecordStoreTimeNotSet int64 = -1
+	pointerCostInBytes                   = (32 << uintptr(^uintptr(0)>>63)) >> 3
+	int32CostInBytes                     = 4
+	int64CostInBytes                     = 8
+	atomicValueCostInBytes               = 8
+	uuidCostInBytes                      = 16 // low uint64 + high uint64
+	nearCacheRecordNotReserved     int64 = -1
+	nearCacheRecordReadPermitted         = -2
 )
 
 type nearCacheRecordValueConverter interface {
@@ -561,16 +568,6 @@ func (rs *nearCacheRecordStore) updateRecordValue(rec *nearCacheRecord, value in
 	rec.SetValue(value)
 	return nil
 }
-
-const (
-	pointerCostInBytes                 = (32 << uintptr(^uintptr(0)>>63)) >> 3
-	int32CostInBytes                   = 4
-	int64CostInBytes                   = 8
-	atomicValueCostInBytes             = 8
-	uuidCostInBytes                    = 16 // low uint64 + high uint64
-	nearCacheRecordNotReserved   int64 = -1
-	nearCacheRecordReadPermitted       = -2
-)
 
 type nearCacheRecord struct {
 	CreationTime         int64
