@@ -26,6 +26,32 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
 
+type simpleEntry struct {
+	creationTime   int64
+	lastAccessTime int64
+	hits           int64
+}
+
+func (s simpleEntry) Hits() int64 {
+	return s.hits
+}
+
+func (s simpleEntry) Key() interface{} {
+	return nil
+}
+
+func (s simpleEntry) Value() interface{} {
+	return nil
+}
+
+func (s simpleEntry) CreationTime() int64 {
+	return s.creationTime
+}
+
+func (s simpleEntry) LastAccessTime() int64 {
+	return s.lastAccessTime
+}
+
 func TestLRUComparatorDoesNotPrematurelySelectNewlyCreatedEntries(t *testing.T) {
 	// 1. Create expected list of ordered elements by
 	// sorting entries based on their idle-times. Longest
@@ -33,16 +59,16 @@ func TestLRUComparatorDoesNotPrematurelySelectNewlyCreatedEntries(t *testing.T) 
 	// 2. Then sort given entries by using LRU eviction comparator.
 	const now = 20
 	given := []nearcache.EvictableEntryView{
-		{CreationTime: 1, LastAccessTime: 0},
-		{CreationTime: 2, LastAccessTime: 3},
-		{CreationTime: 2, LastAccessTime: 0},
-		{CreationTime: 4, LastAccessTime: 4},
-		{CreationTime: 5, LastAccessTime: 20},
-		{CreationTime: 6, LastAccessTime: 6},
-		{CreationTime: 7, LastAccessTime: 0},
-		{CreationTime: 9, LastAccessTime: 15},
-		{CreationTime: 10, LastAccessTime: 10},
-		{CreationTime: 10, LastAccessTime: 0},
+		simpleEntry{creationTime: 1, lastAccessTime: 0},
+		simpleEntry{creationTime: 2, lastAccessTime: 3},
+		simpleEntry{creationTime: 2, lastAccessTime: 0},
+		simpleEntry{creationTime: 4, lastAccessTime: 4},
+		simpleEntry{creationTime: 5, lastAccessTime: 20},
+		simpleEntry{creationTime: 6, lastAccessTime: 6},
+		simpleEntry{creationTime: 7, lastAccessTime: 0},
+		simpleEntry{creationTime: 9, lastAccessTime: 15},
+		simpleEntry{creationTime: 10, lastAccessTime: 10},
+		simpleEntry{creationTime: 10, lastAccessTime: 0},
 	}
 	sortFn := func(sorted []nearcache.EvictableEntryView) func(i, j int) bool {
 		return func(i, j int) bool {
@@ -56,22 +82,22 @@ func TestLRUComparatorDoesNotPrematurelySelectNewlyCreatedEntries(t *testing.T) 
 
 func TestLFUEvictionPolicyComparator(t *testing.T) {
 	given := []nearcache.EvictableEntryView{
-		{Hits: 5, CreationTime: 2},
-		{Hits: 10, CreationTime: 5},
-		{Hits: 2, CreationTime: 7},
-		{Hits: 5, CreationTime: 4},
+		simpleEntry{hits: 5, creationTime: 2},
+		simpleEntry{hits: 10, creationTime: 5},
+		simpleEntry{hits: 2, creationTime: 7},
+		simpleEntry{hits: 5, creationTime: 4},
 	}
 	sortFn := func(sorted []nearcache.EvictableEntryView) func(i, j int) bool {
 		return func(i, j int) bool {
 			a := sorted[i]
 			b := sorted[j]
-			if a.Hits < b.Hits {
+			if a.Hits() < b.Hits() {
 				return true
 			}
-			if a.Hits > b.Hits {
+			if a.Hits() > b.Hits() {
 				return false
 			}
-			return a.CreationTime < b.CreationTime
+			return a.CreationTime() < b.CreationTime()
 		}
 	}
 	evictionPolicyHelper(t, given, sortFn, inearcache.LFUEvictionPolicyComparator)
@@ -79,10 +105,10 @@ func TestLFUEvictionPolicyComparator(t *testing.T) {
 
 func TestRandomEvictionPolicyComparator(t *testing.T) {
 	given := []nearcache.EvictableEntryView{
-		{Hits: 5},
-		{Hits: 10},
-		{Hits: 2},
-		{Hits: 7},
+		simpleEntry{hits: 5},
+		simpleEntry{hits: 10},
+		simpleEntry{hits: 2},
+		simpleEntry{hits: 7},
 	}
 	target := make([]nearcache.EvictableEntryView, len(given))
 	copy(target, given)
@@ -108,7 +134,7 @@ func evictionPolicyHelper(t *testing.T, given []nearcache.EvictableEntryView, so
 }
 
 func idleTime(now int64, ev nearcache.EvictableEntryView) int64 {
-	return now - maxInt64(ev.CreationTime, ev.LastAccessTime)
+	return now - maxInt64(ev.CreationTime(), ev.LastAccessTime())
 }
 
 func maxInt64(a, b int64) int64 {
