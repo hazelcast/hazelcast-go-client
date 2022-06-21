@@ -39,13 +39,12 @@ func NewCompactStreamSerializer(cfg pubserialization.CompactConfig) *CompactStre
 		typeNameToSerializer[typeName] = serializer
 		typeToSerializer[serializer.Type()] = serializer
 	}
-	fingerprint := NewRabinFingerPrint()
 	return &CompactStreamSerializer{
 		ss:                   NewSchemaService(),
 		typeToSchema:         make(map[reflect.Type]Schema),
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
-		fingerprint:          fingerprint,
+		fingerprint:          NewRabinFingerPrint(),
 	}
 }
 
