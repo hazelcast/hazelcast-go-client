@@ -48,9 +48,8 @@ type CompanyInfo struct {
 func TestNestedJSONQuery(t *testing.T) {
 	it.SkipIf(t, "hz < 5.1")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
-		defer driver.SetSerializationConfig(nil)
 		const rowCount = 50
-		db := initDB(t, config)
+		db := initDB(config)
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
@@ -70,8 +69,7 @@ func TestJSONOperators(t *testing.T) {
 	it.SkipIf(t, "hz < 5.1")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		const rowCount = 50
-		defer driver.SetSerializationConfig(nil)
-		db := initDB(t, config)
+		db := initDB(config)
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
@@ -101,13 +99,9 @@ func TestJSONOperators(t *testing.T) {
 	})
 }
 
-func initDB(t *testing.T, config *hz.Config) *sql.DB {
-	dsn := makeDSN(config)
-	sc := &serialization.Config{}
-	sc.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
-	it.Must(driver.SetSerializationConfig(sc))
-	db := mustDB(sql.Open("hazelcast", dsn))
-	return db
+func initDB(config *hz.Config) *sql.DB {
+	config.Serialization.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
+	return driver.Open(*config)
 }
 
 func populateMapWithEmployees(m *hz.Map, rowCount int) ([]employee, error) {
