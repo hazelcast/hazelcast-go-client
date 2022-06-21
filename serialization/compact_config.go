@@ -22,7 +22,7 @@ type CompactSerializationConfig struct {
 
 func (cc *CompactSerializationConfig) Clone() CompactSerializationConfig {
 	var clone CompactSerializationConfig
-	m := make(map[string]CompactSerializer)
+	m := make(map[string]CompactSerializer, len(cc.serializers))
 	for k, v := range cc.serializers {
 		m[k] = v
 	}

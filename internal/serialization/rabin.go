@@ -16,61 +16,58 @@
 
 package serialization
 
-const INIT int64 = -4513414715797952619
+const rabinFingerPrintInit int64 = -4513414715797952619
 
 type RabinFingerPrint struct {
-	table []int64
+	table [256]int64
 }
 
 func NewRabinFingerPrint() RabinFingerPrint {
-	return RabinFingerPrint{
-		table: make([]int64, 256),
-	}
-}
+	r := RabinFingerPrint{}
 
-func (r RabinFingerPrint) Init() {
-	for i := 0; i < 256; i++ {
-		fp := int64(i)
+	for i := int64(0); i < 256; i++ {
+		fp := i
 		for j := 0; j < 8; j++ {
-			fp = (int64(uint64(fp)>>1) ^ (INIT & -(fp & 1)))
+			fp = int64(uint64(fp)>>1) ^ (rabinFingerPrintInit & -(fp & 1))
 		}
 		r.table[i] = fp
 	}
+	return r
 }
 
 func (r RabinFingerPrint) OfSchema(schema *Schema) int64 {
-	fingerprint := r.ofString(INIT, schema.TypeName())
-	fingerprint = r.ofInt32(fingerprint, int32(schema.FieldCount()))
+	fp := r.ofString(rabinFingerPrintInit, schema.TypeName())
+	fp = r.ofInt32(fp, int32(schema.FieldCount()))
 	for _, descriptor := range schema.fieldDefinitions {
-		fingerprint = r.ofString(fingerprint, descriptor.fieldName)
-		fingerprint = r.ofInt32(fingerprint, int32(descriptor.fieldKind))
+		fp = r.ofString(fp, descriptor.fieldName)
+		fp = r.ofInt32(fp, int32(descriptor.fieldKind))
 	}
-	return fingerprint
+	return fp
 }
 
-func (r RabinFingerPrint) ofString(fp int64, value string) int64 {
+func (r RabinFingerPrint) ofString(f int64, value string) int64 {
 	bytes := []byte(value)
-	fingerprint := r.ofInt32(fp, int32(len(bytes)))
+	fp := r.ofInt32(f, int32(len(bytes)))
 	for _, b := range bytes {
-		fingerprint = r.ofByte(fingerprint, b)
+		fp = r.ofByte(fp, b)
 	}
-	return fingerprint
+	return fp
 }
 
-func (r RabinFingerPrint) ofInt32(fp int64, value int32) int64 {
-	fingerprint := r.ofByte(fp, byte(value&0xff))
-	fingerprint = r.ofByte(fingerprint, byte((value>>8)&0xff))
-	fingerprint = r.ofByte(fingerprint, byte((value>>16)&0xff))
-	fingerprint = r.ofByte(fingerprint, byte((value>>24)&0xff))
-	return fingerprint
+func (r RabinFingerPrint) ofInt32(f int64, value int32) int64 {
+	fp := r.ofByte(f, byte(value&0xff))
+	fp = r.ofByte(fp, byte((value>>8)&0xff))
+	fp = r.ofByte(fp, byte((value>>16)&0xff))
+	fp = r.ofByte(fp, byte((value>>24)&0xff))
+	return fp
 }
 
-func (r RabinFingerPrint) ofByte(fp int64, value byte) int64 {
+func (r RabinFingerPrint) ofByte(f int64, value byte) int64 {
 	var rightShifted int64
-	if fp >= 0 {
-		rightShifted = fp >> 8
+	if f >= 0 {
+		rightShifted = f >> 8
 	} else {
-		rightShifted = int64(uint64(fp) >> 8)
+		rightShifted = int64(uint64(f) >> 8)
 	}
-	return rightShifted ^ r.table[(fp^int64(value))&0xff]
+	return rightShifted ^ r.table[(f^int64(value))&0xff]
 }

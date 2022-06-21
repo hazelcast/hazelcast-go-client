@@ -22,40 +22,38 @@ import (
 )
 
 type Schema struct {
-	fieldDefinitionMap    map[string]*FieldDescriptor
-	typeName              string
+	fieldDefinitionMap map[string]FieldDescriptor
+	typeName           string
 	// Go does not have TreeMap, so we use a slice to store sorted fields
-	fieldDefinitions      []*FieldDescriptor
+	fieldDefinitions      []FieldDescriptor
 	id                    int64
 	numberOfVarSizeFields int32
 	fixedSizeFieldsLength int32
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, rabin RabinFingerPrint) Schema {
-	fieldDefinitions := make([]*FieldDescriptor, len(fieldDefinitionMap))
+func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor, rabin RabinFingerPrint) Schema {
+	fds := make([]FieldDescriptor, len(fieldDefinitionMap))
 	c := 0
 	for _, fd := range fieldDefinitionMap {
-		fieldDefinitions[c] = fd
+		fds[c] = fd
 		c += 1
 	}
 	// Sort according to field name
-	sort.SliceStable(fieldDefinitions, func(i, j int) bool {
-		return fieldDefinitions[i].fieldName < fieldDefinitions[j].fieldName
+	sort.SliceStable(fds, func(i, j int) bool {
+		return fds[i].fieldName < fds[j].fieldName
 	})
 	schema := Schema{
 		typeName:           typeName,
 		fieldDefinitionMap: fieldDefinitionMap,
-		fieldDefinitions:   fieldDefinitions,
+		fieldDefinitions:   fds,
 	}
 	schema.init(rabin)
 	return schema
 }
 
-func (s *Schema) GetField(fieldName string) *FieldDescriptor {
-	if fieldDefinition, ok := s.fieldDefinitionMap[fieldName]; ok {
-		return fieldDefinition
-	}
-	return nil
+func (s *Schema) GetField(fieldName string) (FieldDescriptor, bool) {
+	fd, ok := s.fieldDefinitionMap[fieldName]
+	return fd, ok
 }
 
 func (s *Schema) ID() int64 {
@@ -76,18 +74,20 @@ func (s *Schema) TypeName() string {
 }
 
 func (s *Schema) init(rabin RabinFingerPrint) {
-	fixedSizeFields := make([]*FieldDescriptor, 0)
-	variableSizeFields := make([]*FieldDescriptor, 0)
+	fixedSizeFields := make([]FieldDescriptor, 0)
+	variableSizeFields := make([]FieldDescriptor, 0)
 	for _, descriptor := range s.fieldDefinitionMap {
 		fieldKind := descriptor.fieldKind
-		if FieldOperations(fieldKind).KindSizeInBytes() == VARIABLE_SIZE {
+		if FieldOperations(fieldKind).KindSizeInBytes() == variableKindSize {
 			variableSizeFields = append(variableSizeFields, descriptor)
 		} else {
 			fixedSizeFields = append(fixedSizeFields, descriptor)
 		}
 	}
 	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
-		return FieldOperations(fixedSizeFields[j].fieldKind).KindSizeInBytes() < FieldOperations(fixedSizeFields[i].fieldKind).KindSizeInBytes()
+		kindSize1 := FieldOperations(fixedSizeFields[j].fieldKind).KindSizeInBytes()
+		kindSize2 := FieldOperations(fixedSizeFields[i].fieldKind).KindSizeInBytes()
+		return kindSize1 < kindSize2
 	})
 	var offset int32
 	for _, descriptor := range fixedSizeFields {

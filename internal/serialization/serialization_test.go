@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -404,19 +405,13 @@ func TestWithExplicitSerializer(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactSerializationConfig,
 	}
-	service, _ := iserialization.NewService(c)
+	service := mustSerializationService(iserialization.NewService(c))
 	name := "S"
 	obj := student{Age: 12, Name: &name}
-	data, err := service.ToData(obj)
+	data := it.MustValue(service.ToData(obj)).(iserialization.Data)
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ret, err := service.ToObject(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ret := it.MustValue(service.ToObject(data))
 	if !reflect.DeepEqual(obj, ret) {
 		t.Error("compact serialization failed")
 	}
@@ -429,18 +424,12 @@ func TestAllTypesWithCustomSerializer(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactSerializationConfig,
 	}
-	service, _ := iserialization.NewService(c)
+	service := mustSerializationService(iserialization.NewService(c))
 	mainDTO := NewMainDTO()
-	data, err := service.ToData(mainDTO)
+	data := it.MustValue(service.ToData(mainDTO)).(iserialization.Data)
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ret, err := service.ToObject(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ret := it.MustValue((service.ToObject(data)))
 	if !reflect.DeepEqual(mainDTO, ret) {
 		t.Error("compact serialization failed")
 	}

@@ -26,7 +26,7 @@ type FieldKindOperation interface {
 	KindSizeInBytes() int32
 }
 
-const VARIABLE_SIZE = -1
+const variableKindSize = -1
 
 type Int32FieldKindOperation struct{}
 
@@ -37,7 +37,7 @@ func (Int32FieldKindOperation) KindSizeInBytes() int32 {
 type StringFieldKindOperation struct{}
 
 func (StringFieldKindOperation) KindSizeInBytes() int32 {
-	return VARIABLE_SIZE
+	return variableKindSize
 }
 
 func FieldOperations(fieldKind pserialization.FieldKind) FieldKindOperation {

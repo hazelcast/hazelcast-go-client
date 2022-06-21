@@ -28,7 +28,7 @@ type CompactStreamSerializer struct {
 	typeToSchema         map[reflect.Type]Schema
 	typeToSerializer     map[reflect.Type]pubserialization.CompactSerializer
 	typeNameToSerializer map[string]pubserialization.CompactSerializer
-	schemaService        *SchemaService
+	ss                   *SchemaService
 	fingerprint          RabinFingerPrint
 }
 
@@ -40,9 +40,8 @@ func NewCompactStreamSerializer(cfg pubserialization.CompactSerializationConfig)
 		typeToSerializer[serializer.Type()] = serializer
 	}
 	fingerprint := NewRabinFingerPrint()
-	fingerprint.Init()
 	return &CompactStreamSerializer{
-		schemaService:        NewSchemaService(),
+		ss:                   NewSchemaService(),
 		typeToSchema:         make(map[reflect.Type]Schema),
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
@@ -70,16 +69,16 @@ func (c CompactStreamSerializer) Write(output pubserialization.DataOutput, objec
 	serializer := c.typeToSerializer[t]
 	schema, ok := c.typeToSchema[t]
 	if !ok {
-		schemaWriter := NewSchemaWriter(serializer.TypeName())
-		serializer.Write(schemaWriter, object)
-		schema = schemaWriter.Build(c.fingerprint)
-		c.schemaService.PutLocal(schema)
+		sw := NewSchemaWriter(serializer.TypeName())
+		serializer.Write(sw, object)
+		schema = sw.Build(c.fingerprint)
+		c.ss.PutLocal(schema)
 		c.typeToSchema[t] = schema
 	}
 	output.WriteInt64(schema.ID())
-	writer := NewDefaultCompactWriter(c, output.(*PositionalObjectDataOutput), schema)
-	serializer.Write(writer, object)
-	writer.End()
+	w := NewDefaultCompactWriter(c, output.(*PositionalObjectDataOutput), schema)
+	serializer.Write(w, object)
+	w.End()
 }
 
 func (c CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
@@ -89,7 +88,7 @@ func (c CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
 
 func (c CompactStreamSerializer) getOrReadSchema(input pubserialization.DataInput) Schema {
 	schemaId := input.ReadInt64()
-	schema, ok := c.schemaService.Get(schemaId)
+	schema, ok := c.ss.Get(schemaId)
 	if ok {
 		return schema
 	}

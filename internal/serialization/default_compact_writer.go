@@ -29,7 +29,7 @@ type DefaultCompactWriter struct {
 	serializer        CompactStreamSerializer
 	fieldOffsets      []int32
 	schema            Schema
-	dataStartPosition int32
+	dataStartPos int32
 }
 
 func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *PositionalObjectDataOutput, schema Schema) DefaultCompactWriter {
@@ -51,7 +51,7 @@ func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *Positional
 		out:               out,
 		schema:            schema,
 		fieldOffsets:      fieldOffsets,
-		dataStartPosition: dataStartPosition,
+		dataStartPos: dataStartPosition,
 	}
 }
 
@@ -72,31 +72,31 @@ func (r DefaultCompactWriter) End() {
 		return
 	}
 	position := r.out.Position()
-	dataLength := position - r.dataStartPosition
+	dataLength := position - r.dataStartPos
 	r.writeOffsets(dataLength, r.fieldOffsets)
-	r.out.PWriteInt32(r.dataStartPosition-Int32SizeInBytes, dataLength)
+	r.out.PWriteInt32(r.dataStartPos-Int32SizeInBytes, dataLength)
 }
 
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
-	fd := r.schema.GetField(fieldName)
-	if fd == nil {
+	fd, ok := r.schema.GetField(fieldName)
+	if !ok {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %v", fieldName, r.schema), nil))
 	}
 	if fd.fieldKind != fieldKind {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %v", fieldName, r.schema), nil))
 	}
-	return *fd
+	return fd
 }
 
 func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pubserialization.FieldKind) int32 {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
-	return fd.offset + r.dataStartPosition
+	return fd.offset + r.dataStartPos
 }
 
 func (r *DefaultCompactWriter) setPosition(fieldName string, fieldKind pubserialization.FieldKind) error {
 	fd := r.getFieldDescriptorChecked(fieldName, fieldKind)
 	position := r.out.Position()
-	fieldPosition := position - r.dataStartPosition
+	fieldPosition := position - r.dataStartPos
 	index := fd.index
 	r.fieldOffsets[index] = fieldPosition
 	return nil

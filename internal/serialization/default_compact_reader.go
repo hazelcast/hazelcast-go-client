@@ -23,7 +23,7 @@ import (
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-const NullOffset = -1
+const nullOffset = -1
 
 type OffsetReader interface {
 	getOffset(input *ObjectDataInput, variableOffsetsPos, index int32) int32
@@ -34,7 +34,7 @@ type ByteOffsetReader struct{}
 func (ByteOffsetReader) getOffset(input *ObjectDataInput, variableOffsetsPos, index int32) int32 {
 	offset := input.ReadByteAtPosition(variableOffsetsPos + index)
 	if offset == 0xFF {
-		return NullOffset
+		return nullOffset
 	}
 	return int32(offset)
 }
@@ -72,15 +72,15 @@ func (r DefaultCompactReader) ReadString(fieldName string) *string {
 }
 
 func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDataInput, schema Schema) DefaultCompactReader {
-	var offsetsPosition, startPos, finalPos int32
+	var offsetsPos, startPos, finalPos int32
 	if schema.numberOfVarSizeFields == 0 {
 		startPos = input.Position()
 		finalPos = startPos + schema.fixedSizeFieldsLength
 	} else {
 		dataLength := input.readInt32()
 		startPos = input.Position()
-		offsetsPosition = startPos + dataLength
-		finalPos = offsetsPosition + schema.numberOfVarSizeFields
+		offsetsPos = startPos + dataLength
+		finalPos = offsetsPos + schema.numberOfVarSizeFields
 	}
 	input.SetPosition(finalPos)
 	return DefaultCompactReader{
@@ -89,16 +89,16 @@ func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDa
 		serializer:   serializer,
 		startPos:     startPos,
 		offsetReader: &ByteOffsetReader{},
-		offsetsPos:   offsetsPosition,
+		offsetsPos:   offsetsPos,
 	}
 }
 
 func (r *DefaultCompactReader) getFieldDefinition(fieldName string) FieldDescriptor {
-	fd := r.schema.GetField(fieldName)
-	if fd == nil {
+	fd, ok := r.schema.GetField(fieldName)
+	if !ok {
 		panic(newUnknownField(fieldName, r.schema))
 	}
-	return *fd
+	return fd
 }
 
 func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
@@ -125,7 +125,7 @@ func (r *DefaultCompactReader) readVariableSizeField(fd FieldDescriptor, reader 
 	currentPos := r.in.Position()
 	defer r.in.SetPosition(currentPos)
 	position := r.readVariableSizeFieldPosition(fd)
-	if position == NullOffset {
+	if position == nullOffset {
 		return nil
 	}
 	r.in.SetPosition(position)
@@ -134,8 +134,8 @@ func (r *DefaultCompactReader) readVariableSizeField(fd FieldDescriptor, reader 
 
 func (r *DefaultCompactReader) readVariableSizeFieldPosition(fd FieldDescriptor) int32 {
 	offset := r.offsetReader.getOffset(r.in, r.offsetsPos, fd.index)
-	if offset == NullOffset {
-		return NullOffset
+	if offset == nullOffset {
+		return nullOffset
 	}
 	return offset + r.startPos
 }
