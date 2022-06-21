@@ -65,11 +65,11 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
 func (s *Service) ToData(object interface{}) (r Data, err error) {
-	// defer func() {
-	// 	if rec := recover(); rec != nil {
-	// 		err = makeError(rec)
-	// 	}
-	// }()
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = makeError(rec)
+		}
+	}()
 	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
@@ -88,11 +88,11 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 // ToObject deserializes the given Data to an object.
 // nil is returned if called with nil.
 func (s *Service) ToObject(data Data) (r interface{}, err error) {
-	// defer func() {
-	// 	if rec := recover(); rec != nil {
-	// 		err = makeError(rec)
-	// 	}
-	// }()
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = makeError(rec)
+		}
+	}()
 	var ok bool
 	if data == nil {
 		return nil, nil
