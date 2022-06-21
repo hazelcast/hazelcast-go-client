@@ -32,7 +32,7 @@ type CompactStreamSerializer struct {
 	fingerprint          RabinFingerPrint
 }
 
-func NewCompactStreamSerializer(cfg pubserialization.CompactSerializationConfig) *CompactStreamSerializer {
+func NewCompactStreamSerializer(cfg pubserialization.CompactConfig) *CompactStreamSerializer {
 	typeToSerializer := make(map[reflect.Type]pubserialization.CompactSerializer)
 	typeNameToSerializer := make(map[string]pubserialization.CompactSerializer)
 	for typeName, serializer := range cfg.Serializers() {

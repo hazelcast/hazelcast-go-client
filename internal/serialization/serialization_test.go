@@ -399,7 +399,7 @@ func (s studentCompactSerializer) Write(writer serialization.CompactWriter, valu
 }
 
 func TestWithExplicitSerializer(t *testing.T) {
-	compactSerializationConfig := serialization.CompactSerializationConfig{}
+	compactSerializationConfig := serialization.CompactConfig{}
 	serializer := studentCompactSerializer{}
 	compactSerializationConfig.SetSerializers(serializer)
 	c := &serialization.Config{
@@ -418,7 +418,7 @@ func TestWithExplicitSerializer(t *testing.T) {
 }
 
 func TestAllTypesWithCustomSerializer(t *testing.T) {
-	compactSerializationConfig := serialization.CompactSerializationConfig{}
+	compactSerializationConfig := serialization.CompactConfig{}
 	serializer := MainDTOSerializer{}
 	compactSerializationConfig.SetSerializers(serializer)
 	c := &serialization.Config{
