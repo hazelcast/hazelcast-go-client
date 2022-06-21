@@ -121,8 +121,8 @@ func (nc nearCache) InvalidationRequests() int64 {
 }
 
 func (nc *nearCache) TryReserveForUpdate(key interface{}, keyData serialization.Data, ups nearCacheUpdateSemantic) (int64, error) {
-	// eviction stuff will be implemented in another PR
-	nc.store.DoEviction(false)
+	// port of: com.hazelcast.internal.nearcache.impl.DefaultNearCache#tryReserveForUpdate
+	nc.store.DoEviction()
 	return nc.store.TryReserveForUpdate(key, keyData, ups)
 }
 
@@ -139,6 +139,15 @@ func (nc *nearCache) TryPublishReserved(key, value interface{}, reservationID in
 
 const (
 	nearCacheRecordStoreTimeNotSet int64 = -1
+	// see: com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy#SAMPLE_COUNT
+	nearCacheRecordStoreSampleCount       = 15
+	pointerCostInBytes                    = (32 << uintptr(^uintptr(0)>>63)) >> 3
+	int32CostInBytes                      = 4
+	int64CostInBytes                      = 8
+	atomicValueCostInBytes                = 8
+	uuidCostInBytes                       = 16 // low uint64 + high uint64
+	nearCacheRecordNotReserved      int64 = -1
+	nearCacheRecordReadPermitted          = -2
 )
 
 type nearCacheRecordValueConverter interface {
@@ -206,6 +215,8 @@ type nearCacheRecordStore struct {
 	valueConverter   nearCacheRecordValueConverter
 	estimator        nearCacheStorageEstimator
 	evictionDisabled bool
+	maxSize          int
+	cmp              nearcache.EvictionPolicyComparator
 }
 
 func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) nearCacheRecordStore {
@@ -222,6 +233,8 @@ func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, r
 		estimator:        se,
 		stats:            stats,
 		evictionDisabled: cfg.EvictionConfig.EvictionPolicy() == nearcache.EvictionPolicyNone,
+		maxSize:          cfg.EvictionConfig.Size(),
+		cmp:              cfg.EvictionConfig.Comparator(),
 	}
 }
 
@@ -310,12 +323,14 @@ func (rs *nearCacheRecordStore) TryPublishReserved(key interface{}, value interf
 	return cached, nil
 }
 
-func (rs *nearCacheRecordStore) DoEviction(withoutMaxSizeCheck bool) {
+func (rs *nearCacheRecordStore) DoEviction() bool {
+	// port of: com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore#doEviction
+	// note that the reference implementation never has withoutMaxSizeCheck == true
 	// checkAvailable doesn't apply
 	if rs.evictionDisabled {
-		return
+		return false
 	}
-	panic("implement me")
+	return rs.evict()
 }
 
 func (rs *nearCacheRecordStore) OnEvict(key interface{}, rec *nearCacheRecord, expired bool) {
@@ -349,17 +364,12 @@ func (rs *nearCacheRecordStore) remove(key interface{}) bool {
 	return true
 }
 
-func (rs *nearCacheRecordStore) Sample(count int) []evictionCandidate {
-	// port of: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap.NearCacheEvictableSamplingEntry
-	if count < 0 {
-		panic("nearCacheRecordStore.Sample: count cannot be negative")
-	}
-	if count == 0 {
-		return nil
-	}
+func (rs *nearCacheRecordStore) sample(count int) []evictionCandidate {
+	// port of: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#sample
+	// note that count is fixed to 15 in the reference implementation, it is always positive
+	// assumes recordsMu is locked
 	samples := make([]evictionCandidate, count)
 	var idx int
-	rs.recordsMu.Lock()
 	for k, v := range rs.records {
 		// access to maps is random
 		samples[idx] = evictionCandidate{
@@ -367,7 +377,11 @@ func (rs *nearCacheRecordStore) Sample(count int) []evictionCandidate {
 			evictable: v,
 		}
 		idx++
+		if idx >= count {
+			break
+		}
 	}
+	return samples
 }
 
 func (rs nearCacheRecordStore) Stats() nearcache.Stats {
@@ -521,6 +535,19 @@ func (rs *nearCacheRecordStore) canUpdateStats(rec *nearCacheRecord) bool {
 	return rec != nil && rec.ReservationID() == nearCacheRecordReadPermitted
 }
 
+func (rs *nearCacheRecordStore) evict() bool {
+	// port of: com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy#evict
+	// see: com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker#isEvictionRequired
+	rs.recordsMu.Lock()
+	defer rs.recordsMu.Unlock()
+	if len(rs.records) < rs.maxSize {
+		return false
+	}
+	samples := rs.sample(nearCacheRecordStoreSampleCount)
+	c := evaluateForEviction(rs.cmp, samples)
+	return rs.TryEvict(c)
+}
+
 func (rs *nearCacheRecordStore) TryReserveForUpdate(key interface{}, keyData serialization.Data, ups nearCacheUpdateSemantic) (int64, error) {
 	// checkAvailable()
 	// if there is no eviction configured we return if the Near Cache is full and it's a new key.
@@ -644,16 +671,6 @@ func getEvictionPolicyComparator(cfg *nearcache.EvictionConfig) nearcache.Evicti
 	msg := fmt.Sprintf("unknown eviction polcy: %d", cfg.EvictionPolicy())
 	panic(ihzerrors.NewIllegalArgumentError(msg, nil))
 }
-
-const (
-	pointerCostInBytes                 = (32 << uintptr(^uintptr(0)>>63)) >> 3
-	int32CostInBytes                   = 4
-	int64CostInBytes                   = 8
-	atomicValueCostInBytes             = 8
-	uuidCostInBytes                    = 16 // low uint64 + high uint64
-	nearCacheRecordNotReserved   int64 = -1
-	nearCacheRecordReadPermitted       = -2
-)
 
 type nearCacheRecord struct {
 	value                internal.AtomicValue

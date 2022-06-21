@@ -22,6 +22,7 @@ package nearcache_test
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -35,6 +36,41 @@ import (
 const (
 	nearCacheDefaultRecordCount = 1000
 )
+
+func TestSmokeNearCachePopulation(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#smoke_near_cache_population
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{
+				Name:           tcx.MapName,
+				InMemoryFormat: nearcache.InMemoryFormatObject,
+			}
+			ncc.SetInvalidateOnChange(true)
+			tcx.Config.AddNearCacheConfig(ncc)
+		},
+	}
+	tcx.Tester(func(tcx it.MapTestContext) {
+		m := tcx.M
+		t := tcx.T
+		ctx := context.Background()
+		const mapSize = 1000
+		cls := tcx.Cluster
+		// 2. populate server side map
+		for i := 0; i < mapSize; i++ {
+			v := strconv.Itoa(i)
+			it.MapSetOnServer(cls.ClusterID, tcx.MapName, v, v)
+		}
+		// 4. populate client Near Cache
+		for i := int32(0); i < mapSize; i++ {
+			v := it.MustValue(m.Get(ctx, i))
+			tcx.OK(assert.Equal(t, i, v))
+		}
+		// 5. assert number of entries in client Near Cache
+		nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
+		tcx.OK(assert.Equal(t, mapSize, nca.Size()))
+	})
+}
 
 // TestWhenGetIsUsedThenNearCacheShouldBePopulated checks that the Near Cache is populated when Get is used.
 // And also the NearCacheStats are calculated correctly.
@@ -73,9 +109,9 @@ func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 				ConfigCallback: configCB,
 			}
 			mtcx.Tester(func(mtcx it.MapTestContext) {
-				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M)
+				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M).(it.NearCacheAdapter)
 				ci := hz.NewClientInternal(mtcx.Client)
-				tcx := it.NewNearCacheTestContext(mtcx.T, nca.(it.NearCacheAdapter), mtcx.M, &ncc, ci.SerializationService())
+				tcx := it.NewNearCacheTestContext(mtcx.T, nca, mtcx.M, &ncc, ci.SerializationService())
 				// assert that the Near Cache is empty
 				tcx.PopulateNearCacheDataAdapter(nearCacheDefaultRecordCount, valueFmt)
 				tcx.AssertNearCacheSize(0)

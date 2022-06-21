@@ -28,8 +28,8 @@ func (pc simpleEvictionPolicyComparator) Compare(e1, e2 nearcache.EvictableEntry
 
 var LRUEvictionPolicyComparator = simpleEvictionPolicyComparator{
 	f: func(e1, e2 nearcache.EvictableEntryView) int {
-		time1 := maxInt64(e1.CreationTime, e1.LastAccessTime)
-		time2 := maxInt64(e2.CreationTime, e2.LastAccessTime)
+		time1 := maxInt64(e1.CreationTime(), e1.LastAccessTime())
+		time2 := maxInt64(e2.CreationTime(), e2.LastAccessTime())
 		if time1 < time2 {
 			return -1
 		}
@@ -43,10 +43,10 @@ var LRUEvictionPolicyComparator = simpleEvictionPolicyComparator{
 var LFUEvictionPolicyComparator = simpleEvictionPolicyComparator{
 	f: func(e1, e2 nearcache.EvictableEntryView) int {
 		// assuming both e1.Hits and e2.Hits are positive
-		result := e1.Hits - e2.Hits
+		result := e1.Hits() - e2.Hits()
 		if result == 0 {
 			// if hits are same, we try to select oldest entry to evict
-			result = e1.CreationTime - e2.CreationTime
+			result = e1.CreationTime() - e2.CreationTime()
 		}
 		if result < 0 {
 			return -1
