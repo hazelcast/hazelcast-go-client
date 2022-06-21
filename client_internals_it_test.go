@@ -145,7 +145,7 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 	defer client.Shutdown(ctx)
 	ec := int64(0)
 	m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
-	f(ctx, m, &ec)	
+	f(ctx, m, &ec)
 	ci := hz.NewClientInternal(client)
 	// make sure the client connected to the member
 	it.Eventually(t, func() bool {
@@ -233,6 +233,7 @@ func TestClientInternal_ClusterID(t *testing.T) {
 }
 
 func TestClientInternal_OrderedMembers(t *testing.T) {
+	t.Skipf("flaky test: https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
 	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55701, 1)
 	defer tc.Shutdown()
