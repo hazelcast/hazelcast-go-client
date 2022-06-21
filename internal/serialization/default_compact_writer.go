@@ -78,14 +78,14 @@ func (r DefaultCompactWriter) End() {
 }
 
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
-	fd, ok := r.schema.GetField(fieldName)
-	if !ok {
+	fd := r.schema.GetField(fieldName)
+	if fd == nil {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %v", fieldName, r.schema), nil))
 	}
 	if fd.fieldKind != fieldKind {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %v", fieldName, r.schema), nil))
 	}
-	return fd
+	return *fd
 }
 
 func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pubserialization.FieldKind) int32 {

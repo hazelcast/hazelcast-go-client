@@ -19,19 +19,19 @@ package serialization
 import pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type SchemaWriter struct {
-	fieldDefinitionMap map[string]FieldDescriptor
+	fieldDefinitionMap map[string]*FieldDescriptor
 	typeName           string
 }
 
 func NewSchemaWriter(typeName string) SchemaWriter {
 	return SchemaWriter{
 		typeName:           typeName,
-		fieldDefinitionMap: make(map[string]FieldDescriptor),
+		fieldDefinitionMap: make(map[string]*FieldDescriptor),
 	}
 }
 
 func (s SchemaWriter) addField(fd FieldDescriptor) {
-	s.fieldDefinitionMap[fd.fieldName] = fd
+	s.fieldDefinitionMap[fd.fieldName] = &fd
 }
 
 func (s SchemaWriter) Build(rabin RabinFingerPrint) Schema {

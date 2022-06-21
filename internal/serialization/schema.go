@@ -22,17 +22,17 @@ import (
 )
 
 type Schema struct {
-	fieldDefinitionMap map[string]FieldDescriptor
+	fieldDefinitionMap map[string]*FieldDescriptor
 	typeName           string
 	// Go does not have TreeMap, so we use a slice to store sorted fields
-	fieldDefinitions      []FieldDescriptor
+	fieldDefinitions      []*FieldDescriptor
 	id                    int64
 	numberOfVarSizeFields int32
 	fixedSizeFieldsLength int32
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor, rabin RabinFingerPrint) Schema {
-	fds := make([]FieldDescriptor, len(fieldDefinitionMap))
+func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, rabin RabinFingerPrint) Schema {
+	fds := make([]*FieldDescriptor, len(fieldDefinitionMap))
 	c := 0
 	for _, fd := range fieldDefinitionMap {
 		fds[c] = fd
@@ -51,9 +51,11 @@ func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor, r
 	return schema
 }
 
-func (s *Schema) GetField(fieldName string) (FieldDescriptor, bool) {
-	fd, ok := s.fieldDefinitionMap[fieldName]
-	return fd, ok
+func (s *Schema) GetField(fieldName string) *FieldDescriptor {
+	if fd, ok := s.fieldDefinitionMap[fieldName]; ok {
+		return fd
+	}
+	return nil
 }
 
 func (s *Schema) ID() int64 {
@@ -74,14 +76,14 @@ func (s *Schema) TypeName() string {
 }
 
 func (s *Schema) init(rabin RabinFingerPrint) {
-	fixedSizeFields := make([]FieldDescriptor, 0)
-	variableSizeFields := make([]FieldDescriptor, 0)
-	for _, descriptor := range s.fieldDefinitionMap {
-		fieldKind := descriptor.fieldKind
+	var fixedSizeFields []*FieldDescriptor
+	var varSizeFields []*FieldDescriptor
+	for _, fd := range s.fieldDefinitionMap {
+		fieldKind := fd.fieldKind
 		if FieldOperations(fieldKind).KindSizeInBytes() == variableKindSize {
-			variableSizeFields = append(variableSizeFields, descriptor)
+			varSizeFields = append(varSizeFields, fd)
 		} else {
-			fixedSizeFields = append(fixedSizeFields, descriptor)
+			fixedSizeFields = append(fixedSizeFields, fd)
 		}
 	}
 	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
@@ -95,9 +97,9 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		offset += FieldOperations(descriptor.fieldKind).KindSizeInBytes()
 	}
 	s.fixedSizeFieldsLength = offset
-	for i, descriptor := range variableSizeFields {
+	for i, descriptor := range varSizeFields {
 		descriptor.index = int32(i)
 	}
-	s.numberOfVarSizeFields = int32(len(variableSizeFields))
+	s.numberOfVarSizeFields = int32(len(varSizeFields))
 	s.id = rabin.OfSchema(s)
 }

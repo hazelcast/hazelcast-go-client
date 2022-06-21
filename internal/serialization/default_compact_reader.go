@@ -94,11 +94,11 @@ func NewDefaultCompactReader(serializer CompactStreamSerializer, input *ObjectDa
 }
 
 func (r *DefaultCompactReader) getFieldDefinition(fieldName string) FieldDescriptor {
-	fd, ok := r.schema.GetField(fieldName)
-	if !ok {
+	fd := r.schema.GetField(fieldName)
+	if fd == nil {
 		panic(newUnknownField(fieldName, r.schema))
 	}
-	return fd
+	return *fd
 }
 
 func (r *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {

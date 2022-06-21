@@ -26,7 +26,6 @@ import (
 
 func TestRabinFingerprintIsConsistentWithWrittenData(t *testing.T) {
 	rabin := serialization.NewRabinFingerPrint()
-	rabin.Init()
 	fieldDefinitionMap := make(map[string]*serialization.FieldDescriptor)
 	ageField := serialization.NewFieldDescriptor("age", pserialization.FieldKindInt32)
 	nameField := serialization.NewFieldDescriptor("name", pserialization.FieldKindString)
