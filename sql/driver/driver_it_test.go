@@ -18,7 +18,6 @@ package driver_test
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"math/big"
@@ -291,7 +290,7 @@ func TestSQLScanJSON(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		testJSON := serialization.JSON(`{"test":"value"}`)
 		ctx := context.Background()
-		db := mustDB(sql.Open("hazelcast", makeDSN(config)))
+		db := driver.Open(*config)
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
@@ -583,22 +582,9 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := makeDSN(config)
-		sc := &serialization.Config{}
+		sc := &config.Serialization
 		sc.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
-		if err := driver.SetSerializationConfig(sc); err != nil {
-			t.Fatal(err)
-		}
-		defer driver.SetSerializationConfig(nil)
-		if it.SSLEnabled() {
-			sslc := &cluster.SSLConfig{Enabled: true}
-			sslc.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
-			if err := driver.SetSSLConfig(sslc); err != nil {
-				t.Fatal(err)
-			}
-			defer driver.SetSSLConfig(nil)
-		}
-		db := mustDB(sql.Open("hazelcast", dsn))
+		db := driver.Open(*config)
 		if err != nil {
 			t.Fatal(err)
 		}
