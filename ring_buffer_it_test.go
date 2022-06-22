@@ -113,11 +113,11 @@ func TestRingbuffer_ReadMany_Get_with_startSequence(t *testing.T) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "0", "1", "2", "y", "z")
 
 		rs := it.MustValue(rb.ReadMany(context.Background(), 1, 3, 3, nil)).(hz.ReadResultSet)
-		item, _ := rs.Get(0)
+		item := it.MustValue(rs.Get(0))
 		assert.Equal(t, "0", item)
-		item, _ = rs.Get(1)
+		item = it.MustValue(rs.Get(1))
 		assert.Equal(t, "1", item)
-		item, _ = rs.Get(2)
+		item = it.MustValue(rs.Get(2))
 		assert.Equal(t, "2", item)
 	})
 }
@@ -127,11 +127,11 @@ func TestRingbuffer_ReadMany_GetSequence_with_startSequence(t *testing.T) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
 
 		rs := it.MustValue(rb.ReadMany(context.Background(), 1, 3, 3, nil)).(hz.ReadResultSet)
-		seq, _ := rs.GetSequence(0)
+		seq := it.MustValue(rs.GetSequence(0))
 		assert.Equal(t, int64(1), seq)
-		seq, _ = rs.GetSequence(1)
+		seq = it.MustValue(rs.GetSequence(1))
 		assert.Equal(t, int64(2), seq)
-		seq, _ = rs.GetSequence(2)
+		seq = it.MustValue(rs.GetSequence(2))
 		assert.Equal(t, int64(3), seq)
 	})
 }
