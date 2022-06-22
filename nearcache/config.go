@@ -111,14 +111,14 @@ func (c *Config) Validate() error {
 SetInvalidateOnChange sets if Near Cache entries are invalidated when the entries in the backing data structure are changed (updated or removed).
 When this setting is enabled, a client with a Near Cache listens for cluster-wide changes on the entries of the backing data structure.
 And the client invalidates its corresponding Near Cache entries.
-Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
+Changes done on the client always invalidate the Near Cache immediately.
 Invalidate on change is true by default.
 */
 func (c *Config) SetInvalidateOnChange(enabled bool) {
 	c.invalidateOnChange = &enabled
 }
 
-// InvalidateOnChange returns true invalide on change is enabled.
+// InvalidateOnChange returns true when invalidate on change is enabled.
 // See the documentation for SetInvalidateOnChange.
 func (c Config) InvalidateOnChange() bool {
 	if c.invalidateOnChange == nil {

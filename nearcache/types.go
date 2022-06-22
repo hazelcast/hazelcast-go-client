@@ -76,7 +76,7 @@ type Stats struct {
 	Misses int64
 	// OwnedEntryCount is the number of entries in the Near Cache.
 	OwnedEntryCount int64
-	// OwnedEntryMemoryCost is the estimated memory cost of the entries in the Near Cache.
+	// OwnedEntryMemoryCost is the estimated memory cost in bytes for the entries in the Near Cache.
 	OwnedEntryMemoryCost int64
 	// Invalidations is the number of successful invalidations.
 	Invalidations int64
