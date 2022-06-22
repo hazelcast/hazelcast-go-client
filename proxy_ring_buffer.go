@@ -85,7 +85,11 @@ func newRingbuffer(p *proxy) (*Ringbuffer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Ringbuffer{proxy: p, partitionID: partitionID, capacity: ReadResultSetSequenceUnavailable}, nil
+	return &Ringbuffer{
+		proxy:       p,
+		partitionID: partitionID,
+		capacity:    ReadResultSetSequenceUnavailable,
+	}, nil
 }
 
 // Add adds an item to the tail of the Ringbuffer. If there is space in the Ringbuffer, the call
