@@ -55,14 +55,14 @@ type Config struct {
 	// TimeToLiveSeconds is the maximum number of seconds for each entry to stay in the Near Cache (time to live).
 	// Entries that are older than TimeToLiveSeconds will automatically be evicted from the Near Cache.
 	// Must be non-negative.
-	// The value 0 equals to math.MaxInt32
+	// The value 0 means math.MaxInt32
 	// The default is 0.
 	TimeToLiveSeconds int
-	//MaxIdleSeconds is the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
-	//Entries that are not read (touched) more than MaxIdleSeconds value will get removed from the Near Cache.
-	//Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
+	// MaxIdleSeconds is the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
+	// Entries that are not read (touched) more than MaxIdleSeconds value will get removed from the Near Cache.
+	// Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
 	// Must be non-negative.
-	// The value 0 equals to math.MaxInt32
+	// The value 0 means math.MaxInt32
 	// The default is 0.
 	MaxIdleSeconds int
 }
@@ -109,16 +109,16 @@ func (c *Config) Validate() error {
 
 /*
 SetInvalidateOnChange sets if Near Cache entries are invalidated when the entries in the backing data structure are changed (updated or removed).
-When this setting is enabled, a Hazelcast instance with a Near Cache listens for cluster-wide changes on the entries of the backing data structure.
-And invalidates its corresponding Near Cache entries.
-Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
+When this setting is enabled, a client with a Near Cache listens for cluster-wide changes on the entries of the backing data structure.
+And the client invalidates its corresponding Near Cache entries.
+Changes done on the client always invalidate the Near Cache immediately.
 Invalidate on change is true by default.
 */
 func (c *Config) SetInvalidateOnChange(enabled bool) {
 	c.invalidateOnChange = &enabled
 }
 
-// InvalidateOnChange returns true invalide on change is enabled.
+// InvalidateOnChange returns true when invalidate on change is enabled.
 // See the documentation for SetInvalidateOnChange.
 func (c Config) InvalidateOnChange() bool {
 	if c.invalidateOnChange == nil {
@@ -134,9 +134,7 @@ You can set a limit for number of entries.
 The default values of the eviction configuration are:
 
 	* EvictionPolicyLRU as eviction policy
-	* MaxSizePolicyEntryCount as max size policy
-	* 2147483647 as maximum size for on-heap Map
-	* 10_000 as maximum size for all other data structures and configurations
+	* 10_000 as maximum size for Map.
 
 Eviction policy and comparator are mutually exclusive.
 */
@@ -215,7 +213,7 @@ func (c EvictionConfig) Comparator() EvictionPolicyComparator {
 
 // PreloaderConfig is the configuration for storing and pre-loading Near Cache keys.
 // Preloader re-populates Near Cache after client restart to provide fast access.
-// Saved preloader data is compatible between only the same versions of Go client.
+// Saved preloader data is compatible between only the same versions of the Go client.
 // It is disabled by default.
 type PreloaderConfig struct {
 	// Directory is the directory to store preloader cache.
@@ -224,7 +222,7 @@ type PreloaderConfig struct {
 	// Must be positive.
 	// By default it is 600 seconds.
 	StoreInitialDelaySeconds int
-	// StoreIntervalSeconds is the time in seconds for the cache save period.
+	// StoreIntervalSeconds is the interval in seconds for persisting the cache.
 	// Must be positive.
 	// By default it is 600 seconds.
 	StoreIntervalSeconds int
@@ -248,9 +246,6 @@ func (c *PreloaderConfig) Validate() error {
 	}
 	if _, err := check.NonNegativeInt32(c.StoreIntervalSeconds); err != nil {
 		return ihzerrors.NewInvalidConfigurationError("nearcache.PreloaderConfig.StoreIntervalSeconds must be positive", nil)
-	}
-	if c.Enabled && c.Directory == "" {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.PreloaderConfig.Directory must not be empty if preloader is enabled.", nil)
 	}
 	return nil
 }
