@@ -26,6 +26,7 @@ import (
 type Config struct {
 	globalSerializer                    Serializer
 	customSerializers                   map[reflect.Type]Serializer
+	Compact                             CompactConfig
 	identifiedDataSerializableFactories []IdentifiedDataSerializableFactory
 	portableFactories                   []PortableFactory
 	classDefinitions                    []*ClassDefinition
@@ -71,6 +72,7 @@ func (c *Config) Clone() Config {
 		customSerializers:                   serializers,
 		globalSerializer:                    c.globalSerializer,
 		classDefinitions:                    defs,
+		Compact:                             c.Compact.Clone(),
 	}
 }
 
@@ -78,7 +80,7 @@ func (c *Config) Validate() error {
 	if c.customSerializers == nil {
 		c.customSerializers = map[reflect.Type]Serializer{}
 	}
-	return nil
+	return c.Compact.Validate()
 }
 
 // SetIdentifiedDataSerializableFactories adds zore or more identified data serializable factories.
