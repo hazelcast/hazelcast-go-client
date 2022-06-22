@@ -42,12 +42,14 @@ type Ringbuffer struct {
 // Overflowing happens when a time-to-live is set and the oldest item in
 // the Ringbuffer (the head) is not old enough to expire.
 type OverflowPolicy int
+
+// ReadResultSet is used as return type in ReadMany() operations from a Ringbuffer
 type ReadResultSet struct {
-	rb        *Ringbuffer
-	readCount int32
-	items     []iserialization.Data
-	itemSeqs  []int64
-	nextSeq   int64
+	readCount        int32
+	conversionErrors []error
+	convertedItems   []interface{}
+	itemSeqs         []int64
+	nextSeq          int64
 }
 
 const (
@@ -232,12 +234,17 @@ func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCoun
 		return ReadResultSet{}, err
 	}
 	readCount, items, itemSeqs, nextSeq := codec.DecodeRingbufferReadManyResponse(response)
+	var errors = make([]error, len(items))
+	var convertedItems = make([]interface{}, len(items))
+	for i := 0; i < len(items); i++ {
+		convertedItems[i], errors[i] = rb.convertToObject(items[i])
+	}
 	return ReadResultSet{
-		rb:        rb,
-		readCount: readCount,
-		items:     items,
-		itemSeqs:  itemSeqs,
-		nextSeq:   nextSeq,
+		readCount:        readCount,
+		conversionErrors: errors,
+		convertedItems:   convertedItems,
+		itemSeqs:         itemSeqs,
+		nextSeq:          nextSeq,
 	}, nil
 }
 
@@ -248,10 +255,10 @@ func (rrs *ReadResultSet) ReadCount() int32 {
 
 // Get one item from List of items that have been read.
 func (rrs *ReadResultSet) Get(index int) (interface{}, error) {
-	if err := check.WithinRangeInt32(int32(index), 0, int32(len(rrs.items)-1)-1); err != nil {
+	if err := check.WithinRangeInt32(int32(index), 0, int32(len(rrs.convertedItems)-1)); err != nil {
 		return nil, err
 	}
-	return rrs.rb.convertToObject(rrs.items[index])
+	return rrs.convertedItems[index], rrs.conversionErrors[index]
 }
 
 // GetSequence one sequence number from List of sequence numbers for the items that have been read.
@@ -264,7 +271,7 @@ func (rrs *ReadResultSet) GetSequence(index int) (int64, error) {
 
 // Size the total size of result set
 func (rrs *ReadResultSet) Size() int {
-	return len(rrs.items)
+	return len(rrs.convertedItems)
 }
 
 // GetNextSequenceToReadFrom sequence number of the item following the last read item.
