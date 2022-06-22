@@ -72,30 +72,30 @@ type Stats struct {
 	LastPersistenceFailure string
 	// LastPersistenceKeyCount is the number of keys saved in the last persistence task.
 	LastPersistenceKeyCount int64
-	// Misses is the number of times a key was not found in the Near Cache.
+	// Misses is the number of times an entry was not found in the Near Cache.
 	Misses int64
 	// OwnedEntryCount is the number of entries in the Near Cache.
 	OwnedEntryCount int64
-	// OwnedEntryMemoryCost is the estimated memory cost of the entries in the Near Cache.
+	// OwnedEntryMemoryCost is the estimated memory cost in bytes for the entries in the Near Cache.
 	OwnedEntryMemoryCost int64
 	// Invalidations is the number of successful invalidations.
 	Invalidations int64
-	// LastPersistenceWrittenBytes is the size of the last persistence task.
+	// LastPersistenceWrittenBytes is number of bytes written in the last persistence task.
 	LastPersistenceWrittenBytes int64
 	// PersistenceCount is the number of completed persistence tasks.
 	PersistenceCount int64
-	// Hits is the number of times a key was found in the Near Cache.
+	// Hits is the number of times an entry was found in the Near Cache.
 	Hits int64
 	// LastPersistenceDuration is the duration of the last completed persistence task.
 	LastPersistenceDuration time.Duration
-	// Expirations is the number of expirations.
+	// Expirations is the number of expirations due to TTL and max idle constraints.
 	Expirations int64
 	// Evictions is the number of evictions.
 	Evictions int64
 }
 
 // Ratio returns the ratio of hits to misses.
-// Returns math.Nan if there were no hits or misses.
+// Returns math.Nan if there were no hits and misses.
 // Otherwise returns +math.Inf if there were no misses.
 func (s Stats) Ratio() float64 {
 	if s.Misses == 0 {

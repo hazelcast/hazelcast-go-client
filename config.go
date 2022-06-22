@@ -265,6 +265,7 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 }
 
 func matchingPointMatches(patterns map[string]nearcache.Config, itemName string) (string, error) {
+	// port of: com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher#matches
 	var candidate, duplicate string
 	var hasDup bool
 	last := -1
