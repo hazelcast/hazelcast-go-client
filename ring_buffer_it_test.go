@@ -73,15 +73,19 @@ func TestRingbuffer_Size(t *testing.T) {
 
 func TestRingbuffer_Capacity(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
-		capacity := it.MustValue(rb.Capacity(context.Background()))
-		assert.GreaterOrEqual(t, capacity, int64(9999), "There should be a capacity of at least 9999 items.")
+		capacityTotal := it.MustValue(rb.Capacity(context.Background())).(int64)
+		capacityAfter := it.MustValue(rb.RemainingCapacity(context.Background()))
+		assert.Equal(t, capacityTotal, capacityAfter)
+		assert.True(t, capacityTotal > 0)
 	})
 }
 
 func TestRingbuffer_RemainingCapacity(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
-		capacity := it.MustValue(rb.RemainingCapacity(context.Background()))
-		assert.GreaterOrEqual(t, capacity, int64(9999), "There should be a remaining capacity of at least 9999 items.")
+		capacityBefore := it.MustValue(rb.RemainingCapacity(context.Background())).(int64)
+		it.MustValue(rb.Add(context.Background(), "one", hz.OverflowPolicyOverwrite))
+		capacityAfter := it.MustValue(rb.RemainingCapacity(context.Background()))
+		assert.Equal(t, capacityBefore, capacityAfter, "the remaining capacity should be the capacity")
 	})
 }
 
