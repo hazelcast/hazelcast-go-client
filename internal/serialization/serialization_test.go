@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -364,4 +365,72 @@ func mustData(value interface{}, err error) iserialization.Data {
 		panic(err)
 	}
 	return value.(iserialization.Data)
+}
+
+type student struct {
+	Name *string
+	Age  int32
+}
+
+type studentCompactSerializer struct{}
+
+func (studentCompactSerializer) Type() reflect.Type {
+	return reflect.TypeOf(student{})
+}
+
+func (s studentCompactSerializer) TypeName() string {
+	return "student"
+}
+
+func (s studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+	return student{
+		Age:  reader.ReadInt32("age"),
+		Name: reader.ReadString("name"),
+	}
+}
+
+func (s studentCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(student)
+	if !ok {
+		panic("not a student")
+	}
+	writer.WriteInt32("age", c.Age)
+	writer.WriteString("name", c.Name)
+}
+
+func TestWithExplicitSerializer(t *testing.T) {
+	compactSerializationConfig := serialization.CompactConfig{}
+	serializer := studentCompactSerializer{}
+	compactSerializationConfig.SetSerializers(serializer)
+	c := &serialization.Config{
+		Compact: compactSerializationConfig,
+	}
+	service := mustSerializationService(iserialization.NewService(c))
+	name := "S"
+	obj := student{Age: 12, Name: &name}
+	data := it.MustValue(service.ToData(obj)).(iserialization.Data)
+	// Ensure that data is serialized as compact
+	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
+	ret := it.MustValue(service.ToObject(data))
+	if !reflect.DeepEqual(obj, ret) {
+		t.Error("compact serialization failed")
+	}
+}
+
+func TestAllTypesWithCustomSerializer(t *testing.T) {
+	compactSerializationConfig := serialization.CompactConfig{}
+	serializer := MainDTOSerializer{}
+	compactSerializationConfig.SetSerializers(serializer)
+	c := &serialization.Config{
+		Compact: compactSerializationConfig,
+	}
+	service := mustSerializationService(iserialization.NewService(c))
+	mainDTO := NewMainDTO()
+	data := it.MustValue(service.ToData(mainDTO)).(iserialization.Data)
+	// Ensure that data is serialized as compact
+	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
+	ret := it.MustValue((service.ToObject(data)))
+	if !reflect.DeepEqual(mainDTO, ret) {
+		t.Error("compact serialization failed")
+	}
 }
