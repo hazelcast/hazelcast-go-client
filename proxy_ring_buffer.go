@@ -34,15 +34,6 @@ type Ringbuffer struct {
 	capacity    int64
 }
 
-// OverflowPolicy
-// Using this OverflowPolicy one can control the behavior what should to be done
-// when an item is about to be added to the Ringbuffer, but there is {@code 0}
-// remaining capacity.
-//
-// Overflowing happens when a time-to-live is set and the oldest item in
-// the Ringbuffer (the head) is not old enough to expire.
-type OverflowPolicy int
-
 // ReadResultSet is used as return type in ReadMany() operations from a Ringbuffer
 type ReadResultSet struct {
 	readCount        int32
@@ -51,6 +42,15 @@ type ReadResultSet struct {
 	itemSeqs         []int64
 	nextSeq          int64
 }
+
+// OverflowPolicy
+// Using this OverflowPolicy one can control the behavior what should to be done
+// when an item is about to be added to the Ringbuffer, but there is {@code 0}
+// remaining capacity.
+//
+// Overflowing happens when a time-to-live is set and the oldest item in
+// the Ringbuffer (the head) is not old enough to expire.
+type OverflowPolicy int
 
 const (
 	// OverflowPolicyOverwrite
