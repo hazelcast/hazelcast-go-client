@@ -134,9 +134,7 @@ You can set a limit for number of entries.
 The default values of the eviction configuration are:
 
 	* EvictionPolicyLRU as eviction policy
-	* MaxSizePolicyEntryCount as max size policy
-	* 2147483647 as maximum size for on-heap Map
-	* 10_000 as maximum size for all other data structures and configurations
+	* 10_000 as maximum size for Map.
 
 Eviction policy and comparator are mutually exclusive.
 */
@@ -215,7 +213,7 @@ func (c EvictionConfig) Comparator() EvictionPolicyComparator {
 
 // PreloaderConfig is the configuration for storing and pre-loading Near Cache keys.
 // Preloader re-populates Near Cache after client restart to provide fast access.
-// Saved preloader data is compatible between only the same versions of Go client.
+// Saved preloader data is compatible between only the same versions of the Go client.
 // It is disabled by default.
 type PreloaderConfig struct {
 	// Directory is the directory to store preloader cache.
@@ -224,7 +222,7 @@ type PreloaderConfig struct {
 	// Must be positive.
 	// By default it is 600 seconds.
 	StoreInitialDelaySeconds int
-	// StoreIntervalSeconds is the time in seconds for the cache save period.
+	// StoreIntervalSeconds is the interval in seconds for persisting the cache.
 	// Must be positive.
 	// By default it is 600 seconds.
 	StoreIntervalSeconds int
@@ -248,9 +246,6 @@ func (c *PreloaderConfig) Validate() error {
 	}
 	if _, err := check.NonNegativeInt32(c.StoreIntervalSeconds); err != nil {
 		return ihzerrors.NewInvalidConfigurationError("nearcache.PreloaderConfig.StoreIntervalSeconds must be positive", nil)
-	}
-	if c.Enabled && c.Directory == "" {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.PreloaderConfig.Directory must not be empty if preloader is enabled.", nil)
 	}
 	return nil
 }

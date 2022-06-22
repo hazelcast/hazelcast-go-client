@@ -164,6 +164,13 @@ func TestConfigInvalid(t *testing.T) {
 	}
 }
 
+func TestConfig_SetInvalidateOnChange(t *testing.T) {
+	ec := nearcache.Config{}
+	ec.SetInvalidateOnChange(false)
+	assert.Nil(t, ec.Validate())
+	assert.Equal(t, false, ec.InvalidateOnChange())
+}
+
 type comparator struct{}
 
 func (c comparator) Compare(a, b nearcache.EvictableEntryView) int {
@@ -267,6 +274,29 @@ func TestConfigInvalidNon32bit(t *testing.T) {
 	for _, tc := range testCases {
 		tc.Run(t)
 	}
+}
+
+func TestEvictionConfig_SetSize(t *testing.T) {
+	// ported from: com.hazelcast.config.NearCacheConfigTest#testMaxSize_whenValueIsPositive_thenSetValue
+	ec := nearcache.EvictionConfig{}
+	ec.SetSize(4531)
+	assert.Nil(t, ec.Validate())
+	assert.Equal(t, 4531, ec.Size())
+}
+
+func TestEvictionConfig_SetEvictionPolicy(t *testing.T) {
+	ec := nearcache.EvictionConfig{}
+	ec.SetEvictionPolicy(nearcache.EvictionPolicyRandom)
+	assert.Nil(t, ec.Validate())
+	assert.Equal(t, nearcache.EvictionPolicyRandom, ec.EvictionPolicy())
+}
+
+func TestEvictionConfig_SetComparator(t *testing.T) {
+	cmp := comparator{}
+	ec := nearcache.EvictionConfig{}
+	ec.SetComparator(cmp)
+	assert.Nil(t, ec.Validate())
+	assert.Equal(t, cmp, ec.Comparator())
 }
 
 func assertTrueGetNearCacheConfig(t *testing.T, config hazelcast.Config, pattern string) nearcache.Config {
