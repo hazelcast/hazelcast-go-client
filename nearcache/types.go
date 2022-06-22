@@ -88,7 +88,7 @@ type Stats struct {
 	Hits int64
 	// LastPersistenceDuration is the duration of the last completed persistence task.
 	LastPersistenceDuration time.Duration
-	// Expirations is the number of expirations.
+	// Expirations is the number of expirations due to TTL and max idle constraints.
 	Expirations int64
 	// Evictions is the number of evictions.
 	Evictions int64

@@ -225,14 +225,6 @@ func TestPreloaderConfigInvalid(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "blank directory when enabled",
-			cfg: nearcache.Config{
-				PreloaderConfig: nearcache.PreloaderConfig{
-					Enabled: true,
-				},
-			},
-		},
 	}
 	for _, tc := range testCases {
 		tc.Run(t)
