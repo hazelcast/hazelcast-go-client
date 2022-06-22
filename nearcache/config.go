@@ -55,14 +55,14 @@ type Config struct {
 	// TimeToLiveSeconds is the maximum number of seconds for each entry to stay in the Near Cache (time to live).
 	// Entries that are older than TimeToLiveSeconds will automatically be evicted from the Near Cache.
 	// Must be non-negative.
-	// The value 0 equals to math.MaxInt32
+	// The value 0 means math.MaxInt32
 	// The default is 0.
 	TimeToLiveSeconds int
-	//MaxIdleSeconds is the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
-	//Entries that are not read (touched) more than MaxIdleSeconds value will get removed from the Near Cache.
-	//Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
+	// MaxIdleSeconds is the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
+	// Entries that are not read (touched) more than MaxIdleSeconds value will get removed from the Near Cache.
+	// Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
 	// Must be non-negative.
-	// The value 0 equals to math.MaxInt32
+	// The value 0 means math.MaxInt32
 	// The default is 0.
 	MaxIdleSeconds int
 }
@@ -109,8 +109,8 @@ func (c *Config) Validate() error {
 
 /*
 SetInvalidateOnChange sets if Near Cache entries are invalidated when the entries in the backing data structure are changed (updated or removed).
-When this setting is enabled, a Hazelcast instance with a Near Cache listens for cluster-wide changes on the entries of the backing data structure.
-And invalidates its corresponding Near Cache entries.
+When this setting is enabled, a client with a Near Cache listens for cluster-wide changes on the entries of the backing data structure.
+And the client invalidates its corresponding Near Cache entries.
 Changes done on the local Hazelcast instance always invalidate the Near Cache immediately.
 Invalidate on change is true by default.
 */
