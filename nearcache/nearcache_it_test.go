@@ -35,6 +35,9 @@ import (
 
 const (
 	nearCacheDefaultRecordCount = 1000
+	maxCacheSize                = 1000
+	maxTTLSeconds               = 2
+	maxIdleSeconds              = 1
 )
 
 func TestSmokeNearCachePopulation(t *testing.T) {
@@ -69,34 +72,260 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 	})
 }
 
-/*
-   public void testGetNearCacheStatsBeforePopulation() {
-       IMap<Integer, Integer> map = getNearCachedMapFromClient(newNoInvalidationNearCacheConfig());
-
-       int size = 101;
-       for (int i = 0; i < size; i++) {
-           map.put(i, i);
-       }
-
-       NearCacheStats stats = getNearCacheStats(map);
-       assertNotNull(stats);
-   }
-*/
-
 func TestGetNearCacheStatsBeforePopulation(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetNearCacheStatsBeforePopulation
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		for i := int64(0); i < 101; i++ {
+			if _, err := m.Put(context.Background(), i, i); err != nil {
+				t.Fatal(err)
+			}
+		}
+		stats := m.LocalMapStats().NearCacheStats
+		assert.NotEqual(t, nearcache.Stats{}, stats)
+	})
+}
 
+func TestNearCacheMisses(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheMisses
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const expectedCacheMisses = int64(1321)
+		for i := int64(0); i < expectedCacheMisses; i++ {
+			k := fmt.Sprintf("NOT_THERE%d", i)
+			if _, err := m.Get(context.Background(), k); err != nil {
+				t.Fatal(err)
+			}
+		}
+		stats := m.LocalMapStats().NearCacheStats
+		assert.Equal(t, expectedCacheMisses, stats.Misses)
+		assert.Equal(t, expectedCacheMisses, stats.OwnedEntryCount)
+	})
+}
+
+func TestMapRemove_WithNearCache(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMapRemove_WithNearCache
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(1113)
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		for i := int32(0); i < size; i++ {
+			if _, err := m.Remove(context.Background(), i); err != nil {
+				t.Fatal(err)
+			}
+		}
+		stats := m.LocalMapStats().NearCacheStats
+		assert.Equal(t, int64(0), stats.OwnedEntryCount)
+		assert.Equal(t, size, stats.Misses)
+	})
+}
+
+func TestNearCacheTTLExpiration(t *testing.T) {
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{
+				Name:              tcx.MapName,
+				TimeToLiveSeconds: maxTTLSeconds,
+			}
+			ncc.SetInvalidateOnChange(false)
+			tcx.Config.AddNearCacheConfig(ncc)
+		},
+	}
+	tcx.Tester(ttlTester)
+}
+
+func ttlTester(tcx it.MapTestContext) {
+	populateServerMap(tcx, maxCacheSize)
+	populateNearCache(tcx, maxCacheSize)
+	assertNearCacheExpiration(tcx, maxCacheSize)
 }
 
 // TestWhenGetIsUsedThenNearCacheShouldBePopulated checks that the Near Cache is populated when Get is used.
 // And also the NearCacheStats are calculated correctly.
 func TestWhenGetIsUsedThenNearCacheShouldBePopulated(t *testing.T) {
 	// ported from: com.hazelcast.internal.nearcache.impl.AbstractNearCacheBasicTest#whenGetIsUsed_thenNearCacheShouldBePopulated()
-	ClientCacheNearCacheBasicSlowRunner(t, func(tcx *it.NearCacheTestContext, size int64, valueFmt string) {
+	clientCacheNearCacheBasicSlowRunner(t, func(tcx *it.NearCacheTestContext, size int64, valueFmt string) {
 		tcx.PopulateNearCacheWithGet(size, valueFmt)
 	})
 }
 
-func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheTestContext, size int64, valueFmt string)) {
+func TestNearCacheGet(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAsync
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		m := tcx.M
+		t := tcx.T
+		const size = int32(1009)
+		ctx := context.Background()
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		// generate near cache hits
+		for i := int32(0); i < size; i++ {
+			v := it.MustValue(m.Get(ctx, i))
+			tcx.OK(assert.Equal(t, i, v))
+		}
+		stats := m.LocalMapStats().NearCacheStats
+		tcx.OK(assert.Equal(t, size, stats.Hits))
+		tcx.OK(assert.Equal(t, size, stats.OwnedEntryCount))
+	})
+}
+
+type mapTestCase struct {
+	name string
+	f    func(context.Context, it.MapTestContext, int32)
+}
+
+func TestAfterRemoveNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterRemoveNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Remove",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.Remove(ctx, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.Equal(tcx.T, v, i))
+			},
+		},
+		{
+			name: "RemoveIfSame",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				b, err := tcx.M.RemoveIfSame(ctx, i, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.True(tcx.T, b))
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterDeleteNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterDeleteNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Delete",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.Delete(ctx, i); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterPutAsyncNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Put",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.Delete(ctx, i); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterSetNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterSetAsyncNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Set",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.Set(ctx, i, i); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "SetWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.SetWithTTL(ctx, i, i, 1*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "SetWithTTLAndMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.SetWithTTLAndMaxIdle(ctx, i, i, 1*time.Second, 2*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterTryRemoveNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "TryRemove",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.TryRemove(ctx, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.True(t, v.(bool)))
+			},
+		},
+		{
+			name: "TryRemoveWithTimeout",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.TryRemoveWithTimeout(ctx, i, 10*time.Second)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.True(t, v.(bool)))
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterTryPutNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Put",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.Put(ctx, i, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.Equal(tcx.T, i, v))
+			},
+		},
+		{
+			name: "PutWithMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutWithMaxIdle(ctx, i, i, 10*time.Minute)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				tcx.OK(assert.Equal(tcx.T, i, v))
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func clientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheTestContext, size int64, valueFmt string)) {
 	testCases := []struct {
 		inMemoryFmt   nearcache.InMemoryFormat
 		serializeKeys bool
@@ -124,9 +353,9 @@ func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 				ConfigCallback: configCB,
 			}
 			mtcx.Tester(func(mtcx it.MapTestContext) {
-				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M).(it.NearCacheAdapter)
+				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M)
 				ci := hz.NewClientInternal(mtcx.Client)
-				tcx := it.NewNearCacheTestContext(mtcx.T, nca, mtcx.M, &ncc, ci.SerializationService())
+				tcx := it.NewNearCacheTestContext(mtcx.T, nca.(it.NearCacheAdapter), mtcx.M, &ncc, ci.SerializationService())
 				// assert that the Near Cache is empty
 				tcx.PopulateNearCacheDataAdapter(nearCacheDefaultRecordCount, valueFmt)
 				tcx.AssertNearCacheSize(0)
@@ -146,204 +375,17 @@ func ClientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 	}
 }
 
-func TestNearCacheGet(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAsync
-	tcx := it.MapTestContext{
-		T: t,
-		ConfigCallback: func(tcx it.MapTestContext) {
-			ncc := nearcache.Config{
-				Name:           tcx.MapName,
-				InMemoryFormat: nearcache.InMemoryFormatObject,
-			}
-			ncc.SetInvalidateOnChange(false)
-			tcx.Config.AddNearCacheConfig(ncc)
-		},
-	}
-	tcx.Tester(func(tcx it.MapTestContext) {
-		m := tcx.M
-		t := tcx.T
-		const size = int64(1009)
-		ctx := context.Background()
-		populateMap(tcx, size)
-		populateNearCache(tcx, size)
-		// generate near cache hits
-		for i := int64(0); i < size; i++ {
-			v := it.MustValue(m.Get(ctx, i))
-			tcx.OK(assert.Equal(t, i, v))
-		}
-		stats := m.LocalMapStats().NearCacheStats
-		tcx.OK(assert.Equal(t, size, stats.Hits))
-		tcx.OK(assert.Equal(t, size, stats.OwnedEntryCount))
-	})
-}
-
-type mapTestCase struct {
-	name string
-	f    func(context.Context, it.MapTestContext, int64)
-}
-
-func TestAfterRemoveNearCacheIsInvalidated(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterRemoveNearCacheIsInvalidated
-	testCases := []mapTestCase{
-		{
-			name: "Remove",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				v, err := tcx.M.Remove(ctx, i)
-				if err != nil {
-					tcx.T.Fatal(err)
-				}
-				tcx.OK(assert.Equal(tcx.T, v, i))
-			},
-		},
-		{
-			name: "RemoveIfSame",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				b, err := tcx.M.RemoveIfSame(ctx, i, i)
-				if err != nil {
-					tcx.T.Fatal(err)
-				}
-				tcx.OK(assert.True(tcx.T, b))
-			},
-		},
-	}
-	invalidationRunner(t, testCases)
-}
-
-func TestAfterDeleteNearCacheIsInvalidated(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterDeleteNearCacheIsInvalidated
-	testCases := []mapTestCase{
-		{
-			name: "Delete",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				if err := tcx.M.Delete(ctx, i); err != nil {
-					tcx.T.Fatal(err)
-				}
-			},
-		},
-	}
-	invalidationRunner(t, testCases)
-}
-
-func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterPutAsyncNearCacheIsInvalidated
-	testCases := []mapTestCase{
-		{
-			name: "Put",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				if err := tcx.M.Delete(ctx, i); err != nil {
-					tcx.T.Fatal(err)
-				}
-			},
-		},
-	}
-	invalidationRunner(t, testCases)
-}
-
-func TestAfterSetNearCacheIsInvalidated(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterSetAsyncNearCacheIsInvalidated
-	testCases := []mapTestCase{
-		{
-			name: "Set",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				if err := tcx.M.Set(ctx, i, i); err != nil {
-					tcx.T.Fatal(err)
-				}
-			},
-		},
-		{
-			name: "SetWithTTL",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				if err := tcx.M.SetWithTTL(ctx, i, i, 1*time.Second); err != nil {
-					tcx.T.Fatal(err)
-				}
-			},
-		},
-		{
-			name: "SetWithTTLAndMaxIdle",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				if err := tcx.M.SetWithTTLAndMaxIdle(ctx, i, i, 1*time.Second, 2*time.Second); err != nil {
-					tcx.T.Fatal(err)
-				}
-			},
-		},
-	}
-	invalidationRunner(t, testCases)
-}
-
-func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterTryRemoveNearCacheIsInvalidated
-	testCases := []mapTestCase{
-		{
-			name: "TryRemove",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				v, err := tcx.M.TryRemove(ctx, i)
-				if err != nil {
-					tcx.T.Fatal(err)
-				}
-				tcx.OK(assert.True(t, v.(bool)))
-			},
-		},
-		{
-			name: "TryRemoveWithTimeout",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				v, err := tcx.M.TryRemoveWithTimeout(ctx, i, 10*time.Second)
-				if err != nil {
-					tcx.T.Fatal(err)
-				}
-				tcx.OK(assert.True(t, v.(bool)))
-			},
-		},
-	}
-	invalidationRunner(t, testCases)
-}
-
-func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
-	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterTryPutNearCacheIsInvalidated
-	testCases := []mapTestCase{
-		{
-			name: "Put",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				v, err := tcx.M.Put(ctx, i, i)
-				if err != nil {
-					tcx.T.Fatal(err)
-				}
-				tcx.OK(assert.Equal(tcx.T, i, v))
-			},
-		},
-		{
-			name: "PutWithMaxIdle",
-			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				v, err := tcx.M.PutWithMaxIdle(ctx, i, i, 10*time.Minute)
-				if err != nil {
-					tcx.T.Fatal(err)
-				}
-				tcx.OK(assert.Equal(tcx.T, i, v))
-			},
-		},
-	}
-	invalidationRunner(t, testCases)
-}
-
 func invalidationRunner(t *testing.T, testCases []mapTestCase) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tcx := it.MapTestContext{
-				T: t,
-				ConfigCallback: func(tcx it.MapTestContext) {
-					ncc := nearcache.Config{
-						Name: tcx.MapName,
-					}
-					ncc.SetInvalidateOnChange(false)
-					tcx.Config.AddNearCacheConfig(ncc)
-				},
-			}
+			tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, false)
 			tcx.Tester(func(tcx it.MapTestContext) {
-				const size = int64(1000)
+				const size = int32(1000)
 				ctx := context.Background()
 				populateMap(tcx, size)
 				populateNearCache(tcx, size)
 				tcx.OK(assert.Equal(t, size, tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount))
-				for i := int64(0); i < size; i++ {
+				for i := int32(0); i < size; i++ {
 					tc.f(ctx, tcx, i)
 				}
 				tcx.OK(assert.Equal(t, int64(0), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount))
@@ -363,20 +405,68 @@ func inMemoryFmtToString(fmt nearcache.InMemoryFormat) string {
 	}
 }
 
-func populateMap(tcx it.MapTestContext, size int64) {
-	for i := int64(0); i < size; i++ {
+func populateMap(tcx it.MapTestContext, size int32) {
+	for i := int32(0); i < size; i++ {
 		if _, err := tcx.M.Put(context.Background(), i, i); err != nil {
 			panic(err)
 		}
 	}
 }
 
-func populateNearCache(tcx it.MapTestContext, size int64) {
-	for i := int64(0); i < size; i++ {
+func populateServerMap(tcx it.MapTestContext, size int32) {
+	for i := int32(0); i < size; i++ {
+		v := strconv.Itoa(int(i))
+		it.MapSetOnServer(tcx.Cluster.ClusterID, tcx.MapName, v, v)
+	}
+}
+
+func populateNearCache(tcx it.MapTestContext, size int32) {
+	for i := int32(0); i < size; i++ {
 		v, err := tcx.M.Get(context.Background(), i)
 		if err != nil {
 			tcx.T.Fatal(err)
 		}
 		tcx.OK(assert.Equal(tcx.T, v, i))
 	}
+}
+
+func newNearCacheMapTestContext(t *testing.T, fmt nearcache.InMemoryFormat, invalidate bool) it.MapTestContext {
+	return it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{
+				Name:           tcx.MapName,
+				InMemoryFormat: fmt,
+			}
+			ncc.SetInvalidateOnChange(invalidate)
+			tcx.Config.AddNearCacheConfig(ncc)
+		},
+	}
+}
+
+func assertNearCacheExpiration(tcx it.MapTestContext, size int64) {
+	t := tcx.T
+	m := tcx.M
+	it.Eventually(t, func() bool {
+		nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
+		stats := m.LocalMapStats().NearCacheStats
+		// make assertions over near cache's backing map size.
+		if !assert.Equal(t, 0, nca.Size()) {
+			return false
+		}
+		// make assertions over near cache stats.
+		if !assert.Equal(t, 0, stats.OwnedEntryCount) {
+			return false
+		}
+		if !assert.Equal(t, int64(0), stats.OwnedEntryMemoryCost) {
+			return false
+		}
+		if !assert.Equal(t, size, stats.Expirations) {
+			return false
+		}
+		if !assert.Equal(t, 0, stats.Evictions) {
+			return false
+		}
+		return true
+	})
 }
