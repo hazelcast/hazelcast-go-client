@@ -150,7 +150,7 @@ func (rb *Ringbuffer) ReadOne(ctx context.Context, sequence int64) (interface{},
 	request := codec.EncodeRingbufferReadOneRequest(rb.name, sequence)
 	response, err := rb.invokeOnPartition(ctx, request, rb.partitionID)
 	if err != nil {
-		return ReadResultSetSequenceUnavailable, err
+		return nil, err
 	}
 	return rb.convertToObject(codec.DecodeRingbufferReadOneResponse(response))
 }
