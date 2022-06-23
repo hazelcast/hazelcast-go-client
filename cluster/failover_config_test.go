@@ -24,6 +24,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -112,6 +113,18 @@ func TestFailoverConfig_Validate_DefaultClusterTimeout(t *testing.T) {
 	}
 	assert.Equal(t, types.Duration(120*time.Second), foConfig.Configs[0].ConnectionStrategy.Timeout)
 	assert.Equal(t, types.Duration(5*time.Second), foConfig.Configs[1].ConnectionStrategy.Timeout)
+}
+
+func TestFailoverConfig_Validate_RootSSLConfig(t *testing.T) {
+	subCfg1 := cluster.Config{}
+	rootCfg := hazelcast.Config{}
+	rootCfg.Cluster.Network.SSL.Enabled = true
+	rootCfg.Failover.Enabled = true
+	rootCfg.Failover.SetConfigs(subCfg1)
+	err := rootCfg.Validate()
+	if !errors.Is(err, hzerrors.ErrInvalidConfiguration) {
+		t.Fatalf("expected ErrInvalidConfiguration")
+	}
 }
 
 func emptyClusterConfig() cluster.Config {
