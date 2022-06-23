@@ -564,9 +564,9 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		})
 		return conn, nil
 	case credentialsFailed:
-		return nil, cb.WrapNonRetryableError(fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication))
+		return nil, fmt.Errorf("invalid credentials: %w", hzerrors.ErrAuthentication)
 	case serializationVersionMismatch:
-		return nil, cb.WrapNonRetryableError(fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication))
+		return nil, fmt.Errorf("serialization version mismatches with the server: %w", hzerrors.ErrAuthentication)
 	case notAllowedInCluster:
 		return nil, cb.WrapNonRetryableError(hzerrors.ErrClientNotAllowedInCluster)
 	}
