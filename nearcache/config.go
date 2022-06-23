@@ -104,6 +104,9 @@ func (c *Config) Validate() error {
 	if _, err := check.NonNegativeInt32(c.MaxIdleSeconds); err != nil {
 		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.MaxIdleSeconds: out of range", err)
 	}
+	if c.InMemoryFormat != InMemoryFormatBinary && c.InMemoryFormat != InMemoryFormatObject {
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.InMemoryFormat: invalid memory format", nil)
+	}
 	return nil
 }
 
