@@ -158,6 +158,10 @@ func TestConfigInvalid(t *testing.T) {
 			name: "negative max idle",
 			cfg:  nearcache.Config{MaxIdleSeconds: -1},
 		},
+		{
+			name: "invalid memory format",
+			cfg:  nearcache.Config{InMemoryFormat: 3},
+		},
 	}
 	for _, tc := range testCases {
 		tc.Run(t)
