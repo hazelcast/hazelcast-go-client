@@ -402,9 +402,9 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	for i := 1; i <= tryCount; i++ {
 		cluster := m.failoverService.Current()
 		m.logger.Infof("trying to connect to cluster: %s", cluster.ClusterName)
-		addr, err = m.tryConnectCandidateCluster(ctx, cluster, cluster.ConnectionStrategy)
+		addr, err = m.tryConnectCandidateCluster(ctx, cluster)
 		if err == nil {
-			m.logger.Infof("connected to cluster: %s", m.failoverService.Current().ClusterName)
+			m.logger.Infof("connected to cluster: %s", cluster.ClusterName)
 			return addr, nil
 		}
 		if nonRetryableConnectionErr(err) {
@@ -415,7 +415,8 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 	return "", ihzerrors.NewIllegalStateError("cannot connect to any cluster", err)
 }
 
-func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster, cs *pubcluster.ConnectionStrategyConfig) (pubcluster.Address, error) {
+func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster) (pubcluster.Address, error) {
+	cs := cluster.ConnectionStrategy
 	cbr := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.Timeout(time.Duration(cs.Timeout)),

@@ -556,15 +556,24 @@ func TestClientFailover_OSSCluster(t *testing.T) {
 func TestClientFailover_EECluster(t *testing.T) {
 	it.SkipIf(t, "oss")
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("failover-test-cluster", 15701, it.MemberCount())
-	defer cls.Shutdown()
-	config := cls.DefaultConfig()
+	clsBase := t.Name()
+	cls1 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-1", clsBase), 15701, it.MemberCount())
+	defer cls1.Shutdown()
+	cls2 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-2", clsBase), 15701, it.MemberCount())
+	//config := cls.DefaultConfig()
+	config := hz.Config{}
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
 	config.Failover.Enabled = true
-	config.Failover.TryCount = 1
+	//config.Failover.TryCount = 2
+	cfg1 := cls1.DefaultConfig()
+	cfg1.Cluster.Name = "not-this-cluster's-name"
+	cfg2 := cls2.DefaultConfig()
 	// move the main cluster config to failover config list
-	config.Failover.SetConfigs(config.Cluster)
+	config.Failover.SetConfigs(cfg1.Cluster, cfg2.Cluster)
 	// use a non-existing cluster in the main cluster config
-	config.Cluster.Name = "non-existing-failover-test-cluster"
+	//config.Cluster.Name = "non-existing-failover-test-cluster"
 	c, err := hz.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		t.Fatalf("should have connected to failover cluster")
