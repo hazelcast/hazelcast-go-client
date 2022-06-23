@@ -78,9 +78,12 @@ func TestFailoverConfigValidate_ConfigsWithAllowedDifferences(t *testing.T) {
 	c := cluster.FailoverConfig{
 		Enabled:  true,
 		TryCount: 42,
-		Configs:  []cluster.Config{emptyClusterConfig()},
+		Configs:  []cluster.Config{allowedClusterConfig(), emptyClusterConfig()},
 	}
-	assert.NoError(t, c.Validate(allowedClusterConfig()))
+	config := hazelcast.Config{
+		Failover: c,
+	}
+	assert.NoError(t, config.Validate())
 }
 
 func TestFailoverConfigValidate_ConfigsWithUnallowedDifferences(t *testing.T) {
