@@ -332,9 +332,7 @@ func (d *DefaultCompactReader) ReadArrayOfFloat64(fieldName string) []float64 {
 func (d *DefaultCompactReader) ReadArrayOfString(fieldName string) []*string {
 	var values []*string
 	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfString, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			str := inp.ReadString()
 			values[i] = &str
 		}
@@ -347,9 +345,7 @@ func (d *DefaultCompactReader) ReadArrayOfString(fieldName string) []*string {
 func (d *DefaultCompactReader) ReadArrayOfDecimal(fieldName string) []*types.Decimal {
 	var values []*types.Decimal
 	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfDecimal, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			dec := ReadDecimal(inp)
 			values[i] = &dec
 		}
@@ -362,9 +358,7 @@ func (d *DefaultCompactReader) ReadArrayOfDecimal(fieldName string) []*types.Dec
 func (d *DefaultCompactReader) ReadArrayOfTime(fieldName string) []*types.LocalTime {
 	var values []*types.LocalTime
 	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfTime, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			lt := types.LocalTime(ReadTime(inp))
 			values[i] = &lt
 		}
@@ -377,9 +371,7 @@ func (d *DefaultCompactReader) ReadArrayOfTime(fieldName string) []*types.LocalT
 func (d *DefaultCompactReader) ReadArrayOfDate(fieldName string) []*types.LocalDate {
 	var values []*types.LocalDate
 	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfDate, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			ld := types.LocalDate(ReadDate(inp))
 			values[i] = &ld
 		}
@@ -392,9 +384,7 @@ func (d *DefaultCompactReader) ReadArrayOfDate(fieldName string) []*types.LocalD
 func (d *DefaultCompactReader) ReadArrayOfTimestamp(fieldName string) []*types.LocalDateTime {
 	var values []*types.LocalDateTime
 	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfTimestamp, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			ldt := types.LocalDateTime(ReadTimestamp(inp))
 			values[i] = &ldt
 		}
@@ -407,12 +397,10 @@ func (d *DefaultCompactReader) ReadArrayOfTimestamp(fieldName string) []*types.L
 func (d *DefaultCompactReader) ReadArrayOfTimestampWithTimezone(fieldName string) []*types.OffsetDateTime {
 	var values []*types.OffsetDateTime
 	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfTimestampWithTimezone, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			odt := types.OffsetDateTime(ReadTimestampWithTimezone(inp))
 			values[i] = &odt
-		}
+		}	
 	}, func(i int) {
 		values = make([]*types.OffsetDateTime, i)
 	})
@@ -569,9 +557,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableBoolean(fieldName string) []*b
 	case pubserialization.FieldKindArrayOfNullableBoolean:
 		var values []*bool
 		d.readArrayOfVariableSize(fieldName, fd.fieldKind, func(inp *ObjectDataInput, i int32, isNil bool) {
-			if isNil {
-				values[i] = nil
-			} else {
+			if !isNil {
 				b := inp.readBool()
 				values[i] = &b
 			}
@@ -587,9 +573,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableBoolean(fieldName string) []*b
 func (d *DefaultCompactReader) ReadArrayOfNullableInt8(fieldName string) []*int8 {
 	var values []*int8
 	d.readArrayOfNullable(fieldName, pubserialization.FieldKindArrayOfInt8, pubserialization.FieldKindArrayOfNullableInt8, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			b := inp.ReadSignedByte()
 			values[i] = &b
 		}
@@ -602,9 +586,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableInt8(fieldName string) []*int8
 func (d *DefaultCompactReader) ReadArrayOfNullableInt16(fieldName string) []*int16 {
 	var values []*int16
 	d.readArrayOfNullable(fieldName, pubserialization.FieldKindArrayOfInt16, pubserialization.FieldKindArrayOfNullableInt16, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			v := inp.ReadInt16()
 			values[i] = &v
 		}
@@ -617,9 +599,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableInt16(fieldName string) []*int
 func (d *DefaultCompactReader) ReadArrayOfNullableInt32(fieldName string) []*int32 {
 	var values []*int32
 	d.readArrayOfNullable(fieldName, pubserialization.FieldKindArrayOfInt32, pubserialization.FieldKindArrayOfNullableInt32, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			v := inp.ReadInt32()
 			values[i] = &v
 		}
@@ -632,9 +612,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableInt32(fieldName string) []*int
 func (d *DefaultCompactReader) ReadArrayOfNullableInt64(fieldName string) []*int64 {
 	var values []*int64
 	d.readArrayOfNullable(fieldName, pubserialization.FieldKindArrayOfInt64, pubserialization.FieldKindArrayOfNullableInt64, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			long := inp.ReadInt64()
 			values[i] = &long
 		}
@@ -647,9 +625,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableInt64(fieldName string) []*int
 func (d *DefaultCompactReader) ReadArrayOfNullableFloat32(fieldName string) []*float32 {
 	var values []*float32
 	d.readArrayOfNullable(fieldName, pubserialization.FieldKindArrayOfFloat32, pubserialization.FieldKindArrayOfNullableFloat32, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if !isNil {
 			f := inp.ReadFloat32()
 			values[i] = &f
 		}
@@ -662,9 +638,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableFloat32(fieldName string) []*f
 func (d *DefaultCompactReader) ReadArrayOfNullableFloat64(fieldName string) []*float64 {
 	var values []*float64
 	d.readArrayOfNullable(fieldName, pubserialization.FieldKindArrayOfFloat64, pubserialization.FieldKindArrayOfNullableFloat64, func(inp *ObjectDataInput, i int32, isNil bool) {
-		if isNil {
-			values[i] = nil
-		} else {
+		if! isNil {
 			f := inp.ReadFloat64()
 			values[i] = &f
 		}
