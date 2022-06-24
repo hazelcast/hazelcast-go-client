@@ -113,7 +113,7 @@ func (c *FailoverConfig) Validate(root Config) error {
 		}
 	}
 	// root SSL configuration is not respected if failover is enabled.
-	// check that root SSL configuration is not enabled if one of the failover configs is disabled.
+	// check that root SSL configuration is not enabled if one of the failover config has SSL disabled.
 	if root.Network.SSL.Enabled {
 		for _, cfg := range c.Configs {
 			if !cfg.Network.SSL.Enabled {
