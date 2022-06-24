@@ -50,7 +50,6 @@ const (
 	TypeJavaLocalTime      = -52
 	TypeJavaLocalDateTime  = -53
 	TypeJavaOffsetDateTime = -54
-	TypeCompact            = -55
 	TypeJSONSerialization  = -130
 	TypeGobSerialization   = -140
 )
