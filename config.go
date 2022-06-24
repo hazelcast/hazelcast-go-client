@@ -18,12 +18,14 @@ package hazelcast
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -33,6 +35,7 @@ import (
 type Config struct {
 	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
 	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
+	NearcacheConfigs    map[string]nearcache.Config       `json:",omitempty"`
 	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
 	Labels              []string                          `json:",omitempty"`
 	ClientName          string                            `json:",omitempty"`
@@ -69,6 +72,28 @@ func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHand
 	return id
 }
 
+// AddNearCacheConfig adds a near cache configuration.
+func (c *Config) AddNearCacheConfig(cfg nearcache.Config) {
+	c.ensureNearCacheConfigs()
+	c.NearcacheConfigs[cfg.Name] = cfg
+}
+
+// GetNearCacheConfig returns the first configuration that matches the given pattern.
+// Returns hzerrors.ErrInvalidConfiguration if the pattern matches more than one configuration.
+func (c *Config) GetNearCacheConfig(pattern string) (nearcache.Config, bool, error) {
+	c.ensureNearCacheConfigs()
+	nc, ok, err := c.lookupNearCacheByPattern(pattern)
+	if err != nil {
+		return nc, false, err
+	}
+	if ok {
+		return nc, true, nil
+	}
+	// config not found, return the default if it exists
+	nc, ok = c.NearcacheConfigs["default"]
+	return nc, ok, nil
+}
+
 // SetLabels sets the labels for the client.
 // These labels are displayed in the Hazelcast Management Center.
 func (c *Config) SetLabels(labels ...string) {
@@ -85,10 +110,12 @@ func (c *Config) Clone() Config {
 	for k, v := range c.FlakeIDGenerators {
 		newFlakeIDConfigs[k] = v
 	}
+	nccs := c.copyNearCacheConfig()
 	return Config{
 		ClientName:        c.ClientName,
 		Labels:            newLabels,
 		FlakeIDGenerators: newFlakeIDConfigs,
+		NearcacheConfigs:  nccs,
 		Cluster:           c.Cluster.Clone(),
 		Failover:          c.Failover.Clone(),
 		Serialization:     c.Serialization.Clone(),
@@ -124,6 +151,7 @@ func (c *Config) Validate() error {
 			return err
 		}
 	}
+	c.NearcacheConfigs = c.copyNearCacheConfig()
 	return nil
 }
 
@@ -145,6 +173,27 @@ func (c *Config) ensureFlakeIDGenerators() {
 	}
 }
 
+func (c *Config) ensureNearCacheConfigs() {
+	if c.NearcacheConfigs == nil {
+		c.NearcacheConfigs = map[string]nearcache.Config{}
+	}
+}
+
+func (c *Config) lookupNearCacheByPattern(itemName string) (nearcache.Config, bool, error) {
+	if candidate, ok := c.NearcacheConfigs[itemName]; ok {
+		return candidate, true, nil
+	}
+	key, err := matchingPointMatches(c.NearcacheConfigs, itemName)
+	if err != nil {
+		return nearcache.Config{}, false, err
+	}
+	if key == "" {
+		// not found
+		return nearcache.Config{}, false, nil
+	}
+	return c.NearcacheConfigs[key], true, nil
+}
+
 // AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
 func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchExpiry types.Duration) error {
 	if _, ok := c.FlakeIDGenerators[name]; ok {
@@ -157,6 +206,15 @@ func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchE
 	c.ensureFlakeIDGenerators()
 	c.FlakeIDGenerators[name] = idConfig
 	return nil
+}
+
+func (c Config) copyNearCacheConfig() map[string]nearcache.Config {
+	c.ensureNearCacheConfigs()
+	configs := make(map[string]nearcache.Config, len(c.NearcacheConfigs))
+	for k, v := range c.NearcacheConfigs {
+		configs[k] = v.Clone()
+	}
+	return configs
 }
 
 // StatsConfig contains configuration for Management Center.
@@ -204,4 +262,44 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func matchingPointMatches(patterns map[string]nearcache.Config, itemName string) (string, error) {
+	// port of: com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher#matches
+	var candidate, duplicate string
+	var hasDup bool
+	last := -1
+	for p := range patterns {
+		mp := getMatchingPoint(p, itemName)
+		if mp > -1 && mp >= last {
+			hasDup = mp == last
+			if hasDup {
+				duplicate = candidate
+			}
+			last = mp
+			candidate = p
+		}
+	}
+	if hasDup {
+		msg := fmt.Sprintf(`ambiguous configuration for item: "%s": "%s" vs "%s"`, itemName, candidate, duplicate)
+		return "", hzerrors.NewInvalidConfigurationError(msg, nil)
+	}
+	return candidate, nil
+}
+
+func getMatchingPoint(pattern, itemName string) int {
+	// port of: com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher#getMatchingPoint
+	index := strings.Index(pattern, "*")
+	if index == -1 {
+		return -1
+	}
+	first := pattern[:index]
+	if !strings.HasPrefix(itemName, first) {
+		return -1
+	}
+	second := pattern[index+1:]
+	if !strings.HasSuffix(itemName, second) {
+		return -1
+	}
+	return len(first) + len(second)
 }
