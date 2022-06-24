@@ -37,7 +37,6 @@ type Service struct {
 	portableSerializer   *PortableSerializer
 	identifiedSerializer *IdentifiedDataSerializableSerializer
 	customSerializers    map[reflect.Type]pubserialization.Serializer
-	compactSerializer    *CompactStreamSerializer
 }
 
 func NewService(config *pubserialization.Config) (*Service, error) {
@@ -46,7 +45,6 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 		SerializationConfig: config,
 		registry:            make(map[int32]pubserialization.Serializer),
 		customSerializers:   config.CustomSerializers(),
-		compactSerializer:   NewCompactStreamSerializer(config.Compact),
 	}
 	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
 	if err != nil {
@@ -151,9 +149,6 @@ func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Seri
 	if serializer != (pubserialization.Serializer)(nil) {
 		return serializer
 	}
-	if s.compactSerializer.IsRegisteredAsCompact(reflect.TypeOf(obj)) {
-		return s.compactSerializer
-	}
 	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
 		return s.identifiedSerializer
 	}
@@ -167,8 +162,6 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 	switch typeID {
 	case TypeNil:
 		return nilSerializer
-	case TypeCompact:
-		return s.compactSerializer
 	case TypePortable:
 		return s.portableSerializer
 	case TypeDataSerializable:
