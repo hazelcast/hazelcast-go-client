@@ -112,7 +112,7 @@ func tryConnectAddressTest(checkedAddresses []CheckedAddressHelper, inputAddress
 	}
 	m := &ConnectionManager{}
 	nc := &pubcluster.NetworkConfig{PortRange: portRange}
-	mf := func(ctx context.Context, m *ConnectionManager, currAddr pubcluster.Address, networkCfg *pubcluster.NetworkConfig) (pubcluster.Address, error) {
+	mf := func(_ context.Context, _ *ConnectionManager, currAddr pubcluster.Address, _ *pubcluster.NetworkConfig) (pubcluster.Address, error) {
 		connMemberCounter++
 		for _, checkedAddr := range checkedAddresses {
 			if currAddr == checkedAddr.address {

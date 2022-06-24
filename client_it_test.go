@@ -561,13 +561,11 @@ func TestClientFailover_EECluster(t *testing.T) {
 	defer cls1.Shutdown()
 	cls2 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-2", clsBase), 16701, it.MemberCount())
 	defer cls2.Shutdown()
-	//config := cls.DefaultConfig()
 	config := hz.Config{}
 	if it.TraceLoggingEnabled() {
 		config.Logger.Level = logger.TraceLevel
 	}
 	config.Failover.Enabled = true
-	//config.Failover.TryCount = 2
 	cfg1 := cls1.DefaultConfig()
 	cfg1.Cluster.Name = "not-this-cluster's-name"
 	cfg1.Cluster.ConnectionStrategy.Timeout = types.Duration(10 * time.Second)

@@ -464,11 +464,10 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 
 func (m *ConnectionManager) ensureConnection(ctx context.Context, addr pubcluster.Address, networkCfg *pubcluster.NetworkConfig) (*Connection, error) {
 	conn := m.createDefaultConnection()
-	err := conn.start(networkCfg, addr)
-	if err != nil {
+	if err := conn.start(networkCfg, addr); err != nil {
 		return nil, ihzerrors.NewTargetDisconnectedError(err.Error(), err)
 	}
-	if err = m.authenticate(ctx, conn); err != nil {
+	if err := m.authenticate(ctx, conn); err != nil {
 		conn.close(nil)
 		return nil, err
 	}
