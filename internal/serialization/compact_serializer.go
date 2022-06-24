@@ -88,7 +88,7 @@ func (c CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
 func (c CompactStreamSerializer) getOrReadSchema(input pubserialization.DataInput) Schema {
 	schemaId := input.ReadInt64()
 	schema, ok := c.ss.Get(schemaId)
-	if ok {
+	if !ok {
 		panic(hzerrors.NewSerializationError(fmt.Sprintf("the schema cannot be found with id: %d", schemaId), nil))
 	}
 	return schema

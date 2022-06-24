@@ -45,8 +45,8 @@ type OffsetReader interface {
 
 type ByteOffsetReader struct{}
 
-func (ByteOffsetReader) getOffset(inp *ObjectDataInput, variableOffsetsPos int32, index int32) int32 {
-	offset := inp.ReadByteAtPosition(variableOffsetsPos + index)
+func (ByteOffsetReader) getOffset(input *ObjectDataInput, variableOffsetsPos, index int32) int32 {
+	offset := input.ReadByteAtPosition(variableOffsetsPos + index)
 	if offset == 0xFF {
 		return nullOffset
 	}
@@ -55,14 +55,14 @@ func (ByteOffsetReader) getOffset(inp *ObjectDataInput, variableOffsetsPos int32
 
 type ShortOffsetReader struct{}
 
-func (ShortOffsetReader) getOffset(inp *ObjectDataInput, variableOffsetsPos int32, index int32) int32 {
+func (ShortOffsetReader) getOffset(inp *ObjectDataInput, variableOffsetsPos, index int32) int32 {
 	offset := inp.ReadInt16AtPosition(variableOffsetsPos + (index * Int16SizeInBytes))
 	return int32(offset)
 }
 
 type IntOffsetReader struct{}
 
-func (IntOffsetReader) getOffset(inp *ObjectDataInput, variableOffsetsPos int32, index int32) int32 {
+func (IntOffsetReader) getOffset(inp *ObjectDataInput, variableOffsetsPos, index int32) int32 {
 	return inp.ReadInt32AtPosition(variableOffsetsPos + (index * Int32SizeInBytes))
 }
 
