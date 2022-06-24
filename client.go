@@ -18,6 +18,7 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -394,6 +395,7 @@ func (c *Client) createComponents(config *Config) {
 	}
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
 }
 
 func (c *Client) getNearCacheManager(service string) nearCacheManager {
@@ -406,9 +408,20 @@ func (c *Client) getNearCacheManager(service string) nearCacheManager {
 	c.nearCacheMgrsMu.Lock()
 	mgr, ok = c.nearCacheMgrs[service]
 	if !ok {
-		mgr = newNearCacheManager(c.ic.SerializationService)
+		mgr = newNearCacheManager(c.ic.SerializationService, c.ic.Logger)
 		c.nearCacheMgrs[service] = mgr
 	}
 	c.nearCacheMgrsMu.Unlock()
 	return mgr
+}
+
+func (c *Client) stopNearCacheManagers(ctx context.Context) {
+	c.nearCacheMgrsMu.RLock()
+	for s, m := range c.nearCacheMgrs {
+		c.ic.Logger.Debug(func() string {
+			return fmt.Sprintf("stopping near cache manager for %s", s)
+		})
+		m.Stop()
+	}
+	c.nearCacheMgrsMu.RUnlock()
 }

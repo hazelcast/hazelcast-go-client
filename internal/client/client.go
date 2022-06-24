@@ -86,6 +86,8 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+type ShutdownHandler func(ctx context.Context)
+
 type Client struct {
 	InvocationHandler    invocation.Handler
 	Logger               ilogger.LogAdaptor
@@ -100,6 +102,7 @@ type Client struct {
 	statsService         *stats.Service
 	heartbeatService     *icluster.HeartbeatService
 	clusterConfig        *cluster.Config
+	shutdownHandlers     []ShutdownHandler
 	name                 string
 	state                int32
 }
@@ -128,6 +131,11 @@ func New(config *Config) (*Client, error) {
 	}
 	c.createComponents(config)
 	return c, nil
+}
+
+func (c *Client) AddShutdownHandler(f ShutdownHandler) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.shutdownHandlers = append(c.shutdownHandlers, f)
 }
 
 // Name returns client's name.
@@ -175,6 +183,9 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	c.ConnectionManager.Stop()
 	if c.statsService != nil {
 		c.statsService.Stop()
+	}
+	for _, h := range c.shutdownHandlers {
+		h(ctx)
 	}
 	atomic.StoreInt32(&c.state, Stopped)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShutDown))

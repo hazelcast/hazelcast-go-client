@@ -35,7 +35,7 @@ import (
 
 const (
 	nearCacheDefaultRecordCount = 1000
-	maxCacheSize                = 1000
+	maxCacheSize                = 1
 	maxTTLSeconds               = 2
 	maxIdleSeconds              = 1
 )
@@ -128,7 +128,7 @@ func TestMapRemove_WithNearCache(t *testing.T) {
 }
 
 func TestNearCacheTTLExpiration(t *testing.T) {
-	t.Skipf("skipping temporarily")
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheTTLExpiration
 	tcx := it.MapTestContext{
 		T: t,
 		ConfigCallback: func(tcx it.MapTestContext) {
@@ -445,10 +445,11 @@ func newNearCacheMapTestContext(t *testing.T, fmt nearcache.InMemoryFormat, inva
 	}
 }
 
-func assertNearCacheExpiration(tcx it.MapTestContext, size int64) {
+func assertNearCacheExpiration(tcx it.MapTestContext, size int32) {
 	t := tcx.T
 	m := tcx.M
 	it.Eventually(t, func() bool {
+		time.Sleep(1 * time.Second)
 		nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
 		stats := m.LocalMapStats().NearCacheStats
 		// make assertions over near cache's backing map size.
@@ -456,19 +457,19 @@ func assertNearCacheExpiration(tcx it.MapTestContext, size int64) {
 			return false
 		}
 		// make assertions over near cache stats.
-		if !assert.Equal(t, 0, stats.OwnedEntryCount) {
-			return false
+		if !assert.Equal(t, int64(0), stats.OwnedEntryCount) {
+			t.FailNow()
 		}
+		// the assertions below fails the test, since at this point the updates should be complete.
 		if !assert.Equal(t, int64(0), stats.OwnedEntryMemoryCost) {
-			return false
+			t.FailNow()
 		}
-		if !assert.Equal(t, size, stats.Expirations) {
-			return false
+		if !assert.Equal(t, int64(size), stats.Expirations) {
+			t.FailNow()
 		}
-		if !assert.Equal(t, 0, stats.Evictions) {
-			return false
+		if !assert.Equal(t, int64(0), stats.Evictions) {
+			t.FailNow()
 		}
-		time.Sleep(100 * time.Millisecond)
 		return true
 	})
 }
