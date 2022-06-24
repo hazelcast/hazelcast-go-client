@@ -66,11 +66,11 @@ func (p EvictionPolicy) String() string {
 type Stats struct {
 	// CreationTime is the time the Near Cache was initialized.
 	CreationTime time.Time
-	// LastPersistenceTime is the time of the last completed persistence task.
+	// LastPersistenceTime is the time of the last completed persistence task when the pre-load feature is enabled.
 	LastPersistenceTime time.Time
-	// LastPersistenceFailure is the error message of the last completed persistence task.
+	// LastPersistenceFailure is the error message of the last completed persistence task when the pre-load feature is enabled.
 	LastPersistenceFailure string
-	// LastPersistenceKeyCount is the number of keys saved in the last persistence task.
+	// LastPersistenceKeyCount is the number of keys saved in the last persistence task when the pre-load feature is enabled.
 	LastPersistenceKeyCount int64
 	// Misses is the number of times an entry was not found in the Near Cache.
 	Misses int64
@@ -82,11 +82,11 @@ type Stats struct {
 	Invalidations int64
 	// LastPersistenceWrittenBytes is number of bytes written in the last persistence task.
 	LastPersistenceWrittenBytes int64
-	// PersistenceCount is the number of completed persistence tasks.
+	// PersistenceCount is the number of completed persistence tasks when the pre-load feature is enabled.
 	PersistenceCount int64
 	// Hits is the number of times an entry was found in the Near Cache.
 	Hits int64
-	// LastPersistenceDuration is the duration of the last completed persistence task.
+	// LastPersistenceDuration is the duration of the last completed persistence task when the pre-load feature is enabled.
 	LastPersistenceDuration time.Duration
 	// Expirations is the number of expirations due to TTL and max idle constraints.
 	Expirations int64
