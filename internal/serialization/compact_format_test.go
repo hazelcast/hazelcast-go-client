@@ -42,9 +42,9 @@ func TestBasic(t *testing.T) {
 }
 
 /*
-todo: Write the following tests after schema distribution is implemented
+ todo: Write the following tests after schema distribution is implemented
 
-TestBasicQuery
-TestJoinedMemberQuery
-TestClusterRestart
+ TestBasicQuery
+ TestJoinedMemberQuery
+ TestClusterRestart
 */

@@ -406,7 +406,7 @@ func getLoggerLevel() logger.Level {
 	if TraceLoggingEnabled() {
 		return logger.TraceLevel
 	}
-	return logger.WarnLevel
+	return logger.InfoLevel
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {

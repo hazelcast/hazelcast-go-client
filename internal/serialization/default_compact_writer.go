@@ -29,9 +29,9 @@ import (
 
 type DefaultCompactWriter struct {
 	out          *PositionalObjectDataOutput
-	serializer   CompactStreamSerializer
 	fieldOffsets []int32
 	schema       Schema
+	serializer   CompactStreamSerializer
 	dataStartPos int32
 }
 
@@ -361,9 +361,7 @@ func (r *DefaultCompactWriter) writeArrayOfVariableSize(fieldName string, fieldK
 		r.setPositionAsNull(fieldName, fieldKind)
 		return
 	}
-
 	value := reflect.ValueOf(values)
-
 	r.setPosition(fieldName, fieldKind)
 	dataLengthOffset := r.out.position
 	r.out.WriteZeroBytes(Int32SizeInBytes)

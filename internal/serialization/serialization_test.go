@@ -19,10 +19,8 @@ package serialization_test
 import (
 	"bytes"
 	"encoding/gob"
-	"math/big"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +28,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -362,214 +359,71 @@ func mustData(value interface{}, err error) iserialization.Data {
 	return value.(iserialization.Data)
 }
 
+type student struct {
+	Name *string
+	Age  int32
+}
+
+type studentCompactSerializer struct{}
+
+func (studentCompactSerializer) Type() reflect.Type {
+	return reflect.TypeOf(student{})
+}
+
+func (s studentCompactSerializer) TypeName() string {
+	return "student"
+}
+
+func (s studentCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+	return student{
+		Age:  reader.ReadInt32("age"),
+		Name: reader.ReadString("name"),
+	}
+}
+
+func (s studentCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(student)
+	if !ok {
+		panic("not a student")
+	}
+	writer.WriteInt32("age", c.Age)
+	writer.WriteString("name", c.Name)
+}
+
 func TestWithExplicitSerializer(t *testing.T) {
-	compactConfig := serialization.CompactConfig{}
-	serializer := EmployeeDTOCompactSerializer{}
-	compactConfig.SetSerializers(serializer)
+	compactSerializationConfig := serialization.CompactConfig{}
+	serializer := studentCompactSerializer{}
+	compactSerializationConfig.SetSerializers(serializer)
 	c := &serialization.Config{
-		Compact: compactConfig,
+		Compact: compactSerializationConfig,
 	}
 	service := mustSerializationService(iserialization.NewService(c))
-	obj := EmployeeDTO{age: 30, id: 102310312}
-	data, err := service.ToData(obj)
+	name := "S"
+	obj := student{Age: 12, Name: &name}
+	data := it.MustValue(service.ToData(obj)).(iserialization.Data)
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ret, err := service.ToObject(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ret := it.MustValue(service.ToObject(data))
 	if !reflect.DeepEqual(obj, ret) {
 		t.Error("compact serialization failed")
 	}
 }
 
 func TestAllTypesWithCustomSerializer(t *testing.T) {
-	compactConfig := serialization.CompactConfig{}
-	compactConfig.SetSerializers(MainDTOSerializer{}, InnerDTOSerializer{}, NamedDTOSerializer{})
+	compactSerializationConfig := serialization.CompactConfig{}
+	serializer := MainDTOSerializer{}
+	compactSerializationConfig.SetSerializers(serializer)
 	c := &serialization.Config{
-		Compact: compactConfig,
+		Compact: compactSerializationConfig,
 	}
 	service := mustSerializationService(iserialization.NewService(c))
 	mainDTO := NewMainDTO()
-	data, err := service.ToData(mainDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
+	data := it.MustValue(service.ToData(mainDTO)).(iserialization.Data)
 	// Ensure that data is serialized as compact
 	assert.EqualValues(t, data.Type(), iserialization.TypeCompact)
-	ret, err := service.ToObject(data)
-	returnedMainDTO := ret.(MainDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, mainDTO.b, returnedMainDTO.b)
-	assert.Equal(t, mainDTO.boolean, returnedMainDTO.boolean)
-	assert.Equal(t, mainDTO.s, returnedMainDTO.s)
-	assert.Equal(t, mainDTO.i, returnedMainDTO.i)
-	assert.Equal(t, mainDTO.l, returnedMainDTO.l)
-	assert.Equal(t, mainDTO.f, returnedMainDTO.f)
-	assert.Equal(t, mainDTO.d, returnedMainDTO.d)
-	assert.Equal(t, mainDTO.str, returnedMainDTO.str)
-	assert.Equal(t, mainDTO.p.bools, returnedMainDTO.p.bools)
-	assert.Equal(t, mainDTO.p.bytes, returnedMainDTO.p.bytes)
-	assert.Equal(t, mainDTO.p.shorts, returnedMainDTO.p.shorts)
-	assert.Equal(t, mainDTO.p.ints, returnedMainDTO.p.ints)
-	assert.Equal(t, mainDTO.p.longs, returnedMainDTO.p.longs)
-	assert.Equal(t, mainDTO.p.floats, returnedMainDTO.p.floats)
-	assert.Equal(t, mainDTO.p.doubles, returnedMainDTO.p.doubles)
-	assert.Equal(t, mainDTO.p.strings, returnedMainDTO.p.strings)
-	assert.Equal(t, mainDTO.p.nn, returnedMainDTO.p.nn)
-	assert.Equal(t, mainDTO.p.bigDecimals, returnedMainDTO.p.bigDecimals)
-	assert.Equal(t, mainDTO.p.localTimes, returnedMainDTO.p.localTimes)
-	assert.Equal(t, mainDTO.p.localDates, returnedMainDTO.p.localDates)
-	assert.Equal(t, mainDTO.p.localDateTimes, returnedMainDTO.p.localDateTimes)
-	if len(mainDTO.p.offsetDateTimes) != len(returnedMainDTO.p.offsetDateTimes) {
-		t.Error("innerDTO.offsetDateTimes is not equal")
-	}
-
-	for i := 0; i < len(mainDTO.p.offsetDateTimes); i++ {
-		if mainDTO.p.offsetDateTimes[i] == nil && returnedMainDTO.p.offsetDateTimes[i] == nil {
-			continue
-		}
-		odt1 := time.Time(*mainDTO.p.offsetDateTimes[i])
-		odt2 := time.Time(*returnedMainDTO.p.offsetDateTimes[i])
-
-		if !odt1.Equal(odt2) {
-			t.Errorf("One of offsetDateTimes in innerDTO.offsetDateTimes is not equal, %s != %s", odt1, odt2)
-		}
-	}
-	assert.Equal(t, mainDTO.p.nullableBools, returnedMainDTO.p.nullableBools)
-	assert.Equal(t, mainDTO.p.nullableBytes, returnedMainDTO.p.nullableBytes)
-	assert.Equal(t, mainDTO.p.nullableShorts, returnedMainDTO.p.nullableShorts)
-	assert.Equal(t, mainDTO.p.nullableIntegers, returnedMainDTO.p.nullableIntegers)
-	assert.Equal(t, mainDTO.p.nullableLongs, returnedMainDTO.p.nullableLongs)
-	assert.Equal(t, mainDTO.p.nullableFloats, returnedMainDTO.p.nullableFloats)
-	assert.Equal(t, mainDTO.p.nullableDoubles, returnedMainDTO.p.nullableDoubles)
-	assert.Equal(t, mainDTO.bigDecimal, returnedMainDTO.bigDecimal)
-	assert.Equal(t, mainDTO.localTime, returnedMainDTO.localTime)
-	assert.Equal(t, mainDTO.localDate, returnedMainDTO.localDate)
-	assert.Equal(t, mainDTO.localDateTime, returnedMainDTO.localDateTime)
-	offsetDateTimesEqual := false
-	if mainDTO.offsetDateTime == nil && returnedMainDTO.offsetDateTime == nil {
-		offsetDateTimesEqual = true
-	} else {
-		offsetDateTimesEqual = time.Time(*mainDTO.offsetDateTime).Equal(time.Time(*returnedMainDTO.offsetDateTime))
-	}
-	assert.True(t, offsetDateTimesEqual, "MainDTO.offsetDateTimes are not equal")
-	assert.Equal(t, mainDTO.nullableB, returnedMainDTO.nullableB)
-	assert.Equal(t, mainDTO.nullableBool, returnedMainDTO.nullableBool)
-	assert.Equal(t, mainDTO.nullableS, returnedMainDTO.nullableS)
-	assert.Equal(t, mainDTO.nullableI, returnedMainDTO.nullableI)
-	assert.Equal(t, mainDTO.nullableL, returnedMainDTO.nullableL)
-	assert.Equal(t, mainDTO.nullableF, returnedMainDTO.nullableF)
-	assert.Equal(t, mainDTO.nullableD, returnedMainDTO.nullableD)
-}
-
-func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
-	compactConfig := serialization.CompactConfig{}
-	compactConfig.SetSerializers(NoWriteMainDTOSerializer{}, NoWriteInnerDTOSerializer{}, NamedDTOSerializer{})
-	c := &serialization.Config{
-		Compact: compactConfig,
-	}
-	service := mustSerializationService(iserialization.NewService(c))
-	mainDTO := NewMainDTO()
-	data, err := service.ToData(mainDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ret, err := service.ToObject(data)
-	returnedMainDTO := ret.(MainDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.EqualValues(t, 1, returnedMainDTO.b)
-	assert.False(t, returnedMainDTO.boolean)
-	assert.EqualValues(t, 1, returnedMainDTO.s)
-	assert.EqualValues(t, 1, returnedMainDTO.i)
-	assert.EqualValues(t, 1, returnedMainDTO.l)
-	assert.EqualValues(t, 1, returnedMainDTO.f)
-	assert.EqualValues(t, 1, returnedMainDTO.d)
-	assert.Equal(t, "NA", *returnedMainDTO.str)
-	assert.Equal(t, types.NewDecimal(big.NewInt(1), 0), *returnedMainDTO.bigDecimal)
-	assert.True(t, time.Date(0, 0, 0, 1, 1, 1, 0, time.Local).Equal(time.Time(*returnedMainDTO.localTime)))
-	assert.True(t, time.Date(1, 1, 1, 0, 0, 0, 0, time.Local).Equal(time.Time(*returnedMainDTO.localDate)))
-	assert.True(t, time.Date(1, 1, 1, 1, 1, 1, 0, time.Local).Equal(time.Time(*returnedMainDTO.localDateTime)))
-	assert.True(t, time.Date(1, 1, 1, 1, 1, 1, 1, time.FixedZone("", 3600)).Equal(time.Time(*returnedMainDTO.offsetDateTime)))
-	assert.EqualValues(t, 1, *returnedMainDTO.nullableB)
-	assert.False(t, *returnedMainDTO.nullableBool)
-	assert.EqualValues(t, 1, *returnedMainDTO.nullableS)
-	assert.EqualValues(t, 1, *returnedMainDTO.nullableI)
-	assert.EqualValues(t, 1, *returnedMainDTO.nullableL)
-	assert.EqualValues(t, 1, *returnedMainDTO.nullableF)
-	assert.EqualValues(t, 1, *returnedMainDTO.nullableD)
-	// Test InnerDTO
-	innerDTO := NewInnerDTO()
-	data, err = service.ToData(innerDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ret, err = service.ToObject(data)
-	returnedInnerDTO := ret.(InnerDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, returnedInnerDTO.bools, []bool{})
-	assert.Equal(t, returnedInnerDTO.bytes, []int8{})
-	assert.Equal(t, returnedInnerDTO.shorts, []int16{})
-	assert.Equal(t, returnedInnerDTO.ints, []int32{})
-	assert.Equal(t, returnedInnerDTO.longs, []int64{})
-	assert.Equal(t, returnedInnerDTO.floats, []float32{})
-	assert.Equal(t, returnedInnerDTO.doubles, []float64{})
-	assert.Equal(t, returnedInnerDTO.strings, []*string{})
-	assert.Equal(t, returnedInnerDTO.nn, []*NamedDTO{})
-	assert.Equal(t, returnedInnerDTO.bigDecimals, []*types.Decimal{})
-	assert.Equal(t, returnedInnerDTO.localTimes, []*types.LocalTime{})
-	assert.Equal(t, returnedInnerDTO.localDates, []*types.LocalDate{})
-	assert.Equal(t, returnedInnerDTO.localDateTimes, []*types.LocalDateTime{})
-	assert.Equal(t, returnedInnerDTO.offsetDateTimes, []*types.OffsetDateTime{})
-	assert.Equal(t, returnedInnerDTO.nullableBools, []*bool{})
-	assert.Equal(t, returnedInnerDTO.nullableBytes, []*int8{})
-	assert.Equal(t, returnedInnerDTO.nullableShorts, []*int16{})
-	assert.Equal(t, returnedInnerDTO.nullableIntegers, []*int32{})
-	assert.Equal(t, returnedInnerDTO.nullableLongs, []*int64{})
-	assert.Equal(t, returnedInnerDTO.nullableFloats, []*float32{})
-	assert.Equal(t, returnedInnerDTO.nullableDoubles, []*float64{})
-}
-
-func TestBits(t *testing.T) {
-	compactConfig := serialization.CompactConfig{}
-	compactConfig.SetSerializers(BitsDTOSerializer{})
-	c := &serialization.Config{
-		Compact: compactConfig,
-	}
-	service := mustSerializationService(iserialization.NewService(c))
-	service2 := mustSerializationService(iserialization.NewService(c))
-	booleans := make([]bool, 8)
-	booleans[0] = true
-	booleans[4] = true
-	bitsDTO := BitsDTO{a: true, h: true, id: 121, booleans: booleans}
-	data, err := service.ToData(bitsDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// hash(4) + typeid(4) + schemaId(8) + (4 byte length) + (1 bytes for 8 bits) + (4 bytes for int)
-	// (4 byte length of byte array) + (1 byte for booleans array of 8 bits) + (1 byte offset bytes)
-	assert.Equal(t, 31, len(data.ToByteArray()))
-	// To create schema in service2
-	_, err = service2.ToData(BitsDTO{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ret, err := service2.ToObject(data)
-	returnedBitsDTO := ret.(BitsDTO)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(returnedBitsDTO, bitsDTO) {
-		t.Fatal("BitsDTOs are not equal")
+	ret := it.MustValue((service.ToObject(data)))
+	if !reflect.DeepEqual(mainDTO, ret) {
+		t.Error("compact serialization failed")
 	}
 }
 

@@ -55,9 +55,16 @@ type InnerDTO struct {
 }
 
 type BitsDTO struct {
-	a, b, c, d, e, f, g, h bool
-	id                     int32
-	booleans               []bool
+	booleans []bool
+	id       int32
+	a        bool
+	b        bool
+	e        bool
+	f        bool
+	g        bool
+	h        bool
+	c        bool
+	d        bool
 }
 
 type BitsDTOSerializer struct {
@@ -82,7 +89,7 @@ func (BitsDTOSerializer) Read(reader serialization.CompactReader) interface{} {
 	h := reader.ReadBoolean("h")
 	id := reader.ReadInt32("id")
 	booleans := reader.ReadArrayOfBoolean("booleans")
-	return BitsDTO{a, b, c, d, e, f, g, h, id, booleans}
+	return BitsDTO{a: a, b: b, c: c, d: d, e: e, f: f, g: g, h: h, id: id, booleans: booleans}
 }
 
 func (BitsDTOSerializer) Write(writer serialization.CompactWriter, value interface{}) {
@@ -103,27 +110,27 @@ func (BitsDTOSerializer) Write(writer serialization.CompactWriter, value interfa
 }
 
 type MainDTO struct {
-	b              int8
-	boolean        bool
-	s              int16
-	i              int32
-	l              int64
-	f              float32
-	d              float64
+	offsetDateTime *types.OffsetDateTime
+	nullableF      *float32
+	nullableL      *int64
+	nullableI      *int32
+	nullableS      *int16
+	nullableBool   *bool
+	nullableB      *int8
 	str            *string
 	p              *InnerDTO
 	bigDecimal     *types.Decimal
 	localTime      *types.LocalTime
 	localDate      *types.LocalDate
 	localDateTime  *types.LocalDateTime
-	offsetDateTime *types.OffsetDateTime
-	nullableB      *int8
-	nullableBool   *bool
-	nullableS      *int16
-	nullableI      *int32
-	nullableL      *int64
-	nullableF      *float32
 	nullableD      *float64
+	d              float64
+	l              int64
+	f              float32
+	i              int32
+	s              int16
+	boolean        bool
+	b              int8
 }
 
 func NewInnerDTO() InnerDTO {
@@ -581,20 +588,20 @@ func (MainDTOSerializer) Write(writer serialization.CompactWriter, value interfa
 }
 
 type CompactTest struct {
-	boolean  bool
-	b        int8
-	short    int16
-	i        int32
+	booleans []bool
+	floats   []float32
+	longs    []int64
+	ints     []int32
+	shorts   []int16
+	bytes    []int8
+	doubles  []float64
+	double   float64
 	long     int64
 	float    float32
-	double   float64
-	booleans []bool
-	bytes    []int8
-	shorts   []int16
-	ints     []int32
-	longs    []int64
-	floats   []float32
-	doubles  []float64
+	i        int32
+	short    int16
+	b        int8
+	boolean  bool
 }
 
 func NewCompactTestObj() CompactTest {
@@ -952,11 +959,11 @@ func (NamedDTOSerializer) Write(writer serialization.CompactWriter, value interf
 
 type EmployerDTO struct {
 	name           *string
-	zcode          int32
-	ids            []int64
 	hiringStatus   *string
 	singleEmployee *EmployeeDTO
+	ids            []int64
 	otherEmployees []*EmployeeDTO
+	zcode          int32
 }
 
 type EmployerDTOCompactSerializer struct{}
