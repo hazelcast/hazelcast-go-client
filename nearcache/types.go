@@ -80,7 +80,7 @@ type Stats struct {
 	OwnedEntryMemoryCost int64
 	// Invalidations is the number of successful invalidations.
 	Invalidations int64
-	// LastPersistenceWrittenBytes is number of bytes written in the last persistence task.
+	// LastPersistenceWrittenBytes is number of bytes written in the last persistence task when the pre-load feature is enabled.
 	LastPersistenceWrittenBytes int64
 	// PersistenceCount is the number of completed persistence tasks when the pre-load feature is enabled.
 	PersistenceCount int64
