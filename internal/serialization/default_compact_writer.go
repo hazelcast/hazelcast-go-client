@@ -29,9 +29,9 @@ import (
 
 type DefaultCompactWriter struct {
 	out          *PositionalObjectDataOutput
-	serializer   CompactStreamSerializer
 	fieldOffsets []int32
 	schema       Schema
+	serializer   CompactStreamSerializer
 	dataStartPos int32
 }
 

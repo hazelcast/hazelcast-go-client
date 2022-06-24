@@ -69,8 +69,8 @@ func (IntOffsetReader) getOffset(inp *ObjectDataInput, variableOffsetsPos, index
 type DefaultCompactReader struct {
 	offsetReader OffsetReader
 	in           *ObjectDataInput
-	serializer   CompactStreamSerializer
 	schema       Schema
+	serializer   CompactStreamSerializer
 	startPos     int32
 	offsetsPos   int32
 }
