@@ -21,7 +21,6 @@ import (
 	"reflect"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
