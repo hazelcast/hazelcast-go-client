@@ -468,6 +468,21 @@ func TestAllTypesWithCustomSerializer(t *testing.T) {
 	assert.Equal(t, mainDTO.nullableD, returnedMainDTO.nullableD)
 }
 
+func TestMissingNestedCompactSerializerPanicsNoSerializerFound(t *testing.T) {
+	compactConfig := serialization.CompactConfig{}
+	compactConfig.SetSerializers(MainDTOSerializer{}, NamedDTOSerializer{})
+	c := &serialization.Config{
+		Compact: compactConfig,
+	}
+	service := mustSerializationService(iserialization.NewService(c))
+	mainDTO := NewMainDTO()
+	_, err := service.ToData(mainDTO)
+	if err == nil {
+		t.Fatal("Expected ToData to panic but it didnot")
+	}
+	assert.Contains(t, err.Error(), "no compact serializer found for type")
+}
+
 func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	compactConfig := serialization.CompactConfig{}
 	compactConfig.SetSerializers(NoWriteMainDTOSerializer{}, NoWriteInnerDTOSerializer{}, NamedDTOSerializer{})

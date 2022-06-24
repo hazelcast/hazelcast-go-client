@@ -65,7 +65,10 @@ func (c CompactStreamSerializer) Read(input pubserialization.DataInput) interfac
 
 func (c CompactStreamSerializer) Write(output pubserialization.DataOutput, object interface{}) {
 	t := reflect.TypeOf(object)
-	serializer := c.typeToSerializer[t]
+	serializer, ok := c.typeToSerializer[t]
+	if !ok {
+		panic(fmt.Sprintf("no compact serializer found for type: %s", t.Name()))
+	}
 	schema, ok := c.typeToSchema[t]
 	if !ok {
 		sw := NewSchemaWriter(serializer.TypeName())
