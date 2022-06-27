@@ -408,7 +408,7 @@ func (c *Client) getNearCacheManager(service string) *nearCacheManager {
 	c.nearCacheMgrsMu.Lock()
 	mgr, ok = c.nearCacheMgrs[service]
 	if !ok {
-		mgr = newNearCacheManager(c.ic)
+		mgr = newNearCacheManager(c.ic, c.cfg)
 		c.nearCacheMgrs[service] = mgr
 	}
 	c.nearCacheMgrsMu.Unlock()

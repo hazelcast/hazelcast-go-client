@@ -277,7 +277,7 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 
 type InvalidationConfig struct {
 	maxToleratedMissCount *int
-	// InvalidationReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
+	// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
 	// Configuring a value of zero seconds disables the reconciliation task.
 	reconciliationIntervalSeconds *int
 	err                           error
@@ -298,30 +298,30 @@ func (pc *InvalidationConfig) Validate() error {
 	return nil
 }
 
-func (pc *InvalidationConfig) SetInvalidationMaxToleratedMissCount(count int) {
+func (pc *InvalidationConfig) SetMaxToleratedMissCount(count int) {
 	if err := check.NonNegativeInt32Config(count); err != nil {
-		pc.err = fmt.Errorf("InvalidationMaxToleratedMissCount: %w", err)
+		pc.err = fmt.Errorf("MaxToleratedMissCount: %w", err)
 		return
 	}
 	pc.maxToleratedMissCount = &count
 }
 
-func (pc InvalidationConfig) InvalidationMaxToleratedMissCount() int {
+func (pc InvalidationConfig) MaxToleratedMissCount() int {
 	if pc.maxToleratedMissCount == nil {
 		return defaultMaxToleratedMissCount
 	}
 	return *pc.maxToleratedMissCount
 }
 
-func (pc *InvalidationConfig) SetInvalidationReconciliationIntervalSeconds(seconds int) {
+func (pc *InvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	if err := check.NonNegativeInt32Config(seconds); err != nil {
-		pc.err = fmt.Errorf("InvalidationReconciliationIntervalSeconds: %w", err)
+		pc.err = fmt.Errorf("ReconciliationIntervalSeconds: %w", err)
 		return
 	}
 	pc.reconciliationIntervalSeconds = &seconds
 }
 
-func (pc *InvalidationConfig) InvalidationReconciliationIntervalSeconds() int {
+func (pc *InvalidationConfig) ReconciliationIntervalSeconds() int {
 	if pc.reconciliationIntervalSeconds == nil {
 		return defaultReconciliationIntervalSeconds
 	}

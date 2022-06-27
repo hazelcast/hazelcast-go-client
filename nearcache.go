@@ -59,7 +59,7 @@ type nearCacheManager struct {
 	state        int32
 }
 
-func newNearCacheManager(ic *client.Client) *nearCacheManager {
+func newNearCacheManager(ic *client.Client, cfg *Config) *nearCacheManager {
 	doneCh := make(chan struct{})
 	cs := ic.ClusterService
 	is := ic.InvocationService
@@ -68,9 +68,9 @@ func newNearCacheManager(ic *client.Client) *nearCacheManager {
 	inf := ic.InvocationFactory
 	lg := ic.Logger
 	mf := newNearCacheInvalidationMetaDataFetcher(cs, is, inf, lg)
-	reconciliationIntervalSeconds := 60
-	maxToleratedMissCount := 10
-	rt := newNearCacheReparingTask(reconciliationIntervalSeconds, maxToleratedMissCount, ss, ps, lg, mf, doneCh)
+	ris := cfg.Invalidation.ReconciliationIntervalSeconds()
+	mc := cfg.Invalidation.MaxToleratedMissCount()
+	rt := newNearCacheReparingTask(ris, mc, ss, ps, lg, mf, doneCh)
 	ncm := &nearCacheManager{
 		nearCaches:   map[string]*nearCache{},
 		nearCachesMu: &sync.RWMutex{},
@@ -985,7 +985,7 @@ func (st *nearCacheStats) InvalidationRequests() int64 {
 nearCacheReparingTask runs on Near Cache side and only one instance is created per data-structure type like IMap and ICache.
 Repairing responsibilities of this task are:
 
-    * To scan RepairingHandlers to see if any Near Cache needs to be invalidated according to missed invalidation counts (controlled via InvalidationMaxToleratedMissCount).
+    * To scan RepairingHandlers to see if any Near Cache needs to be invalidated according to missed invalidation counts (controlled via MaxToleratedMissCount).
     * To send periodic generic-operations to cluster members in order to fetch latest partition sequences and UUIDs (controlled via InvalidationMinReconciliationIntervalSeconds.
 
 See: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask
