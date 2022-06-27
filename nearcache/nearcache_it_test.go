@@ -233,7 +233,7 @@ func clientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 			}
 			ncc.SetInvalidateOnChange(false)
 			configCB := func(tcx it.MapTestContext) {
-				tcx.Config.AddNearCacheConfig(ncc)
+				tcx.Config.AddNearCache(ncc)
 			}
 			valueFmt := "value-%d"
 			mtcx := &it.MapTestContext{
@@ -320,7 +320,7 @@ func newNearCacheMapTestContext(t *testing.T, fmt nearcache.InMemoryFormat, inva
 				InMemoryFormat: fmt,
 			}
 			ncc.SetInvalidateOnChange(invalidate)
-			tcx.Config.AddNearCacheConfig(ncc)
+			tcx.Config.AddNearCache(ncc)
 		},
 	}
 

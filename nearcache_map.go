@@ -40,7 +40,7 @@ func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Ser
 	}
 	// the only valid local policy on the client side is invalidate.
 	ncm.registerInvalidationListener()
-	if ncc.PreloaderConfig.Enabled {
+	if ncc.Preloader.Enabled {
 		if err := ncm.preload(); err != nil {
 			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
 		}
@@ -71,19 +71,23 @@ func (ncm *nearCacheMap) preload() error {
 	panic("implement me!")
 }
 
-func (ncm *nearCacheMap) ContainsKey(key interface{}) (found bool, err error, handled bool) {
+func (ncm *nearCacheMap) ContainsKey(ctx context.Context, key interface{}, m *Map) (found bool, err error) {
 	key, err = ncm.toNearCacheKey(key)
 	if err != nil {
-		return false, err, true
+		return false, err
 	}
 	cached, ok, err := ncm.getCachedValue(key, false)
 	if err != nil {
-		return false, err, true
+		return false, err
 	}
 	if ok {
-		return cached != nil, nil, true
+		return cached != nil, nil
 	}
-	return false, nil, false
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return false, err
+	}
+	return m.containsKeyFromRemote(ctx, keyData)
 }
 
 func (ncm *nearCacheMap) Delete(ctx context.Context, m *Map, key interface{}) error {

@@ -36,8 +36,8 @@ type NearCacheTestContext struct {
 	NC                            NearCacheAdapter
 	Config                        *nearcache.Config
 	DSAdapter                     DataStructureAdapter
-	decrementInvalidationRequests int64
 	ss                            *serialization.Service
+	decrementInvalidationRequests int64
 }
 
 func NewNearCacheTestContext(t *testing.T, nc NearCacheAdapter, dsa DataStructureAdapter, cfg *nearcache.Config, ss *serialization.Service) *NearCacheTestContext {
@@ -117,10 +117,7 @@ func (tcx *NearCacheTestContext) AssertNearCacheSize(target int64) bool {
 	}
 	// ignoring the invalidation requests here.
 	st, _ := tcx.Stats()
-	if !assert.Equal(tcx.T, target, st.OwnedEntryCount, "Near Cache owned entry count didn't reach the desired value") {
-		return false
-	}
-	return true
+	return !assert.Equal(tcx.T, target, st.OwnedEntryCount, "Near Cache owned entry count didn't reach the desired value")
 }
 
 func (tcx *NearCacheTestContext) AssertNearCacheStats(owned, hits, misses int64) {

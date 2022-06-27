@@ -118,9 +118,9 @@ func TestDefaultConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	target := nearcache.Config{
-		Name:           "default",
-		EvictionConfig: nearcache.EvictionConfig{},
-		PreloaderConfig: nearcache.PreloaderConfig{
+		Name:     "default",
+		Eviction: nearcache.EvictionConfig{},
+		Preloader: nearcache.PreloaderConfig{
 			Enabled:                  false,
 			Directory:                "",
 			StoreIntervalSeconds:     600,
@@ -195,15 +195,15 @@ func TestEvictionConfigInvalid(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "has both policy and comparator",
-			cfg:  nearcache.Config{EvictionConfig: ec1},
+			cfg:  nearcache.Config{Eviction: ec1},
 		},
 		{
 			name: "invalid policy",
-			cfg:  nearcache.Config{EvictionConfig: ec2},
+			cfg:  nearcache.Config{Eviction: ec2},
 		},
 		{
 			name: "size out of range",
-			cfg:  nearcache.Config{EvictionConfig: ec3},
+			cfg:  nearcache.Config{Eviction: ec3},
 		},
 	}
 	for _, tc := range testCases {
@@ -216,7 +216,7 @@ func TestPreloaderConfigInvalid(t *testing.T) {
 		{
 			name: "negative store initial delay seconds",
 			cfg: nearcache.Config{
-				PreloaderConfig: nearcache.PreloaderConfig{
+				Preloader: nearcache.PreloaderConfig{
 					StoreInitialDelaySeconds: -1,
 				},
 			},
@@ -224,7 +224,7 @@ func TestPreloaderConfigInvalid(t *testing.T) {
 		{
 			name: "negative store interval seconds",
 			cfg: nearcache.Config{
-				PreloaderConfig: nearcache.PreloaderConfig{
+				Preloader: nearcache.PreloaderConfig{
 					StoreIntervalSeconds: -1,
 				},
 			},
@@ -256,15 +256,15 @@ func TestConfigInvalidNon32bit(t *testing.T) {
 		},
 		{
 			name: "big eviction size",
-			cfg:  nearcache.Config{EvictionConfig: ec},
+			cfg:  nearcache.Config{Eviction: ec},
 		},
 		{
 			name: "big store initial delay seconds",
-			cfg:  nearcache.Config{PreloaderConfig: pc1},
+			cfg:  nearcache.Config{Preloader: pc1},
 		},
 		{
 			name: "big store big store interval seconds seconds",
-			cfg:  nearcache.Config{PreloaderConfig: pc2},
+			cfg:  nearcache.Config{Preloader: pc2},
 		},
 	}
 	for _, tc := range testCases {
@@ -321,7 +321,7 @@ func configWithNearCacheNames(names ...string) (hazelcast.Config, []nearcache.Co
 	var ncs []nearcache.Config
 	for _, name := range names {
 		nc := nearcache.Config{Name: name}
-		config.AddNearCacheConfig(nc)
+		config.AddNearCache(nc)
 		ncs = append(ncs, nc)
 	}
 	if err := config.Validate(); err != nil {
