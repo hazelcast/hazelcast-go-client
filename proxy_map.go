@@ -274,25 +274,13 @@ func (m *Map) Clear(ctx context.Context) error {
 // ContainsKey returns true if the map contains an entry with the given key.
 func (m *Map) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
 	if m.hasNearCache {
-		found, err, handled := m.ncm.ContainsKey(key)
-		if err != nil {
-			return false, err
-		}
-		if handled {
-			return found, nil
-		}
+		return m.ncm.ContainsKey(ctx, key, m)
 	}
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
 		return false, err
-	} else {
-		request := codec.EncodeMapContainsKeyRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapContainsKeyResponse(response), nil
-		}
 	}
+	return m.containsKeyFromRemote(ctx, keyData)
 }
 
 // ContainsValue returns true if the map contains an entry with the given value.
@@ -462,6 +450,16 @@ func (m *Map) Get(ctx context.Context, key interface{}) (interface{}, error) {
 		return nil, err
 	}
 	return m.getFromRemote(ctx, keyData)
+}
+
+func (m *Map) containsKeyFromRemote(ctx context.Context, keyData serialization.Data) (bool, error) {
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapContainsKeyRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapContainsKeyResponse(response), nil
 }
 
 func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {

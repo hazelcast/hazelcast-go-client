@@ -27,12 +27,12 @@ import (
 type MapTestContext struct {
 	T              *testing.T
 	M              *hz.Map
-	MapName        string
 	Cluster        *TestCluster
 	Client         *hz.Client
 	Config         *hz.Config
 	ConfigCallback func(testContext MapTestContext)
 	NameMaker      func(...string) string
+	MapName        string
 	Smart          bool
 }
 

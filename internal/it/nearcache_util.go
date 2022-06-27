@@ -36,8 +36,8 @@ type NearCacheTestContext struct {
 	NC                            NearCacheAdapter
 	Config                        *nearcache.Config
 	DSAdapter                     DataStructureAdapter
-	decrementInvalidationRequests int64
 	ss                            *serialization.Service
+	decrementInvalidationRequests int64
 }
 
 func NewNearCacheTestContext(t *testing.T, nc NearCacheAdapter, dsa DataStructureAdapter, cfg *nearcache.Config, ss *serialization.Service) *NearCacheTestContext {
