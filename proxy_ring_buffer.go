@@ -233,6 +233,15 @@ func (rb *Ringbuffer) RemainingCapacity(ctx context.Context) (int64, error) {
 // true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
 // This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
 func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCount int32, maxCount int32, filter interface{}) (ReadResultSet, error) {
+	if startSequence < 0 {
+		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError("startSequence can't be smaller then 0", nil)
+	}
+	if minCount < 0 {
+		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError("minCount can't be smaller then 0", nil)
+	}
+	if maxCount < 0 {
+		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError("maxCount can't be smaller then 0", nil)
+	}
 	var serializedFilterData iserialization.Data
 	if filter != nil {
 		data, err := rb.validateAndSerialize(filter)
