@@ -308,7 +308,7 @@ func newNearCacheRecordStore(cfg *nearcache.Config, ss *serialization.Service, r
 		stats:            stats,
 		evictionDisabled: cfg.Eviction.EvictionPolicy() == nearcache.EvictionPolicyNone,
 		maxSize:          cfg.Eviction.Size(),
-		cmp:              cfg.Eviction.Comparator(),
+		cmp:              getEvictionPolicyComparator(&cfg.Eviction),
 	}
 }
 
@@ -902,7 +902,7 @@ type evictionCandidate struct {
 }
 
 func (e evictionCandidate) Key() interface{} {
-	return e.Key()
+	return e.key
 }
 
 func (e evictionCandidate) Value() interface{} {
@@ -985,8 +985,8 @@ func (st *nearCacheStats) InvalidationRequests() int64 {
 nearCacheReparingTask runs on Near Cache side and only one instance is created per data-structure type like IMap and ICache.
 Repairing responsibilities of this task are:
 
-    * To scan RepairingHandlers to see if any Near Cache needs to be invalidated according to missed invalidation counts (controlled via MaxToleratedMissCount).
-    * To send periodic generic-operations to cluster members in order to fetch latest partition sequences and UUIDs (controlled via MinReconciliationIntervalSeconds.
+    * To scan RepairingHandlers to see if any Near Cache needs to be invalidated according to missed invalidation counts (controlled via InvalidationMaxToleratedMissCount).
+    * To send periodic generic-operations to cluster members in order to fetch latest partition sequences and UUIDs (controlled via InvalidationMinReconciliationIntervalSeconds.
 
 See: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask
 */
