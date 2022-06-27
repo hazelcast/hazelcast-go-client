@@ -348,7 +348,7 @@ func (rs *nearCacheRecordStore) Get(key interface{}) (value interface{}, found b
 	       return null;
 	   }
 	*/
-	nowMS := internal.TimeMillis(time.Now())
+	nowMS := time.Now().UnixMilli()
 	if rs.recordExpired(rec, nowMS) {
 		rs.invalidate(key)
 		rs.onExpire()
@@ -751,7 +751,7 @@ func (rs *nearCacheRecordStore) createRecord(value interface{}) (*nearCacheRecor
 	if err != nil {
 		return nil, err
 	}
-	created := internal.TimeMillis(time.Now())
+	created := time.Now().UnixMilli()
 	expired := nearCacheRecordStoreTimeNotSet
 	if rs.timeToLiveMillis > 0 {
 		expired = created + rs.timeToLiveMillis
@@ -922,7 +922,7 @@ func (e evictionCandidate) LastAccessTime() int64 {
 }
 
 func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evictionCandidate) evictionCandidate {
-	now := internal.TimeMillis(time.Now())
+	now := time.Now().UnixMilli()
 	var selected evictionCandidate
 	var hasSelected bool
 	for _, current := range candies {
