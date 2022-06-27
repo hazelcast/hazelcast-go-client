@@ -173,6 +173,21 @@ func TestRingbuffer_ReadMany_Get_invalid_index(t *testing.T) {
 	})
 }
 
+func TestRingbuffer_ReadMany_NonNegativeParameterValidation(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
+
+		_, err := rb.ReadMany(context.Background(), -1, 0, 0, nil)
+		assert.Error(t, err)
+
+		_, err = rb.ReadMany(context.Background(), 0, -1, 0, nil)
+		assert.Error(t, err)
+
+		_, err = rb.ReadMany(context.Background(), 0, 0, -1, nil)
+		assert.Error(t, err)
+	})
+}
+
 func TestRingbuffer_ReadMany_GetSequence_invalid_index(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
