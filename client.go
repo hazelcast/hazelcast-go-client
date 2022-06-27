@@ -130,7 +130,7 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if err != nil {
 		return nil, err
 	}
-	ncc, ok, err := c.cfg.GetNearCacheConfig(name)
+	ncc, ok, err := c.cfg.GetNearCache(name)
 	if err != nil {
 		return nil, err
 	}

@@ -70,7 +70,7 @@ func TestNearCacheConfigWildcardMultipleConfigs(t *testing.T) {
 func TestMapConfigWildcardMultipleAmbiguousConfigs(t *testing.T) {
 	// ported from: com.hazelcast.client.config.MatchingPointConfigPatternMatcherTest#testMapConfigWildcardMultipleAmbiguousConfigs
 	config, _ := configWithNearCacheNames("com.hazelcast*", "*com.hazelcast")
-	_, _, err := config.GetNearCacheConfig("com.hazelcast")
+	_, _, err := config.GetNearCache("com.hazelcast")
 	if !errors.Is(err, hzerrors.ErrInvalidConfiguration) {
 		t.Fatalf("expected invalid configuration error, but got: %v", err)
 	}
@@ -296,23 +296,23 @@ func TestEvictionConfig_SetComparator(t *testing.T) {
 }
 
 func assertTrueGetNearCacheConfig(t *testing.T, config hazelcast.Config, pattern string) nearcache.Config {
-	nc, ok, err := config.GetNearCacheConfig(pattern)
+	nc, ok, err := config.GetNearCache(pattern)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !ok {
-		t.Fatalf("%s: GetNearCacheConfig expected to return true for: %s", t.Name(), pattern)
+		t.Fatalf("%s: GetNearCache expected to return true for: %s", t.Name(), pattern)
 	}
 	return nc
 }
 
 func assertFalseGetNearCacheConfig(t *testing.T, config hazelcast.Config, pattern string) {
-	_, ok, err := config.GetNearCacheConfig(pattern)
+	_, ok, err := config.GetNearCache(pattern)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if ok {
-		t.Fatalf("%s: GetNearCacheConfig expected to return false for: %s", t.Name(), pattern)
+		t.Fatalf("%s: GetNearCache expected to return false for: %s", t.Name(), pattern)
 	}
 }
 
