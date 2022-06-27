@@ -67,6 +67,8 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 		if tcx.ConfigCallback != nil {
 			tcx.ConfigCallback(tcx)
 		}
+		tcx.T.Logf("map name: %s", tcx.MapName)
+		tcx.T.Logf("cluster address: %s", tcx.Config.Cluster.Network.Addresses[0])
 		tcx.Config.Cluster.Unisocket = !tcx.Smart
 		if tcx.Client == nil {
 			tcx.Client = getDefaultClient(tcx.Config)

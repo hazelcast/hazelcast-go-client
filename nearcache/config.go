@@ -17,6 +17,7 @@
 package nearcache
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
@@ -29,6 +30,7 @@ const (
 	defaultStoreInitialDelaySeconds = 600
 	defaultStoreIntervalSeconds     = 600
 	defaultMemoryFormat             = InMemoryFormatBinary
+	// see: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#MAX_TOLERATED_MISS_COUNT
 )
 
 // Config is the Near Cache configuration.
@@ -37,10 +39,10 @@ type Config struct {
 	// Name is the name of this Near Cache configuration.
 	// If the name is not specified, it is set to "default".
 	Name string
-	// EvictionConfig is the optional eviction configuration for the Near Cache.
-	EvictionConfig EvictionConfig
-	// PreloaderConfig is the optional preloader configuration for the Near Cache.
-	PreloaderConfig PreloaderConfig
+	// Eviction is the optional eviction configuration for the Near Cache.
+	Eviction EvictionConfig
+	// Preloader is the optional preloader configuration for the Near Cache.
+	Preloader PreloaderConfig
 	// InMemoryFormat specifies how the entry values are stored in the Near Cache.
 	// InMemoryFormatBinary stores the values after serializing them.
 	// InMemoryFormatObject stores the values in their original form.
@@ -72,8 +74,8 @@ func (c Config) Clone() Config {
 	return Config{
 		invalidateOnChange: c.invalidateOnChange,
 		Name:               c.Name,
-		EvictionConfig:     c.EvictionConfig.Clone(),
-		PreloaderConfig:    c.PreloaderConfig.Clone(),
+		Eviction:           c.Eviction.Clone(),
+		Preloader:          c.Preloader.Clone(),
 		InMemoryFormat:     c.InMemoryFormat,
 		SerializeKeys:      c.SerializeKeys,
 		TimeToLiveSeconds:  c.TimeToLiveSeconds,
@@ -92,20 +94,20 @@ func (c *Config) Validate() error {
 	if c.MaxIdleSeconds == 0 {
 		c.MaxIdleSeconds = math.MaxInt32
 	}
-	if err := c.EvictionConfig.Validate(); err != nil {
+	if err := c.Eviction.Validate(); err != nil {
 		return err
 	}
-	if err := c.PreloaderConfig.Validate(); err != nil {
+	if err := c.Preloader.Validate(); err != nil {
 		return err
 	}
-	if _, err := check.NonNegativeInt32(c.TimeToLiveSeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.TimeToLiveSeconds: out of range", err)
+	if err := check.NonNegativeInt32Config(c.TimeToLiveSeconds); err != nil {
+		return fmt.Errorf("nearcache.Config: TimeToLiveSeconds: %w", err)
 	}
-	if _, err := check.NonNegativeInt32(c.MaxIdleSeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.MaxIdleSeconds: out of range", err)
+	if err := check.NonNegativeInt32Config(c.MaxIdleSeconds); err != nil {
+		return fmt.Errorf("nearcache.Config: MaxIdleSeconds: %w", err)
 	}
 	if c.InMemoryFormat != InMemoryFormatBinary && c.InMemoryFormat != InMemoryFormatObject {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.InMemoryFormat: invalid memory format", nil)
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Config: InMemoryFormat: invalid memory format", nil)
 	}
 	return nil
 }
@@ -159,7 +161,7 @@ func (c *EvictionConfig) Validate() error {
 		return c.err
 	}
 	if c.evictionPolicy != nil && c.comparator != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.EvictionConfig: only one of EvictionPolicy or Comparator can be configured", nil)
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Eviction: only one of EvictionPolicy or Comparator can be configured", nil)
 	}
 	return nil
 }
@@ -168,7 +170,7 @@ func (c *EvictionConfig) Validate() error {
 // The default policy is EvictionPolicyLRU which evicts the least recently used entries.
 func (c *EvictionConfig) SetEvictionPolicy(policy EvictionPolicy) {
 	if policy < 0 || policy >= evictionPolicyCount {
-		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.EvictionConfig.SetEvictionPolicy: invalid policy", nil)
+		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.Eviction.SetEvictionPolicy: invalid policy", nil)
 		return
 	}
 	c.evictionPolicy = &policy
@@ -189,7 +191,7 @@ func (c EvictionConfig) EvictionPolicy() EvictionPolicy {
 func (c *EvictionConfig) SetSize(size int) {
 	s, err := check.NonNegativeInt32(size)
 	if err != nil {
-		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.EvictionConfig.SetSize: out of range", err)
+		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.Eviction.SetSize: out of range", err)
 		return
 	}
 	c.size = &s
@@ -245,10 +247,10 @@ func (c *PreloaderConfig) Validate() error {
 		c.StoreIntervalSeconds = defaultStoreIntervalSeconds
 	}
 	if _, err := check.NonNegativeInt32(c.StoreInitialDelaySeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.PreloaderConfig.StoreInitialDelaySeconds must be positive", nil)
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Preloader.StoreInitialDelaySeconds must be positive", nil)
 	}
 	if _, err := check.NonNegativeInt32(c.StoreIntervalSeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.PreloaderConfig.StoreIntervalSeconds must be positive", nil)
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Preloader.StoreIntervalSeconds must be positive", nil)
 	}
 	return nil
 }

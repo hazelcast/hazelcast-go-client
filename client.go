@@ -69,7 +69,7 @@ type Client struct {
 	ic                      *client.Client
 	sqlService              isql.Service
 	nearCacheMgrsMu         *sync.RWMutex
-	nearCacheMgrs           map[string]nearCacheManager
+	nearCacheMgrs           map[string]*nearCacheManager
 	cfg                     *Config
 }
 
@@ -99,7 +99,7 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
 		nearCacheMgrsMu:         &sync.RWMutex{},
-		nearCacheMgrs:           map[string]nearCacheManager{},
+		nearCacheMgrs:           map[string]*nearCacheManager{},
 		cfg:                     &config,
 	}
 	c.addConfigEvents(&config)
@@ -131,7 +131,7 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if err != nil {
 		return nil, err
 	}
-	ncc, ok, err := c.cfg.GetNearCacheConfig(name)
+	ncc, ok, err := c.cfg.GetNearCache(name)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func (c *Client) createComponents(config *Config) {
 	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
 }
 
-func (c *Client) getNearCacheManager(service string) nearCacheManager {
+func (c *Client) getNearCacheManager(service string) *nearCacheManager {
 	c.nearCacheMgrsMu.RLock()
 	mgr, ok := c.nearCacheMgrs[service]
 	c.nearCacheMgrsMu.RUnlock()
@@ -408,7 +408,7 @@ func (c *Client) getNearCacheManager(service string) nearCacheManager {
 	c.nearCacheMgrsMu.Lock()
 	mgr, ok = c.nearCacheMgrs[service]
 	if !ok {
-		mgr = newNearCacheManager(c.ic.SerializationService, c.ic.Logger)
+		mgr = newNearCacheManager(c.ic)
 		c.nearCacheMgrs[service] = mgr
 	}
 	c.nearCacheMgrsMu.Unlock()

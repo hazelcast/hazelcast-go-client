@@ -40,7 +40,7 @@ func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Ser
 	}
 	// the only valid local policy on the client side is invalidate.
 	ncm.registerInvalidationListener()
-	if ncc.PreloaderConfig.Enabled {
+	if ncc.Preloader.Enabled {
 		if err := ncm.preload(); err != nil {
 			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
 		}
@@ -52,7 +52,6 @@ func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Ser
 			if err != nil {
 				return nil, err
 			}
-			// byte slices cannot be map keys
 			return data, nil
 		}
 	} else {
@@ -64,6 +63,7 @@ func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Ser
 }
 
 func (ncm *nearCacheMap) registerInvalidationListener() {
+	// port of: com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl#registerInvalidationListener
 	fmt.Println("IMPLEMENT ME: registerInvalidationListener")
 }
 
