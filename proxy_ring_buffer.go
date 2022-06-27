@@ -18,7 +18,9 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
@@ -107,6 +109,10 @@ func newRingbuffer(p *proxy) (*Ringbuffer, error) {
 //
 // Add returns the sequence number of the added item. You can read the added item using this number.
 func (rb *Ringbuffer) Add(ctx context.Context, item interface{}, overflowPolicy OverflowPolicy) (sequence int64, err error) {
+	if int(overflowPolicy) != int(OverflowPolicyFail) || int(overflowPolicy) != int(OverflowPolicyOverwrite) {
+		msg := fmt.Sprintf("invalid overflow policy: %d", overflowPolicy)
+		return 0, ihzerrors.NewIllegalArgumentError(msg, nil)
+	}
 	serializedItemData, err := rb.validateAndSerialize(item)
 	if err != nil {
 		return ReadResultSetSequenceUnavailable, err
@@ -129,6 +135,10 @@ func (rb *Ringbuffer) Add(ctx context.Context, item interface{}, overflowPolicy 
 // If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
 // The result contains the sequenceId of the last written item.
 func (rb *Ringbuffer) AddAll(ctx context.Context, overflowPolicy OverflowPolicy, items ...interface{}) (int64, error) {
+	if int(overflowPolicy) != int(OverflowPolicyFail) || int(overflowPolicy) != int(OverflowPolicyOverwrite) {
+		msg := fmt.Sprintf("invalid overflow policy: %d", overflowPolicy)
+		return 0, ihzerrors.NewIllegalArgumentError(msg, nil)
+	}
 	serializedItemsData, err := rb.validateAndSerializeValues(items)
 	if err != nil {
 		return ReadResultSetSequenceUnavailable, err
