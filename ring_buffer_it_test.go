@@ -36,6 +36,14 @@ func TestRingbuffer_Add(t *testing.T) {
 	})
 }
 
+func TestRingbuffer_Add_OverFlowPolicyValidation(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		const notAllowedValueForPolicy = 666
+		_, err := rb.Add(context.Background(), nil, notAllowedValueForPolicy)
+		assert.Error(t, err)
+	})
+}
+
 func TestRingbuffer_AddNilElement(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		_, err := rb.Add(context.Background(), nil, hz.OverflowPolicyFail)
@@ -59,6 +67,14 @@ func TestRingbuffer_AddAll(t *testing.T) {
 
 		tailSeq := it.MustValue(rb.TailSequence(context.Background()))
 		assert.Equal(t, int64(1), tailSeq)
+	})
+}
+
+func TestRingbuffer_AddAll_OverFlowPolicyValidation(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		const notAllowedValueForPolicy = 666
+		_, err := rb.AddAll(context.Background(), notAllowedValueForPolicy, "foo", "bar")
+		assert.Error(t, err)
 	})
 }
 
