@@ -65,7 +65,7 @@ func main() {
 Requirements:
 
 * Hazelcast Go client is compatible only with Hazelcast 4.x and 5.x.
-* We support two most recent releases of Go, currently 1.16 and 1.17.
+* We support two most recent releases of Go, currently 1.17 and 1.18.
 
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
