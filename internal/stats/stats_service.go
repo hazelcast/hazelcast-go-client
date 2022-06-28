@@ -268,13 +268,13 @@ func (g runtimeGauges) updateUptime(bt *binTextStats) {
 		// gopsutil.process is not registered, skip gauge
 		return
 	}
-	if uptime, err := g.proc.CreateTime(); err != nil {
+	if ct, err := g.proc.CreateTime(); err != nil {
 		// could not get the uptime
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting uptime: %s", err.Error())
 		})
 	} else {
-		ms := int64(uptime) * 1000
+		ms := internal.TimeMillis(time.Now()) - ct
 		bt.mc.AddLong(g.uptime, ms)
 		bt.stats = append(bt.stats, makeTextStat(&g.uptime, ms))
 	}
