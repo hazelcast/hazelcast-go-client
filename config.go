@@ -151,7 +151,12 @@ func (c *Config) Validate() error {
 			return err
 		}
 	}
-	c.NearCaches = c.copyNearCacheConfig()
+	c.ensureNearCacheConfigs()
+	for _, cfg := range c.NearCaches {
+		if err := cfg.Validate(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
