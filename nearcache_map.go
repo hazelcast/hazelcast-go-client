@@ -27,16 +27,14 @@ import (
 
 type nearCacheMap struct {
 	nc             *nearCache
-	ncc            *nearcache.Config
 	toNearCacheKey func(key interface{}) (interface{}, error)
 	ss             *serialization.Service
 }
 
 func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Service) (nearCacheMap, error) {
 	ncm := nearCacheMap{
-		nc:  nc,
-		ncc: ncc,
-		ss:  ss,
+		nc: nc,
+		ss: ss,
 	}
 	if ncc.InvalidateOnChange() {
 		ncm.registerInvalidationListener()
