@@ -92,13 +92,130 @@ func TestClientLifecycleEvents(t *testing.T) {
 	})
 }
 
-func TestClientRunning(t *testing.T) {
+func TestClient_AddLifecycleListener(t *testing.T) {
+	receivedStates := []hz.LifecycleState{}
+	receivedStatesMu := &sync.RWMutex{}
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
-		assert.True(t, client.Running())
-		if err := client.Shutdown(context.Background()); err != nil {
+		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			receivedStatesMu.Lock()
+			defer receivedStatesMu.Unlock()
+			// client is already connected
+			switch event.State {
+			case hz.LifecycleStateShuttingDown:
+				t.Logf("Received shutting down state")
+			case hz.LifecycleStateShutDown:
+				t.Logf("Received shut down state")
+			default:
+				t.Log("Received unknown state:", event.State)
+			}
+			receivedStates = append(receivedStates, event.State)
+		})
+		if err != nil {
 			t.Fatal(err)
 		}
-		assert.False(t, client.Running())
+		assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		if err = client.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			receivedStatesMu.Lock()
+			receivedStates = []hz.LifecycleState{}
+			receivedStatesMu.Unlock()
+		}()
+		targetStates := []hz.LifecycleState{
+			hz.LifecycleStateShuttingDown,
+			hz.LifecycleStateShutDown,
+		}
+		it.Eventually(t, func() bool {
+			receivedStatesMu.RLock()
+			defer receivedStatesMu.RUnlock()
+			return reflect.DeepEqual(targetStates, receivedStates)
+		})
+	})
+}
+
+func TestClient_RemoveLifecycleListener(t *testing.T) {
+	var lifecycleEventReceived int32 = 1
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			// shutting down event is published before the actual shutdown is occurred
+			// client must not be shutdown before published that event
+			if event.State == hz.LifecycleStateShuttingDown {
+				atomic.SwapInt32(&lifecycleEventReceived, 0)
+			}
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		if err = client.RemoveLifecycleListener(subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		if err = client.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		it.Eventually(t, func() bool {
+			// ensures that client us
+			return !client.Running() && lifecycleEventReceived == 1
+		})
+	})
+}
+
+func TestClient_AddMembershipListener(t *testing.T) {
+	var (
+		wgAdded,
+		wgRemoved sync.WaitGroup
+		memberCount int = 3
+	)
+	wgAdded.Add(1)
+	wgRemoved.Add(1)
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("client-subscribed-membership-listeners", 15701, memberCount)
+	cfg := cls.DefaultConfig()
+	cfg.Cluster.Unisocket = true
+	client, err := hz.StartNewClientWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(ctx context.Context, client *hz.Client) {
+		err = client.Shutdown(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(ctx, client)
+	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		switch event.State {
+		case cluster.MembershipStateAdded:
+			t.Logf("MembershipStateAdded")
+			wgAdded.Done()
+		case cluster.MembershipStateRemoved:
+			t.Logf("MembershipStateRemoved")
+			wgRemoved.Done()
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	// member which is not connected by the client initially.
+	uuid := cls.MemberUUIDs[1]
+	//uuid := cls.MemberUUIDs[0]
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, uuid)
+	it.Must(err)
+	assert.True(t, ok, "rc cannot terminate member")
+	wgRemoved.Wait()
+	_, err = cls.RC.StartMember(ctx, cls.ClusterID)
+	it.Must(err)
+	wgAdded.Wait()
+}
+
+func TestClientRunning(t *testing.T) {
+	clientName := "test-client-name"
+	cnfCallBack := func(config *hz.Config) {
+		config.ClientName = clientName
+	}
+	it.TesterWithConfigBuilder(t, cnfCallBack, func(t *testing.T, client *hz.Client) {
+		assert.Equal(t, clientName, client.Name())
 	})
 }
 
@@ -155,7 +272,7 @@ func TestClientEventOrder(t *testing.T) {
 			var state int32
 			checkers = append(checkers, &state)
 		}
-		// init listener conf
+		// init listeners conf
 		var c hz.MapEntryListenerConfig
 		c.NotifyEntryAdded(true)
 		c.NotifyEntryRemoved(true)

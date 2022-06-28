@@ -39,7 +39,7 @@ const (
 )
 
 // Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
-// MessageListener is called. More than one message listener can be added on one instance.
+// MessageListener is called. More than one message listeners can be added on one instance.
 
 func EncodeTopicAddMessageListenerRequest(name string, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

@@ -41,12 +41,12 @@ For details, see https://docs.hazelcast.com/imdg/latest/data-structures/map.html
 Listening for Map Events
 
 To listen events of a map, you can use the AddListener, AddListenerWithKey, AddListenerWithPredicate and AddListenerWithPredicateAndKey methods.
-The first method adds a listener to the map's all events. The others filter the events depending on a key and/or a predicate.
+The first method adds a listeners to the map's all events. The others filter the events depending on a key and/or a predicate.
 In all methods you specify whether you want to include value in the event or not.
 
 You can pass a MapListener struct to these methods to add handlers to different event types. You can add different handlers to different event types
 with a single MapListener struct. If you don't specify a handler in for an event type in MapListener struct, there will be no handler for that event.
-In the example below, a listener for added and updated entry events is created. Entries only with key "somekey" and matching to predicate year > 2000 are considered:
+In the example below, a listeners for added and updated entry events is created. Entries only with key "somekey" and matching to predicate year > 2000 are considered:
 
 	entryListenerConfig := hazelcast.MapEntryListenerConfig{
 		Key: "somekey",
@@ -66,7 +66,7 @@ In the example below, a listener for added and updated entry events is created. 
 	}, predicate.Greater("year", 2000), "somekey", true)
 	// error checking is omitted.
 
-Adding an event listener returns a subscription ID, which you can later use to remove the listener:
+Adding an event listeners returns a subscription ID, which you can later use to remove the listeners:
 
 	err = m.RemoveListener(ctx, subscriptionID)
 
@@ -180,37 +180,37 @@ func (m *Map) mapListenerEventHandler(listener MapListener) EntryNotifiedHandler
 			listener.MapCleared(event)
 		case EntryAllEvicted:
 			listener.MapEvicted(event)
-		default: 
+		default:
 			m.logger.Warnf("Not a known map event type: %d", event.EventType)
 		}
 	}
 }
 
-// AddListener adds a continuous entry listener to this map.
+// AddListener adds a continuous entry listeners to this map.
 func (m *Map) AddListener(ctx context.Context, listener MapListener, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
 	return m.addEntryListener(ctx, flags, includeValue, nil, nil, m.mapListenerEventHandler(listener))
 }
 
-// AddListenerWithKey adds a continuous entry listener on a specific key to this map.
+// AddListenerWithKey adds a continuous entry listeners on a specific key to this map.
 func (m *Map) AddListenerWithKey(ctx context.Context, listener MapListener, key interface{}, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
 	return m.addEntryListener(ctx, flags, includeValue, key, nil, m.mapListenerEventHandler(listener))
 }
 
-// AddListenerWithPredicate adds a continuous entry listener to this map. Events are filtered by a predicate.
+// AddListenerWithPredicate adds a continuous entry listeners to this map. Events are filtered by a predicate.
 func (m *Map) AddListenerWithPredicate(ctx context.Context, listener MapListener, predicate predicate.Predicate, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
 	return m.addEntryListener(ctx, flags, includeValue, nil, predicate, m.mapListenerEventHandler(listener))
 }
 
-// AddListenerWithPredicateAndKey adds a continuous entry listener on a specific key to this map. Events are filtered by a predicate.
+// AddListenerWithPredicateAndKey adds a continuous entry listeners on a specific key to this map. Events are filtered by a predicate.
 func (m *Map) AddListenerWithPredicateAndKey(ctx context.Context, listener MapListener, predicate predicate.Predicate, key interface{}, includeValue bool) (types.UUID, error) {
 	flags := m.prepareFlagsOfMapListener(listener)
 	return m.addEntryListener(ctx, flags, includeValue, key, predicate, m.mapListenerEventHandler(listener))
 }
 
-// AddEntryListener adds a continuous entry listener to this map.
+// AddEntryListener adds a continuous entry listeners to this map.
 // Deprecated: In favor of AddListener, AddListenerWithKey, AddListenerWithPredicate,
 // AddListenerWithPredicateAndKey methods.
 func (m *Map) AddEntryListener(ctx context.Context, config MapEntryListenerConfig, handler EntryNotifiedHandler) (types.UUID, error) {
@@ -844,12 +844,12 @@ func (m *Map) RemoveAll(ctx context.Context, predicate predicate.Predicate) erro
 	}
 }
 
-// RemoveEntryListener removes the specified entry listener.
+// RemoveEntryListener removes the specified entry listeners.
 func (m *Map) RemoveEntryListener(ctx context.Context, subscriptionID types.UUID) error {
 	return m.listenerBinder.Remove(ctx, subscriptionID)
 }
 
-// RemoveListener removes the specified entry listener.
+// RemoveListener removes the specified entry listeners.
 func (m *Map) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return m.listenerBinder.Remove(ctx, subscriptionID)
 }
@@ -1332,7 +1332,7 @@ func (as attributeSet) Attrs() []string {
 	return attrs
 }
 
-// MapEntryListenerConfig contains configuration for a map entry listener.
+// MapEntryListenerConfig contains configuration for a map entry listeners.
 type MapEntryListenerConfig struct {
 	Predicate    predicate.Predicate
 	Key          interface{}

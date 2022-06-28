@@ -154,7 +154,7 @@ Here are all configuration items with their default values:
 
 Listening for Distributed Object Events
 
-You can listen to creation and destroy events for distributed objects by attaching a listener to the client.
+You can listen to creation and destroy events for distributed objects by attaching a listeners to the client.
 A distributed object is created when first referenced unless it already exists.
 Here is an example:
 

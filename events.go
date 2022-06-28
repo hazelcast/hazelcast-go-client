@@ -217,7 +217,7 @@ func newQueueItemNotified(name string, value interface{}, member cluster.MemberI
 	}
 }
 
-// ListItemNotifiedHandler is a handler function for the List item listener.
+// ListItemNotifiedHandler is a handler function for the List item listeners.
 type ListItemNotifiedHandler func(event *ListItemNotified)
 
 // ListItemNotified describes the List item event.

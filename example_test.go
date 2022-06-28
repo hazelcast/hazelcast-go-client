@@ -238,7 +238,7 @@ func ExampleMap_AddEntryListener() {
 	if err := m.Delete(ctx, key); err != nil {
 		log.Fatal(err)
 	}
-	// you can use the subscriptionID later to remove the event listener.
+	// you can use the subscriptionID later to remove the event listeners.
 	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
 		log.Fatal(err)
 	}
@@ -286,7 +286,7 @@ func ExampleMap_AddListener() {
 	if err := m.Delete(ctx, key); err != nil {
 		log.Fatal(err)
 	}
-	// you can use the subscriptionID later to remove the event listener.
+	// you can use the subscriptionID later to remove the event listeners.
 	if err := m.RemoveListener(ctx, subscriptionID); err != nil {
 		log.Fatal(err)
 	}
@@ -335,7 +335,7 @@ func ExampleMap_AddListenerWithKey() {
 	if err := m.Delete(ctx, key); err != nil {
 		log.Fatal(err)
 	}
-	// you can use the subscriptionID later to remove the event listener.
+	// you can use the subscriptionID later to remove the event listeners.
 	if err := m.RemoveListener(ctx, subscriptionID); err != nil {
 		log.Fatal(err)
 	}
@@ -383,7 +383,7 @@ func ExampleMap_AddListenerWithPredicate() {
 	if err := m.Delete(ctx, key); err != nil {
 		log.Fatal(err)
 	}
-	// you can use the subscriptionID later to remove the event listener.
+	// you can use the subscriptionID later to remove the event listeners.
 	if err := m.RemoveListener(ctx, subscriptionID); err != nil {
 		log.Fatal(err)
 	}
@@ -432,7 +432,7 @@ func ExampleMap_AddListenerWithPredicateAndKey() {
 	if err := m.Delete(ctx, key); err != nil {
 		log.Fatal(err)
 	}
-	// you can use the subscriptionID later to remove the event listener.
+	// you can use the subscriptionID later to remove the event listeners.
 	if err := m.RemoveListener(ctx, subscriptionID); err != nil {
 		log.Fatal(err)
 	}
@@ -597,7 +597,7 @@ func ExampleTopic() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Add a message listener to the topic
+	// Add a message listeners to the topic
 	topic.AddMessageListener(ctx, messageListener)
 	// Publish messages to topic
 	for i := 0; i < messageCount; i++ {

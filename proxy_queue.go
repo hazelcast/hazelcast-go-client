@@ -80,7 +80,7 @@ func (q *Queue) AddAll(ctx context.Context, values ...interface{}) (bool, error)
 	}
 }
 
-// AddItemListener adds an item listener for this queue. Listener will be notified for all queue add/remove events.
+// AddItemListener adds an item listeners for this queue. Listener will be notified for all queue add/remove events.
 // Received events include the updated item if includeValue is true.
 func (q *Queue) AddItemListener(ctx context.Context, includeValue bool, handler QueueItemNotifiedHandler) (types.UUID, error) {
 	return q.addListener(ctx, includeValue, handler)
@@ -242,7 +242,7 @@ func (q *Queue) RemoveAll(ctx context.Context, values ...interface{}) (bool, err
 	}
 }
 
-// RemoveListener removes the specified listener.
+// RemoveListener removes the specified listeners.
 func (q *Queue) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return q.listenerBinder.Remove(ctx, subscriptionID)
 }

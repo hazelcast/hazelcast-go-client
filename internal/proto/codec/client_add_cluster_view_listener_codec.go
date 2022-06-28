@@ -38,7 +38,7 @@ const (
 	ClientAddClusterViewListenerEventPartitionsViewVersionOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Adds a cluster view listener to a connection.
+// Adds a cluster view listeners to a connection.
 
 func EncodeClientAddClusterViewListenerRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

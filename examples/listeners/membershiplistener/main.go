@@ -18,46 +18,43 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"math/rand"
-	"time"
+	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
-// messageListener handles incoming messages to the topic
-func messageListener(event *hazelcast.MessagePublished) {
-	fmt.Println("Received message: ", event.Value)
-}
-
 func main() {
-	messageCount := 10
-	// Start the client with defaults
+	var (
+		wgAdded,
+		wgRemoved sync.WaitGroup
+	)
+	wgAdded.Add(1)
+	wgRemoved.Add(1)
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Get a random topic
-	rand.Seed(time.Now().Unix())
-	topicName := fmt.Sprintf("sample-%d", rand.Int())
-	topic, err := client.GetTopic(ctx, topicName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Add a message listeners to the topic
-	_, err = topic.AddMessageListener(ctx, messageListener)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Publish messages to topic
-	for i := 0; i < messageCount; i++ {
-		err := topic.Publish(ctx, fmt.Sprintf("Message %d", i))
+	defer func(client *hazelcast.Client, ctx context.Context) {
+		err = client.Shutdown(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
+	}(client, ctx)
+	_, err = client.AddMembershipListener(func(event pubcluster.MembershipStateChanged) {
+		switch event.State {
+		case pubcluster.MembershipStateAdded:
+			wgAdded.Done()
+		case pubcluster.MembershipStateRemoved:
+			wgRemoved.Done()
+		}
+		log.Printf("Event: %s, member-id: %s\n", event.State, event.Member.UUID)
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
-	// Shutdown client
-	client.Shutdown(ctx)
+	wgRemoved.Wait()
+	wgAdded.Wait()
 }

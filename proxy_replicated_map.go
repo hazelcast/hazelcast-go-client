@@ -59,22 +59,22 @@ func newReplicatedMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) (*R
 	return rp, nil
 }
 
-// AddEntryListener adds a continuous entry listener to this map.
+// AddEntryListener adds a continuous entry listeners to this map.
 func (m *ReplicatedMap) AddEntryListener(ctx context.Context, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(ctx, nil, nil, handler, "AddEntryListener")
 }
 
-// AddEntryListenerToKey adds a continuous entry listener to this map.
+// AddEntryListenerToKey adds a continuous entry listeners to this map.
 func (m *ReplicatedMap) AddEntryListenerToKey(ctx context.Context, key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(ctx, key, nil, handler, "AddEntryListenerToKey")
 }
 
-// AddEntryListenerWithPredicate adds a continuous entry listener to this map.
+// AddEntryListenerWithPredicate adds a continuous entry listeners to this map.
 func (m *ReplicatedMap) AddEntryListenerWithPredicate(ctx context.Context, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(ctx, nil, predicate, handler, "AddEntryListenerWithPredicate")
 }
 
-// AddEntryListenerToKeyWithPredicate adds a continuous entry listener to this map.
+// AddEntryListenerToKeyWithPredicate adds a continuous entry listeners to this map.
 func (m *ReplicatedMap) AddEntryListenerToKeyWithPredicate(ctx context.Context, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
 	return m.addEntryListener(ctx, key, predicate, handler, "AddEntryListenerToKeyWithPredicate")
 }
@@ -240,7 +240,7 @@ func (m *ReplicatedMap) Remove(ctx context.Context, key interface{}) (interface{
 	}
 }
 
-// RemoveEntryListener removes the specified entry listener.
+// RemoveEntryListener removes the specified entry listeners.
 func (m *ReplicatedMap) RemoveEntryListener(ctx context.Context, subscriptionID types.UUID) error {
 	return m.listenerBinder.Remove(ctx, subscriptionID)
 }

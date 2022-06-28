@@ -39,7 +39,7 @@ const (
 	ReplicatedMapAddEntryListenerEventEntryNumberOfAffectedEntriesOffset = ReplicatedMapAddEntryListenerEventEntryUuidOffset + proto.UuidSizeInBytes
 )
 
-// Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
+// Adds an entry listeners for this map. The listeners will be notified for all map add/remove/update/evict events.
 
 func EncodeReplicatedMapAddEntryListenerRequest(name string, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

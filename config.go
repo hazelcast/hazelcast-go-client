@@ -48,9 +48,9 @@ func NewConfig() Config {
 	return Config{}
 }
 
-// AddLifecycleListener adds a lifecycle listener.
-// The listener is attached to the client before the client starts, so all lifecycle events can be received.
-// Use the returned subscription ID to remove the listener.
+// AddLifecycleListener adds a lifecycle listeners.
+// The listeners is attached to the client before the client starts, so all lifecycle events can be received.
+// Use the returned subscription ID to remove the listeners.
 // The handler must not block.
 func (c *Config) AddLifecycleListener(handler LifecycleStateChangeHandler) types.UUID {
 	c.ensureLifecycleListeners()
@@ -59,9 +59,9 @@ func (c *Config) AddLifecycleListener(handler LifecycleStateChangeHandler) types
 	return id
 }
 
-// AddMembershipListener adds a membership listener.
-// The listener is attached to the client before the client starts, so all membership events can be received.
-// Use the returned subscription ID to remove the listener.
+// AddMembershipListener adds a membership listeners.
+// The listeners is attached to the client before the client starts, so all membership events can be received.
+// Use the returned subscription ID to remove the listeners.
 func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHandler) types.UUID {
 	c.ensureMembershipListeners()
 	id := types.NewUUID()

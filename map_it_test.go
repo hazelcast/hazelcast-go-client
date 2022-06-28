@@ -822,7 +822,7 @@ func TestMap_EntryNotifiedEventWithAddListener(t *testing.T) {
 			return cc == totalCallCount
 		})
 		atomic.StoreInt32(&callCount, 0)
-		// Remove the listener and test that entry added events are not received anymore
+		// Remove the listeners and test that entry added events are not received anymore
 		if err := m.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}

@@ -39,7 +39,7 @@ const (
 	ReplicatedMapAddEntryListenerToKeyEventEntryNumberOfAffectedEntriesOffset = ReplicatedMapAddEntryListenerToKeyEventEntryUuidOffset + proto.UuidSizeInBytes
 )
 
-// Adds the specified entry listener for the specified key. The listener will be notified for all
+// Adds the specified entry listeners for the specified key. The listeners will be notified for all
 // add/remove/update/evict events of the specified key only.
 
 func EncodeReplicatedMapAddEntryListenerToKeyRequest(name string, key iserialization.Data, localOnly bool) *proto.ClientMessage {

@@ -93,7 +93,7 @@ func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *
 		return !b.connExists(conn, id)
 	})
 	b.logger.Trace(func() string {
-		return fmt.Sprintf("adding listener %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
+		return fmt.Sprintf("adding listeners %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
 	})
 	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, conns...)
 	if err != nil {
@@ -121,7 +121,7 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	b.removeCorrelationIDs(id)
 	conns := b.connectionManager.ActiveConnections()
 	b.logger.Trace(func() string {
-		return fmt.Sprintf("removing listener %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
+		return fmt.Sprintf("removing listeners %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
 	})
 	for _, conn := range conns {
 		b.removeMemberSubscriptions(conn.MemberUUID())
@@ -143,7 +143,7 @@ func (b *ConnectionListenerBinder) removeCorrelationIDs(regId types.UUID) {
 		for _, id := range ids {
 			if err := b.invocationService.Remove(id); err != nil {
 				b.logger.Debug(func() string {
-					return fmt.Sprintf("removing listener: %s", err.Error())
+					return fmt.Sprintf("removing listeners: %s", err.Error())
 				})
 			}
 		}
@@ -221,7 +221,7 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Contex
 
 func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context, request *proto.ClientMessage, conn *Connection, start time.Time) (invocation.Invocation, error) {
 	b.logger.Trace(func() string {
-		return fmt.Sprintf("%d: removing listener", conn.connectionID)
+		return fmt.Sprintf("%d: removing listeners", conn.connectionID)
 	})
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, nil, start)
 	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
@@ -250,16 +250,16 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionStateChan
 	for regID, reg := range b.regs {
 		if b.connExists(e.Conn, regID) {
 			b.logger.Trace(func() string {
-				return fmt.Sprintf("listener %s already subscribed to member %s", regID, e.Conn.MemberUUID())
+				return fmt.Sprintf("listeners %s already subscribed to member %s", regID, e.Conn.MemberUUID())
 			})
 			continue
 		}
 		b.logger.Debug(func() string {
-			return fmt.Sprintf("adding listener %s:\nconns: [%v],\nregs: %v, source: handleConnectionOpened", regID, e.Conn, b.regs)
+			return fmt.Sprintf("adding listeners %s:\nconns: [%v],\nregs: %v, source: handleConnectionOpened", regID, e.Conn, b.regs)
 		})
 		corrIDs, err := b.sendAddListenerRequests(context.Background(), reg.addRequest, reg.handler, e.Conn)
 		if err != nil {
-			b.logger.Errorf("adding listener on connection: %d", e.Conn.ConnectionID())
+			b.logger.Errorf("adding listeners on connection: %d", e.Conn.ConnectionID())
 			return
 		}
 		b.updateCorrelationIDs(regID, corrIDs)
