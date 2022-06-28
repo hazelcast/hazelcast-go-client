@@ -274,7 +274,7 @@ func (g runtimeGauges) updateUptime(bt *binTextStats) {
 			return fmt.Sprintf("ERROR getting uptime: %s", err.Error())
 		})
 	} else {
-		ms := internal.TimeMillis(time.Now()) - ct
+		ms := time.Now().UnixMilli() - ct
 		bt.mc.AddLong(g.uptime, ms)
 		bt.stats = append(bt.stats, makeTextStat(&g.uptime, ms))
 	}
