@@ -993,14 +993,14 @@ Repairing responsibilities of this task are:
 See: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask
 */
 type nearCacheReparingTask struct {
+	reconciliationIntervalNanos int64
+	lastAntiEntropyRunNanos     int64
 	handlers                    *sync.Map
 	ss                          *serialization.Service
 	ps                          *cluster.PartitionService
 	doneCh                      <-chan struct{}
 	invalidationMetaDataFetcher nearCacheInvalidationMetaDataFetcher
 	lg                          ilogger.LogAdaptor
-	reconciliationIntervalNanos int64
-	lastAntiEntropyRunNanos     int64
 	maxToleratedMissCount       int
 	partitionCount              int32
 }
