@@ -196,6 +196,7 @@ func (n nearCacheValueStoreAdapter) ConvertValue(value interface{}) (interface{}
 }
 
 func (n nearCacheValueStoreAdapter) GetRecordStorageMemoryCost(rec *nearCacheRecord) int64 {
+	// memory cost for "OBJECT" in memory format is totally not supported, so just return zero
 	return 0
 }
 
