@@ -209,8 +209,11 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
-	assertStringEquivalent(t, target, string(b))
+	target := `{"Invalidation":{},"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
+	if !assertStringEquivalent(t, target, string(b)) {
+		t.Logf("expected: %s", target)
+		t.Logf("got     : %s", string(b))
+	}
 }
 
 func TestValidateFlakeIDGeneratorConfig(t *testing.T) {
@@ -394,8 +397,10 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, false, c.Failover.Enabled)
 }
 
-func assertStringEquivalent(t *testing.T, s1, s2 string) {
-	assert.Equal(t, len(s1), len(s2))
+func assertStringEquivalent(t *testing.T, s1, s2 string) bool {
+	if !assert.Equal(t, len(s1), len(s2)) {
+		return false
+	}
 	s1sl := []byte(s1)
 	s2sl := []byte(s2)
 	sort.Slice(s1sl, func(i, j int) bool {
@@ -404,5 +409,5 @@ func assertStringEquivalent(t *testing.T, s1, s2 string) {
 	sort.Slice(s2sl, func(i, j int) bool {
 		return s2sl[i] < s2sl[j]
 	})
-	assert.Equal(t, s1sl, s2sl)
+	return assert.Equal(t, s1sl, s2sl)
 }

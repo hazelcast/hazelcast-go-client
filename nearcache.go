@@ -98,7 +98,9 @@ func (m *nearCacheManager) GetOrCreateNearCache(name string, cfg nearcache.Confi
 	m.nearCachesMu.Lock()
 	nc, ok = m.nearCaches[name]
 	if !ok {
-		nc = newNearCache(&cfg, m.ss, m.lg, m.doneCh)
+		delay := defaultExpirationTaskInitialDelay
+		period := defaultExpirationTaskPeriod
+		nc = newNearCache(&cfg, m.ss, delay, period, m.lg, m.doneCh)
 		m.nearCaches[name] = nc
 	}
 	m.nearCachesMu.Unlock()
@@ -120,7 +122,7 @@ type nearCache struct {
 	expirationInProgress int32
 }
 
-func newNearCache(cfg *nearcache.Config, ss *serialization.Service, logger ilogger.LogAdaptor, doneCh <-chan struct{}) *nearCache {
+func newNearCache(cfg *nearcache.Config, ss *serialization.Service, expirationInitialDelay, expirationPeriod time.Duration, logger ilogger.LogAdaptor, doneCh <-chan struct{}) *nearCache {
 	var rc nearCacheRecordValueConverter
 	var se nearCacheStorageEstimator
 	if cfg.InMemoryFormat == nearcache.InMemoryFormatBinary {
@@ -138,7 +140,7 @@ func newNearCache(cfg *nearcache.Config, ss *serialization.Service, logger ilogg
 		logger: logger,
 		doneCh: doneCh,
 	}
-	go nc.startExpirationTask(defaultExpirationTaskInitialDelay, defaultExpirationTaskPeriod)
+	go nc.startExpirationTask(expirationInitialDelay, expirationPeriod)
 	return nc
 }
 
