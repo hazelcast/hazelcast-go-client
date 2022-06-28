@@ -37,6 +37,10 @@ jobs:
           go install golang.org/x/tools/...@v0.1.11
           go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
 
+      -name: "Go mod tidy"
+        run: |
+          go mod tidy
+
       - name: "Run Checkers"
         run: |
           make check
