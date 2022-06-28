@@ -38,8 +38,9 @@ func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Ser
 		ncc: ncc,
 		ss:  ss,
 	}
-	// the only valid local policy on the client side is invalidate.
-	ncm.registerInvalidationListener()
+	if ncc.InvalidateOnChange() {
+		ncm.registerInvalidationListener()
+	}
 	if ncc.Preloader.Enabled {
 		if err := ncm.preload(); err != nil {
 			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
@@ -108,7 +109,7 @@ func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (inte
 	if err != nil {
 		return nil, err
 	}
-	cached, found, err := ncm.getCachedValue(key, false)
+	cached, found, err := ncm.getCachedValue(key, true)
 	if err != nil {
 		return nil, err
 	}
@@ -234,9 +235,12 @@ func (ncm *nearCacheMap) getCachedValue(key interface{}, deserialize bool) (valu
 		return nil, true, nil
 	}
 	if deserialize {
-		value, err = ncm.ss.ToObject(value.(serialization.Data))
-		if err != nil {
-			return nil, false, err
+		data, ok := value.(serialization.Data)
+		if ok {
+			value, err = ncm.ss.ToObject(data)
+			if err != nil {
+				return nil, false, err
+			}
 		}
 	}
 	return value, true, nil
