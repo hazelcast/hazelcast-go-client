@@ -71,6 +71,7 @@ jobs:
           MEMBER_COUNT: 3
         run: |
           ./rc.sh start
+          go mod tidy
           make test-cover
 
       - name: Publish results to Codecov for PR coming from hazelcast organization
