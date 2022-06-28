@@ -38,8 +38,8 @@ jobs:
           go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
 
       - name: "Go mod tidy"
-       run: |
-         go mod tidy
+        run: |
+          go mod tidy
 
       - name: "Run Checkers"
         run: |
