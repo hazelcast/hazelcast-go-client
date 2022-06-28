@@ -234,7 +234,9 @@ func (c *Client) createComponents(config *Config) {
 		Config:            config.Cluster,
 	})
 	invocationService := invocation.NewService(invocationHandler, c.EventDispatcher, c.Logger)
-	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger)
+	iv := time.Duration(c.clusterConfig.HeartbeatInterval)
+	it := time.Duration(c.clusterConfig.HeartbeatTimeout)
+	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger, iv, it)
 	if config.StatsEnabled {
 		c.statsService = stats.NewService(
 			invocationService,
