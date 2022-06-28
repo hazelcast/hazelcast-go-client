@@ -276,11 +276,7 @@ func (m *Map) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
 	if m.hasNearCache {
 		return m.ncm.ContainsKey(ctx, key, m)
 	}
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return false, err
-	}
-	return m.containsKeyFromRemote(ctx, keyData)
+	return m.containsKeyFromRemote(ctx, key)
 }
 
 // ContainsValue returns true if the map contains an entry with the given value.
@@ -305,11 +301,7 @@ func (m *Map) Delete(ctx context.Context, key interface{}) error {
 	if m.hasNearCache {
 		return m.ncm.Delete(ctx, m, key)
 	}
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return err
-	}
-	return m.deleteFromRemote(ctx, keyData)
+	return m.deleteFromRemote(ctx, key)
 }
 
 // Evict evicts the mapping for a key from this map.
@@ -452,8 +444,12 @@ func (m *Map) Get(ctx context.Context, key interface{}) (interface{}, error) {
 	return m.getFromRemote(ctx, keyData)
 }
 
-func (m *Map) containsKeyFromRemote(ctx context.Context, keyData serialization.Data) (bool, error) {
+func (m *Map) containsKeyFromRemote(ctx context.Context, key interface{}) (bool, error) {
 	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return false, err
+	}
 	request := codec.EncodeMapContainsKeyRequest(m.name, keyData, lid)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -472,8 +468,12 @@ func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (in
 	return m.convertToObject(codec.DecodeMapGetResponse(response))
 }
 
-func (m *Map) deleteFromRemote(ctx context.Context, keyData serialization.Data) error {
+func (m *Map) deleteFromRemote(ctx context.Context, key interface{}) error {
 	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return err
+	}
 	request := codec.EncodeMapDeleteRequest(m.name, keyData, lid)
 	if _, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 		return err
@@ -481,8 +481,12 @@ func (m *Map) deleteFromRemote(ctx context.Context, keyData serialization.Data) 
 	return nil
 }
 
-func (m *Map) putWithTTLFromRemote(ctx context.Context, keyData, valueData serialization.Data, ttl int64) (interface{}, error) {
+func (m *Map) putWithTTLFromRemote(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
 	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
 	request := codec.EncodeMapPutRequest(m.name, keyData, valueData, lid, ttl)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -490,8 +494,12 @@ func (m *Map) putWithTTLFromRemote(ctx context.Context, keyData, valueData seria
 	}
 	return m.convertToObject(codec.DecodeMapPutResponse(response))
 }
-func (m *Map) putWithMaxIdleFromRemote(ctx context.Context, keyData, valueData serialization.Data, ttl int64, maxIdle int64) (interface{}, error) {
+func (m *Map) putWithMaxIdleFromRemote(ctx context.Context, key, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
 	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
 	request := codec.EncodeMapPutWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -500,8 +508,12 @@ func (m *Map) putWithMaxIdleFromRemote(ctx context.Context, keyData, valueData s
 	return m.convertToObject(codec.DecodeMapPutWithMaxIdleResponse(response))
 }
 
-func (m *Map) removeFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {
+func (m *Map) removeFromRemote(ctx context.Context, key interface{}) (interface{}, error) {
 	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
 	request := codec.EncodeMapRemoveRequest(m.name, keyData, lid)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -510,8 +522,12 @@ func (m *Map) removeFromRemote(ctx context.Context, keyData serialization.Data) 
 	return m.convertToObject(codec.DecodeMapRemoveResponse(response))
 }
 
-func (m *Map) removeIfSameFromRemote(ctx context.Context, keyData, valueData serialization.Data) (bool, error) {
+func (m *Map) removeIfSameFromRemote(ctx context.Context, key, value interface{}) (bool, error) {
 	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
 	request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, lid)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -520,8 +536,12 @@ func (m *Map) removeIfSameFromRemote(ctx context.Context, keyData, valueData ser
 	return codec.DecodeMapRemoveIfSameResponse(response), nil
 }
 
-func (m *Map) setFromRemote(ctx context.Context, keyData, valueData serialization.Data, ttl int64) error {
+func (m *Map) setFromRemote(ctx context.Context, key, value interface{}, ttl int64) error {
 	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return err
+	}
 	request := codec.EncodeMapSetRequest(m.name, keyData, valueData, lid, ttl)
 	if _, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 		return err
@@ -529,8 +549,12 @@ func (m *Map) setFromRemote(ctx context.Context, keyData, valueData serializatio
 	return nil
 }
 
-func (m *Map) setWithTTLAndMaxIdleFromRemote(ctx context.Context, keyData, valueData serialization.Data, ttl time.Duration, maxIdle time.Duration) error {
+func (m *Map) setWithTTLAndMaxIdleFromRemote(ctx context.Context, key, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
 	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return err
+	}
 	request := codec.EncodeMapSetWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
 	if _, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 		return err
@@ -538,8 +562,12 @@ func (m *Map) setWithTTLAndMaxIdleFromRemote(ctx context.Context, keyData, value
 	return nil
 }
 
-func (m *Map) tryRemoveFromRemote(ctx context.Context, keyData serialization.Data, timeout int64) (interface{}, error) {
+func (m *Map) tryRemoveFromRemote(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
 	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
 	request := codec.EncodeMapTryRemoveRequest(m.name, keyData, lid, timeout)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -922,11 +950,7 @@ func (m *Map) Remove(ctx context.Context, key interface{}) (interface{}, error) 
 	if m.hasNearCache {
 		return m.ncm.Remove(ctx, m, key)
 	}
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return nil, err
-	}
-	return m.removeFromRemote(ctx, keyData)
+	return m.removeFromRemote(ctx, key)
 }
 
 // RemoveAll deletes all entries matching the given predicate.
@@ -966,11 +990,7 @@ func (m *Map) RemoveIfSame(ctx context.Context, key interface{}, value interface
 	if m.hasNearCache {
 		return m.ncm.RemoveIfSame(ctx, m, key, value)
 	}
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return false, err
-	}
-	return m.removeIfSameFromRemote(ctx, keyData, valueData)
+	return m.removeIfSameFromRemote(ctx, key, value)
 }
 
 // Replace replaces the entry for a key only if it is currently mapped to some value and returns the previous value.
@@ -1055,11 +1075,7 @@ func (m *Map) SetWithTTLAndMaxIdle(ctx context.Context, key, value interface{}, 
 	if m.hasNearCache {
 		return m.ncm.SetWithTTLAndMaxIdle(ctx, m, key, value, ttl, maxIdle)
 	}
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return err
-	}
-	return m.setWithTTLAndMaxIdleFromRemote(ctx, keyData, valueData, ttl, maxIdle)
+	return m.setWithTTLAndMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 // Size returns the number of entries in this map.
@@ -1213,22 +1229,14 @@ func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
 }
 
 func (m *Map) putWithTTL(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return nil, err
-	}
-	return m.putWithTTLFromRemote(ctx, keyData, valueData, ttl)
+	return m.putWithTTLFromRemote(ctx, key, value, ttl)
 }
 
 func (m *Map) putWithMaxIdle(ctx context.Context, key, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
 	if m.hasNearCache {
 		return m.ncm.PutWithMaxIdle(ctx, m, key, value, ttl, maxIdle)
 	}
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return nil, err
-	}
-	return m.putWithMaxIdleFromRemote(ctx, keyData, valueData, ttl, maxIdle)
+	return m.putWithMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 func (m *Map) putIfAbsent(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
@@ -1313,11 +1321,7 @@ func (m *Map) set(ctx context.Context, key, value interface{}, ttl int64) error 
 	if m.hasNearCache {
 		return m.ncm.Set(ctx, m, key, value, ttl)
 	}
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return err
-	}
-	return m.setFromRemote(ctx, keyData, valueData, ttl)
+	return m.setFromRemote(ctx, key, value, ttl)
 }
 
 func (m *Map) tryPut(ctx context.Context, key interface{}, value interface{}, timeout int64) (bool, error) {
@@ -1338,11 +1342,7 @@ func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (in
 	if m.hasNearCache {
 		return m.ncm.TryRemove(ctx, m, key, timeout)
 	}
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return false, err
-	}
-	return m.tryRemoveFromRemote(ctx, keyData, timeout)
+	return m.tryRemoveFromRemote(ctx, key, timeout)
 }
 
 func (m *Map) aggregate(ctx context.Context, req *proto.ClientMessage, decoder func(message *proto.ClientMessage) serialization.Data) (interface{}, error) {

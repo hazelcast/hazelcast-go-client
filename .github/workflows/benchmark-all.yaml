@@ -33,8 +33,10 @@ jobs:
 
       - name: "Run Benchmarks, Single Member"
         run: |
+          go mod tidy
           MEMBER_COUNT=1 WARMUPS=3 make benchmark
 
       - name: "Run Benchmarks, Three Members"
         run: |
+          go mod tidy
           MEMBER_COUNT=3 WARMUPS=3 make benchmark

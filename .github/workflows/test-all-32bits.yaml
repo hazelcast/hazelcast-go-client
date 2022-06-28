@@ -34,8 +34,12 @@ jobs:
 
       - name: "Install Go tools"
         run: |
-          go get -u golang.org/x/tools/...@v0.1.0
-          go get honnef.co/go/tools/cmd/staticcheck@v0.2.2
+          go install golang.org/x/tools/...@v0.1.11
+          go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
+
+      - name: "Go mod tidy"
+        run: |
+          go mod tidy
 
       - name: "Run Checkers"
         run: |

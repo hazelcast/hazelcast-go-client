@@ -27,19 +27,18 @@ import (
 
 type nearCacheMap struct {
 	nc             *nearCache
-	ncc            *nearcache.Config
 	toNearCacheKey func(key interface{}) (interface{}, error)
 	ss             *serialization.Service
 }
 
 func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Service) (nearCacheMap, error) {
 	ncm := nearCacheMap{
-		nc:  nc,
-		ncc: ncc,
-		ss:  ss,
+		nc: nc,
+		ss: ss,
 	}
-	// the only valid local policy on the client side is invalidate.
-	ncm.registerInvalidationListener()
+	if ncc.InvalidateOnChange() {
+		ncm.registerInvalidationListener()
+	}
 	if ncc.Preloader.Enabled {
 		if err := ncm.preload(); err != nil {
 			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
@@ -83,11 +82,7 @@ func (ncm *nearCacheMap) ContainsKey(ctx context.Context, key interface{}, m *Ma
 	if ok {
 		return cached != nil, nil
 	}
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return false, err
-	}
-	return m.containsKeyFromRemote(ctx, keyData)
+	return m.containsKeyFromRemote(ctx, key)
 }
 
 func (ncm *nearCacheMap) Delete(ctx context.Context, m *Map, key interface{}) error {
@@ -96,11 +91,7 @@ func (ncm *nearCacheMap) Delete(ctx context.Context, m *Map, key interface{}) er
 		return err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return err
-	}
-	return m.deleteFromRemote(ctx, keyData)
+	return m.deleteFromRemote(ctx, key)
 }
 
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
@@ -108,7 +99,7 @@ func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (inte
 	if err != nil {
 		return nil, err
 	}
-	cached, found, err := ncm.getCachedValue(key, false)
+	cached, found, err := ncm.getCachedValue(key, true)
 	if err != nil {
 		return nil, err
 	}
@@ -131,11 +122,7 @@ func (ncm *nearCacheMap) Put(ctx context.Context, m *Map, key, value interface{}
 		return nil, err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return false, err
-	}
-	return m.putWithTTLFromRemote(ctx, keyData, valueData, ttl)
+	return m.putWithTTLFromRemote(ctx, key, value, ttl)
 }
 
 func (ncm *nearCacheMap) PutWithMaxIdle(ctx context.Context, m *Map, key, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
@@ -144,11 +131,7 @@ func (ncm *nearCacheMap) PutWithMaxIdle(ctx context.Context, m *Map, key, value 
 		return nil, err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return false, err
-	}
-	return m.putWithMaxIdleFromRemote(ctx, keyData, valueData, ttl, maxIdle)
+	return m.putWithMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 func (ncm *nearCacheMap) Remove(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
@@ -157,11 +140,7 @@ func (ncm *nearCacheMap) Remove(ctx context.Context, m *Map, key interface{}) (i
 		return false, err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return nil, err
-	}
-	return m.removeFromRemote(ctx, keyData)
+	return m.removeFromRemote(ctx, key)
 }
 
 func (ncm *nearCacheMap) RemoveIfSame(ctx context.Context, m *Map, key interface{}, value interface{}) (bool, error) {
@@ -170,11 +149,7 @@ func (ncm *nearCacheMap) RemoveIfSame(ctx context.Context, m *Map, key interface
 		return false, err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return false, err
-	}
-	return m.removeIfSameFromRemote(ctx, keyData, valueData)
+	return m.removeIfSameFromRemote(ctx, key, value)
 }
 
 func (ncm *nearCacheMap) Set(ctx context.Context, m *Map, key, value interface{}, ttl int64) error {
@@ -183,11 +158,7 @@ func (ncm *nearCacheMap) Set(ctx context.Context, m *Map, key, value interface{}
 		return err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return err
-	}
-	return m.setFromRemote(ctx, keyData, valueData, ttl)
+	return m.setFromRemote(ctx, key, value, ttl)
 }
 
 func (ncm *nearCacheMap) SetWithTTLAndMaxIdle(ctx context.Context, m *Map, key, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
@@ -196,11 +167,7 @@ func (ncm *nearCacheMap) SetWithTTLAndMaxIdle(ctx context.Context, m *Map, key, 
 		return err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, valueData, err := m.validateAndSerialize2(key, value)
-	if err != nil {
-		return err
-	}
-	return m.setWithTTLAndMaxIdleFromRemote(ctx, keyData, valueData, ttl, maxIdle)
+	return m.setWithTTLAndMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 func (ncm *nearCacheMap) TryRemove(ctx context.Context, m *Map, key interface{}, timeout int64) (interface{}, error) {
@@ -209,11 +176,7 @@ func (ncm *nearCacheMap) TryRemove(ctx context.Context, m *Map, key interface{},
 		return false, err
 	}
 	defer ncm.nc.Invalidate(key)
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return nil, err
-	}
-	return m.tryRemoveFromRemote(ctx, keyData, timeout)
+	return m.tryRemoveFromRemote(ctx, key, timeout)
 }
 
 func (ncm *nearCacheMap) GetLocalMapStats() LocalMapStats {
@@ -234,9 +197,12 @@ func (ncm *nearCacheMap) getCachedValue(key interface{}, deserialize bool) (valu
 		return nil, true, nil
 	}
 	if deserialize {
-		value, err = ncm.ss.ToObject(value.(serialization.Data))
-		if err != nil {
-			return nil, false, err
+		data, ok := value.(serialization.Data)
+		if ok {
+			value, err = ncm.ss.ToObject(data)
+			if err != nil {
+				return nil, false, err
+			}
 		}
 	}
 	return value, true, nil
