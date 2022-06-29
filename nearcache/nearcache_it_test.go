@@ -119,9 +119,11 @@ func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 		{
 			name: "Put",
 			f: func(ctx context.Context, tcx it.MapTestContext, i int64) {
-				if err := tcx.M.Delete(ctx, i); err != nil {
+				v, err := tcx.M.Put(ctx, i, i)
+				if err != nil {
 					tcx.T.Fatal(err)
 				}
+				require.Equal(t, i, v)
 			},
 		},
 	}
@@ -266,7 +268,7 @@ func clientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 func invalidationRunner(t *testing.T, testCases []mapTestCase) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, false)
+			tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
 			tcx.Tester(func(tcx it.MapTestContext) {
 				const size = int64(1000)
 				ctx := context.Background()
