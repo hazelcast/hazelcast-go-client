@@ -90,18 +90,12 @@ func newNearCache(cfg *nearcache.Config, ss *serialization.Service) *nearCache {
 }
 
 func (nc *nearCache) Get(key interface{}) (interface{}, bool, error) {
-	_, ok := key.(serialization.Data)
-	if nc.cfg.SerializeKeys {
-		if !ok {
-			panic("key must be of type serialization.Data!")
-		}
-	} else if ok {
-		panic("key cannot be of type Data!")
-	}
+	nc.checkKeyFormat(key)
 	return nc.store.Get(key)
 }
 
 func (nc *nearCache) Invalidate(key interface{}) {
+	nc.checkKeyFormat(key)
 	nc.store.Invalidate(key)
 }
 
@@ -132,6 +126,17 @@ func (nc *nearCache) TryPublishReserved(key, value interface{}, reservationID in
 		value = cached
 	}
 	return value, nil
+}
+
+func (nc *nearCache) checkKeyFormat(key interface{}) {
+	_, ok := key.(serialization.Data)
+	if nc.cfg.SerializeKeys {
+		if !ok {
+			panic("key must be of type serialization.Data!")
+		}
+	} else if ok {
+		panic("key cannot be of type serialization.Data!")
+	}
 }
 
 const (
