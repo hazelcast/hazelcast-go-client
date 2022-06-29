@@ -117,7 +117,7 @@ func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
 }
 
 // InvokeOnRandomTarget sends the given request to one of the members.
-// If opts.Handler is given, it is used as an event listeners handler.
+// If opts.Handler is given, it is used as an event listener handler.
 func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *ClientMessage, opts *InvokeOptions) (*ClientMessage, error) {
 	var handler proto.ClientMessageHandler
 	if opts != nil {
@@ -137,7 +137,7 @@ func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessag
 }
 
 // InvokeOnMember sends the request to the given member.
-// If opts.Handler is given, it is used as an event listeners handler.
+// If opts.Handler is given, it is used as an event listener handler.
 func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID, opts *InvokeOptions) (*ClientMessage, error) {
 	var handler proto.ClientMessageHandler
 	if opts != nil {

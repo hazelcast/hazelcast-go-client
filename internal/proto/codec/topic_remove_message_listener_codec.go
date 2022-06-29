@@ -30,7 +30,7 @@ const (
 	TopicRemoveMessageListenerResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-// Stops receiving messages for the given message listeners.If the given listeners already removed, this method does nothing.
+// Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
 
 func EncodeTopicRemoveMessageListenerRequest(name string, registrationId types.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

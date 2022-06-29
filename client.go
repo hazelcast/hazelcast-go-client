@@ -203,7 +203,7 @@ func (c *Client) Running() bool {
 }
 
 // AddLifecycleListener adds a lifecycle state change handler after the client starts.
-// Use the returned subscription ID to remove the listeners.
+// Use the returned subscription ID to remove the listener.
 // The handler must not block.
 func (c *Client) AddLifecycleListener(handler LifecycleStateChangeHandler) (types.UUID, error) {
 	if c.ic.State() >= client.Stopping {
@@ -233,7 +233,7 @@ func (c *Client) RemoveLifecycleListener(subscriptionID types.UUID) error {
 }
 
 // AddMembershipListener adds a member state change handler and returns a unique subscription ID.
-// Use the returned subscription ID to remove the listeners.
+// Use the returned subscription ID to remove the listener.
 func (c *Client) AddMembershipListener(handler cluster.MembershipStateChangeHandler) (types.UUID, error) {
 	if c.ic.State() >= client.Stopping {
 		return types.UUID{}, hzerrors.ErrClientNotActive
@@ -261,8 +261,8 @@ func (c *Client) RemoveMembershipListener(subscriptionID types.UUID) error {
 	return nil
 }
 
-// AddDistributedObjectListener adds a distributed object listeners and returns a unique subscription ID.
-// Use the returned subscription ID to remove the listeners.
+// AddDistributedObjectListener adds a distributed object listener and returns a unique subscription ID.
+// Use the returned subscription ID to remove the listener.
 func (c *Client) AddDistributedObjectListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
 	if c.ic.State() >= client.Stopping {
 		return types.UUID{}, hzerrors.ErrClientNotActive
@@ -270,7 +270,7 @@ func (c *Client) AddDistributedObjectListener(ctx context.Context, handler Distr
 	return c.proxyManager.addDistributedObjectEventListener(ctx, handler)
 }
 
-// RemoveDistributedObjectListener removes the distributed object listeners handler with the given subscription ID.
+// RemoveDistributedObjectListener removes the distributed object listener handler with the given subscription ID.
 func (c *Client) RemoveDistributedObjectListener(ctx context.Context, subscriptionID types.UUID) error {
 	if c.ic.State() >= client.Stopping {
 		return hzerrors.ErrClientNotActive

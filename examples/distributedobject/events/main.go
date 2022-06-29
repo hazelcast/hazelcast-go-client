@@ -44,7 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Adding the event listeners.")
+	log.Println("Adding the event listener.")
 	subID, err := client.AddDistributedObjectListener(ctx, func(e hazelcast.DistributedObjectNotified) {
 		log.Println(e.EventType, e.ServiceName, e.ObjectName)
 	})
@@ -55,11 +55,11 @@ func main() {
 	if err = createDestroyMap(ctx, client, "my-map-1"); err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Removing the event listeners.")
+	log.Println("Removing the event listener.")
 	if err := client.RemoveDistributedObjectListener(ctx, subID); err != nil {
 		log.Fatal(err)
 	}
-	log.Println("The event listeners was removed, no DistributedObject events will be received from now on...")
+	log.Println("The event listener was removed, no DistributedObject events will be received from now on...")
 	// creating a map an destroying it afterwards
 	if err = createDestroyMap(ctx, client, "my-map-2"); err != nil {
 		log.Fatal(err)

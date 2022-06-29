@@ -39,7 +39,7 @@ const (
 	ReplicatedMapAddEntryListenerWithPredicateEventEntryNumberOfAffectedEntriesOffset = ReplicatedMapAddEntryListenerWithPredicateEventEntryUuidOffset + proto.UuidSizeInBytes
 )
 
-// Adds an continuous entry listeners for this map. The listeners will be notified for map add/remove/update/evict
+// Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
 // events filtered by the given predicate.
 
 func EncodeReplicatedMapAddEntryListenerWithPredicateRequest(name string, predicate iserialization.Data, localOnly bool) *proto.ClientMessage {

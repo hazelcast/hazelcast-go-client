@@ -39,7 +39,7 @@ const (
 	ListAddListenerEventItemEventTypeOffset = ListAddListenerEventItemUuidOffset + proto.UuidSizeInBytes
 )
 
-// Adds an item listeners for this collection. Listener will be notified for all collection add/remove events.
+// Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
 
 func EncodeListAddListenerRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

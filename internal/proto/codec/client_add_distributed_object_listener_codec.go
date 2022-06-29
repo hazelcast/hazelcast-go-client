@@ -33,7 +33,7 @@ const (
 	ClientAddDistributedObjectListenerEventDistributedObjectSourceOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Adds a distributed object listeners to the cluster. This listeners will be notified
+// Adds a distributed object listener to the cluster. This listener will be notified
 // when a distributed object is created or destroyed.
 
 func EncodeClientAddDistributedObjectListenerRequest(localOnly bool) *proto.ClientMessage {

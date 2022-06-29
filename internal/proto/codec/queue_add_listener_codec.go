@@ -39,7 +39,7 @@ const (
 	QueueAddListenerEventItemEventTypeOffset = QueueAddListenerEventItemUuidOffset + proto.UuidSizeInBytes
 )
 
-// Adds an listeners for this collection. Listener will be notified or all collection add/remove events.
+// Adds an listener for this collection. Listener will be notified or all collection add/remove events.
 
 func EncodeQueueAddListenerRequest(name string, includeValue bool, localOnly bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

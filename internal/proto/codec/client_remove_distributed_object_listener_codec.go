@@ -30,7 +30,7 @@ const (
 	ClientRemoveDistributedObjectListenerResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-// Removes the specified distributed object listeners. If there is no such listeners added before, this call does no
+// Removes the specified distributed object listener. If there is no such listener added before, this call does no
 // change in the cluster and returns false.
 
 func EncodeClientRemoveDistributedObjectListenerRequest(registrationId types.UUID) *proto.ClientMessage {

@@ -32,7 +32,7 @@ const (
 	MapRemoveEntryListenerResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-// Removes the specified entry listeners. If there is no such listeners added before, this call does no change in the
+// Removes the specified entry listener. If there is no such listener added before, this call does no change in the
 // cluster and returns false.
 
 func EncodeMapRemoveEntryListenerRequest(name string, registrationId types.UUID) *proto.ClientMessage {

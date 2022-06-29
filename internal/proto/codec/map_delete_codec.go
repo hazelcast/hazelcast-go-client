@@ -35,7 +35,7 @@ const (
 // a delete operation is preferred over a remove operation for better performance. The map will not contain a mapping
 // for the specified key once the call returns.
 // This method breaks the contract of EntryListener. When an entry is removed by delete(), it fires an EntryEvent
-// with a null oldValue. Also, a listeners with predicates will have null values, so only keys can be queried via predicates
+// with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
 
 func EncodeMapDeleteRequest(name string, key iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()

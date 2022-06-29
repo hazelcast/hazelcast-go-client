@@ -32,7 +32,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Add a message listeners to the topic
+	// Add a message listener to the topic
 	_, err = topic.AddMessageListener(ctx, messageListener)
 	if err != nil {
 		log.Fatal(err)

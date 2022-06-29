@@ -123,10 +123,10 @@ func (l *List) AddAllAt(ctx context.Context, index int, elements ...interface{})
 	return codec.DecodeListAddAllWithIndexResponse(response), nil
 }
 
-// AddListener adds an item listeners for this list.
-// The listeners will be invoked whenever an item is added to or removed from this list.
+// AddListener adds an item listener for this list.
+// The listener will be invoked whenever an item is added to or removed from this list.
 // Received events include the updated item if includeValue is true.
-// Returns subscription ID of the listeners.
+// Returns subscription ID of the listener.
 func (l *List) AddListener(ctx context.Context, includeValue bool, handler ListItemNotifiedHandler) (types.UUID, error) {
 	return l.addListener(ctx, includeValue, handler)
 }
@@ -271,7 +271,7 @@ func (l *List) RemoveAll(ctx context.Context, elements ...interface{}) (bool, er
 	return codec.DecodeListCompareAndRemoveAllResponse(response), nil
 }
 
-// RemoveListener removes the item listeners with the given subscription ID.
+// RemoveListener removes the item listener with the given subscription ID.
 func (l *List) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return l.listenerBinder.Remove(ctx, subscriptionID)
 }

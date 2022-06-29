@@ -78,7 +78,7 @@ func (s *Set) AddAll(ctx context.Context, values ...interface{}) (bool, error) {
 	}
 }
 
-// AddItemListener adds an item listeners for this set.
+// AddItemListener adds an item listener for this set.
 // Listener will be notified for all set add/remove events.
 // Received events include the updated item if includeValue is true.
 func (s *Set) AddItemListener(ctx context.Context, includeValue bool, handler SetItemNotifiedHandler) (types.UUID, error) {
@@ -176,7 +176,7 @@ func (s *Set) RemoveAll(ctx context.Context, values ...interface{}) (bool, error
 	}
 }
 
-// RemoveListener removes the specified listeners.
+// RemoveListener removes the specified listener.
 func (s *Set) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return s.listenerBinder.Remove(ctx, subscriptionID)
 }

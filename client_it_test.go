@@ -170,7 +170,7 @@ func TestClient_AddMembershipListener(t *testing.T) {
 	wgAdded.Add(1)
 	wgRemoved.Add(1)
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("client-subscribed-membership-listeners", 15701, memberCount)
+	cls := it.StartNewClusterWithOptions("client-subscribed-membership-listener", 15701, memberCount)
 	cfg := cls.DefaultConfig()
 	cfg.Cluster.Unisocket = true
 	client, err := hz.StartNewClientWithConfig(ctx, cfg)
@@ -272,7 +272,7 @@ func TestClientEventOrder(t *testing.T) {
 			var state int32
 			checkers = append(checkers, &state)
 		}
-		// init listeners conf
+		// init listener conf
 		var c hz.MapEntryListenerConfig
 		c.NotifyEntryAdded(true)
 		c.NotifyEntryRemoved(true)

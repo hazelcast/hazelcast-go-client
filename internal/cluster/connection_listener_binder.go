@@ -93,7 +93,7 @@ func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *
 		return !b.connExists(conn, id)
 	})
 	b.logger.Trace(func() string {
-		return fmt.Sprintf("adding listeners %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
+		return fmt.Sprintf("adding listener %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
 	})
 	corrIDs, err := b.sendAddListenerRequests(ctx, add, handler, conns...)
 	if err != nil {
