@@ -354,7 +354,7 @@ func (rs nearCacheRecordStore) Size() int {
 func (rs nearCacheRecordStore) makeMapKey(key interface{}) interface{} {
 	data, ok := key.(serialization.Data)
 	if ok {
-		// serialization.Data is not hashable, conver it to string
+		// serialization.Data is not hashable, convert it to string
 		return string(data)
 	}
 	return key
