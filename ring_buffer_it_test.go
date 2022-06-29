@@ -188,6 +188,23 @@ func TestRingbuffer_ReadMany_NonNegativeParameterValidation(t *testing.T) {
 	})
 }
 
+func TestRingbuffer_ReadMany_InvalidParameterValidation(t *testing.T) {
+	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
+		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")
+
+		_, err := rb.ReadMany(context.Background(), 0, 9, 1, nil)
+		assert.Error(t, err, "minCount should be smaller maxCount")
+
+		_, err = rb.ReadMany(context.Background(), 0, 0, hz.MaxBatchSize+1, nil)
+		assert.Error(t, err, "maxCount should be smaller or equal MaxBatchSize")
+
+		capacity := it.MustValue(rb.Capacity(context.Background())).(int64)
+
+		_, err = rb.ReadMany(context.Background(), 0, 0, int32(capacity+1), nil)
+		assert.Error(t, err, "maxCount should be smaller or equal capacity")
+	})
+}
+
 func TestRingbuffer_ReadMany_GetSequence_invalid_index(t *testing.T) {
 	it.RingbufferTester(t, func(t *testing.T, rb *hz.Ringbuffer) {
 		rb.AddAll(context.Background(), hz.OverflowPolicyOverwrite, "x", "1", "2", "3")

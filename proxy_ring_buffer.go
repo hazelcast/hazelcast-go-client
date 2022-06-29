@@ -48,6 +48,8 @@ type ReadResultSet struct {
 // ReadResultSetSequenceUnavailable is used when error happened
 const ReadResultSetSequenceUnavailable int64 = -1
 
+const MaxBatchSize = 1000
+
 // OverflowPolicy
 // Using this OverflowPolicy one can control the behavior what should to be done
 // when an item is about to be added to the Ringbuffer, but there is {@code 0}
@@ -240,6 +242,16 @@ func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCoun
 	}
 	if maxCount < 0 {
 		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError("maxCount can't be smaller then 0", nil)
+	}
+	if maxCount < minCount {
+		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError("maxCount should be equal or larger than minCount", nil)
+	}
+	if maxCount > MaxBatchSize {
+		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("maxCount can't be larger than %d", MaxBatchSize), nil)
+	}
+	capacity, err := rb.Capacity(context.Background())
+	if int64(maxCount) > capacity || err != nil {
+		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError("the maxCount should be smaller than or equal to the capacity", err)
 	}
 	var serializedFilterData iserialization.Data
 	if filter != nil {
