@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
@@ -106,14 +107,12 @@ func (tcx *NearCacheTestContext) AssertNearCacheInvalidationRequests(invalidatio
 	}
 }
 
-func (tcx *NearCacheTestContext) AssertNearCacheSize(target int64) bool {
+func (tcx *NearCacheTestContext) RequireNearCacheSize(target int64) {
 	size := int64(tcx.NC.Size())
-	if !assert.Equal(tcx.T, target, size, "Cache size didn't reach the desired value") {
-		return false
-	}
+	require.Equal(tcx.T, target, size, "Cache size didn't reach the desired value")
 	// ignoring the invalidation requests here.
 	st, _ := tcx.Stats()
-	return assert.Equal(tcx.T, target, st.OwnedEntryCount, "Near Cache owned entry count didn't reach the desired value")
+	require.Equal(tcx.T, target, st.OwnedEntryCount, "Near Cache owned entry count didn't reach the desired value")
 }
 
 func (tcx *NearCacheTestContext) AssertNearCacheStats(owned, hits, misses int64) {
