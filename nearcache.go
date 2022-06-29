@@ -508,6 +508,7 @@ func (rs *nearCacheRecordStore) reserveForWriteUpdate(key interface{}, keyData s
 		}
 		rec.SetReservationID(reservationID)
 		// initInvalidationMetaData(record, key, keyData);
+		return rec, nil
 	}
 	if rec.reservationID == nearCacheRecordReadPermitted {
 		rec.SetReservationID(reservationID)
