@@ -21,17 +21,18 @@ import (
 	"fmt"
 	"time"
 
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
 
 type nearCacheMap struct {
-	nc             *nearCache
+	nc             *inearcache.NearCache
 	toNearCacheKey func(key interface{}) (interface{}, error)
 	ss             *serialization.Service
 }
 
-func newNearCacheMap(nc *nearCache, ncc *nearcache.Config, ss *serialization.Service) (nearCacheMap, error) {
+func newNearCacheMap(nc *inearcache.NearCache, ncc *nearcache.Config, ss *serialization.Service) (nearCacheMap, error) {
 	ncm := nearCacheMap{
 		nc: nc,
 		ss: ss,
@@ -212,7 +213,7 @@ func (ncm *nearCacheMap) getFromRemote(ctx context.Context, m *Map, key interfac
 	if err != nil {
 		return nil, err
 	}
-	rid, err := ncm.nc.TryReserveForUpdate(key, keyData, nearCacheUpdateSemanticReadUpdate)
+	rid, err := ncm.nc.TryReserveForUpdate(key, keyData, inearcache.UpdateSemanticReadUpdate)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +221,7 @@ func (ncm *nearCacheMap) getFromRemote(ctx context.Context, m *Map, key interfac
 	if err != nil {
 		return nil, err
 	}
-	if rid != nearCacheRecordNotReserved {
+	if rid != inearcache.RecordNotReserved {
 		value, err = ncm.nc.TryPublishReserved(key, value, rid)
 		if err != nil {
 			return nil, err
