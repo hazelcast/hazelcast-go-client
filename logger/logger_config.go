@@ -17,7 +17,7 @@
 package logger
 
 import (
-	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 // Level is the importance of a log message.
@@ -69,7 +69,7 @@ func (c Config) Clone() Config {
 // Validate checks the logger configuration for problems and updates it with default values.
 func (c *Config) Validate() error {
 	if c.Level != "" && c.CustomLogger != nil {
-		return ihzerrors.NewIllegalArgumentError("logger level cannot be set when a custom logger is specified", nil)
+		return hzerrors.NewIllegalArgumentError("logger level cannot be set when a custom logger is specified", nil)
 	}
 	if c.Level == "" {
 		c.Level = InfoLevel

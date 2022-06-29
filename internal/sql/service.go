@@ -25,7 +25,7 @@ import (
 	"unsafe"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -109,10 +109,10 @@ type Result struct {
 
 func (r *Result) Iterator() (sql.RowsIterator, error) {
 	if !r.IsRowSet() {
-		return nil, ihzerrors.NewIllegalStateError("this result contains only update count", nil)
+		return nil, hzerrors.NewIllegalStateError("this result contains only update count", nil)
 	}
 	if !atomic.CompareAndSwapInt32(&r.iteratorState, iteratorInitial, iteratorRequested) {
-		return nil, ihzerrors.NewIllegalStateError("iterator can be requested only once", nil)
+		return nil, hzerrors.NewIllegalStateError("iterator can be requested only once", nil)
 	}
 	return r, nil
 }
@@ -121,7 +121,7 @@ func (r *Result) Iterator() (sql.RowsIterator, error) {
 // An error is returned if result represents an update count.
 func (r *Result) RowMetadata() (sql.RowMetadata, error) {
 	if r.qr == nil {
-		return nil, ihzerrors.NewIllegalStateError("result contains only update count", nil)
+		return nil, hzerrors.NewIllegalStateError("result contains only update count", nil)
 	}
 	return r.qr.Metadata(), nil
 }
@@ -204,7 +204,7 @@ func (r Row) Get(index int) (interface{}, error) {
 func (r Row) GetByColumnName(colName string) (interface{}, error) {
 	i, err := r.metadata.FindColumn(colName)
 	if err != nil {
-		return nil, ihzerrors.NewIllegalArgumentError(fmt.Sprintf(`column "%s" doesn't exist`, colName), err)
+		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf(`column "%s" doesn't exist`, colName), err)
 	}
 	return r.Get(i)
 }

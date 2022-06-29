@@ -25,7 +25,7 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -33,7 +33,7 @@ import (
 
 /*
 WARNING!
-The constants, types, methods and functions defined under hazelcast internal are considered internal API.
+The constants, types, methods and functions defined under hazelcastinternal are considered internal API.
 No backward-compatibility guarantees apply for this code.
 */
 
@@ -145,7 +145,7 @@ func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMes
 	}
 	mem := ci.client.ic.ClusterService.GetMemberByUUID(uuid)
 	if mem == nil {
-		return nil, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("member not found: %s", uuid.String()), nil)
+		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf("member not found: %s", uuid.String()), nil)
 	}
 	now := time.Now()
 	return ci.proxy.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
