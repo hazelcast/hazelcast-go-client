@@ -1332,7 +1332,7 @@ func (as attributeSet) Attrs() []string {
 	return attrs
 }
 
-// MapEntryListenerConfig contains configuration for a map entry listeners.
+// MapEntryListenerConfig contains configuration for a map entry listener.
 type MapEntryListenerConfig struct {
 	Predicate    predicate.Predicate
 	Key          interface{}

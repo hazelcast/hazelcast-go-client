@@ -230,7 +230,7 @@ type ListItemNotified struct {
 	EventType ItemEventType
 }
 
-// EventName returns generic event name, common for all List item listener.
+// EventName returns generic event name, common for all List item listeners.
 func (q ListItemNotified) EventName() string {
 	return eventListItemNotified
 }
