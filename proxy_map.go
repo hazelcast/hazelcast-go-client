@@ -827,19 +827,12 @@ func (m *Map) LockWithLease(ctx context.Context, key interface{}, leaseTime time
 
 // Put sets the value for the given key and returns the old value.
 func (m *Map) Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	ttl := int64(ttlUnset)
-	if m.hasNearCache {
-		return m.ncm.Put(ctx, m, key, value, ttl)
-	}
-	return m.putWithTTL(ctx, key, value, ttl)
+	return m.putWithTTL(ctx, key, value, int64(ttlUnset))
 }
 
 // PutWithTTL sets the value for the given key and returns the old value.
 // Entry will expire and get evicted after the ttl.
 func (m *Map) PutWithTTL(ctx context.Context, key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
-	if m.hasNearCache {
-		return m.ncm.Put(ctx, m, key, value, ttl.Milliseconds())
-	}
 	return m.putWithTTL(ctx, key, value, ttl.Milliseconds())
 }
 
@@ -1229,6 +1222,9 @@ func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
 }
 
 func (m *Map) putWithTTL(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.Put(ctx, m, key, value, ttl)
+	}
 	return m.putWithTTLFromRemote(ctx, key, value, ttl)
 }
 
