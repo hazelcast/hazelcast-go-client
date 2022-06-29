@@ -293,7 +293,7 @@ func (rs *nearCacheRecordStore) Invalidate(key interface{}) {
 	rs.incrementInvalidationRequests()
 }
 
-func (rs *nearCacheRecordStore) TryPublishReserved(key interface{}, value interface{}, reservationID int64, deserialize bool) (interface{}, error) {
+func (rs *nearCacheRecordStore) TryPublishReserved(key, value interface{}, reservationID int64, deserialize bool) (interface{}, error) {
 	key = rs.makeMapKey(key)
 	rs.recordsMu.Lock()
 	defer rs.recordsMu.Unlock()
@@ -550,7 +550,6 @@ func (rs *nearCacheRecordStore) reserveForReadUpdate(key interface{}, keyData se
 }
 
 func (rs *nearCacheRecordStore) createRecord(value interface{}) (*nearCacheRecord, error) {
-	// assumes recordsMu was locked elsewhere
 	var err error
 	value, err = rs.valueConverter.ConvertValue(value)
 	if err != nil {
@@ -686,8 +685,4 @@ type nearCacheStats struct {
 	LastPersistenceFailure string
 	// LastPersistenceDuration is the duration of the last completed persistence task.
 	LastPersistenceDuration time.Duration
-}
-
-func (st *nearCacheStats) InvalidationRequests() int64 {
-	return atomic.LoadInt64(&st.invalidationRequests)
 }

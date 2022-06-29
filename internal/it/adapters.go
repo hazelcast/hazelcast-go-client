@@ -24,7 +24,7 @@ import (
 
 type DataStructureAdapter interface {
 	Get(ctx context.Context, key interface{}) (interface{}, error)
-	Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error)
+	Put(ctx context.Context, key, value interface{}) (interface{}, error)
 	LocalMapStats() hazelcast.LocalMapStats
 }
 
