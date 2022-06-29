@@ -51,7 +51,7 @@ func (ci *ClientInternal) SerializationService() *serialization.Service {
 }
 
 // MakeNearCacheAdapterFromMap returns the nearcache of the given map.
-// It returns an interface{} instead of it.NearCacheAdapter in order to not introduce an import cycle.
+// It returns an interface{} instead of it.NearCacheAdapter in order not to introduce an import cycle.
 func MakeNearCacheAdapterFromMap(m *Map) interface{} {
 	if m.hasNearCache {
 		return m.ncm.nc

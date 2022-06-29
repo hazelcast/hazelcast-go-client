@@ -149,18 +149,12 @@ func (nc *nearCache) Clear() {
 }
 
 func (nc *nearCache) Get(key interface{}) (interface{}, bool, error) {
-	_, ok := key.(serialization.Data)
-	if nc.cfg.SerializeKeys {
-		if !ok {
-			panic("key must be of type serialization.Data!")
-		}
-	} else if ok {
-		panic("key cannot be of type Data!")
-	}
+	nc.checkKeyFormat(key)
 	return nc.store.Get(key)
 }
 
 func (nc *nearCache) Invalidate(key interface{}) {
+	nc.checkKeyFormat(key)
 	nc.store.Invalidate(key)
 }
 
@@ -172,6 +166,8 @@ func (nc nearCache) Stats() nearcache.Stats {
 	return nc.store.Stats()
 }
 
+// InvalidationRequests returns the invalidation requests.
+// It is used only for tests.
 func (nc nearCache) InvalidationRequests() int64 {
 	return nc.store.InvalidationRequests()
 }
@@ -191,6 +187,17 @@ func (nc *nearCache) TryPublishReserved(key, value interface{}, reservationID in
 		value = cached
 	}
 	return value, nil
+}
+
+func (nc *nearCache) checkKeyFormat(key interface{}) {
+	_, ok := key.(serialization.Data)
+	if nc.cfg.SerializeKeys {
+		if !ok {
+			panic("key must be of type serialization.Data!")
+		}
+	} else if ok {
+		panic("key cannot be of type serialization.Data!")
+	}
 }
 
 func (nc *nearCache) startExpirationTask(delay, timeout time.Duration) {
@@ -256,11 +263,7 @@ func (n nearCacheDataStoreAdapter) GetRecordStorageMemoryCost(rec *nearCacheReco
 		3*int32CostInBytes + // PartitionID, hits, cachedAsNil
 		1*atomicValueCostInBytes + // holder of the value
 		1*uuidCostInBytes // UUID
-	value := rec.Value()
-	data, ok := value.(serialization.Data)
-	if ok {
-		cost += data.DataSize()
-	}
+	cost += rec.Value().(serialization.Data).DataSize()
 	return int64(cost)
 }
 
@@ -277,6 +280,7 @@ func (n nearCacheValueStoreAdapter) ConvertValue(value interface{}) (interface{}
 }
 
 func (n nearCacheValueStoreAdapter) GetRecordStorageMemoryCost(rec *nearCacheRecord) int64 {
+	// memory cost for "OBJECT" in memory format is totally not supported, so just return zero
 	return 0
 }
 
@@ -552,10 +556,9 @@ func (rs *nearCacheRecordStore) publishReservedRecord(key, value interface{}, re
 	if rec.ReservationID() != reservationID {
 		return rec, nil
 	}
-	cost := rs.getTotalStorageMemoryCost(key, rec)
 	update := rec.Value() != nil || rec.CachedAsNil()
 	if update {
-		rs.decrementOwnedEntryMemoryCost(cost)
+		rs.decrementOwnedEntryMemoryCost(rs.getTotalStorageMemoryCost(key, rec))
 	}
 	if err := rs.updateRecordValue(rec, value); err != nil {
 		return nil, err
@@ -564,7 +567,7 @@ func (rs *nearCacheRecordStore) publishReservedRecord(key, value interface{}, re
 		rec.SetCachedAsNil()
 	}
 	rec.SetReservationID(nearCacheRecordReadPermitted)
-	rs.incrementOwnedEntryMemoryCost(cost)
+	rs.incrementOwnedEntryMemoryCost(rs.getTotalStorageMemoryCost(key, rec))
 	if !update {
 		rs.incrementOwnedEntryCount()
 	}

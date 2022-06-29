@@ -27,10 +27,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
 
-type InvalidationRequestStore interface {
-	InvalidationRequests() int64
-}
-
 type NearCacheTestContext struct {
 	T                             *testing.T
 	NC                            NearCacheAdapter
