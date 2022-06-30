@@ -29,6 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -100,6 +101,8 @@ You can pass any context.Context to any Map function, but in that case lock owne
 */
 type Map struct {
 	*proxy
+	ncm          nearCacheMap
+	hasNearCache bool
 }
 
 func newMap(p *proxy) *Map {
@@ -180,7 +183,7 @@ func (m *Map) mapListenerEventHandler(listener MapListener) EntryNotifiedHandler
 			listener.MapCleared(event)
 		case EntryAllEvicted:
 			listener.MapEvicted(event)
-		default: 
+		default:
 			m.logger.Warnf("Not a known map event type: %d", event.EventType)
 		}
 	}
@@ -270,17 +273,10 @@ func (m *Map) Clear(ctx context.Context) error {
 
 // ContainsKey returns true if the map contains an entry with the given key.
 func (m *Map) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapContainsKeyRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapContainsKeyResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.ContainsKey(ctx, key, m)
 	}
+	return m.containsKeyFromRemote(ctx, key)
 }
 
 // ContainsValue returns true if the map contains an entry with the given value.
@@ -302,14 +298,10 @@ func (m *Map) ContainsValue(ctx context.Context, value interface{}) (bool, error
 // the returned value. If the removed value will not be used, a delete operation is preferred over a remove
 // operation for better performance.
 func (m *Map) Delete(ctx context.Context, key interface{}) error {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapDeleteRequest(m.name, keyData, lid)
-		_, err := m.invokeOnKey(ctx, request, keyData)
-		return err
+	if m.hasNearCache {
+		return m.ncm.Delete(ctx, m, key)
 	}
+	return m.deleteFromRemote(ctx, key)
 }
 
 // Evict evicts the mapping for a key from this map.
@@ -439,21 +431,163 @@ func (m *Map) ForceUnlock(ctx context.Context, key interface{}) error {
 }
 
 // Get returns the value for the specified key, or nil if this map does not contain this key.
-// Warning:
-// This method returns a clone of original value, modifying the returned value does not change the
-// actual value in the map. One should put modified value back to make changes visible to all nodes.
+// Warning: This method returns a clone of original value, modifying the returned value does not change the actual value in the map.
+// One should put modified value back to make changes visible to all nodes.
 func (m *Map) Get(ctx context.Context, key interface{}) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapGetRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapGetResponse(response))
-		}
+	if m.hasNearCache {
+		return m.ncm.Get(ctx, m, key)
 	}
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+	return m.getFromRemote(ctx, keyData)
+}
+
+func (m *Map) containsKeyFromRemote(ctx context.Context, key interface{}) (bool, error) {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapContainsKeyRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapContainsKeyResponse(response), nil
+}
+
+func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapGetRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapGetResponse(response))
+}
+
+func (m *Map) deleteFromRemote(ctx context.Context, key interface{}) error {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return err
+	}
+	request := codec.EncodeMapDeleteRequest(m.name, keyData, lid)
+	if _, err := m.invokeOnKey(ctx, request, keyData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Map) putWithTTLFromRemote(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
+	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapPutRequest(m.name, keyData, valueData, lid, ttl)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapPutResponse(response))
+}
+func (m *Map) putWithMaxIdleFromRemote(ctx context.Context, key, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
+	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapPutWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapPutWithMaxIdleResponse(response))
+}
+
+func (m *Map) removeFromRemote(ctx context.Context, key interface{}) (interface{}, error) {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapRemoveRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapRemoveResponse(response))
+}
+
+func (m *Map) removeIfSameFromRemote(ctx context.Context, key, value interface{}) (bool, error) {
+	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapRemoveIfSameResponse(response), nil
+}
+
+func (m *Map) setFromRemote(ctx context.Context, key, value interface{}, ttl int64) error {
+	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return err
+	}
+	request := codec.EncodeMapSetRequest(m.name, keyData, valueData, lid, ttl)
+	if _, err := m.invokeOnKey(ctx, request, keyData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Map) setWithTTLAndMaxIdleFromRemote(ctx context.Context, key, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
+	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return err
+	}
+	request := codec.EncodeMapSetWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
+	if _, err := m.invokeOnKey(ctx, request, keyData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Map) tryRemoveFromRemote(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
+	lid := extractLockID(ctx)
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapTryRemoveRequest(m.name, keyData, lid, timeout)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return codec.DecodeMapTryRemoveResponse(response), nil
+}
+
+func (m *Map) tryPutFromRemote(ctx context.Context, key interface{}, value interface{}, timeout int64) (bool, error) {
+	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, lid, timeout)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapTryPutResponse(response), nil
 }
 
 // GetAll returns the entries for the given keys.
@@ -707,7 +841,7 @@ func (m *Map) LockWithLease(ctx context.Context, key interface{}, leaseTime time
 
 // Put sets the value for the given key and returns the old value.
 func (m *Map) Put(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	return m.putWithTTL(ctx, key, value, ttlUnset)
+	return m.putWithTTL(ctx, key, value, int64(ttlUnset))
 }
 
 // PutWithTTL sets the value for the given key and returns the old value.
@@ -719,14 +853,14 @@ func (m *Map) PutWithTTL(ctx context.Context, key interface{}, value interface{}
 // PutWithMaxIdle sets the value for the given key and returns the old value.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *Map) PutWithMaxIdle(ctx context.Context, key interface{}, value interface{}, maxIdle time.Duration) (interface{}, error) {
-	return m.putMaxIdle(ctx, key, value, ttlUnset, maxIdle.Milliseconds())
+	return m.putWithMaxIdle(ctx, key, value, ttlUnset, maxIdle.Milliseconds())
 }
 
 // PutWithTTLAndMaxIdle sets the value for the given key and returns the old value.
 // Entry will expire and get evicted after the ttl.
 // maxIdle is the maximum time in seconds for this entry to stay idle in the map.
 func (m *Map) PutWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
-	return m.putMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
+	return m.putWithMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
 // PutAll copies all the mappings from the specified map to this map.
@@ -820,17 +954,10 @@ func (m *Map) PutTransientWithTTLAndMaxIdle(ctx context.Context, key interface{}
 
 // Remove deletes the value for the given key and returns it.
 func (m *Map) Remove(ctx context.Context, key interface{}) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapRemoveRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapRemoveResponse(response))
-		}
+	if m.hasNearCache {
+		return m.ncm.Remove(ctx, m, key)
 	}
+	return m.removeFromRemote(ctx, key)
 }
 
 // RemoveAll deletes all entries matching the given predicate.
@@ -867,17 +994,10 @@ func (m *Map) RemoveInterceptor(ctx context.Context, registrationID string) (boo
 // RemoveIfSame removes the entry for a key only if it is currently mapped to a given value.
 // Returns true if the entry was removed.
 func (m *Map) RemoveIfSame(ctx context.Context, key interface{}, value interface{}) (bool, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapRemoveIfSameRequest(m.name, keyData, valueData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapRemoveIfSameResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.RemoveIfSame(ctx, m, key, value)
 	}
+	return m.removeIfSameFromRemote(ctx, key, value)
 }
 
 // Replace replaces the entry for a key only if it is currently mapped to some value and returns the previous value.
@@ -958,15 +1078,11 @@ func (m *Map) SetWithTTL(ctx context.Context, key interface{}, value interface{}
 // Set ttl to 0 for infinite timeout.
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
-func (m *Map) SetWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapSetWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
-		_, err := m.invokeOnKey(ctx, request, keyData)
-		return err
+func (m *Map) SetWithTTLAndMaxIdle(ctx context.Context, key, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
+	if m.hasNearCache {
+		return m.ncm.SetWithTTLAndMaxIdle(ctx, m, key, value, ttl, maxIdle)
 	}
+	return m.setWithTTLAndMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 // Size returns the number of entries in this map.
@@ -1035,6 +1151,13 @@ func (m *Map) Unlock(ctx context.Context, key interface{}) error {
 		_, err = m.invokeOnKey(ctx, request, keyData)
 		return err
 	}
+}
+
+func (m *Map) LocalMapStats() LocalMapStats {
+	if m.hasNearCache {
+		return m.ncm.GetLocalMapStats()
+	}
+	return LocalMapStats{}
 }
 
 func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error {
@@ -1112,32 +1235,18 @@ func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
 	}
 }
 
-func (m *Map) putWithTTL(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapPutRequest(m.name, keyData, valueData, lid, ttl)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapPutResponse(response))
-		}
+func (m *Map) putWithTTL(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.Put(ctx, m, key, value, ttl)
 	}
+	return m.putWithTTLFromRemote(ctx, key, value, ttl)
 }
 
-func (m *Map) putMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapPutWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapPutWithMaxIdleResponse(response))
-		}
+func (m *Map) putWithMaxIdle(ctx context.Context, key, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.PutWithMaxIdle(ctx, m, key, value, ttl, maxIdle)
 	}
+	return m.putWithMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 func (m *Map) putIfAbsent(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
@@ -1218,43 +1327,25 @@ func (m *Map) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateDa
 	}
 }
 
-func (m *Map) set(ctx context.Context, key interface{}, value interface{}, ttl int64) error {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapSetRequest(m.name, keyData, valueData, lid, ttl)
-		_, err := m.invokeOnKey(ctx, request, keyData)
-		return err
+func (m *Map) set(ctx context.Context, key, value interface{}, ttl int64) error {
+	if m.hasNearCache {
+		return m.ncm.Set(ctx, m, key, value, ttl)
 	}
+	return m.setFromRemote(ctx, key, value, ttl)
 }
 
 func (m *Map) tryPut(ctx context.Context, key interface{}, value interface{}, timeout int64) (bool, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, lid, timeout)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapTryPutResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.TryPut(ctx, m, key, value, timeout)
 	}
+	return m.tryPutFromRemote(ctx, key, value, timeout)
 }
 
 func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapTryRemoveRequest(m.name, keyData, lid, timeout)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return codec.DecodeMapTryRemoveResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.TryRemove(ctx, m, key, timeout)
 	}
+	return m.tryRemoveFromRemote(ctx, key, timeout)
 }
 
 func (m *Map) aggregate(ctx context.Context, req *proto.ClientMessage, decoder func(message *proto.ClientMessage) serialization.Data) (interface{}, error) {
@@ -1398,4 +1489,8 @@ func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
 // Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
+}
+
+type LocalMapStats struct {
+	NearCacheStats nearcache.Stats
 }

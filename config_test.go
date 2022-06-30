@@ -30,6 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -349,6 +350,28 @@ func TestConfig_AddExistingFlakeIDGenerator(t *testing.T) {
 	assert.NoError(t, config.AddFlakeIDGenerator("foo", 1, 1))
 	err := config.AddFlakeIDGenerator("foo", 2, 2)
 	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
+}
+
+func TestConfig_AddNearCache(t *testing.T) {
+	config := hazelcast.Config{}
+	ncc := nearcache.Config{Name: "foo"}
+	config.AddNearCache(ncc)
+	assert.NoError(t, config.Validate())
+	ncc2, ok, err := config.GetNearCache("foo")
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.Equal(t, ncc, ncc2)
+}
+
+func TestConfig_Validate_NearCache_Fails(t *testing.T) {
+	config := hazelcast.Config{}
+	ncc := nearcache.Config{Name: "foo"}
+	ncc.TimeToLiveSeconds = -1
+	config.AddNearCache(ncc)
+	err := config.Validate()
+	if !errors.Is(err, hzerrors.ErrInvalidConfiguration) {
+		t.Fatalf("expected ErrInvalidConfiguration")
+	}
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {

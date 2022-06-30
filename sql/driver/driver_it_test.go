@@ -21,8 +21,6 @@ import (
 	"database/sql"
 	"fmt"
 	"math/big"
-	"net/url"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -652,23 +650,6 @@ func populateMap(m *hz.Map, count int, keyFn, valueFn func(i int) interface{}) (
 		return nil, err
 	}
 	return entries, nil
-}
-
-func makeDSN(config *hz.Config) string {
-	ll := logger.InfoLevel
-	if it.TraceLoggingEnabled() {
-		ll = logger.TraceLevel
-	}
-	q := url.Values{}
-	q.Add("cluster.name", config.Cluster.Name)
-	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
-	q.Add("log", string(ll))
-	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
-}
-
-func mustDB(db *sql.DB, err error) *sql.DB {
-	it.Must(err)
-	return db
 }
 
 func mustRows(rows *sql.Rows, err error) *sql.Rows {

@@ -24,7 +24,6 @@ import (
 )
 
 type UUID struct {
-	text         string
 	mostSigBits  uint64
 	leastSigBits uint64
 }
@@ -45,14 +44,10 @@ func NewUUIDWith(mostSigBits, leastSigBits uint64) UUID {
 		mostSigBits:  mostSigBits,
 		leastSigBits: leastSigBits,
 	}
-	v.text = v.asString()
 	return v
 }
 
 func (u UUID) String() string {
-	if u.text != "" {
-		return u.text
-	}
 	return u.asString()
 }
 
@@ -77,6 +72,7 @@ func (u UUID) ExtractInto(b []byte) {
 }
 
 func (u UUID) asString() string {
+	// TODO: move this function to String
 	data := make([]byte, 16)
 	u.ExtractInto(data)
 	dst := make([]byte, 36)

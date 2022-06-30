@@ -23,6 +23,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
@@ -43,4 +44,17 @@ func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 
 func (ci *ClientInternal) ClusterService() *cluster.Service {
 	return ci.client.ic.ClusterService
+}
+
+func (ci *ClientInternal) SerializationService() *serialization.Service {
+	return ci.client.ic.SerializationService
+}
+
+// MakeNearCacheAdapterFromMap returns the nearcache of the given map.
+// It returns an interface{} instead of it.NearCacheAdapter in order not to introduce an import cycle.
+func MakeNearCacheAdapterFromMap(m *Map) interface{} {
+	if m.hasNearCache {
+		return m.ncm.nc
+	}
+	return nil
 }
