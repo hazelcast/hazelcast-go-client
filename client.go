@@ -28,6 +28,7 @@ import (
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"github.com/hazelcast/hazelcast-go-client/sql"
@@ -68,7 +69,7 @@ type Client struct {
 	ic                      *client.Client
 	sqlService              isql.Service
 	nearCacheMgrsMu         *sync.RWMutex
-	nearCacheMgrs           map[string]nearCacheManager
+	nearCacheMgrs           map[string]inearcache.Manager
 	cfg                     *Config
 }
 
@@ -98,7 +99,7 @@ func newClient(config Config) (*Client, error) {
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
 		nearCacheMgrsMu:         &sync.RWMutex{},
-		nearCacheMgrs:           map[string]nearCacheManager{},
+		nearCacheMgrs:           map[string]inearcache.Manager{},
 		cfg:                     &config,
 	}
 	c.addConfigEvents(&config)
@@ -396,7 +397,7 @@ func (c *Client) createComponents(config *Config) {
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 }
 
-func (c *Client) getNearCacheManager(service string) nearCacheManager {
+func (c *Client) getNearCacheManager(service string) inearcache.Manager {
 	c.nearCacheMgrsMu.RLock()
 	mgr, ok := c.nearCacheMgrs[service]
 	c.nearCacheMgrsMu.RUnlock()
@@ -406,7 +407,7 @@ func (c *Client) getNearCacheManager(service string) nearCacheManager {
 	c.nearCacheMgrsMu.Lock()
 	mgr, ok = c.nearCacheMgrs[service]
 	if !ok {
-		mgr = newNearCacheManager(c.ic.SerializationService)
+		mgr = inearcache.NewManager(c.ic.SerializationService)
 		c.nearCacheMgrs[service] = mgr
 	}
 	c.nearCacheMgrsMu.Unlock()
