@@ -25,12 +25,12 @@ import (
 
 type Record struct {
 	CreationTime         int64
-	value                internal.AtomicValue
-	UUID                 types.UUID
 	lastAccessTime       int64
 	ExpirationTime       int64
 	InvalidationSequence int64
 	reservationID        int64
+	value                internal.AtomicValue
+	UUID                 types.UUID
 	hits                 int32
 	cachedAsNil          int32
 	PartitionID          int32
