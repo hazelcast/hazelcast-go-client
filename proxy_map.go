@@ -576,6 +576,20 @@ func (m *Map) tryRemoveFromRemote(ctx context.Context, key interface{}, timeout 
 	return codec.DecodeMapTryRemoveResponse(response), nil
 }
 
+func (m *Map) tryPutFromRemote(ctx context.Context, key interface{}, value interface{}, timeout int64) (bool, error) {
+	lid := extractLockID(ctx)
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, lid, timeout)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapTryPutResponse(response), nil
+}
+
 // GetAll returns the entries for the given keys.
 func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, error) {
 	if len(keys) == 0 {
@@ -1321,17 +1335,10 @@ func (m *Map) set(ctx context.Context, key, value interface{}, ttl int64) error 
 }
 
 func (m *Map) tryPut(ctx context.Context, key interface{}, value interface{}, timeout int64) (bool, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapTryPutRequest(m.name, keyData, valueData, lid, timeout)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapTryPutResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.TryPut(ctx, m, key, value, timeout)
 	}
+	return m.tryPutFromRemote(ctx, key, value, timeout)
 }
 
 func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {

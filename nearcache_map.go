@@ -180,6 +180,15 @@ func (ncm *nearCacheMap) TryRemove(ctx context.Context, m *Map, key interface{},
 	return m.tryRemoveFromRemote(ctx, key, timeout)
 }
 
+func (ncm *nearCacheMap) TryPut(ctx context.Context, m *Map, key interface{}, value interface{}, timeout int64) (bool, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.tryPutFromRemote(ctx, key, value, timeout)
+}
+
 func (ncm *nearCacheMap) GetLocalMapStats() LocalMapStats {
 	return LocalMapStats{
 		NearCacheStats: ncm.nc.Stats(),

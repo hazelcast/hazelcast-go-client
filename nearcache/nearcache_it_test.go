@@ -306,23 +306,23 @@ func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterTryPutNearCacheIsInvalidated
 	testCases := []mapTestCase{
 		{
-			name: "Put",
+			name: "TryPut",
 			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
-				v, err := tcx.M.Put(ctx, i, i)
+				v, err := tcx.M.TryPut(ctx, i, i)
 				if err != nil {
 					tcx.T.Fatal(err)
 				}
-				require.Equal(tcx.T, i, v)
+				require.Equal(tcx.T, true, v)
 			},
 		},
 		{
-			name: "PutWithMaxIdle",
+			name: "TryPutWithTimeout",
 			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
-				v, err := tcx.M.PutWithMaxIdle(ctx, i, i, 10*time.Minute)
+				v, err := tcx.M.TryPutWithTimeout(ctx, i, i, 10*time.Second)
 				if err != nil {
 					tcx.T.Fatal(err)
 				}
-				require.Equal(tcx.T, i, v)
+				require.Equal(tcx.T, true, v)
 			},
 		},
 	}
