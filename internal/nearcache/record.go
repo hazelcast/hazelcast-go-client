@@ -27,13 +27,13 @@ type Record struct {
 	CreationTime         int64
 	value                internal.AtomicValue
 	UUID                 types.UUID
-	PartitionID          int32
 	lastAccessTime       int64
 	ExpirationTime       int64
 	InvalidationSequence int64
 	reservationID        int64
 	hits                 int32
 	cachedAsNil          int32
+	PartitionID          int32
 }
 
 func NewRecord(value interface{}, creationTime, expirationTime int64) *Record {

@@ -45,5 +45,8 @@ staticcheck -tags hazelcastinternal $(go list ./... | grep -v org-website) | \
 fieldalignment -tags $(go list ./... | grep -v org-website) 2>&1 | \
   grep -v "internal/cluster/connection_manager.go" | \
   grep -v "internal/cluster/view_listener_service.go" | \
-  grep -v "flake_id_generator.go" \
+  grep -v "flake_id_generator.go" | \
+  grep -v "record_store.go" | \
+  grep -v "record.go" | \
+  grep -v "stats.go" \
   || true
