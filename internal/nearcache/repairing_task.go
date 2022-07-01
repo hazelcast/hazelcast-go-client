@@ -200,6 +200,7 @@ func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *s
 		nc:                 nc,
 		metadataContainers: mcs,
 		toNearCacheKey:     f,
+		ss:                 ss,
 		ps:                 ps,
 		lg:                 lg,
 	}

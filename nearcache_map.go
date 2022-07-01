@@ -282,7 +282,6 @@ func (ncm *nearCacheMap) handleInvalidationMsg(rth *inearcache.RepairingHandler,
 			key, source, partition, seq)
 	})
 	return rth.Handle(key, source, partition, seq)
-
 }
 
 func (ncm *nearCacheMap) handleBatchInvalidationMsg(rth *inearcache.RepairingHandler, keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) error {
