@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -39,6 +40,51 @@ func TestDefaultConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkDefault(t, &config)
+}
+
+func TestConfig_SetLabels(t *testing.T) {
+	config := hazelcast.NewConfig()
+	m := sync.Mutex{}
+	for _, tc := range []struct {
+		info           string
+		expectedLength int
+		input          []string
+	}{
+		{"non-empty single string slice", 1, []string{"client-label"}},
+		{"empty single string slice", 1, []string{""}},
+		{"empty slice", 0, []string{}},
+		{"non-empty multiple string slice", 2, []string{"a", "b"}},
+		{"hybrid strings slice", 3, []string{"a", "", "c"}},
+	} {
+		t.Run(tc.info, func(t *testing.T) {
+			m.Lock()
+			defer func(config *hazelcast.Config) {
+				*config = hazelcast.NewConfig()
+			}(&config)
+			defer m.Unlock()
+			config.SetLabels(tc.input...)
+			got := len(config.Labels)
+			if got != tc.expectedLength {
+				t.Fatalf("got %v want %v", got, tc.expectedLength)
+			}
+			labels := config.Labels
+			for i := 0; i < got; i++ {
+				if labels[i] != tc.input[i] {
+					t.Fatalf("got %v want %v", labels[i], tc.input[i])
+				}
+			}
+		})
+	}
+}
+
+func TestConfig_Clone(t *testing.T) {
+	config := hazelcast.Config{}
+	config.Stats.Enabled = true
+	config.Cluster.Name = "dummyClusterName"
+	newCfg := config.Clone()
+	if &newCfg == &config {
+		t.Fatal("cannot clone")
+	}
 }
 
 func TestNewConfig_SetAddress(t *testing.T) {

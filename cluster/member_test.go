@@ -17,6 +17,7 @@
 package cluster_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,6 +64,28 @@ func TestMemberInfo_PublicAddress(t *testing.T) {
 			addr, ok := tc.M.PublicAddress()
 			assert.Equal(t, tc.Ok, ok)
 			assert.Equal(t, tc.A, addr)
+			assert.Equal(t, tc.M.String(), fmt.Sprintf("%s:%s", tc.M.Address, tc.M.UUID))
+		})
+	}
+}
+
+func TestEndpointQualifierType_String(t *testing.T) {
+	for _, qt := range []struct {
+		want          string
+		qualifierType cluster.EndpointQualifierType
+		info          string
+	}{
+		{want: "member", qualifierType: cluster.EndpointQualifierTypeMember, info: "EndpointQualifierTypeMember"},
+		{want: "client", qualifierType: cluster.EndpointQualifierTypeClient, info: "EndpointQualifierTypeClient"},
+		{want: "wan", qualifierType: cluster.EndpointQualifierTypeWan, info: "EndpointQualifierTypeWan"},
+		{want: "rest", qualifierType: cluster.EndpointQualifierTypeRest, info: "EndpointQualifierTypeRest"},
+		{want: "memcache", qualifierType: cluster.EndpointQualifierTypeMemCache, info: "EndpointQualifierTypeMemCache"},
+		{want: "UNKNOWN", qualifierType: 5, info: "UNKNOWN EndpointQualifierType"},
+	} {
+		t.Run(qt.info, func(t *testing.T) {
+			if qt.qualifierType.String() != qt.want {
+				t.Fatalf("got %v want %v", qt.qualifierType.String(), qt.want)
+			}
 		})
 	}
 }

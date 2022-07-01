@@ -62,6 +62,8 @@ func TestClientLifecycleEvents(t *testing.T) {
 				t.Logf("Received client connected state")
 			case hz.LifecycleStateDisconnected:
 				t.Logf("Received client disconnected state")
+			case hz.LifecycleStateChangedCluster:
+				t.Logf("Connected cluster has been changed")
 			default:
 				t.Log("Received unknown state:", event.State)
 			}
@@ -155,7 +157,7 @@ func TestClient_RemoveLifecycleListener(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.Eventually(t, func() bool {
-			// ensures that client us
+			// ensures that client is
 			return !client.Running() && lifecycleEventReceived == 1
 		})
 	})
@@ -170,9 +172,8 @@ func TestClient_AddMembershipListener(t *testing.T) {
 	wgAdded.Add(1)
 	wgRemoved.Add(1)
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("client-subscribed-membership-listener", 15701, memberCount)
+	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", 15701, memberCount)
 	cfg := cls.DefaultConfig()
-	cfg.Cluster.Unisocket = true
 	client, err := hz.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -209,7 +210,59 @@ func TestClient_AddMembershipListener(t *testing.T) {
 	wgAdded.Wait()
 }
 
+func TestClient_RemoveMembershipListener(t *testing.T) {
+	var added int32 = 1
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", 15701, 2)
+	cfg := cls.DefaultConfig()
+	client, err := hz.StartNewClientWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(ctx context.Context, client *hz.Client) {
+		err = client.Shutdown(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(ctx, client)
+	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		switch event.State {
+		case cluster.MembershipStateRemoved:
+			t.Logf("MembershipStateRemoved")
+			atomic.SwapInt32(&added, 0)
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	err = client.RemoveMembershipListener(subscriptionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[1])
+	it.Must(err)
+	assert.True(t, ok, "rc cannot terminate member")
+	go func() {
+		time.Sleep(time.Minute * 1)
+		_ = client.Shutdown(ctx)
+	}()
+	it.Eventually(t, func() bool {
+		return !client.Running() && added == 1
+	})
+}
+
 func TestClientRunning(t *testing.T) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		assert.True(t, client.Running())
+		if err := client.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, client.Running())
+	})
+}
+
+func TestClient_Name(t *testing.T) {
 	clientName := "test-client-name"
 	cnfCallBack := func(config *hz.Config) {
 		config.ClientName = clientName
