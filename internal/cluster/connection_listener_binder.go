@@ -114,7 +114,6 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	defer b.regsMu.Unlock()
 	reg, ok := b.regs[id]
 	if !ok {
-		b.regsMu.Unlock()
 		return nil
 	}
 	delete(b.regs, id)

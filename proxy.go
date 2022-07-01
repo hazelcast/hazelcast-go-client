@@ -114,23 +114,14 @@ type proxy struct {
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	cb                   *cb.CircuitBreaker
 	refIDGen             *iproxy.ReferenceIDGenerator
-	removeFromCacheFn    func() bool
+	removeFromCacheFn    func(ctx context.Context) bool
 	serviceName          string
 	name                 string
 	smart                bool
 }
 
-func newProxy(
-	ctx context.Context,
-	bundle creationBundle,
-	serviceName string,
-	objectName string,
-	refIDGen *iproxy.ReferenceIDGenerator,
-	removeFromCacheFn func() bool,
-	remote bool) (*proxy, error) {
-
+func newProxy(ctx context.Context, bundle creationBundle, svc string, obj string, idg *iproxy.ReferenceIDGenerator, removeFromCacheFn func(ctx context.Context) bool, remote bool) (*proxy, error) {
 	bundle.Check()
-	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -138,8 +129,8 @@ func newProxy(
 			return time.Duration((attempt+1)*100) * time.Millisecond
 		}))
 	p := &proxy{
-		serviceName:          serviceName,
-		name:                 objectName,
+		serviceName:          svc,
+		name:                 obj,
 		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
@@ -150,7 +141,7 @@ func newProxy(
 		logger:               bundle.Logger,
 		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
-		refIDGen:             refIDGen,
+		refIDGen:             idg,
 		smart:                !bundle.Config.Cluster.Unisocket,
 	}
 	if !remote {
@@ -174,7 +165,7 @@ func (p *proxy) create(ctx context.Context) error {
 // Clears and releases all resources for this object.
 func (p *proxy) Destroy(ctx context.Context) error {
 	// wipe from proxy manager cache
-	if !p.removeFromCacheFn() {
+	if !p.removeFromCacheFn(ctx) {
 		// no need to destroy on cluster, since the proxy is stale and was already destroyed
 		return nil
 	}

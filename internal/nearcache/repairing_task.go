@@ -106,6 +106,11 @@ func (rt *ReparingTask) RegisterAndGetHandler(ctx context.Context, name string, 
 	return h.(RepairingHandler), nil
 }
 
+func (rt *ReparingTask) DeregisterHandler(name string) {
+	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#deregisterHandler
+	rt.handlers.Delete(name)
+}
+
 func (rt *ReparingTask) run() {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#run
 	rt.fixSequenceGaps()

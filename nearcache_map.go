@@ -19,8 +19,10 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -34,16 +36,21 @@ const (
 )
 
 type nearCacheMap struct {
-	nc             *inearcache.NearCache
-	toNearCacheKey func(key interface{}) (interface{}, error)
-	ss             *serialization.Service
-	lg             logger.LogAdaptor
+	nc                     *inearcache.NearCache
+	toNearCacheKey         func(key interface{}) (interface{}, error)
+	ss                     *serialization.Service
+	rt                     *inearcache.ReparingTask
+	lb                     *cluster.ConnectionListenerBinder
+	lg                     logger.LogAdaptor
+	invalidationListenerID atomic.Value
 }
 
-func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serialization.Service, rt *inearcache.ReparingTask, lg logger.LogAdaptor, name string, p *proxy, local bool) (nearCacheMap, error) {
+func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serialization.Service, rt *inearcache.ReparingTask, lg logger.LogAdaptor, name string, lb *cluster.ConnectionListenerBinder, local bool) (nearCacheMap, error) {
 	ncm := nearCacheMap{
 		nc: nc,
 		ss: ss,
+		rt: rt,
+		lb: lb,
 		lg: lg,
 	}
 	ncc := nc.Config()
@@ -51,7 +58,7 @@ func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serializ
 		lg.Debug(func() string {
 			return fmt.Sprintf("registering invalidation listener: name: %s, local: %t", name, local)
 		})
-		if err := ncm.registerInvalidationListener(ctx, name, p, local, rt); err != nil {
+		if err := ncm.registerInvalidationListener(ctx, name, local); err != nil {
 			return nearCacheMap{}, fmt.Errorf("hazelcast.newNearCacheMap: preloading near cache: %w", err)
 		}
 	}
@@ -77,11 +84,25 @@ func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serializ
 	return ncm, nil
 }
 
-func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name string, p *proxy, local bool, rt *inearcache.ReparingTask) error {
+func (ncm *nearCacheMap) Destroy(ctx context.Context, name string) error {
+	ncm.lg.Trace(func() string {
+		return fmt.Sprintf("hazelcast.nearCacheMap.Destroy: %s", name)
+	})
+	s := ncm.invalidationListenerID.Load()
+	if s == nil {
+		return nil
+	}
+	// removeNearCacheInvalidationListener
+	sid := s.(types.UUID)
+	ncm.rt.DeregisterHandler(name)
+	return ncm.lb.Remove(ctx, sid)
+}
+
+func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name string, local bool) error {
 	// port of: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#registerInvalidationListener
 	sid := types.NewUUID()
 	addMsg := codec.EncodeMapAddNearCacheInvalidationListenerRequest(name, eventTypeInvalidation, local)
-	rth, err := rt.RegisterAndGetHandler(ctx, name, ncm.nc)
+	rth, err := ncm.rt.RegisterAndGetHandler(ctx, name, ncm.nc)
 	if err != nil {
 		return fmt.Errorf("nearCacheMap.registerInvalidationListener: %w", err)
 	}
@@ -103,7 +124,12 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 			})
 		}
 	}
-	return p.listenerBinder.Add(ctx, sid, addMsg, nil, handler)
+	removeMsg := codec.EncodeMapRemoveEntryListenerRequest(name, sid)
+	if err := ncm.lb.Add(ctx, sid, addMsg, removeMsg, handler); err != nil {
+		return err
+	}
+	ncm.invalidationListenerID.Store(sid)
+	return nil
 }
 
 func (ncm *nearCacheMap) preload() error {

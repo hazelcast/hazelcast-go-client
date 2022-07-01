@@ -142,7 +142,7 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 		nc := ncmgr.GetOrCreateNearCache(name, ncc)
 		ss := c.ic.SerializationService
 		rt := ncmgr.RepairingTask()
-		m.ncm, err = newNearCacheMap(ctx, nc, ss, rt, c.ic.Logger, name, m.proxy, m.smart)
+		m.ncm, err = newNearCacheMap(ctx, nc, ss, rt, c.ic.Logger, name, m.proxy.listenerBinder, m.smart)
 		if err != nil {
 			return nil, err
 		}
