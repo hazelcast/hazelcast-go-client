@@ -53,6 +53,7 @@ type ReparingTask struct {
 	lg                          ilogger.LogAdaptor
 	maxToleratedMissCount       int
 	partitionCount              int32
+	running                     int32
 }
 
 func NewReparingTask(recInt int, maxMissCnt int, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor, mf InvalidationMetaDataFetcher, doneCh <-chan struct{}) *ReparingTask {
@@ -67,41 +68,52 @@ func NewReparingTask(recInt int, maxMissCnt int, ss *serialization.Service, ps *
 		handlers:                    &sync.Map{},
 		partitionCount:              ps.PartitionCount(),
 	}
-	go nc.Start()
 	return nc
 }
 
-func (rt *ReparingTask) Start() {
-	// see: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#run
+func (rt *ReparingTask) start() {
+	// see: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#scheduleNextRun
 	rt.lg.Debug(func() string {
 		return "ReparingTask started"
 	})
 	timer := time.NewTicker(1 * time.Second)
 	defer timer.Stop()
-	rt.doTask()
+	rt.run()
 	for {
 		select {
 		case <-rt.doneCh:
 			return
 		case <-timer.C:
-			rt.doTask()
+			rt.run()
 		}
 	}
 }
 
-func (rt *ReparingTask) RegisterAndGetHandler(name string, nc *NearCache) RepairingHandler {
+func (rt *ReparingTask) RegisterAndGetHandler(ctx context.Context, name string, nc *NearCache) (RepairingHandler, error) {
 	handler := NewRepairingHandler(name, nc, rt.partitionCount, rt.ss, rt.ps, rt.lg)
 	// ignoring the "loaded" return value
-	h, _ := rt.handlers.LoadOrStore(name, handler)
-	return h.(RepairingHandler)
+	h, loaded := rt.handlers.LoadOrStore(name, handler)
+	if !loaded {
+		if err := rt.invalidationMetaDataFetcher.Init(ctx, handler); err != nil {
+			return RepairingHandler{}, nil
+		}
+	}
+	if atomic.CompareAndSwapInt32(&rt.running, 0, 1) {
+		// this is the first added handler
+		go rt.start()
+		atomic.StoreInt64(&rt.lastAntiEntropyRunNanos, time.Now().UnixNano())
+	}
+	return h.(RepairingHandler), nil
 }
 
-func (rt *ReparingTask) doTask() {
+func (rt *ReparingTask) run() {
+	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#run
 	rt.fixSequenceGaps()
 	if rt.isAntiEntropyNeeded() {
 		if err := rt.runAntiEntropy(context.Background()); err != nil {
 			rt.lg.Errorf("%s", err.Error())
 		}
+		atomic.StoreInt64(&rt.lastAntiEntropyRunNanos, time.Now().UnixNano())
 	}
 }
 
@@ -148,9 +160,13 @@ func (rt *ReparingTask) isAntiEntropyNeeded() bool {
 	if rt.reconciliationIntervalNanos == 0 {
 		return false
 	}
-	now := time.Now()
-	since := int64(now.Nanosecond()) - atomic.LoadInt64(&rt.lastAntiEntropyRunNanos)
-	return since > rt.reconciliationIntervalNanos
+	now := time.Now().UnixNano()
+	since := now - atomic.LoadInt64(&rt.lastAntiEntropyRunNanos)
+	rt.lg.Trace(func() string {
+		return fmt.Sprintf("since last anti-entropy: %d, recon interval: %d, needed: %t",
+			since, rt.reconciliationIntervalNanos, since >= rt.reconciliationIntervalNanos)
+	})
+	return since >= rt.reconciliationIntervalNanos
 }
 
 // runAntiEntropy periodically sends generic operations to cluster members to get latest invalidation metadata.
@@ -430,6 +446,13 @@ func NewInvalidationMetaDataFetcher(cs *cluster.Service, is *invocation.Service,
 		lg:         lg,
 	}
 	return df
+}
+
+func (df InvalidationMetaDataFetcher) Init(ctx context.Context, handler RepairingHandler) error {
+	handlers := map[string]RepairingHandler{
+		handler.Name(): handler,
+	}
+	return df.fetchMetadata(ctx, handlers)
 }
 
 func (df InvalidationMetaDataFetcher) fetchMetadata(ctx context.Context, handlers map[string]RepairingHandler) error {

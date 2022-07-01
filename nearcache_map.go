@@ -81,7 +81,10 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 	// port of: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#registerInvalidationListener
 	sid := types.NewUUID()
 	addMsg := codec.EncodeMapAddNearCacheInvalidationListenerRequest(name, eventTypeInvalidation, local)
-	rth := rt.RegisterAndGetHandler(name, ncm.nc)
+	rth, err := rt.RegisterAndGetHandler(ctx, name, ncm.nc)
+	if err != nil {
+		return fmt.Errorf("nearCacheMap.registerInvalidationListener: %w", err)
+	}
 	handler := func(msg *proto.ClientMessage) {
 		switch msg.Type() {
 		case inearcache.EventIMapInvalidationMessageType:

@@ -17,23 +17,24 @@
 package proto
 
 const (
-	TypeFieldOffset           = 0
-	MessageTypeOffset         = 0
-	ByteSizeInBytes           = 1
-	BooleanSizeInBytes        = 1
-	ShortSizeInBytes          = 2
-	CharSizeInBytes           = 2
-	IntSizeInBytes            = 4
-	FloatSizeInBytes          = 4
-	LongSizeInBytes           = 8
-	DoubleSizeInBytes         = 8
-	UUIDSizeInBytes           = 17
-	UuidSizeInBytes           = 17 // Deprecated
-	EntrySizeInBytes          = UUIDSizeInBytes + LongSizeInBytes
-	LocalDateSizeInBytes      = IntSizeInBytes + 2*ByteSizeInBytes
-	LocalTimeSizeInBytes      = 3*ByteSizeInBytes + IntSizeInBytes
-	LocalDateTimeSizeInBytes  = LocalDateSizeInBytes + LocalTimeSizeInBytes
-	OffsetDateTimeSizeInBytes = LocalDateTimeSizeInBytes + IntSizeInBytes
+	TypeFieldOffset                      = 0
+	MessageTypeOffset                    = 0
+	ByteSizeInBytes                      = 1
+	BooleanSizeInBytes                   = 1
+	ShortSizeInBytes                     = 2
+	CharSizeInBytes                      = 2
+	IntSizeInBytes                       = 4
+	FloatSizeInBytes                     = 4
+	LongSizeInBytes                      = 8
+	DoubleSizeInBytes                    = 8
+	UUIDSizeInBytes                      = 17
+	UuidSizeInBytes                      = 17 // Deprecated
+	EntrySizeInBytes                     = UUIDSizeInBytes + LongSizeInBytes
+	EntryListIntegerUUIDEntrySizeInBytes = IntSizeInBytes + UUIDSizeInBytes
+	LocalDateSizeInBytes                 = IntSizeInBytes + 2*ByteSizeInBytes
+	LocalTimeSizeInBytes                 = 3*ByteSizeInBytes + IntSizeInBytes
+	LocalDateTimeSizeInBytes             = LocalDateSizeInBytes + LocalTimeSizeInBytes
+	OffsetDateTimeSizeInBytes            = LocalDateTimeSizeInBytes + IntSizeInBytes
 
 	CorrelationIDFieldOffset   = TypeFieldOffset + IntSizeInBytes
 	CorrelationIDOffset        = MessageTypeOffset + IntSizeInBytes

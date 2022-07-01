@@ -373,11 +373,11 @@ func DecodeEntryListUUIDListInteger(frameIterator *proto.ForwardFrameIterator) [
 
 func DecodeEntryListIntegerUUID(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	frame := frameIterator.Next()
-	entryCount := len(frame.Content) / proto.EntrySizeInBytes
+	entryCount := len(frame.Content) / proto.EntryListIntegerUUIDEntrySizeInBytes
 	result := make([]proto.Pair, entryCount)
 	for i := 0; i < entryCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeUUID(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
+		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntryListIntegerUUIDEntrySizeInBytes))
+		value := FixSizedTypesCodec.DecodeUUID(frame.Content, int32(i*proto.EntryListIntegerUUIDEntrySizeInBytes+proto.IntSizeInBytes))
 		result[i] = proto.NewPair(key, value)
 	}
 	return result
