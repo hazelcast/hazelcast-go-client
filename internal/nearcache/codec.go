@@ -40,3 +40,13 @@ func DecodeInvalidationMsg(msg *proto.ClientMessage) (key serialization.Data, so
 	key = codec.DecodeNullableData(it)
 	return
 }
+
+func DecodeBatchInvalidationMsg(msg *proto.ClientMessage) (keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) {
+	it := msg.FrameIterator()
+	it.Next()
+	keys = codec.DecodeListMultiFrameForData(it)
+	sources = codec.DecodeListUUID(it)
+	partitions = codec.DecodeListUUID(it)
+	seqs = codec.DecodeListLong(it)
+	return
+}

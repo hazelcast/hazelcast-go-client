@@ -140,7 +140,9 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 		// there is a near cache config for this map
 		ncmgr := c.getNearCacheManager(ServiceNameMap)
 		nc := ncmgr.GetOrCreateNearCache(name, ncc)
-		m.ncm, err = newNearCacheMap(ctx, nc, &ncc, c.ic.SerializationService, c.ic.Logger, name, m.proxy, m.smart)
+		ss := c.ic.SerializationService
+		rt := ncmgr.RepairingTask()
+		m.ncm, err = newNearCacheMap(ctx, nc, ss, rt, c.ic.Logger, name, m.proxy, m.smart)
 		if err != nil {
 			return nil, err
 		}

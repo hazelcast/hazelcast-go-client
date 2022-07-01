@@ -81,3 +81,7 @@ func (m *Manager) GetOrCreateNearCache(name string, cfg nearcache.Config) *NearC
 	m.nearCachesMu.Unlock()
 	return nc
 }
+
+func (m *Manager) RepairingTask() *ReparingTask {
+	return m.rt
+}

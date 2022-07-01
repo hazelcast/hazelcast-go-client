@@ -30,7 +30,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -88,6 +87,13 @@ func (rt *ReparingTask) Start() {
 			rt.doTask()
 		}
 	}
+}
+
+func (rt *ReparingTask) RegisterAndGetHandler(name string, nc *NearCache) RepairingHandler {
+	handler := NewRepairingHandler(name, nc, rt.partitionCount, rt.ss, rt.ps, rt.lg)
+	// ignoring the "loaded" return value
+	h, _ := rt.handlers.LoadOrStore(name, handler)
+	return h.(RepairingHandler)
 }
 
 func (rt *ReparingTask) doTask() {
@@ -177,19 +183,19 @@ type RepairingHandler struct {
 	lg                 ilogger.LogAdaptor
 }
 
-func NewRepairingHandler(name string, nc *NearCache, ncc *nearcache.Config, partitionCount int, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor) *RepairingHandler {
+func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor) RepairingHandler {
 	mcs := make([]*MetaDataContainer, partitionCount)
-	for i := 0; i < partitionCount; i++ {
+	for i := int32(0); i < partitionCount; i++ {
 		mcs[i] = NewMetaDataContainer()
 	}
-	sk := ncc.SerializeKeys
+	sk := nc.Config().SerializeKeys
 	f := func(key interface{}) (interface{}, error) {
 		if sk {
 			return key, nil
 		}
 		return ss.ToObject(key.(serialization.Data))
 	}
-	return &RepairingHandler{
+	return RepairingHandler{
 		name:               name,
 		nc:                 nc,
 		metadataContainers: mcs,
@@ -226,8 +232,9 @@ func (h *RepairingHandler) UpdateLastKnownStaleSequence(md *MetaDataContainer, p
 	})
 }
 
-// handle handles a single invalidation
-func (h *RepairingHandler) handle(key serialization.Data, source, partition types.UUID, seq int64) error {
+// Handle handles a single invalidation.
+func (h *RepairingHandler) Handle(key serialization.Data, source, partition types.UUID, seq int64) error {
+	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler#handle(com.hazelcast.internal.serialization.Data, java.util.UUID, java.util.UUID, long)
 	// Apply invalidation if it's not originated by local member/client.
 	// Since local Near Caches are invalidated immediately there is no need to invalidate them twice.
 	if source != partition {
@@ -247,6 +254,19 @@ func (h *RepairingHandler) handle(key serialization.Data, source, partition type
 	}
 	h.CheckOrRepairUUID(pid, partition)
 	h.CheckOrRepairSequence(pid, seq, false)
+	return nil
+}
+
+// HandleBatch handles a batch of validations.
+func (h *RepairingHandler) HandleBatch(keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) error {
+	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler#handle(java.util.Collection<com.hazelcast.internal.serialization.Data>, java.util.Collection<java.util.UUID>, java.util.Collection<java.util.UUID>, java.util.Collection<java.lang.Long>)
+	// assumes len(keys) == len(source) -- len(partitions) == len(seqs)
+	sz := len(keys)
+	for i := 0; i < sz; i++ {
+		if err := h.Handle(keys[i], sources[i], partitions[i], seqs[i]); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

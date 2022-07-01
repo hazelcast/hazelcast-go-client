@@ -69,6 +69,10 @@ func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, expirationIn
 	return nc
 }
 
+func (nc *NearCache) Config() *nearcache.Config {
+	return nc.cfg
+}
+
 func (nc *NearCache) Clear() {
 	nc.store.Clear()
 }

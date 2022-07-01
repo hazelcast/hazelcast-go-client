@@ -26,12 +26,11 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
-	eventTypeInvalidation = 8
+	eventTypeInvalidation = 1 << 8
 )
 
 type nearCacheMap struct {
@@ -41,17 +40,18 @@ type nearCacheMap struct {
 	lg             logger.LogAdaptor
 }
 
-func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ncc *nearcache.Config, ss *serialization.Service, lg logger.LogAdaptor, name string, p *proxy, local bool) (nearCacheMap, error) {
+func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serialization.Service, rt *inearcache.ReparingTask, lg logger.LogAdaptor, name string, p *proxy, local bool) (nearCacheMap, error) {
 	ncm := nearCacheMap{
 		nc: nc,
 		ss: ss,
 		lg: lg,
 	}
+	ncc := nc.Config()
 	if ncc.InvalidateOnChange() {
 		lg.Debug(func() string {
 			return fmt.Sprintf("registering invalidation listener: name: %s, local: %t", name, local)
 		})
-		if err := ncm.registerInvalidationListener(ctx, name, p, local); err != nil {
+		if err := ncm.registerInvalidationListener(ctx, name, p, local, rt); err != nil {
 			return nearCacheMap{}, fmt.Errorf("hazelcast.newNearCacheMap: preloading near cache: %w", err)
 		}
 	}
@@ -77,16 +77,27 @@ func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ncc *nearcac
 	return ncm, nil
 }
 
-func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name string, p *proxy, local bool) error {
+func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name string, p *proxy, local bool, rt *inearcache.ReparingTask) error {
 	// port of: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#registerInvalidationListener
 	sid := types.NewUUID()
 	addMsg := codec.EncodeMapAddNearCacheInvalidationListenerRequest(name, eventTypeInvalidation, local)
+	rth := rt.RegisterAndGetHandler(name, ncm.nc)
 	handler := func(msg *proto.ClientMessage) {
 		switch msg.Type() {
 		case inearcache.EventIMapInvalidationMessageType:
-			ncm.handleInvalidationMsg(inearcache.DecodeInvalidationMsg(msg))
+			key, src, pt, sq := inearcache.DecodeInvalidationMsg(msg)
+			if err := ncm.handleInvalidationMsg(&rth, key, src, pt, sq); err != nil {
+				ncm.lg.Errorf("handling invalidation message: %w", err)
+			}
+		case inearcache.EventIMapBatchInvalidationMessageType:
+			keys, srcs, pts, sqs := inearcache.DecodeBatchInvalidationMsg(msg)
+			if err := ncm.handleBatchInvalidationMsg(&rth, keys, srcs, pts, sqs); err != nil {
+				ncm.lg.Errorf("handling batch invalidation message: %w", err)
+			}
 		default:
-			panic(fmt.Sprintf("invalid invalidation message type: %d", msg.Type()))
+			ncm.lg.Debug(func() string {
+				return fmt.Sprintf("invalid invalidation message type: %d", msg.Type())
+			})
 		}
 	}
 	return p.listenerBinder.Add(ctx, sid, addMsg, nil, handler)
@@ -265,9 +276,19 @@ func (ncm *nearCacheMap) getFromRemote(ctx context.Context, m *Map, key interfac
 	return value, nil
 }
 
-func (ncm *nearCacheMap) handleInvalidationMsg(key serialization.Data, source types.UUID, partition types.UUID, seq int64) {
+func (ncm *nearCacheMap) handleInvalidationMsg(rth *inearcache.RepairingHandler, key serialization.Data, source types.UUID, partition types.UUID, seq int64) error {
 	ncm.lg.Trace(func() string {
 		return fmt.Sprintf("nearCacheMap.handleInvalidationMsg: key: %v, source: %s, partition: %s, seq: %d",
 			key, source, partition, seq)
 	})
+	return rth.Handle(key, source, partition, seq)
+
+}
+
+func (ncm *nearCacheMap) handleBatchInvalidationMsg(rth *inearcache.RepairingHandler, keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) error {
+	ncm.lg.Trace(func() string {
+		return fmt.Sprintf("nearCacheMap.handleBatchInvalidationMsg: keys: %v, sources: %s, partitions: %v, seqs: %v",
+			keys, sources, partitions, seqs)
+	})
+	return rth.HandleBatch(keys, sources, partitions, seqs)
 }
