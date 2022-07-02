@@ -82,6 +82,13 @@ func (nc *NearCache) Get(key interface{}) (interface{}, bool, error) {
 	return nc.store.Get(key)
 }
 
+func (nc *NearCache) GetRecord(key interface{}) (*Record, bool) {
+	// this function is exported only for tests.
+	// do not use outside of tests.
+	nc.checkKeyFormat(key)
+	return nc.store.GetRecord(key)
+}
+
 func (nc *NearCache) Invalidate(key interface{}) {
 	nc.checkKeyFormat(key)
 	nc.store.Invalidate(key)

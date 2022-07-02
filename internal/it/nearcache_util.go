@@ -19,11 +19,13 @@ package it
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
@@ -123,14 +125,13 @@ func (tcx *NearCacheTestContext) AssertNearCacheStats(owned, hits, misses int64)
 	assert.Equal(tcx.T, misses, stats.Misses)
 }
 
-func (tcx *NearCacheTestContext) AssertNearCacheContent(size int64, valueFmt string) {
+func (tcx *NearCacheTestContext) AssertNearCacheContent(nca NearCacheAdapter, size int64, valueFmt string) {
 	for i := int64(0); i < size; i++ {
 		key := tcx.GetKey(i)
-		value, found, err := tcx.NC.Get(key)
+		value, err := tcx.NC.GetFromNearCache(key)
 		if err != nil {
 			tcx.T.Fatal(err)
 		}
-		assert.True(tcx.T, found)
 		data, ok := value.(serialization.Data)
 		if ok {
 			value, err = tcx.ss.ToObject(data)
@@ -139,9 +140,29 @@ func (tcx *NearCacheTestContext) AssertNearCacheContent(size int64, valueFmt str
 			}
 		}
 		target := fmt.Sprintf(valueFmt, i)
-		if !assert.Equal(tcx.T, target, value) {
-			tcx.T.FailNow()
-		}
-		// TODO: assertNearCacheRecord
+		require.Equal(tcx.T, target, value)
+		tcx.AssertNearCacheRecord(getRecordFromNearCache(nca, i), i, tcx.Config.InMemoryFormat)
 	}
+}
+
+func (tcx *NearCacheTestContext) AssertNearCacheRecord(rec *inearcache.Record, key int64, imf nearcache.InMemoryFormat) {
+	// see: com.hazelcast.internal.nearcache.impl.NearCacheTestUtils#assertNearCacheReference
+	t := tcx.T
+	require.NotNil(t, rec)
+	require.Equal(t, inearcache.RecordReadPermitted, rec.ReservationID())
+	value := rec.Value()
+	switch imf {
+	case nearcache.InMemoryFormatBinary:
+		require.Equal(t, reflect.TypeOf(serialization.Data{}), reflect.TypeOf(value))
+	case nearcache.InMemoryFormatObject:
+		require.NotEqual(t, reflect.TypeOf(serialization.Data{}), reflect.TypeOf(value))
+	default:
+		t.Fatalf("invalid memory format for %v", value)
+	}
+}
+func getRecordFromNearCache(a NearCacheAdapter, key interface{}) *inearcache.Record {
+	// when the key is not found rec is nil.
+	// ignores the return value "ok".
+	rec, _ := a.GetRecord(key)
+	return rec
 }

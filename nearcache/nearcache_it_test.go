@@ -357,9 +357,9 @@ func clientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 				ConfigCallback: configCB,
 			}
 			mtcx.Tester(func(mtcx it.MapTestContext) {
-				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M)
+				nca := hz.MakeNearCacheAdapterFromMap(mtcx.M).(it.NearCacheAdapter)
 				ci := hz.NewClientInternal(mtcx.Client)
-				tcx := it.NewNearCacheTestContext(mtcx.T, nca.(it.NearCacheAdapter), mtcx.M, &ncc, ci.SerializationService())
+				tcx := it.NewNearCacheTestContext(mtcx.T, nca, mtcx.M, &ncc, ci.SerializationService())
 				// assert that the Near Cache is empty
 				tcx.PopulateNearCacheDataAdapter(nearCacheDefaultRecordCount, valueFmt)
 				tcx.RequireNearCacheSize(0)
@@ -372,8 +372,9 @@ func clientCacheNearCacheBasicSlowRunner(t *testing.T, f func(tcx *it.NearCacheT
 				f(tcx, nearCacheDefaultRecordCount, valueFmt)
 				tcx.RequireNearCacheSize(nearCacheDefaultRecordCount)
 				tcx.AssertNearCacheStats(nearCacheDefaultRecordCount, nearCacheDefaultRecordCount, nearCacheDefaultRecordCount)
-				tcx.AssertNearCacheContent(nearCacheDefaultRecordCount, valueFmt)
-				// TODO: assertNearCacheReferences
+				tcx.AssertNearCacheContent(nca, nearCacheDefaultRecordCount, valueFmt)
+				// since non-pointer values are copid, the following assertion doesn't hold
+				// assertNearCacheReferences
 			})
 		})
 	}

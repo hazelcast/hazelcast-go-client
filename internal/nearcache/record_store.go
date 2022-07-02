@@ -30,7 +30,7 @@ import (
 
 const (
 	RecordNotReserved     int64 = -1
-	RecordReadPermitted         = -2
+	RecordReadPermitted   int64 = -2
 	RecordStoreTimeNotSet int64 = -1
 	// see: com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy#SAMPLE_COUNT
 	RecordStoreSampleCount = 15
@@ -40,18 +40,19 @@ const (
 type dataString string
 
 type RecordStore struct {
-	stats            Stats
-	maxIdleMillis    int64
-	reservationID    int64
-	timeToLiveMillis int64
-	recordsMu        *sync.Mutex
-	records          map[interface{}]*Record
-	ss               *serialization.Service
-	valueConverter   nearCacheRecordValueConverter
-	estimator        nearCacheStorageEstimator
-	evictionDisabled bool
-	maxSize          int
-	cmp              nearcache.EvictionPolicyComparator
+	stats             Stats
+	maxIdleMillis     int64
+	reservationID     int64
+	timeToLiveMillis  int64
+	recordsMu         *sync.Mutex
+	records           map[interface{}]*Record
+	ss                *serialization.Service
+	valueConverter    nearCacheRecordValueConverter
+	estimator         nearCacheStorageEstimator
+	staleReadDetector *StaleReadDetector
+	evictionDisabled  bool
+	maxSize           int
+	cmp               nearcache.EvictionPolicyComparator
 }
 
 func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) RecordStore {
@@ -101,14 +102,12 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 		rs.incrementMisses()
 		return nil, false, nil
 	}
-	// to be handled in another PR
-	/*
-	   if (staleReadDetector.isStaleRead(key, record)) {
-	       invalidate(key);
-	       nearCacheStats.incrementMisses();
-	       return null;
-	   }
-	*/
+	// instead of ALWAYS_FRESH staleReadDetector, the nil value used
+	if rs.staleReadDetector != nil && rs.staleReadDetector.IsStaleRead(rec) {
+		rs.invalidate(key)
+		rs.incrementMisses()
+		return nil, false, nil
+	}
 	nowMS := time.Now().UnixMilli()
 	if rs.recordExpired(rec, nowMS) {
 		rs.Invalidate(key)
@@ -130,6 +129,15 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 		return nil, false, err
 	}
 	return value, true, nil
+}
+
+func (rs *RecordStore) GetRecord(key interface{}) (*Record, bool) {
+	// this function is exported only for tests.
+	// do not use outside of tests.
+	rs.recordsMu.Lock()
+	defer rs.recordsMu.Unlock()
+	key = rs.makeMapKey(key)
+	return rs.getRecord(key)
 }
 
 func (rs *RecordStore) Invalidate(key interface{}) {
@@ -250,11 +258,6 @@ func (rs *RecordStore) TryPublishReserved(key, value interface{}, reservationID 
 		return rs.ss.ToObject(data)
 	}
 	return cached, nil
-}
-
-func (rs *RecordStore) DoEviction(withoutMaxSizeCheck bool) bool {
-	// TODO: implement this
-	return false
 }
 
 func (rs RecordStore) Stats() nearcache.Stats {
@@ -465,12 +468,10 @@ func (rs *RecordStore) reserveForWriteUpdate(key interface{}, keyData serializat
 	defer rs.recordsMu.Unlock()
 	rec, ok := rs.records[key]
 	if !ok {
-		rec, err := rs.createRecord(nil)
+		rec, err := rs.newReservationRecord(key, keyData, reservationID)
 		if err != nil {
 			return nil, err
 		}
-		rec.SetReservationID(reservationID)
-		// initInvalidationMetaData(record, key, keyData);
 		return rec, nil
 	}
 	if rec.reservationID == RecordReadPermitted {
@@ -502,13 +503,11 @@ func (rs *RecordStore) reserveForReadUpdate(key interface{}, keyData serializati
 	if ok {
 		return rec, nil
 	}
-	rec, err := rs.createRecord(nil)
+	rec, err := rs.newReservationRecord(key, keyData, reservationID)
 	if err != nil {
 		return nil, err
 	}
-	rec.SetReservationID(reservationID)
 	rs.records[key] = rec
-	// initInvalidationMetaData(record, key, keyData);
 	return rec, nil
 }
 
@@ -524,6 +523,40 @@ func (rs *RecordStore) createRecord(value interface{}) (*Record, error) {
 		expired = created + rs.timeToLiveMillis
 	}
 	return NewRecord(value, created, expired), nil
+}
+
+func (rs *RecordStore) newReservationRecord(key interface{}, keyData serialization.Data, rid int64) (*Record, error) {
+	rec, err := rs.createRecord(nil)
+	if err != nil {
+		return nil, err
+	}
+	rec.SetReservationID(rid)
+	if err := rs.initInvalidationMetadata(rec, key, keyData); err != nil {
+		return nil, err
+	}
+	return rec, nil
+}
+
+func (rs *RecordStore) initInvalidationMetadata(rec *Record, key interface{}, keyData serialization.Data) error {
+	if rs.staleReadDetector == nil {
+		return nil
+	}
+	var err error
+	if keyData == nil {
+		keyData, err = rs.ss.ToData(key)
+		if err != nil {
+			return fmt.Errorf("nearcache.RecordStore.initInvalidationMetadata: converting key: %w", err)
+		}
+	}
+	pid, err := rs.staleReadDetector.GetPartitionID(keyData)
+	if err != nil {
+		return fmt.Errorf("nearcache.RecordStore.initInvalidationMetadata: getting partition ID: %w", err)
+	}
+	md := rs.staleReadDetector.GetMetaDataContainer(pid)
+	rec.SetPartitionID(pid)
+	rec.SetInvalidationSequence(md.Sequence())
+	rec.SetUUID(md.UUID())
+	return nil
 }
 
 func (rs *RecordStore) updateRecordValue(rec *Record, value interface{}) error {

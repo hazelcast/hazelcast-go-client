@@ -24,16 +24,16 @@ import (
 )
 
 type Record struct {
-	InvalidationSequence int64
+	invalidationSequence int64
 	reservationID        int64
 	value                internal.AtomicValue
-	UUID                 types.UUID
+	uuid                 atomic.Value
 	creationTime         int32
 	lastAccessTime       int32
 	expirationTime       int32
 	hits                 int32
 	cachedAsNil          int32
-	PartitionID          int32
+	partitionID          int32
 }
 
 func NewRecord(value interface{}, creationTime, expirationTime int64) *Record {
@@ -125,4 +125,32 @@ func (r *Record) CachedAsNil() bool {
 
 func (r *Record) SetCachedAsNil() {
 	atomic.StoreInt32(&r.cachedAsNil, 1)
+}
+
+func (r *Record) InvalidationSequence() int64 {
+	return atomic.LoadInt64(&r.invalidationSequence)
+}
+
+func (r *Record) SetInvalidationSequence(v int64) {
+	atomic.StoreInt64(&r.invalidationSequence, v)
+}
+
+func (r *Record) PartitionID() int32 {
+	return atomic.LoadInt32(&r.partitionID)
+}
+
+func (r *Record) SetPartitionID(v int32) {
+	atomic.StoreInt32(&r.partitionID, v)
+}
+
+func (r *Record) UUID() types.UUID {
+	v := r.uuid.Load()
+	if v == nil {
+		return types.UUID{}
+	}
+	return v.(types.UUID)
+}
+
+func (r *Record) SetUUID(v types.UUID) {
+	r.uuid.Store(v)
 }

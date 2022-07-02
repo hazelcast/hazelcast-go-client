@@ -97,6 +97,8 @@ func (rt *ReparingTask) RegisterAndGetHandler(ctx context.Context, name string, 
 		if err := rt.invalidationMetaDataFetcher.Init(ctx, handler); err != nil {
 			return RepairingHandler{}, nil
 		}
+		sr := NewStaleReadDetector(handler, rt.ps)
+		nc.store.staleReadDetector = &sr
 	}
 	if atomic.CompareAndSwapInt32(&rt.running, 0, 1) {
 		// this is the first added handler

@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 )
 
 type DataStructureAdapter interface {
@@ -30,6 +31,9 @@ type DataStructureAdapter interface {
 
 type NearCacheAdapter interface {
 	Size() int
-	Get(key interface{}) (interface{}, bool, error)
+	Get(key interface{}) (interface{}, error)
+	GetFromNearCache(key interface{}) (interface{}, error)
+	GetRecord(key interface{}) (*inearcache.Record, bool)
 	InvalidationRequests() int64
+	ToNearCacheKey(key interface{}) interface{}
 }
