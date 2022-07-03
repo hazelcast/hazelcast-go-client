@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ const (
 	UUIDSizeInBytes                      = 17
 	UuidSizeInBytes                      = 17 // Deprecated
 	EntrySizeInBytes                     = UUIDSizeInBytes + LongSizeInBytes
+	EntryListIntegerLongSizeInBytes      = IntSizeInBytes + LongSizeInBytes
 	EntryListIntegerUUIDEntrySizeInBytes = IntSizeInBytes + UUIDSizeInBytes
 	LocalDateSizeInBytes                 = IntSizeInBytes + 2*ByteSizeInBytes
 	LocalTimeSizeInBytes                 = 3*ByteSizeInBytes + IntSizeInBytes

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -249,15 +249,15 @@ func DecodeNullableEntryList(frameIterator *proto.ForwardFrameIterator, keyDecod
 	return DecodeEntryList(frameIterator, keyDecoder, valueDecoder)
 }
 
-func DecodeEntryListForStringAndEntryListIntegerLong(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
-	result := make([]proto.Pair, 0)
-	frameIterator.Next()
-	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		key := DecodeString(frameIterator)
-		value := DecodeEntryListIntegerLong(frameIterator)
+func DecodeEntryListForStringAndEntryListIntegerLong(it *proto.ForwardFrameIterator) []proto.Pair {
+	var result []proto.Pair
+	it.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(it) {
+		key := DecodeString(it)
+		value := DecodeEntryListIntegerLong(it)
 		result = append(result, proto.NewPair(key, value))
 	}
-	frameIterator.Next()
+	it.Next()
 	return result
 }
 
@@ -385,11 +385,11 @@ func DecodeEntryListIntegerUUID(frameIterator *proto.ForwardFrameIterator) []pro
 
 func DecodeEntryListIntegerLong(iterator *proto.ForwardFrameIterator) []proto.Pair {
 	frame := iterator.Next()
-	entryCount := len(frame.Content) / proto.EntrySizeInBytes
+	entryCount := len(frame.Content) / proto.EntryListIntegerLongSizeInBytes
 	result := make([]proto.Pair, entryCount)
 	for i := 0; i < entryCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeLong(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
+		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntryListIntegerLongSizeInBytes))
+		value := FixSizedTypesCodec.DecodeLong(frame.Content, int32(i*proto.EntryListIntegerLongSizeInBytes+proto.IntSizeInBytes))
 		result[i] = proto.NewPair(key, value)
 	}
 	return result
