@@ -105,13 +105,15 @@ func newClient(config Config) (*Client, error) {
 		nearCacheMgrs:           map[string]*inearcache.Manager{},
 		cfg:                     &config,
 	}
-	c.ic.StatsService.SetNCStatsGetter(func(service string) stats.NearCacheStatsGetter {
-		ncmgr, ok := c.nearCacheMgrs[service]
-		if !ok {
-			return nil
-		}
-		return ncmgr
-	})
+	if c.ic.StatsService != nil {
+		c.ic.StatsService.SetNCStatsGetter(func(service string) stats.NearCacheStatsGetter {
+			ncmgr, ok := c.nearCacheMgrs[service]
+			if !ok {
+				return nil
+			}
+			return ncmgr
+		})
+	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
 	return c, nil
