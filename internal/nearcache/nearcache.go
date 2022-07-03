@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,12 @@ const (
 type NearCache struct {
 	store                RecordStore
 	cfg                  *nearcache.Config
-	logger               ilogger.LogAdaptor
+	lg                   ilogger.LogAdaptor
 	doneCh               <-chan struct{}
 	expirationInProgress int32
 }
 
-func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, expirationInitialDelay, expirationPeriod time.Duration, logger ilogger.LogAdaptor, doneCh <-chan struct{}) *NearCache {
+func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.LogAdaptor, doneCh <-chan struct{}) *NearCache {
 	var rc nearCacheRecordValueConverter
 	var se nearCacheStorageEstimator
 	if cfg.InMemoryFormat == nearcache.InMemoryFormatBinary {
@@ -62,10 +62,12 @@ func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, expirationIn
 	nc := &NearCache{
 		cfg:    cfg,
 		store:  NewRecordStore(cfg, ss, rc, se),
-		logger: logger,
+		lg:     lg,
 		doneCh: doneCh,
 	}
-	go nc.startExpirationTask(expirationInitialDelay, expirationPeriod)
+	if cfg.TimeToLiveSeconds > 0 && cfg.MaxIdleSeconds > 0 {
+		go nc.startExpirationTask(defaultExpirationTaskInitialDelay, defaultExpirationTaskPeriod)
+	}
 	return nc
 }
 
@@ -146,7 +148,7 @@ func (nc *NearCache) startExpirationTask(delay, timeout time.Duration) {
 			return
 		case <-timer.C:
 			if atomic.CompareAndSwapInt32(&nc.expirationInProgress, 0, 1) {
-				nc.logger.Debug(func() string {
+				nc.lg.Debug(func() string {
 					return "running near cache expiration task"
 				})
 				nc.store.DoExpiration()

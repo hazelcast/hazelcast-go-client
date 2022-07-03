@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ const (
 	defaultEvictionPolicy           = EvictionPolicyLRU
 	defaultStoreInitialDelaySeconds = 600
 	defaultStoreIntervalSeconds     = 600
-	defaultMemoryFormat             = InMemoryFormatBinary
-	// see: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#MAX_TOLERATED_MISS_COUNT
 )
 
 // Config is the Near Cache configuration.

@@ -74,9 +74,7 @@ func (m *Manager) GetOrCreateNearCache(name string, cfg nearcache.Config) *NearC
 	m.nearCachesMu.Lock()
 	nc, ok = m.nearCaches[name]
 	if !ok {
-		delay := defaultExpirationTaskInitialDelay
-		period := defaultExpirationTaskPeriod
-		nc = NewNearCache(&cfg, m.ss, delay, period, m.lg, m.doneCh)
+		nc = NewNearCache(&cfg, m.ss, m.lg, m.doneCh)
 		m.nearCaches[name] = nc
 	}
 	m.nearCachesMu.Unlock()
