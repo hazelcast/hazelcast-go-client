@@ -19,7 +19,7 @@ package invocation
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -27,11 +27,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-)
-
-const (
-	ready   = 0
-	stopped = 1
 )
 
 var serviceSubID = event.NextSubscriptionID()
@@ -53,7 +48,8 @@ type Service struct {
 	removeCh chan int64
 	executor *stripeExecutor
 	logger   logger.LogAdaptor
-	state    int32
+	stateMu  *sync.RWMutex
+	running  bool
 }
 
 func NewService(handler Handler, ed *event.DispatchService, lg logger.LogAdaptor) *Service {
@@ -68,7 +64,8 @@ func NewService(handler Handler, ed *event.DispatchService, lg logger.LogAdaptor
 		handler:         handler,
 		eventDispatcher: ed,
 		logger:          lg,
-		state:           ready,
+		stateMu:         &sync.RWMutex{},
+		running:         true,
 		executor:        newStripeExecutor(),
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
@@ -87,9 +84,12 @@ func NewService(handler Handler, ed *event.DispatchService, lg logger.LogAdaptor
 }
 
 func (s *Service) Stop() {
-	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
+	s.stateMu.Lock()
+	defer s.stateMu.Unlock()
+	if !s.running {
 		return
 	}
+	s.running = false
 	s.executor.stop()
 	close(s.doneCh)
 }
@@ -251,7 +251,9 @@ func (s *Service) unregisterInvocation(correlationID int64) Invocation {
 }
 
 func (s *Service) handleGroupLost(e *GroupLostEvent) {
-	if atomic.LoadInt32(&s.state) != ready {
+	s.stateMu.RLock()
+	defer s.stateMu.RUnlock()
+	if !s.running {
 		return
 	}
 	for corrID, inv := range s.invocations {
