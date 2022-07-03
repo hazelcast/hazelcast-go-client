@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -56,10 +56,7 @@ type Service struct {
 	state    int32
 }
 
-func NewService(
-	handler Handler,
-	eventDispatcher *event.DispatchService,
-	logger logger.LogAdaptor) *Service {
+func NewService(handler Handler, ed *event.DispatchService, lg logger.LogAdaptor) *Service {
 	s := &Service{
 		requestCh:       make(chan Invocation),
 		urgentRequestCh: make(chan Invocation),
@@ -69,14 +66,21 @@ func NewService(
 		groupLostCh:     make(chan *GroupLostEvent),
 		invocations:     map[int64]Invocation{},
 		handler:         handler,
-		eventDispatcher: eventDispatcher,
-		logger:          logger,
+		eventDispatcher: ed,
+		logger:          lg,
 		state:           ready,
 		executor:        newStripeExecutor(),
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
 		go func() {
-			s.groupLostCh <- event.(*GroupLostEvent)
+			for {
+				select {
+				case s.groupLostCh <- event.(*GroupLostEvent):
+					return
+				case <-s.doneCh:
+					return
+				}
+			}
 		}()
 	})
 	s.executor.start()
