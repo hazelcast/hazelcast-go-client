@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -457,4 +457,38 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 	case <-timer.C:
 		t.FailNow()
 	}
+}
+
+// Cloud APIs
+
+func LoginToHazelcastCloudUsingEnvironment() error {
+	return rc.LoginToHazelcastCloudUsingEnvironment(context.Background())
+}
+
+func LoginToHazelcastCloud(uri string, apiKey string, apiSecret string) error {
+	return rc.LoginToHazelcastCloud(context.Background(), uri, apiKey, apiSecret)
+}
+
+func CreateHazelcastCloudStandardCluster(hzVersion string, isTlsEnabled bool) (*CloudCluster, error) {
+	return rc.CreateHazelcastCloudStandardCluster(context.Background(), hzVersion, isTlsEnabled)
+}
+
+func GetHazelcastCloudCluster(clusterId string) (*CloudCluster, error) {
+	return rc.GetHazelcastCloudCluster(context.Background(), clusterId)
+}
+
+func SetHazelcastCloudClusterMemberCount(clusterId string, totalMemberCount int32) error {
+	return rc.SetHazelcastCloudClusterMemberCount(context.Background(), clusterId, totalMemberCount)
+}
+
+func StopHazelcastCloudCluster(clusterId string)(*CloudCluster, error) {
+	return rc.StopHazelcastCloudCluster(context.Background(), clusterId)
+}
+
+func ResumeHazelcastCloudCluster(clusterId string)(*CloudCluster, error) {
+	return rc.ResumeHazelcastCloudCluster(context.Background(),clusterId)
+}
+
+func DeleteHazelcastCloudCluster(clusterId string) error {
+	return rc.DeleteHazelcastCloudCluster(context.Background(), clusterId)
 }
