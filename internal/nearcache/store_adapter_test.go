@@ -21,6 +21,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -41,6 +42,7 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 		estimator nearCacheStorageEstimator
 		makeRec   func() *Record
 		cost      int64
+		cost32    int64 // cost for 32bit
 	}{
 		{
 			name:      "data estimator: nil record",
@@ -48,7 +50,8 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 			makeRec: func() *Record {
 				return nil
 			},
-			cost: 0,
+			cost:   0,
+			cost32: 0,
 		},
 		{
 			name:      "data estimator: record with nil value",
@@ -58,7 +61,8 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 				rec.SetValue(nil)
 				return rec
 			},
-			cost: 84,
+			cost:   84,
+			cost32: 80,
 		},
 		{
 			name:      "data estimator: record with value",
@@ -72,7 +76,8 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 				rec.SetValue(v)
 				return rec
 			},
-			cost: 93,
+			cost:   93,
+			cost32: 89,
 		},
 		{
 			name:      "value estimator: nil record",
@@ -80,7 +85,8 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 			makeRec: func() *Record {
 				return nil
 			},
-			cost: 0,
+			cost:   0,
+			cost32: 0,
 		},
 		{
 			name:      "value estimator: record with nil value",
@@ -90,7 +96,8 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 				rec.SetValue(nil)
 				return rec
 			},
-			cost: 0,
+			cost:   0,
+			cost32: 0,
 		},
 		{
 			name:      "value estimator: record with value",
@@ -100,14 +107,19 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 				rec.SetValue("hello")
 				return rec
 			},
-			cost: 0,
+			cost:   0,
+			cost32: 0,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			targetCost := tc.cost
+			if runtime.Is32BitArch() {
+				targetCost = tc.cost32
+			}
 			rec := tc.makeRec()
 			cost := tc.estimator.GetRecordStorageMemoryCost(rec)
-			require.Equal(t, tc.cost, cost)
+			require.Equal(t, targetCost, cost)
 		})
 	}
 }
