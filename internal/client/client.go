@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ type Client struct {
 	InvocationFactory    *icluster.ConnectionInvocationFactory
 	SerializationService *serialization.Service
 	EventDispatcher      *event.DispatchService
-	statsService         *stats.Service
+	StatsService         *stats.Service
 	heartbeatService     *icluster.HeartbeatService
 	clusterConfig        *cluster.Config
 	shutdownHandlers     []ShutdownHandler
@@ -160,8 +160,8 @@ func (c *Client) Start(ctx context.Context) error {
 		return err
 	}
 	c.heartbeatService.Start()
-	if c.statsService != nil {
-		c.statsService.Start()
+	if c.StatsService != nil {
+		c.StatsService.Start()
 	}
 	c.EventDispatcher.Subscribe(icluster.EventCluster, event.MakeSubscriptionID(c.handleClusterEvent), c.handleClusterEvent)
 	atomic.StoreInt32(&c.state, Ready)
@@ -181,8 +181,8 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
 	c.ConnectionManager.Stop()
-	if c.statsService != nil {
-		c.statsService.Stop()
+	if c.StatsService != nil {
+		c.StatsService.Stop()
 	}
 	for _, h := range c.shutdownHandlers {
 		h(ctx)
@@ -249,13 +249,14 @@ func (c *Client) createComponents(config *Config) {
 	it := time.Duration(c.clusterConfig.HeartbeatTimeout)
 	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger, iv, it)
 	if config.StatsEnabled {
-		c.statsService = stats.NewService(
+		c.StatsService = stats.NewService(
 			invocationService,
 			c.InvocationFactory,
 			c.EventDispatcher,
 			c.Logger,
 			config.StatsPeriod,
-			c.name)
+			c.name,
+		)
 	}
 	c.ConnectionManager = connectionManager
 	c.ClusterService = clusterService

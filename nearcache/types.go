@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -64,34 +64,36 @@ func (p EvictionPolicy) String() string {
 
 // Stats contains statistics for a Near Cache instance.
 type Stats struct {
-	// CreationTime is the time the Near Cache was initialized.
-	CreationTime time.Time
-	// LastPersistenceTime is the time of the last completed persistence task when the pre-load feature is enabled.
-	LastPersistenceTime time.Time
-	// LastPersistenceFailure is the error message of the last completed persistence task when the pre-load feature is enabled.
-	LastPersistenceFailure string
-	// LastPersistenceKeyCount is the number of keys saved in the last persistence task when the pre-load feature is enabled.
-	LastPersistenceKeyCount int64
+	// InvalidationRequests is the number of times an invalidation was requested.
+	InvalidationRequests int64
 	// Misses is the number of times an entry was not found in the Near Cache.
 	Misses int64
+	// Hits is the number of times an entry was found in the Near Cache.
+	Hits int64
+	// Expirations is the number of expirations due to TTL and max idle constraints.
+	Expirations int64
+	// Evictions is the number of evictions.
+	Evictions int64
 	// OwnedEntryCount is the number of entries in the Near Cache.
 	OwnedEntryCount int64
 	// OwnedEntryMemoryCost is the estimated memory cost in bytes for the entries in the Near Cache.
 	OwnedEntryMemoryCost int64
 	// Invalidations is the number of successful invalidations.
 	Invalidations int64
+	// LastPersistenceKeyCount is the number of keys saved in the last persistence task when the pre-load feature is enabled.
+	LastPersistenceKeyCount int64
 	// LastPersistenceWrittenBytes is number of bytes written in the last persistence task when the pre-load feature is enabled.
 	LastPersistenceWrittenBytes int64
 	// PersistenceCount is the number of completed persistence tasks when the pre-load feature is enabled.
 	PersistenceCount int64
-	// Hits is the number of times an entry was found in the Near Cache.
-	Hits int64
+	// CreationTime is the time the Near Cache was initialized.
+	CreationTime time.Time
+	// LastPersistenceTime is the time of the last completed persistence task when the pre-load feature is enabled.
+	LastPersistenceTime time.Time
+	// LastPersistenceFailure is the error message of the last completed persistence task when the pre-load feature is enabled.
+	LastPersistenceFailure string
 	// LastPersistenceDuration is the duration of the last completed persistence task when the pre-load feature is enabled.
 	LastPersistenceDuration time.Duration
-	// Expirations is the number of expirations due to TTL and max idle constraints.
-	Expirations int64
-	// Evictions is the number of evictions.
-	Evictions int64
 }
 
 // Ratio returns the ratio of hits to misses.

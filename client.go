@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import (
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -79,6 +80,7 @@ func newClient(config Config) (*Client, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
+	var c *Client
 	icc := &client.Config{
 		Name:          config.ClientName,
 		Cluster:       &config.Cluster,
@@ -93,7 +95,7 @@ func newClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &Client{
+	c = &Client{
 		ic:                      ic,
 		lifecycleListenerMap:    map[types.UUID]int64{},
 		lifecycleListenerMapMu:  &sync.Mutex{},
@@ -103,6 +105,13 @@ func newClient(config Config) (*Client, error) {
 		nearCacheMgrs:           map[string]*inearcache.Manager{},
 		cfg:                     &config,
 	}
+	c.ic.StatsService.SetNCStatsGetter(func(service string) stats.NearCacheStatsGetter {
+		ncmgr, ok := c.nearCacheMgrs[service]
+		if !ok {
+			return nil
+		}
+		return ncmgr
+	})
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
 	return c, nil

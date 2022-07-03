@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ const (
 type dataString string
 
 type RecordStore struct {
-	stats             Stats
+	stats             nearcache.Stats
 	maxIdleMillis     int64
 	reservationID     int64
 	timeToLiveMillis  int64
@@ -56,7 +56,7 @@ type RecordStore struct {
 }
 
 func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) RecordStore {
-	stats := Stats{
+	stats := nearcache.Stats{
 		CreationTime: time.Now(),
 	}
 	return RecordStore{
@@ -208,8 +208,7 @@ func (rs *RecordStore) tryEvict(candidate evictionCandidate) bool {
 
 func (rs *RecordStore) remove(key interface{}) bool {
 	// the key is already in the "made" form, so don't run on rs.makeMapKey on it
-	rs.recordsMu.Lock()
-	defer rs.recordsMu.Unlock()
+	// assumes rs.recordsMu is locked elsewhere
 	if _, exists := rs.records[key]; !exists {
 		return false
 	}

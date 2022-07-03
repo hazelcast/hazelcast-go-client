@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
@@ -84,4 +85,14 @@ func (m *Manager) GetOrCreateNearCache(name string, cfg nearcache.Config) *NearC
 
 func (m *Manager) RepairingTask() *ReparingTask {
 	return m.rt
+}
+
+func (m *Manager) GetNearCacheStats() []proto.Pair {
+	m.nearCachesMu.RLock()
+	nameStats := make([]proto.Pair, 0, len(m.nearCaches))
+	for name, nc := range m.nearCaches {
+		nameStats = append(nameStats, proto.NewPair(name, nc.Stats()))
+	}
+	m.nearCachesMu.RUnlock()
+	return nameStats
 }

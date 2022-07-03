@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -315,8 +315,7 @@ func (ncm *nearCacheMap) handleInvalidationMsg(rth *inearcache.RepairingHandler,
 
 func (ncm *nearCacheMap) handleBatchInvalidationMsg(rth *inearcache.RepairingHandler, keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) error {
 	ncm.lg.Trace(func() string {
-		return fmt.Sprintf("nearCacheMap.handleBatchInvalidationMsg: keys: %v, sources: %s, partitions: %v, seqs: %v",
-			keys, sources, partitions, seqs)
+		return fmt.Sprintf("nearCacheMap.handleBatchInvalidationMsg: key count: %d", len(keys))
 	})
 	return rth.HandleBatch(keys, sources, partitions, seqs)
 }
