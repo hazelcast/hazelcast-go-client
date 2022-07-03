@@ -73,13 +73,11 @@ func NewService(handler Handler, ed *event.DispatchService, lg logger.LogAdaptor
 	}
 	s.eventDispatcher.Subscribe(EventGroupLost, serviceSubID, func(event event.Event) {
 		go func() {
-			for {
-				select {
-				case s.groupLostCh <- event.(*GroupLostEvent):
-					return
-				case <-s.doneCh:
-					return
-				}
+			select {
+			case s.groupLostCh <- event.(*GroupLostEvent):
+				return
+			case <-s.doneCh:
+				return
 			}
 		}()
 	})
