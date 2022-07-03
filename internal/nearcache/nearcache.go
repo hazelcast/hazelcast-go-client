@@ -65,7 +65,7 @@ func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.L
 		lg:     lg,
 		doneCh: doneCh,
 	}
-	if cfg.TimeToLiveSeconds > 0 && cfg.MaxIdleSeconds > 0 {
+	if cfg.TimeToLiveSeconds > 0 || cfg.MaxIdleSeconds > 0 {
 		go nc.startExpirationTask(defaultExpirationTaskInitialDelay, defaultExpirationTaskPeriod)
 	}
 	return nc

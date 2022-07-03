@@ -59,7 +59,7 @@ func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serializ
 			return fmt.Sprintf("registering invalidation listener: name: %s, local: %t", name, local)
 		})
 		if err := ncm.registerInvalidationListener(ctx, name, local); err != nil {
-			return nearCacheMap{}, fmt.Errorf("hazelcast.newNearCacheMap: preloading near cache: %w", err)
+			return nearCacheMap{}, fmt.Errorf("hazelcast.newNearCacheMap: registering invalidation handler: %w", err)
 		}
 	}
 	if ncc.Preloader.Enabled {
