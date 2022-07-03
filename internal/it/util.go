@@ -461,34 +461,34 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 
 // Cloud APIs
 
-func LoginToHazelcastCloudUsingEnvironment() error {
-	return rc.LoginToHazelcastCloudUsingEnvironment(context.Background())
+func LoginToHazelcastCloudUsingEnvironment(ctx context.Context) error {
+	return rc.LoginToHazelcastCloudUsingEnvironment(ctx)
 }
 
-func LoginToHazelcastCloud(uri string, apiKey string, apiSecret string) error {
-	return rc.LoginToHazelcastCloud(context.Background(), uri, apiKey, apiSecret)
+func LoginToHazelcastCloud(ctx context.Context, uri string, apiKey string, apiSecret string) error {
+	return rc.LoginToHazelcastCloud(ctx, uri, apiKey, apiSecret)
 }
 
-func CreateHazelcastCloudStandardCluster(hzVersion string, isTlsEnabled bool) (*CloudCluster, error) {
-	return rc.CreateHazelcastCloudStandardCluster(context.Background(), hzVersion, isTlsEnabled)
+func CreateHazelcastCloudStandardCluster(ctx context.Context, hzVersion string, isTlsEnabled bool) (*CloudCluster, error) {
+	return rc.CreateHazelcastCloudStandardCluster(ctx, hzVersion, isTlsEnabled)
 }
 
-func GetHazelcastCloudCluster(clusterId string) (*CloudCluster, error) {
-	return rc.GetHazelcastCloudCluster(context.Background(), clusterId)
+func GetHazelcastCloudCluster(ctx context.Context, clusterId string) (*CloudCluster, error) {
+	return rc.GetHazelcastCloudCluster(ctx, clusterId)
 }
 
-func SetHazelcastCloudClusterMemberCount(clusterId string, totalMemberCount int32) error {
-	return rc.SetHazelcastCloudClusterMemberCount(context.Background(), clusterId, totalMemberCount)
+func SetHazelcastCloudClusterMemberCount(ctx context.Context, clusterId string, totalMemberCount int32) error {
+	return rc.SetHazelcastCloudClusterMemberCount(ctx, clusterId, totalMemberCount)
 }
 
-func StopHazelcastCloudCluster(clusterId string)(*CloudCluster, error) {
-	return rc.StopHazelcastCloudCluster(context.Background(), clusterId)
+func StopHazelcastCloudCluster(ctx context.Context, clusterId string)(*CloudCluster, error) {
+	return rc.StopHazelcastCloudCluster(ctx, clusterId)
 }
 
-func ResumeHazelcastCloudCluster(clusterId string)(*CloudCluster, error) {
-	return rc.ResumeHazelcastCloudCluster(context.Background(),clusterId)
+func ResumeHazelcastCloudCluster(ctx context.Context, clusterId string)(*CloudCluster, error) {
+	return rc.ResumeHazelcastCloudCluster(ctx,clusterId)
 }
 
-func DeleteHazelcastCloudCluster(clusterId string) error {
-	return rc.DeleteHazelcastCloudCluster(context.Background(), clusterId)
+func DeleteHazelcastCloudCluster(ctx context.Context, clusterId string) error {
+	return rc.DeleteHazelcastCloudCluster(ctx, clusterId)
 }
