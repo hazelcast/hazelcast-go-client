@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ type RecordStore struct {
 	maxIdleMillis     int64
 	reservationID     int64
 	timeToLiveMillis  int64
-	recordsMu         *sync.Mutex
+	recordsMu         *sync.RWMutex
 	records           map[interface{}]*Record
 	ss                *serialization.Service
 	valueConverter    nearCacheRecordValueConverter
@@ -60,7 +60,7 @@ func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCac
 		CreationTime: time.Now(),
 	}
 	return RecordStore{
-		recordsMu:        &sync.Mutex{},
+		recordsMu:        &sync.RWMutex{},
 		records:          map[interface{}]*Record{},
 		maxIdleMillis:    int64(cfg.MaxIdleSeconds * 1000),
 		ss:               ss,
@@ -89,8 +89,8 @@ func (rs *RecordStore) Clear() {
 
 func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err error) {
 	// checkAvailable() does not apply since rs.records is always created
-	rs.recordsMu.Lock()
-	defer rs.recordsMu.Unlock()
+	rs.recordsMu.RLock()
+	defer rs.recordsMu.RUnlock()
 	key = rs.makeMapKey(key)
 	rec, ok := rs.getRecord(key)
 	if !ok {
@@ -134,8 +134,8 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 func (rs *RecordStore) GetRecord(key interface{}) (*Record, bool) {
 	// this function is exported only for tests.
 	// do not use outside of tests.
-	rs.recordsMu.Lock()
-	defer rs.recordsMu.Unlock()
+	rs.recordsMu.RLock()
+	defer rs.recordsMu.RUnlock()
 	key = rs.makeMapKey(key)
 	return rs.getRecord(key)
 }
@@ -284,9 +284,9 @@ func (rs RecordStore) InvalidationRequests() int64 {
 }
 
 func (rs RecordStore) Size() int {
-	rs.recordsMu.Lock()
+	rs.recordsMu.RLock()
 	size := len(rs.records)
-	rs.recordsMu.Unlock()
+	rs.recordsMu.RUnlock()
 	return size
 }
 
