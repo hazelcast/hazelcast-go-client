@@ -473,22 +473,22 @@ func CreateHazelcastCloudStandardCluster(ctx context.Context, hzVersion string, 
 	return rc.CreateHazelcastCloudStandardCluster(ctx, hzVersion, isTlsEnabled)
 }
 
-func GetHazelcastCloudCluster(ctx context.Context, clusterId string) (*CloudCluster, error) {
-	return rc.GetHazelcastCloudCluster(ctx, clusterId)
+func GetHazelcastCloudCluster(ctx context.Context, clusterID string) (*CloudCluster, error) {
+	return rc.GetHazelcastCloudCluster(ctx, clusterID)
 }
 
-func SetHazelcastCloudClusterMemberCount(ctx context.Context, clusterId string, totalMemberCount int32) error {
-	return rc.SetHazelcastCloudClusterMemberCount(ctx, clusterId, totalMemberCount)
+func SetHazelcastCloudClusterMemberCount(ctx context.Context, clusterID string, totalMemberCount int32) error {
+	return rc.SetHazelcastCloudClusterMemberCount(ctx, clusterID, totalMemberCount)
 }
 
-func StopHazelcastCloudCluster(ctx context.Context, clusterId string)(*CloudCluster, error) {
-	return rc.StopHazelcastCloudCluster(ctx, clusterId)
+func StopHazelcastCloudCluster(ctx context.Context, clusterID string)(*CloudCluster, error) {
+	return rc.StopHazelcastCloudCluster(ctx, clusterID)
 }
 
-func ResumeHazelcastCloudCluster(ctx context.Context, clusterId string)(*CloudCluster, error) {
-	return rc.ResumeHazelcastCloudCluster(ctx,clusterId)
+func ResumeHazelcastCloudCluster(ctx context.Context, clusterID string)(*CloudCluster, error) {
+	return rc.ResumeHazelcastCloudCluster(ctx,clusterID)
 }
 
-func DeleteHazelcastCloudCluster(ctx context.Context, clusterId string) error {
-	return rc.DeleteHazelcastCloudCluster(ctx, clusterId)
+func DeleteHazelcastCloudCluster(ctx context.Context, clusterID string) error {
+	return rc.DeleteHazelcastCloudCluster(ctx, clusterID)
 }
