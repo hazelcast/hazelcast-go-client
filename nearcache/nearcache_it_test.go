@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -472,21 +472,18 @@ func assertNearCacheExpiration(tcx it.MapTestContext, size int32) {
 		if stats.OwnedEntryCount != 0 {
 			return false
 		}
-		// TODO: fix this
-		//if !assert.Equal(t, int64(0), stats.OwnedEntryMemoryCost) {
-		//	return false
-		//}
+		if !assert.Equal(t, int64(0), stats.OwnedEntryMemoryCost) {
+			return false
+		}
 		if stats.Expirations != int64(size) {
 			return false
 		}
 		if stats.Evictions != 0 {
 			return false
 		}
-		/*
-			if !assert.Equal(t, int64(0), stats.Evictions) {
-				return false
-			}
-		*/
+		if !assert.Equal(t, int64(0), stats.Evictions) {
+			return false
+		}
 		return true
 	})
 }
