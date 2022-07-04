@@ -19,6 +19,7 @@ package hazelcast_test
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"sort"
 	"sync"
 	"testing"
@@ -31,6 +32,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -78,13 +80,31 @@ func TestConfig_SetLabels(t *testing.T) {
 }
 
 func TestConfig_Clone(t *testing.T) {
-	config := hazelcast.Config{}
-	config.Stats.Enabled = true
-	config.Cluster.Name = "dummyClusterName"
-	newCfg := config.Clone()
-	if &newCfg == &config {
-		t.Fatal("cannot clone")
+	cfg := hazelcast.Config{
+		FlakeIDGenerators: map[string]hazelcast.FlakeIDGeneratorConfig{
+			"test-flakeID-key-1": {
+				PrefetchCount:  50_000,
+				PrefetchExpiry: types.Duration(time.Minute * 2),
+			},
+			"test-flakeID-key-2": {
+				PrefetchCount:  90_000,
+				PrefetchExpiry: types.Duration(time.Minute * 5),
+			},
+		},
+		Labels:     []string{"test-client-label"},
+		ClientName: "test-client",
+		// Each config's clone method is assumed to working fine by itself.
+		// This test is only validating hazelcast config's clone receiver.
+		Logger:        logger.Config{},
+		Failover:      cluster.FailoverConfig{},
+		Serialization: serialization.Config{},
+		Cluster:       cluster.Config{},
+		Stats:         hazelcast.StatsConfig{},
 	}
+	newCfg := cfg.Clone()
+	assert.True(t, reflect.DeepEqual(newCfg.FlakeIDGenerators, cfg.FlakeIDGenerators))
+	assert.True(t, reflect.DeepEqual(newCfg.Labels, cfg.Labels))
+	assert.True(t, reflect.DeepEqual(newCfg.ClientName, cfg.ClientName))
 }
 
 func TestNewConfig_SetAddress(t *testing.T) {

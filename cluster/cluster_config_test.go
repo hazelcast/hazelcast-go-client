@@ -40,6 +40,7 @@ func TestConfig_SetLoadBalancer(t *testing.T) {
 	client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
+
 	}
 	defer func(ctx context.Context, client *hazelcast.Client) {
 		err = client.Shutdown(ctx)
