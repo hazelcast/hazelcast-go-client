@@ -22,6 +22,7 @@ package nearcache_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -32,6 +33,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -70,6 +72,48 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		// 5. assert number of entries in client Near Cache
 		nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
 		require.Equal(t, mapSize, nca.Size())
+	})
+}
+
+func TestGetAllNearCacheStatsBeforePopulation(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAllChecksNearCacheFirst
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		var keys []interface{}
+		var target []types.Entry
+		const size = 1003
+		for i := int64(0); i < size; i++ {
+			if _, err := m.Put(ctx, i, i); err != nil {
+				t.Fatal(err)
+			}
+			keys = append(keys, i)
+			target = append(target, types.Entry{Key: i, Value: i})
+		}
+		// populate Near Cache
+		for i := int64(0); i < size; i++ {
+			v, err := m.Get(ctx, i)
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, i, v)
+		}
+		// GetAll() generates the Near Cache hits
+		vs, err := m.GetAll(ctx, keys...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sort.Slice(vs, func(i, j int) bool {
+			k1 := vs[i].Key.(int64)
+			k2 := vs[j].Key.(int64)
+			return k1 < k2
+		})
+		require.Equal(t, target, vs)
+		stats := m.LocalMapStats().NearCacheStats
+		require.Equal(t, int64(size), stats.OwnedEntryCount)
+		require.Equal(t, int64(size), stats.Hits)
 	})
 }
 

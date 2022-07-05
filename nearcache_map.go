@@ -182,6 +182,10 @@ func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (inte
 	return value, nil
 }
 
+func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{}) ([]types.Entry, error) {
+	panic("implement me!")
+}
+
 func (ncm *nearCacheMap) Put(ctx context.Context, m *Map, key, value interface{}, ttl int64) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {

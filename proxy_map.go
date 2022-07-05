@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -468,6 +468,30 @@ func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (in
 	return m.convertToObject(codec.DecodeMapGetResponse(response))
 }
 
+func (m *Map) getAllFromRemote(ctx context.Context, keyCount int, partitionToKeys map[int32][]serialization.Data) ([]proto.Pair, error) {
+	futures := make([]cb.Future, 0, len(partitionToKeys))
+	for pid, ks := range partitionToKeys {
+		request := codec.EncodeMapGetAllRequest(m.name, ks)
+		fut := m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+			if attempt > 0 {
+				request = request.Copy()
+			}
+			return m.invokeOnPartition(ctx, request, pid)
+		})
+		futures = append(futures, fut)
+	}
+	result := make([]proto.Pair, 0, keyCount)
+	for _, fut := range futures {
+		fr, err := fut.Result()
+		if err != nil {
+			return nil, err
+		}
+		pairs := codec.DecodeMapGetAllResponse(fr.(*proto.ClientMessage))
+		result = append(result, pairs...)
+	}
+	return result, nil
+}
+
 func (m *Map) deleteFromRemote(ctx context.Context, key interface{}) error {
 	lid := extractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
@@ -598,56 +622,18 @@ func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, e
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	partitionToKeys := map[int32][]serialization.Data{}
-	ps := m.proxy.partitionService
-	for _, key := range keys {
-		if keyData, err := m.validateAndSerialize(key); err != nil {
-			return nil, err
-		} else {
-			if partitionKey, err := ps.GetPartitionID(keyData); err != nil {
-				return nil, err
-			} else {
-				arr := partitionToKeys[partitionKey]
-				partitionToKeys[partitionKey] = append(arr, keyData)
-			}
-		}
+	if m.hasNearCache {
+		return m.ncm.GetAll(ctx, m, keys)
 	}
-	result := make([]types.Entry, 0, len(keys))
-	// create futures
-	f := func(partitionID int32, keys []serialization.Data) cb.Future {
-		request := codec.EncodeMapGetAllRequest(m.name, keys)
-		return m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-			if attempt > 0 {
-				request = request.Copy()
-			}
-			return m.invokeOnPartition(ctx, request, partitionID)
-		})
+	partitionToKeys, err := m.partitionToKeys(keys)
+	if err != nil {
+		return nil, err
 	}
-	futures := make([]cb.Future, 0, len(partitionToKeys))
-	for partitionID, keys := range partitionToKeys {
-		futures = append(futures, f(partitionID, keys))
+	pairs, err := m.getAllFromRemote(ctx, len(keys), partitionToKeys)
+	if err != nil {
+		return nil, err
 	}
-	for _, future := range futures {
-		if futureResult, err := future.Result(); err != nil {
-			return nil, err
-		} else {
-			pairs := codec.DecodeMapGetAllResponse(futureResult.(*proto.ClientMessage))
-			var key, value interface{}
-			var err error
-			for _, pair := range pairs {
-				key, err = m.convertToObject(pair.Key.(serialization.Data))
-				if err != nil {
-					return nil, err
-				}
-				value, err = m.convertToObject(pair.Value.(serialization.Data))
-				if err != nil {
-					return nil, err
-				}
-				result = append(result, types.NewEntry(key, value))
-			}
-		}
-	}
-	return result, nil
+	return m.convertPairsToEntries(pairs)
 }
 
 // GetEntrySet returns a clone of the mappings contained in this map.
@@ -1375,6 +1361,24 @@ func (m *Map) aggregate(ctx context.Context, req *proto.ClientMessage, decoder f
 		return *cs, nil
 	}
 	return obj, nil
+}
+
+func (m *Map) partitionToKeys(keys []interface{}) (map[int32][]serialization.Data, error) {
+	res := map[int32][]serialization.Data{}
+	ps := m.proxy.partitionService
+	for _, key := range keys {
+		keyData, err := m.validateAndSerialize(key)
+		if err != nil {
+			return nil, err
+		}
+		pk, err := ps.GetPartitionID(keyData)
+		if err != nil {
+			return nil, err
+		}
+		arr := res[pk]
+		res[pk] = append(arr, keyData)
+	}
+	return res, nil
 }
 
 func validateAndNormalizeIndexConfig(ic *types.IndexConfig) error {

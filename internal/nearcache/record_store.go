@@ -36,8 +36,8 @@ const (
 	RecordStoreSampleCount = 15
 )
 
-// serialization.Data is not hashable, so using this to store keys.
-type dataString string
+// DataString is stringified serialization.Data which is not hashable, so using this to store keys.
+type DataString string
 
 type RecordStore struct {
 	stats             nearcache.Stats
@@ -293,13 +293,13 @@ func (rs RecordStore) makeMapKey(key interface{}) interface{} {
 	data, ok := key.(serialization.Data)
 	if ok {
 		// serialization.Data is not hashable, convert it to string
-		return dataString(data)
+		return DataString(data)
 	}
 	return key
 }
 
 func (rs RecordStore) unMakeMapKey(key interface{}) interface{} {
-	ds, ok := key.(dataString)
+	ds, ok := key.(DataString)
 	if ok {
 		return serialization.Data(ds)
 	}
