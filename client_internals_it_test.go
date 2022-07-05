@@ -206,6 +206,7 @@ func TestClientInternal_ClusterID(t *testing.T) {
 }
 
 func TestClientInternal_OrderedMembers(t *testing.T) {
+	t.Skipf("flaky test: https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
 	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55701, 1)
 	defer tc.Shutdown()
