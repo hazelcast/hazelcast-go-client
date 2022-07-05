@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 var names = []string{"Gorkem", "Ezgi", "Joe", "Jane", "Mike", "Mandy", "Tom", "Tina"}
@@ -60,9 +61,9 @@ func createMapping(client *hazelcast.Client, mapName string) error {
 
 // populateMap creates entries in the given map.
 // It uses SINK INTO instead of INSERT INTO in order to update already existing entries.
-func populateMap(client *hazelcast.Client, mapName string, employess []Employee) error {
+func populateMap(client *hazelcast.Client, mapName string, employees []Employee) error {
 	q := fmt.Sprintf(`SINK INTO "%s"(__key, age, name) VALUES (?, ?, ?)`, mapName)
-	for i, e := range employess {
+	for i, e := range employees {
 		if _, err := client.SQL().Execute(context.Background(), q, i, e.Age, e.Name); err != nil {
 			return fmt.Errorf("populating map: %w", err)
 		}
@@ -72,8 +73,9 @@ func populateMap(client *hazelcast.Client, mapName string, employess []Employee)
 
 // queryMap returns employees with the given minimum age.
 func queryMap(client *hazelcast.Client, mapName string, minAge int) ([]Employee, error) {
-	q := fmt.Sprintf(`SELECT name, age FROM "%s" WHERE age >= ?`, mapName)
-	result, err := client.SQL().Execute(context.Background(), q, minAge)
+	stmt := sql.NewStatement(fmt.Sprintf(`SELECT name, CAST(age AS smallint) FROM "%s" WHERE age >= ?`, mapName))
+	stmt.AddParameter(minAge)
+	result, err := client.SQL().ExecuteStatement(context.Background(), stmt)
 	if err != nil {
 		return nil, fmt.Errorf("querying: %w", err)
 	}
@@ -98,7 +100,16 @@ func queryMap(client *hazelcast.Client, mapName string, minAge int) ([]Employee,
 		if err != nil {
 			return nil, fmt.Errorf("accessing row field: %w", err)
 		}
-		e.Age = int16(age.(int64))
+		// we can check for column type
+		c, err := row.Metadata().GetColumn(1)
+		if err != nil {
+			return nil, fmt.Errorf("accessing metadata: %w", err)
+		}
+		if c.Type() != sql.ColumnTypeSmallInt {
+			return nil, fmt.Errorf("unexpected column type: %d", c.Type())
+		}
+		// we already check that it is int16
+		e.Age = age.(int16)
 		emps = append(emps, e)
 	}
 	return emps, nil
