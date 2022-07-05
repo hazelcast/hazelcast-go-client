@@ -41,6 +41,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
+var serviceHandleClusterEventSubID = event.NextSubscriptionID()
+
 type stat struct {
 	k string
 	v string
@@ -88,7 +90,7 @@ func NewService(
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
-	ed.Subscribe(cluster.EventCluster, event.DefaultSubscriptionID, s.handleClusterEvent)
+	ed.Subscribe(cluster.EventCluster, serviceHandleClusterEventSubID, s.handleClusterEvent)
 	s.addGauges()
 	return s
 }
@@ -99,8 +101,7 @@ func (s *Service) Start() {
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	subID := event.MakeSubscriptionID(s.handleClusterEvent)
-	s.ed.Unsubscribe(cluster.EventCluster, subID)
+	s.ed.Unsubscribe(cluster.EventCluster, serviceHandleClusterEventSubID)
 }
 
 func (s *Service) loop() {
