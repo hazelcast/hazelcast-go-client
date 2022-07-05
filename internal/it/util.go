@@ -351,9 +351,6 @@ func xmlConfig(clusterName string, port int) string {
             <network>
                <port>%d</port>
             </network>
-			<map name="*">
-				<per-entry-stats-enabled>true</per-entry-stats-enabled>
-			</map>
 			<map name="test-map">
 				<map-store enabled="true">
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
@@ -390,9 +387,6 @@ func xmlSSLConfig(clusterName string, port int) string {
 					</properties>
 				</ssl>
 			</network>
-			<map name="*">
-				<per-entry-stats-enabled>true</per-entry-stats-enabled>
-			</map>
 			<map name="test-map">
 				<map-store enabled="true">
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
