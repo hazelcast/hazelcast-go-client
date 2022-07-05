@@ -1084,11 +1084,11 @@ func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"
-		if err := m.SetWithTTLAndMaxIdle(ctx, "key", targetValue, 20*time.Second, 5*time.Second); err != nil {
+		if err := m.SetWithTTLAndMaxIdle(ctx, "key", targetValue, 4*time.Second, 5*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
-		time.Sleep(10 * time.Second)
+		time.Sleep(3 * time.Second)
 		it.Eventually(t, func() bool {
 			v := it.MustValue(m.Get(ctx, "key"))
 			return v == nil
