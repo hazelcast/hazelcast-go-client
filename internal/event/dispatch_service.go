@@ -31,8 +31,6 @@ func NextSubscriptionID() int64 {
 	return atomic.AddInt64(&globalSubscriptionID, 1)
 }
 
-const DefaultSubscriptionID = -1
-
 type Event interface {
 	EventName() string
 }
@@ -96,9 +94,6 @@ func (s *DispatchService) Stop(ctx context.Context) error {
 // Subscribe attaches handler to listen for events with eventName.
 // Do not rely on the order of handlers, they may be shuffled.
 func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, handler Handler) {
-	if subscriptionID == DefaultSubscriptionID {
-		subscriptionID = MakeSubscriptionID(handler)
-	}
 	// subscribing to a not-running service is no-op
 	if atomic.LoadInt32(&s.state) == stopped {
 		return
