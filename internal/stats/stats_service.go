@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/process"
@@ -174,9 +173,15 @@ func (s *Service) resetStats() {
 }
 
 func (s *Service) addGauges() {
+	p, err := process.NewProcess(int32(os.Getpid()))
+	if err != nil {
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("ERROR getting process info, unable to register process gauges (os.maxFileDescriptorCount, os.openFileDescriptorCount, runtime.uptime): %s", err.Error())
+		})
+	}
 	s.gauges = []gauge{
-		newGaugeRuntime(s.logger),
-		newGaugeOS(s.logger),
+		newGaugeRuntime(s.logger, p),
+		newGaugeOS(s.logger, p),
 	}
 }
 
@@ -218,6 +223,7 @@ type gauge interface {
 
 type runtimeGauges struct {
 	logger          logger.LogAdaptor
+	proc            *process.Process
 	availProcessors metricDescriptor
 	uptime          metricDescriptor
 	totalMem        metricDescriptor
@@ -229,7 +235,7 @@ type runtimeGauges struct {
 	committedHeap   metricDescriptor
 }
 
-func newGaugeRuntime(lg logger.LogAdaptor) runtimeGauges {
+func newGaugeRuntime(lg logger.LogAdaptor, p *process.Process) runtimeGauges {
 	return runtimeGauges{
 		logger:          lg,
 		availProcessors: makeCountMD("runtime", "availableProcessors"),
@@ -241,6 +247,7 @@ func newGaugeRuntime(lg logger.LogAdaptor) runtimeGauges {
 		freeHeap:        makeBytesMD("memory", "freeHeap"),
 		usedHeap:        makeBytesMD("memory", "usedHeap"),
 		committedHeap:   makeBytesMD("memory", "committedHeap"),
+		proc:            p,
 	}
 }
 
@@ -256,14 +263,22 @@ func (g runtimeGauges) updateNumCPU(bt *binTextStats) {
 	bt.stats = append(bt.stats, makeTextStat(&g.availProcessors, numCpu))
 }
 
+func unixMilli(t time.Time) int64 {
+	return t.UnixNano() / int64(time.Nanosecond) / int64(time.Millisecond)
+}
+
 func (g runtimeGauges) updateUptime(bt *binTextStats) {
-	if uptime, err := host.Uptime(); err != nil {
+	if g.proc == nil {
+		// gopsutil.process is not registered, skip gauge
+		return
+	}
+	if ct, err := g.proc.CreateTime(); err != nil {
 		// could not get the uptime
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting uptime: %s", err.Error())
 		})
 	} else {
-		ms := int64(uptime) * 1000
+		ms := unixMilli(time.Now()) - ct
 		bt.mc.AddLong(g.uptime, ms)
 		bt.stats = append(bt.stats, makeTextStat(&g.uptime, ms))
 	}
@@ -291,6 +306,7 @@ func (g runtimeGauges) updateMem(bt *binTextStats) {
 
 type gaugeOS struct {
 	logger        logger.LogAdaptor
+	proc          *process.Process
 	totalMem      metricDescriptor
 	freeMem       metricDescriptor
 	committedVM   metricDescriptor
@@ -302,7 +318,7 @@ type gaugeOS struct {
 	openDecrCount metricDescriptor
 }
 
-func newGaugeOS(lg logger.LogAdaptor) gaugeOS {
+func newGaugeOS(lg logger.LogAdaptor, p *process.Process) gaugeOS {
 	return gaugeOS{
 		logger:        lg,
 		totalMem:      makeBytesMD("os", "totalPhysicalMemorySize"),
@@ -314,6 +330,7 @@ func newGaugeOS(lg logger.LogAdaptor) gaugeOS {
 		loadAvg:       makePercentMD("os", "systemLoadAverage"),
 		maxDecrCount:  makeCountMD("os", "maxFileDescriptorCount"),
 		openDecrCount: makeCountMD("os", "openFileDescriptorCount"),
+		proc:          p,
 	}
 }
 
@@ -381,29 +398,33 @@ func (g gaugeOS) updateLoad(bt *binTextStats) {
 }
 
 func (g gaugeOS) updateDescr(bt *binTextStats) {
-	if proc, err := process.NewProcess(int32(os.Getpid())); err != nil {
-		g.logger.Debug(func() string {
-			return fmt.Sprintf("ERROR getting process info: %s", err.Error())
-		})
-	} else if rls, err := proc.Rlimit(); err != nil {
+	if g.proc == nil {
+		// gopsutil.process is not registered, skip gauge
+		return
+	}
+	rls, err := g.proc.Rlimit()
+	if err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting RLIMIT: %s", err.Error())
 		})
-	} else if nfd, err := proc.NumFDs(); err != nil {
+		return
+	}
+	nfd, err := g.proc.NumFDs()
+	if err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting open file descriptors: %s", err.Error())
 		})
-	} else {
-		for _, rl := range rls {
-			if rl.Resource == process.RLIMIT_NOFILE {
-				bt.mc.AddLong(g.maxDecrCount, int64(rl.Soft))
-				bt.stats = append(bt.stats, makeTextStat(&g.maxDecrCount, rl.Soft))
-				break
-			}
-		}
-		bt.mc.AddLong(g.openDecrCount, int64(nfd))
-		bt.stats = append(bt.stats, makeTextStat(&g.openDecrCount, nfd))
+		return
 	}
+	for _, rl := range rls {
+		if rl.Resource == process.RLIMIT_NOFILE {
+			bt.mc.AddLong(g.maxDecrCount, int64(rl.Soft))
+			bt.stats = append(bt.stats, makeTextStat(&g.maxDecrCount, rl.Soft))
+			break
+		}
+	}
+	bt.mc.AddLong(g.openDecrCount, int64(nfd))
+	bt.stats = append(bt.stats, makeTextStat(&g.openDecrCount, nfd))
 }
 
 func makeBytesMD(prefix, metric string) metricDescriptor {
