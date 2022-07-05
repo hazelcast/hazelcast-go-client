@@ -47,6 +47,8 @@ const (
 	Stopped
 )
 
+var handleClusterEventSubID = event.NextSubscriptionID()
+
 type Config struct {
 	Name          string
 	Cluster       *cluster.Config
@@ -155,7 +157,7 @@ func (c *Client) Start(ctx context.Context) error {
 	if c.statsService != nil {
 		c.statsService.Start()
 	}
-	c.EventDispatcher.Subscribe(icluster.EventCluster, event.MakeSubscriptionID(c.handleClusterEvent), c.handleClusterEvent)
+	c.EventDispatcher.Subscribe(icluster.EventCluster, handleClusterEventSubID, c.handleClusterEvent)
 	atomic.StoreInt32(&c.state, Ready)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateStarted))
 	return nil
@@ -234,7 +236,9 @@ func (c *Client) createComponents(config *Config) {
 		Config:            config.Cluster,
 	})
 	invocationService := invocation.NewService(invocationHandler, c.EventDispatcher, c.Logger)
-	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger)
+	iv := time.Duration(c.clusterConfig.HeartbeatInterval)
+	it := time.Duration(c.clusterConfig.HeartbeatTimeout)
+	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger, iv, it)
 	if config.StatsEnabled {
 		c.statsService = stats.NewService(
 			invocationService,

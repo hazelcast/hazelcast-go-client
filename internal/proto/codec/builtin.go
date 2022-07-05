@@ -249,18 +249,6 @@ func DecodeNullableEntryList(frameIterator *proto.ForwardFrameIterator, keyDecod
 	return DecodeEntryList(frameIterator, keyDecoder, valueDecoder)
 }
 
-func DecodeEntryListForStringAndEntryListIntegerLong(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
-	result := make([]proto.Pair, 0)
-	frameIterator.Next()
-	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		key := DecodeString(frameIterator)
-		value := DecodeEntryListIntegerLong(frameIterator)
-		result = append(result, proto.NewPair(key, value))
-	}
-	frameIterator.Next()
-	return result
-}
-
 func DecodeEntryListForDataAndData(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	result := make([]proto.Pair, 0)
 	frameIterator.Next()
@@ -273,74 +261,27 @@ func DecodeEntryListForDataAndData(frameIterator *proto.ForwardFrameIterator) []
 	return result
 }
 
-func EncodeListIntegerIntegerInteger(message *proto.ClientMessage, entries []proto.Pair) {
-	entryCount := len(entries)
-	frame := proto.NewFrame(make([]byte, entryCount*proto.EntrySizeInBytes))
-	for i := 0; i < entryCount; i++ {
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes), entries[i].Key.(int32))
-		FixSizedTypesCodec.EncodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes), entries[i].Value.(int32))
-	}
-	message.AddFrame(frame)
-}
-
-func DecodeListIntegerIntegerInteger(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
-	frame := frameIterator.Next()
-	itemCount := len(frame.Content) / proto.EntrySizeInBytes
-	result := make([]proto.Pair, itemCount)
-	for i := 0; i < itemCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
-		result = append(result, proto.NewPair(key, value))
-	}
-	return result
-}
-
 func EncodeEntryListUUIDLong(message *proto.ClientMessage, entries []proto.Pair) {
 	size := len(entries)
-	content := make([]byte, size*proto.EntrySizeInBytes)
+	content := make([]byte, size*proto.EntryListUUIDLongEntrySizeInBytes)
 	newFrame := proto.NewFrame(content)
 	for i, entry := range entries {
 		key := entry.Key.(types.UUID)
 		value := entry.Value.(int64)
-		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.EntrySizeInBytes), key)
-		FixSizedTypesCodec.EncodeLong(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
-	}
-	message.AddFrame(newFrame)
-}
-
-func EncodeEntryListIntegerInteger(message *proto.ClientMessage, entries []proto.Pair) {
-	size := len(entries)
-	content := make([]byte, size*proto.EntrySizeInBytes)
-	newFrame := proto.NewFrame(content)
-	for i, entry := range entries {
-		key := entry.Key.(int32)
-		value := entry.Value.(int32)
-		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes), key)
-		FixSizedTypesCodec.EncodeInt(content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes), value)
+		FixSizedTypesCodec.EncodeUUID(content, int32(i*proto.EntryListUUIDLongEntrySizeInBytes), key)
+		FixSizedTypesCodec.EncodeLong(content, int32(i*proto.EntryListUUIDLongEntrySizeInBytes+proto.UUIDSizeInBytes), value)
 	}
 	message.AddFrame(newFrame)
 }
 
 func DecodeEntryListUUIDLong(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	nextFrame := frameIterator.Next()
-	itemCount := len(nextFrame.Content) / proto.EntrySizeInBytes
+	itemCount := len(nextFrame.Content) / proto.EntryListUUIDLongEntrySizeInBytes
 	content := make([]proto.Pair, itemCount)
 	for i := 0; i < itemCount; i++ {
-		uuid := FixSizedTypesCodec.DecodeUUID(nextFrame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeLong(nextFrame.Content, int32(i*proto.EntrySizeInBytes+proto.UUIDSizeInBytes))
+		uuid := FixSizedTypesCodec.DecodeUUID(nextFrame.Content, int32(i*proto.EntryListUUIDLongEntrySizeInBytes))
+		value := FixSizedTypesCodec.DecodeLong(nextFrame.Content, int32(i*proto.EntryListUUIDLongEntrySizeInBytes+proto.UUIDSizeInBytes))
 		content[i] = proto.NewPair(uuid, value)
-	}
-	return content
-}
-
-func DecodeEntryListIntegerInteger(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
-	nextFrame := frameIterator.Next()
-	itemCount := len(nextFrame.Content) / proto.EntrySizeInBytes
-	content := make([]proto.Pair, itemCount)
-	for i := 0; i < itemCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeInt(nextFrame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
-		content[i] = proto.NewPair(key, value)
 	}
 	return content
 }
@@ -366,31 +307,7 @@ func DecodeEntryListUUIDListInteger(frameIterator *proto.ForwardFrameIterator) [
 	keySize := len(keys)
 	result := make([]proto.Pair, keySize)
 	for i := 0; i < keySize; i++ {
-		result[i] = proto.NewPair(keys, values)
-	}
-	return result
-}
-
-func DecodeEntryListIntegerUUID(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
-	frame := frameIterator.Next()
-	entryCount := len(frame.Content) / proto.EntrySizeInBytes
-	result := make([]proto.Pair, entryCount)
-	for i := 0; i < entryCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeUUID(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
-		result[i] = proto.NewPair(key, value)
-	}
-	return result
-}
-
-func DecodeEntryListIntegerLong(iterator *proto.ForwardFrameIterator) []proto.Pair {
-	frame := iterator.Next()
-	entryCount := len(frame.Content) / proto.EntrySizeInBytes
-	result := make([]proto.Pair, entryCount)
-	for i := 0; i < entryCount; i++ {
-		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntrySizeInBytes))
-		value := FixSizedTypesCodec.DecodeLong(frame.Content, int32(i*proto.EntrySizeInBytes+proto.IntSizeInBytes))
-		result[i] = proto.NewPair(key, value)
+		result[i] = proto.NewPair(keys[i], values[i])
 	}
 	return result
 }
@@ -631,13 +548,11 @@ func DecodeListMultiFrameForData(frameIterator *proto.ForwardFrameIterator) []is
 	return result
 }
 
-func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterator) []int32 {
-	result := make([]int32, 0)
-	frameIterator.Next()
-	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
-		result = append(result, DecodeListInteger(frameIterator)...)
-	}
-	frameIterator.Next()
+func DecodeListMultiFrameWithListInteger(frameIterator *proto.ForwardFrameIterator) [][]int32 {
+	var result [][]int32
+	DecodeListMultiFrame(frameIterator, func(fi *proto.ForwardFrameIterator) {
+		result = append(result, DecodeListInteger(fi))
+	})
 	return result
 }
 

@@ -18,14 +18,12 @@ package it
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"testing"
 
 	"go.uber.org/goleak"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -53,15 +51,6 @@ func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), 
 		if configFn != nil {
 			configFn(&config)
 		}
-		if SSLEnabled() {
-			config.Cluster.Network.SSL.Enabled = true
-			config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
-		}
-		logLevel := logger.WarnLevel
-		if TraceLoggingEnabled() {
-			logLevel = logger.TraceLevel
-		}
-		config.Logger.Level = logLevel
 		config.Cluster.Unisocket = !smart
 		ls := "smart"
 		if !smart {

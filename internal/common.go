@@ -21,5 +21,5 @@ const (
 	ClientType         = "GOO"
 	AggregateFactoryID = -29
 	// ClientVersion should be manually set
-	ClientVersion = "1.2.0"
+	ClientVersion = "1.2.1"
 )
