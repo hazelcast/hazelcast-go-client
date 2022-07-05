@@ -174,7 +174,7 @@ const (
 	DoubleSizeInBytes                    = proto.DoubleSizeInBytes
 	UUIDSizeInBytes                      = proto.UUIDSizeInBytes
 	UuidSizeInBytes                      = proto.UuidSizeInBytes // Deprecated
-	EntrySizeInBytes                     = proto.EntrySizeInBytes
+	EntryListUUIDLongEntrySizeInBytes    = proto.EntryListUUIDLongEntrySizeInBytes
 	EntryListIntegerLongSizeInBytes      = proto.EntryListIntegerLongSizeInBytes
 	EntryListIntegerUUIDEntrySizeInBytes = proto.EntryListIntegerUUIDEntrySizeInBytes
 	LocalDateSizeInBytes                 = proto.LocalDateSizeInBytes
