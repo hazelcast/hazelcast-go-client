@@ -29,7 +29,7 @@ const (
 	DoubleSizeInBytes                    = 8
 	UUIDSizeInBytes                      = 17
 	UuidSizeInBytes                      = 17 // Deprecated
-	EntrySizeInBytes                     = UUIDSizeInBytes + LongSizeInBytes
+	EntryListUUIDLongEntrySizeInBytes    = UUIDSizeInBytes + LongSizeInBytes
 	EntryListIntegerLongSizeInBytes      = IntSizeInBytes + LongSizeInBytes
 	EntryListIntegerUUIDEntrySizeInBytes = IntSizeInBytes + UUIDSizeInBytes
 	LocalDateSizeInBytes                 = IntSizeInBytes + 2*ByteSizeInBytes

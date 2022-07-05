@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
+
+var listenerBinderConnectionEventSubID = event.NextSubscriptionID()
 
 type listenerRegistration struct {
 	addRequest    *proto.ClientMessage
@@ -72,7 +74,7 @@ func NewConnectionListenerBinder(
 		logger:                logger,
 		smart:                 smart,
 	}
-	eventDispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, binder.handleConnectionEvent)
+	eventDispatcher.Subscribe(EventConnection, listenerBinderConnectionEventSubID, binder.handleConnectionEvent)
 	return binder
 }
 

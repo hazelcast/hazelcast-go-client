@@ -53,6 +53,8 @@ type NearCacheStatsGetter interface {
 	GetNearCacheStats() []proto.Pair
 }
 
+var serviceHandleClusterEventSubID = event.NextSubscriptionID()
+
 type stat struct {
 	k string
 	v string
@@ -95,7 +97,7 @@ func NewService(is *invocation.Service, invFac *cluster.ConnectionInvocationFact
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
-	ed.Subscribe(cluster.EventCluster, event.DefaultSubscriptionID, s.handleClusterEvent)
+	ed.Subscribe(cluster.EventCluster, serviceHandleClusterEventSubID, s.handleClusterEvent)
 	s.addGauges()
 	return s
 }
@@ -106,8 +108,7 @@ func (s *Service) Start() {
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	subID := event.MakeSubscriptionID(s.handleClusterEvent)
-	s.ed.Unsubscribe(cluster.EventCluster, subID)
+	s.ed.Unsubscribe(cluster.EventCluster, serviceHandleClusterEventSubID)
 }
 
 func (s *Service) SetNCStatsGetter(ncmsFn func(service string) NearCacheStatsGetter) {
