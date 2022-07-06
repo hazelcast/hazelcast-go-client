@@ -89,10 +89,10 @@ func (rs *RecordStore) Clear() {
 
 func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err error) {
 	// checkAvailable() does not apply since rs.records is always created
-	rs.recordsMu.RLock()
-	defer rs.recordsMu.RUnlock()
 	key = rs.makeMapKey(key)
+	rs.recordsMu.RLock()
 	rec, ok := rs.getRecord(key)
+	rs.recordsMu.RUnlock()
 	if !ok {
 		rs.incrementMisses()
 		return nil, false, nil
@@ -104,7 +104,7 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 	}
 	// instead of ALWAYS_FRESH staleReadDetector, the nil value used
 	if rs.staleReadDetector != nil && rs.staleReadDetector.IsStaleRead(rec) {
-		rs.invalidate(key)
+		rs.Invalidate(key)
 		rs.incrementMisses()
 		return nil, false, nil
 	}
@@ -112,7 +112,6 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 	if rs.recordExpired(rec, nowMS) {
 		rs.Invalidate(key)
 		rs.onExpire()
-		rs.incrementExpirations()
 		return nil, false, nil
 	}
 	// onRecordAccess

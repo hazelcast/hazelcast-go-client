@@ -38,7 +38,7 @@ func (sr StaleReadDetector) IsStaleRead(rec *Record) bool {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetectorImpl#isStaleRead
 	// key param in the original implementation is not used.
 	md := sr.rh.GetMetaDataContainer(rec.PartitionID())
-	return hasSameUUID(rec.UUID(), md.UUID()) || rec.InvalidationSequence() < md.StaleSequence()
+	return !hasSameUUID(rec.UUID(), md.UUID()) || rec.InvalidationSequence() < md.StaleSequence()
 }
 
 func (sr StaleReadDetector) GetPartitionID(keyData serialization.Data) (int32, error) {
