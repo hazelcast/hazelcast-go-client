@@ -625,7 +625,11 @@ func (m *Map) GetAll(ctx context.Context, keys ...interface{}) ([]types.Entry, e
 	if m.hasNearCache {
 		return m.ncm.GetAll(ctx, m, keys)
 	}
-	partitionToKeys, err := m.partitionToKeys(keys)
+	return m.getAll(ctx, keys)
+}
+
+func (m *Map) getAll(ctx context.Context, keys []interface{}) ([]types.Entry, error) {
+	partitionToKeys, err := m.partitionToKeys(keys, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1363,13 +1367,19 @@ func (m *Map) aggregate(ctx context.Context, req *proto.ClientMessage, decoder f
 	return obj, nil
 }
 
-func (m *Map) partitionToKeys(keys []interface{}) (map[int32][]serialization.Data, error) {
+func (m *Map) partitionToKeys(keys []interface{}, serializedKeys bool) (map[int32][]serialization.Data, error) {
 	res := map[int32][]serialization.Data{}
 	ps := m.proxy.partitionService
+	var err error
 	for _, key := range keys {
-		keyData, err := m.validateAndSerialize(key)
-		if err != nil {
-			return nil, err
+		var keyData serialization.Data
+		if serializedKeys {
+			keyData = key.(serialization.Data)
+		} else {
+			keyData, err = m.validateAndSerialize(key)
+			if err != nil {
+				return nil, err
+			}
 		}
 		pk, err := ps.GetPartitionID(keyData)
 		if err != nil {
