@@ -100,7 +100,6 @@ func (ncm *nearCacheMap) Destroy(ctx context.Context, name string) error {
 
 func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name string, local bool) error {
 	// port of: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#registerInvalidationListener
-	sid := types.NewUUID()
 	addMsg := codec.EncodeMapAddNearCacheInvalidationListenerRequest(name, eventTypeInvalidation, local)
 	rth, err := ncm.rt.RegisterAndGetHandler(ctx, name, ncm.nc)
 	if err != nil {
@@ -124,6 +123,7 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 			})
 		}
 	}
+	sid := types.NewUUID()
 	removeMsg := codec.EncodeMapRemoveEntryListenerRequest(name, sid)
 	if err := ncm.lb.Add(ctx, sid, addMsg, removeMsg, handler); err != nil {
 		return err

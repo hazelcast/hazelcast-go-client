@@ -217,13 +217,14 @@ func (rs *RecordStore) remove(key interface{}) bool {
 }
 
 func (rs *RecordStore) sample(count int) []evictionCandidate {
-	// port of: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#sample
+	// see: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#sample
+	// currently we use builtin maps of the Go client, so another random sampling algorithm is used.
 	// note that count is fixed to 15 in the reference implementation, it is always positive
 	// assumes recordsMu is locked
 	samples := make([]evictionCandidate, count)
 	var idx int
 	for k, v := range rs.records {
-		// access to maps is random
+		// access to keys of maps is random
 		samples[idx] = evictionCandidate{
 			key:       k,
 			evictable: v,
@@ -617,6 +618,7 @@ func (e evictionCandidate) LastAccessTime() int64 {
 }
 
 func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evictionCandidate) evictionCandidate {
+	// see: com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator#evaluate
 	now := time.Now().UnixMilli()
 	var selected evictionCandidate
 	var hasSelected bool

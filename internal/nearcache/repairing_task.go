@@ -297,7 +297,8 @@ func (h *RepairingHandler) HandleBatch(keys []serialization.Data, sources []type
 func (h *RepairingHandler) CheckOrRepairUUID(partition int32, new types.UUID) {
 	// this method may be called concurrently: anti-entropy, event service
 	if new.Default() {
-		panic("CheckOrRepairUUID: new UUID should not be the default UUID")
+		h.lg.Warnf("nearcache.RepairingHandler.CheckOrRepairUUID: new UUID should not be the default UUID")
+		return
 	}
 	md := h.GetMetaDataContainer(partition)
 	for {
@@ -306,7 +307,7 @@ func (h *RepairingHandler) CheckOrRepairUUID(partition int32, new types.UUID) {
 			break
 		}
 		if md.CASUUID(prev, new) {
-			md.ResetStaleSequence()
+			md.ResetSequence()
 			md.ResetStaleSequence()
 			h.lg.Trace(func() string {
 				return fmt.Sprintf("invalid UUID, lost remote partition data unexpectedly:[name=%s,partition=%d,prevUuid=%s,newUuid=%s]",
@@ -319,7 +320,8 @@ func (h *RepairingHandler) CheckOrRepairUUID(partition int32, new types.UUID) {
 
 func (h *RepairingHandler) CheckOrRepairSequence(partition int32, nextSeq int64, viaAntiEntropy bool) {
 	if nextSeq <= 0 {
-		panic("CheckOrRepairSequence <= 0")
+		h.lg.Warnf("nearcache.RepairingHandler.CheckOrRepairSequence: CheckOrRepairSequence <= 0")
+		return
 	}
 	md := h.GetMetaDataContainer(partition)
 	for {
@@ -519,7 +521,12 @@ func (df *InvalidationMetaDataFetcher) processMemberMetadata(ctx context.Context
 		return err
 	}
 	npsPairs, psPairs := codec.DecodeMapFetchNearCacheInvalidationMetadataResponse(res)
-	// repairUuids
+	df.repairUUIDs(handlers, psPairs)
+	df.repairSequences(handlers, npsPairs)
+	return nil
+}
+
+func (df *InvalidationMetaDataFetcher) repairUUIDs(handlers map[string]RepairingHandler, psPairs []proto.Pair) {
 	// see: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#repairUuids
 	for _, p := range psPairs {
 		k := p.Key.(int32)
@@ -528,7 +535,9 @@ func (df *InvalidationMetaDataFetcher) processMemberMetadata(ctx context.Context
 			handler.CheckOrRepairUUID(k, v)
 		}
 	}
-	// repairSequences
+}
+
+func (df *InvalidationMetaDataFetcher) repairSequences(handlers map[string]RepairingHandler, npsPairs []proto.Pair) {
 	// see: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#repairSequences
 	for _, np := range npsPairs {
 		handler := handlers[np.Key.(string)]
@@ -539,7 +548,6 @@ func (df *InvalidationMetaDataFetcher) processMemberMetadata(ctx context.Context
 			handler.CheckOrRepairSequence(partition, nextSeq, true)
 		}
 	}
-	return nil
 }
 
 // filterDataMembers removes lite members from the given slice.

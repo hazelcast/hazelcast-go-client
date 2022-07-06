@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -146,7 +146,7 @@ func (tcx *NearCacheTestContext) AssertNearCacheContent(nca NearCacheAdapter, si
 }
 
 func (tcx *NearCacheTestContext) AssertNearCacheRecord(rec *inearcache.Record, key int64, imf nearcache.InMemoryFormat) {
-	// see: com.hazelcast.internal.nearcache.impl.NearCacheTestUtils#assertNearCacheReference
+	// see: com.hazelcast.internal.nearcache.impl.NearCacheTestUtils#assertNearCacheRecord
 	t := tcx.T
 	require.NotNil(t, rec)
 	require.Equal(t, inearcache.RecordReadPermitted, rec.ReservationID())
