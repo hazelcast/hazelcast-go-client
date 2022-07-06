@@ -74,9 +74,10 @@ func NewReparingTask(recInt int, maxMissCnt int, ss *serialization.Service, ps *
 func (rt *ReparingTask) start() {
 	// see: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#scheduleNextRun
 	rt.lg.Debug(func() string {
-		return "ReparingTask started"
+		return "nearacahe.ReparingTask started"
 	})
-	timer := time.NewTicker(1 * time.Second)
+	const interval = 1 * time.Second
+	timer := time.NewTimer(interval)
 	defer timer.Stop()
 	rt.run()
 	for {
@@ -85,6 +86,7 @@ func (rt *ReparingTask) start() {
 			return
 		case <-timer.C:
 			rt.run()
+			timer.Reset(interval)
 		}
 	}
 }
