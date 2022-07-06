@@ -532,6 +532,57 @@ func (m *Map) putWithMaxIdleFromRemote(ctx context.Context, key, value interface
 	return m.convertToObject(codec.DecodeMapPutWithMaxIdleResponse(response))
 }
 
+func (m *Map) putTransientWithTTLFromRemote(ctx context.Context, key, value interface{}, ttl int64) error {
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return err
+	}
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, lid, ttl)
+	_, err = m.invokeOnKey(ctx, request, keyData)
+	return err
+}
+
+func (m *Map) putTransientWithTTLAndMaxIdleFromRemote(ctx context.Context, key interface{}, value interface{}, ttl int64, maxIdle int64) error {
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return err
+	}
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
+	_, err = m.invokeOnKey(ctx, request, keyData)
+	return err
+
+}
+
+func (m *Map) putIfAbsentWithTTLFromRemote(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return nil, err
+	}
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, lid, ttl)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapPutIfAbsentResponse(response))
+}
+
+func (m *Map) putIfAbsentWithTTLAndMaxIdleFromRemote(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return nil, err
+	}
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapPutIfAbsentWithMaxIdleResponse(response))
+}
+
 func (m *Map) removeFromRemote(ctx context.Context, key interface{}) (interface{}, error) {
 	lid := extractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
@@ -882,30 +933,23 @@ func (m *Map) PutAll(ctx context.Context, entries ...types.Entry) error {
 
 // PutIfAbsent associates the specified key with the given value if it is not already associated.
 func (m *Map) PutIfAbsent(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	return m.putIfAbsent(ctx, key, value, ttlUnset)
+	return m.putIfAbsentWithTTL(ctx, key, value, ttlUnset)
 }
 
 // PutIfAbsentWithTTL associates the specified key with the given value if it is not already associated.
 // Entry will expire and get evicted after the ttl.
 func (m *Map) PutIfAbsentWithTTL(ctx context.Context, key interface{}, value interface{}, ttl time.Duration) (interface{}, error) {
-	return m.putIfAbsent(ctx, key, value, ttl.Milliseconds())
+	return m.putIfAbsentWithTTL(ctx, key, value, ttl.Milliseconds())
 }
 
 // PutIfAbsentWithTTLAndMaxIdle associates the specified key with the given value if it is not already associated.
 // Entry will expire and get evicted after the ttl.
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 func (m *Map) PutIfAbsentWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return codec.DecodeMapPutIfAbsentWithMaxIdleResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.PutIfAbsentWithTTLAndMaxIdle(ctx, m, key, value, ttl, maxIdle)
 	}
+	return m.PutIfAbsentWithTTLAndMaxIdle(ctx, key, value, ttl, maxIdle)
 }
 
 // PutTransient sets the value for the given key.
@@ -913,7 +957,7 @@ func (m *Map) PutIfAbsentWithTTLAndMaxIdle(ctx context.Context, key interface{},
 // The TTL defined on the server-side configuration will be used.
 // Max idle time defined on the server-side configuration will be used.
 func (m *Map) PutTransient(ctx context.Context, key interface{}, value interface{}) error {
-	return m.putTransient(ctx, key, value, ttlUnset)
+	return m.putTransientWithTTL(ctx, key, value, ttlUnset)
 }
 
 // PutTransientWithTTL sets the value for the given key.
@@ -921,7 +965,7 @@ func (m *Map) PutTransient(ctx context.Context, key interface{}, value interface
 // Given TTL (maximum time in seconds for this entry to stay in the map) is used.
 // Set ttl to 0 for infinite timeout.
 func (m *Map) PutTransientWithTTL(ctx context.Context, key interface{}, value interface{}, ttl time.Duration) error {
-	return m.putTransient(ctx, key, value, ttl.Milliseconds())
+	return m.putTransientWithTTL(ctx, key, value, ttl.Milliseconds())
 }
 
 // PutTransientWithMaxIdle sets the value for the given key.
@@ -929,7 +973,7 @@ func (m *Map) PutTransientWithTTL(ctx context.Context, key interface{}, value in
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
 func (m *Map) PutTransientWithMaxIdle(ctx context.Context, key interface{}, value interface{}, maxIdle time.Duration) error {
-	return m.putTransientWithMaxIdle(ctx, key, value, ttlUnset, maxIdle.Milliseconds())
+	return m.putTransientWithTTLAndMaxIdle(ctx, key, value, ttlUnset, maxIdle.Milliseconds())
 }
 
 // PutTransientWithTTLAndMaxIdle sets the value for the given key.
@@ -939,7 +983,7 @@ func (m *Map) PutTransientWithMaxIdle(ctx context.Context, key interface{}, valu
 // Given max idle time (maximum time for this entry to stay idle in the map) is used.
 // Set maxIdle to 0 for infinite idle time.
 func (m *Map) PutTransientWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
-	return m.putTransientWithMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
+	return m.putTransientWithTTLAndMaxIdle(ctx, key, value, ttl.Milliseconds(), maxIdle.Milliseconds())
 }
 
 // Remove deletes the value for the given key and returns it.
@@ -1250,40 +1294,25 @@ func (m *Map) putWithMaxIdle(ctx context.Context, key, value interface{}, ttl in
 	return m.putWithMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
-func (m *Map) putIfAbsent(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, lid, ttl)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return codec.DecodeMapPutIfAbsentResponse(response), nil
-		}
+func (m *Map) putIfAbsentWithTTL(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
+	if m.hasNearCache {
+		return m.ncm.PutIfAbsentWithTTL(ctx, m, key, value, ttl)
 	}
+	return m.putIfAbsentWithTTLFromRemote(ctx, key, value, ttl)
 }
 
-func (m *Map) putTransient(ctx context.Context, key interface{}, value interface{}, ttl int64) error {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, lid, ttl)
-		_, err = m.invokeOnKey(ctx, request, keyData)
-		return err
+func (m *Map) putTransientWithTTL(ctx context.Context, key interface{}, value interface{}, ttl int64) error {
+	if m.hasNearCache {
+		return m.ncm.PutTransientWithTTL(ctx, m, key, value, ttl)
 	}
+	return m.putTransientWithTTLFromRemote(ctx, key, value, ttl)
 }
 
-func (m *Map) putTransientWithMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl int64, maxIdle int64) error {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
-		_, err = m.invokeOnKey(ctx, request, keyData)
-		return err
+func (m *Map) putTransientWithTTLAndMaxIdle(ctx context.Context, key interface{}, value interface{}, ttl int64, maxIdle int64) error {
+	if m.hasNearCache {
+		return m.ncm.PutTransientWithTTLAndMaxIdle(ctx, m, key, value, ttl, maxIdle)
 	}
+	return m.putTransientWithTTLAndMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 func (m *Map) tryLock(ctx context.Context, key interface{}, lease int64, timeout int64) (bool, error) {

@@ -75,7 +75,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 	})
 }
 
-func TestGetAllNearCacheStatsBeforePopulation(t *testing.T) {
+func TestGetAllChecksNearCacheFirst(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAllChecksNearCacheFirst
 	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
 	tcx.Tester(func(tcx it.MapTestContext) {
@@ -114,6 +114,38 @@ func TestGetAllNearCacheStatsBeforePopulation(t *testing.T) {
 		stats := m.LocalMapStats().NearCacheStats
 		require.Equal(t, int64(size), stats.OwnedEntryCount)
 		require.Equal(t, int64(size), stats.Hits)
+	})
+}
+
+func TestGetAllPopulatesNearCache(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAllPopulatesNearCache
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		var keys []interface{}
+		var target []types.Entry
+		const size = 1214
+		for i := int64(0); i < size; i++ {
+			if _, err := m.Put(ctx, i, i); err != nil {
+				t.Fatal(err)
+			}
+			keys = append(keys, i)
+			target = append(target, types.Entry{Key: i, Value: i})
+		}
+		vs, err := m.GetAll(ctx, keys...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sort.Slice(vs, func(i, j int) bool {
+			k1 := vs[i].Key.(int64)
+			k2 := vs[j].Key.(int64)
+			return k1 < k2
+		})
+		require.Equal(t, target, vs)
+		stats := m.LocalMapStats().NearCacheStats
+		require.Equal(t, int64(size), stats.OwnedEntryCount)
 	})
 }
 
@@ -278,6 +310,42 @@ func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 			name: "Put",
 			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
 				v, err := tcx.M.Put(ctx, i, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
+		{
+			name: "PutTransientWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.PutTransientWithTTL(ctx, i, i, 10*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "PutTransientWithTTLAndMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.PutTransientWithTTLAndMaxIdle(ctx, i, i, 10*time.Second, 5*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "PutIfAbsentWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutIfAbsentWithTTL(ctx, i, i, 10*time.Second)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
+		{
+			name: "PutIfAbsentWithTTLAndMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutIfAbsentWithTTLAndMaxIdle(ctx, i, i, 10*time.Second, 5*time.Second)
 				if err != nil {
 					tcx.T.Fatal(err)
 				}
