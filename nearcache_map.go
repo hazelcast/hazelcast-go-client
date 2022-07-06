@@ -167,6 +167,20 @@ func (ncm *nearCacheMap) Delete(ctx context.Context, m *Map, key interface{}) er
 	return m.deleteFromRemote(ctx, key)
 }
 
+func (ncm *nearCacheMap) Evict(ctx context.Context, m *Map, key interface{}) (bool, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.evictFromRemote(ctx, key)
+}
+
+func (ncm *nearCacheMap) EvictAll(ctx context.Context, m *Map) error {
+	ncm.nc.Clear()
+	return m.evictAllFromRemote(ctx)
+}
+
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {

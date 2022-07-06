@@ -307,24 +307,18 @@ func (m *Map) Delete(ctx context.Context, key interface{}) error {
 // Evict evicts the mapping for a key from this map.
 // Returns true if the key is evicted.
 func (m *Map) Evict(ctx context.Context, key interface{}) (bool, error) {
-	lid := extractLockID(ctx)
-	if keyData, err := m.validateAndSerialize(key); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapEvictRequest(m.name, keyData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapEvictResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.Evict(ctx, m, key)
 	}
+	return m.evictFromRemote(ctx, key)
 }
 
 // EvictAll deletes all entries without firing related events.
 func (m *Map) EvictAll(ctx context.Context) error {
-	request := codec.EncodeMapEvictAllRequest(m.name)
-	_, err := m.invokeOnRandomTarget(ctx, request, nil)
-	return err
+	if m.hasNearCache {
+		return m.ncm.EvictAll(ctx, m)
+	}
+	return m.evictAllFromRemote(ctx)
 }
 
 // ExecuteOnEntries applies the user defined EntryProcessor to all the entries in the map.
@@ -456,6 +450,26 @@ func (m *Map) containsKeyFromRemote(ctx context.Context, key interface{}) (bool,
 		return false, err
 	}
 	return codec.DecodeMapContainsKeyResponse(response), nil
+}
+
+func (m *Map) evictFromRemote(ctx context.Context, key interface{}) (bool, error) {
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return false, err
+	}
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapEvictRequest(m.name, keyData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapEvictResponse(response), nil
+}
+
+func (m *Map) evictAllFromRemote(ctx context.Context) error {
+	request := codec.EncodeMapEvictAllRequest(m.name)
+	_, err := m.invokeOnRandomTarget(ctx, request, nil)
+	return err
 }
 
 func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {

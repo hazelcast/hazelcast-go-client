@@ -317,6 +317,24 @@ func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 			},
 		},
 		{
+			name: "PutWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutWithTTL(ctx, i, i, 10*time.Second)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
+		{
+			name: "PutTransient",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.PutTransient(ctx, i, i); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
 			name: "PutTransientWithTTL",
 			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
 				if err := tcx.M.PutTransientWithTTL(ctx, i, i, 10*time.Second); err != nil {
@@ -385,6 +403,40 @@ func TestAfterSetNearCacheIsInvalidated(t *testing.T) {
 		},
 	}
 	invalidationRunner(t, testCases)
+}
+
+func TestAfterEvictNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterEvictNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Evict",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				b, err := tcx.M.Evict(ctx, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				assert.True(t, true, b)
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterEvictAllNearCacheIsInvalidated(t *testing.T) {
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(1000)
+		ctx := context.Background()
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		require.Equal(t, int64(size), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		if err := m.EvictAll(ctx); err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int64(0), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+	})
 }
 
 func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
