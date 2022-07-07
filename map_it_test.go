@@ -1081,7 +1081,7 @@ func TestMap_AggregateWithPredicate(t *testing.T) {
 }
 
 func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
-	it.SkipIf(t, "hz != 4.2")
+	it.SkipIf(t, "hz > 4.1.9, hz < 4.3")
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"
