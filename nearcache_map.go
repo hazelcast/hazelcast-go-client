@@ -204,7 +204,7 @@ func (ncm *nearCacheMap) ExecuteOnKeys(ctx context.Context, m *Map, entryProcess
 			ncm.nc.Invalidate(nck)
 		}
 	}()
-	return m.executeOnKeysFromRemote(ctx, entryProcessor, keys)
+	return m.executeOnKeysFromRemote(ctx, entryProcessor, ncKeys)
 }
 
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
