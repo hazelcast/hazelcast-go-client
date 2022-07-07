@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ type creationBundle struct {
 	ListenerBinder       *cluster.ConnectionListenerBinder
 	Config               *Config
 	Logger               logger.LogAdaptor
+	NCMDestroyFn         func(service, object string)
 }
 
 func (b creationBundle) Check() {
@@ -100,6 +101,9 @@ func (b creationBundle) Check() {
 	}
 	if b.Logger.Logger == nil {
 		panic("LogAdaptor is nil")
+	}
+	if b.NCMDestroyFn == nil {
+		panic("NearCacheManager is nil")
 	}
 }
 

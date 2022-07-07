@@ -407,6 +407,16 @@ func (c *Client) createComponents(config *Config) {
 		ListenerBinder:       listenerBinder,
 		Logger:               c.ic.Logger,
 	}
+	destroyNearCacheFun := func(service, object string) {
+		c.nearCacheMgrsMu.RLock()
+		defer c.nearCacheMgrsMu.RUnlock()
+		ncmgr, ok := c.nearCacheMgrs[service]
+		if !ok {
+			return
+		}
+		ncmgr.DestroyNearCache(object)
+	}
+	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 	c.ic.AddShutdownHandler(c.stopNearCacheManagers)

@@ -54,14 +54,18 @@ func NewManager(ic *client.Client, reconInterval, maxMiss int) *Manager {
 		ss:           ss,
 		rt:           rt,
 		lg:           lg,
-		doneCh:       doneCh,
 	}
 	return ncm
 }
 
 func (m *Manager) Stop() {
 	if atomic.CompareAndSwapInt32(&m.state, 0, 1) {
-		close(m.doneCh)
+		m.nearCachesMu.Lock()
+		for _, nc := range m.nearCaches {
+			nc.Destroy()
+		}
+		m.nearCaches = map[string]*NearCache{}
+		m.nearCachesMu.Unlock()
 	}
 }
 
@@ -75,7 +79,7 @@ func (m *Manager) GetOrCreateNearCache(name string, cfg nearcache.Config) *NearC
 	m.nearCachesMu.Lock()
 	nc, ok = m.nearCaches[name]
 	if !ok {
-		nc = NewNearCache(&cfg, m.ss, m.lg, m.doneCh)
+		nc = NewNearCache(&cfg, m.ss, m.lg)
 		m.nearCaches[name] = nc
 	}
 	m.nearCachesMu.Unlock()
@@ -94,4 +98,15 @@ func (m *Manager) GetNearCacheStats() []proto.Pair {
 	}
 	m.nearCachesMu.RUnlock()
 	return nameStats
+}
+
+func (m *Manager) DestroyNearCache(name string) {
+	m.nearCachesMu.Lock()
+	defer m.nearCachesMu.Unlock()
+	nc, ok := m.nearCaches[name]
+	if !ok {
+		return
+	}
+	nc.Destroy()
+	delete(m.nearCaches, name)
 }
