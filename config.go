@@ -323,11 +323,11 @@ func (pc InvalidationConfig) MaxToleratedMissCount() int {
 
 func (pc *InvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	if err := check.NonNegativeInt32Config(seconds); err != nil {
-		pc.err = fmt.Errorf("ReconciliationIntervalSeconds: %w", err)
+		pc.err = fmt.Errorf("invalid configuration: ReconciliationIntervalSeconds: %w", err)
 		return
 	}
 	if seconds != 0 && seconds < defaultMinReconciliationIntervalSeconds {
-		pc.err = fmt.Errorf("ReconciliationIntervalSeconds: must be 0 or greater or equal to 30: %w", pubhzerrors.ErrInvalidConfiguration)
+		pc.err = fmt.Errorf("invalid configuration: ReconciliationIntervalSeconds: must be 0 or greater or equal to %d: %w", defaultMinReconciliationIntervalSeconds, pubhzerrors.ErrInvalidConfiguration)
 		return
 	}
 	pc.reconciliationIntervalSeconds = &seconds
