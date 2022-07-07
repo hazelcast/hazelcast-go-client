@@ -147,7 +147,7 @@ func (nc *NearCache) checkKeyFormat(key interface{}) {
 
 func (nc *NearCache) startExpirationTask(delay, timeout time.Duration) {
 	time.Sleep(delay)
-	timer := time.NewTimer(timeout)
+	timer := time.NewTicker(timeout)
 	defer timer.Stop()
 	for {
 		select {
