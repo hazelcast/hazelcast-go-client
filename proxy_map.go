@@ -342,21 +342,10 @@ func (m *Map) ExecuteOnEntries(ctx context.Context, entryProcessor interface{}) 
 
 // ExecuteOnKey applies the user defined EntryProcessor to the entry with the specified key in the map.
 func (m *Map) ExecuteOnKey(ctx context.Context, entryProcessor interface{}, key interface{}) (interface{}, error) {
-	processorData, err := m.validateAndSerialize(entryProcessor)
-	if err != nil {
-		return nil, err
+	if m.hasNearCache {
+		return m.ncm.ExecuteOnKey(ctx, m, entryProcessor, key)
 	}
-	keyData, err := m.validateAndSerialize(key)
-	if err != nil {
-		return nil, err
-	}
-	lid := extractLockID(ctx)
-	request := codec.EncodeMapExecuteOnKeyRequest(m.name, processorData, keyData, lid)
-	resp, err := m.invokeOnKey(ctx, request, keyData)
-	if err != nil {
-		return nil, err
-	}
-	return m.convertToObject(codec.DecodeMapExecuteOnKeyResponse(resp))
+	return m.executeOnKeyFromRemote(ctx, entryProcessor, key)
 }
 
 // ExecuteOnKeys applies the user defined EntryProcessor to the entries with the specified keys in the map.
@@ -470,6 +459,25 @@ func (m *Map) evictAllFromRemote(ctx context.Context) error {
 	request := codec.EncodeMapEvictAllRequest(m.name)
 	_, err := m.invokeOnRandomTarget(ctx, request, nil)
 	return err
+}
+
+func (m *Map) executeOnKeyFromRemote(ctx context.Context, entryProcessor interface{}, key interface{}) (interface{}, error) {
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	keyData, err := m.validateAndSerialize(key)
+	if err != nil {
+		return nil, err
+	}
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapExecuteOnKeyRequest(m.name, processorData, keyData, lid)
+	resp, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapExecuteOnKeyResponse(resp))
+
 }
 
 func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {
@@ -963,7 +971,7 @@ func (m *Map) PutIfAbsentWithTTLAndMaxIdle(ctx context.Context, key interface{},
 	if m.hasNearCache {
 		return m.ncm.PutIfAbsentWithTTLAndMaxIdle(ctx, m, key, value, ttl, maxIdle)
 	}
-	return m.PutIfAbsentWithTTLAndMaxIdle(ctx, key, value, ttl, maxIdle)
+	return m.putIfAbsentWithTTLAndMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 // PutTransient sets the value for the given key.

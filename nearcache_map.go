@@ -181,6 +181,15 @@ func (ncm *nearCacheMap) EvictAll(ctx context.Context, m *Map) error {
 	return m.evictAllFromRemote(ctx)
 }
 
+func (ncm *nearCacheMap) ExecuteOnKey(ctx context.Context, m *Map, entryProcessor interface{}, key interface{}) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return nil, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.executeOnKeyFromRemote(ctx, entryProcessor, key)
+}
+
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {

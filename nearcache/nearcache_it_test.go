@@ -22,6 +22,7 @@ package nearcache_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strconv"
 	"testing"
@@ -33,6 +34,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -351,6 +353,16 @@ func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 			},
 		},
 		{
+			name: "PutIfAbsent",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutIfAbsent(ctx, i, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
+		{
 			name: "PutIfAbsentWithTTL",
 			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
 				v, err := tcx.M.PutIfAbsentWithTTL(ctx, i, i, 10*time.Second)
@@ -436,6 +448,27 @@ func TestAfterEvictAllNearCacheIsInvalidated(t *testing.T) {
 			t.Fatal(err)
 		}
 		require.Equal(t, int64(0), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+	})
+}
+
+func TestAfterExecuteOnKeyKeyIsInvalidatedFromNearCache(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterExecuteOnKeyKeyIsInvalidatedFromNearCache
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(10)
+		ctx := context.Background()
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		require.Equal(t, int64(size), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		randomKey := int32(rand.Intn(int(size)))
+		// using a different entry processor
+		_, err := m.ExecuteOnKey(ctx, &SimpleEntryProcessor{value: "value"}, randomKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int64(size-1), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
 	})
 }
 
@@ -647,4 +680,43 @@ func assertNearCacheExpiration(tcx it.MapTestContext, size int32) {
 		}
 		return true
 	})
+}
+
+// this is the same entry processor from the hazelcast_test package.
+// TODO: move this to it
+const simpleEntryProcessorFactoryID = 66
+const simpleEntryProcessorClassID = 1
+
+type SimpleEntryProcessor struct {
+	value string
+}
+
+func (s SimpleEntryProcessor) FactoryID() int32 {
+	return simpleEntryProcessorFactoryID
+}
+
+func (s SimpleEntryProcessor) ClassID() int32 {
+	return simpleEntryProcessorClassID
+}
+
+func (s SimpleEntryProcessor) WriteData(output serialization.DataOutput) {
+	output.WriteString(s.value)
+}
+
+func (s *SimpleEntryProcessor) ReadData(input serialization.DataInput) {
+	s.value = input.ReadString()
+}
+
+type SimpleEntryProcessorFactory struct {
+}
+
+func (f SimpleEntryProcessorFactory) Create(id int32) serialization.IdentifiedDataSerializable {
+	if id == simpleEntryProcessorClassID {
+		return &SimpleEntryProcessor{}
+	}
+	panic(fmt.Sprintf("unknown class ID: %d", id))
+}
+
+func (f SimpleEntryProcessorFactory) FactoryID() int32 {
+	return simpleEntryProcessorFactoryID
 }
