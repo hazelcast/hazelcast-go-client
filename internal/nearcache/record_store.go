@@ -624,6 +624,7 @@ func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evict
 		// initialize selected by setting it to current candidate.
 		if !hasSelected {
 			selected = current
+			hasSelected = true
 			continue
 		}
 		// then check if current candidate is expired.

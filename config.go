@@ -299,7 +299,7 @@ func (pc InvalidationConfig) Clone() InvalidationConfig {
 	}
 }
 
-func (pc *InvalidationConfig) Validate() error {
+func (pc InvalidationConfig) Validate() error {
 	if pc.err != nil {
 		return fmt.Errorf("hazelcast.Invalidation: %w", pc.err)
 	}
