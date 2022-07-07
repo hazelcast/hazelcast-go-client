@@ -147,9 +147,8 @@ func (nc *NearCache) checkKeyFormat(key interface{}) {
 
 func (nc *NearCache) startExpirationTask(delay, timeout time.Duration) {
 	time.Sleep(delay)
-	timer := time.NewTimer(timeout)
+	timer := time.NewTicker(timeout)
 	defer timer.Stop()
-	tic := time.Now()
 	for {
 		select {
 		case <-nc.doneCh:
@@ -160,17 +159,5 @@ func (nc *NearCache) startExpirationTask(delay, timeout time.Duration) {
 			})
 			nc.store.DoExpiration()
 		}
-		toc := time.Now()
-		elapsed := toc.Sub(tic)
-		tic = toc
-		timer.Reset(nextTickForRepetition(timeout, elapsed))
 	}
-}
-
-func nextTickForRepetition(timeout, elapsed time.Duration) time.Duration {
-	nextTick := timeout - elapsed
-	if nextTick < 0 {
-		nextTick = elapsed % timeout
-	}
-	return nextTick
 }
