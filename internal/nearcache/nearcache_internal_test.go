@@ -17,9 +17,7 @@
 package nearcache
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -186,32 +184,6 @@ func TestFilterDataMembers(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := filterDataMembers(tc.mems)
 			assert.ElementsMatch(t, tc.target, r)
-		})
-	}
-}
-
-func TestNextTickForRepetition(t *testing.T) {
-	testCases := []struct {
-		timeout  time.Duration
-		elapsed  time.Duration
-		nextTick time.Duration
-	}{
-		{
-			timeout:  5 * time.Second,
-			elapsed:  2 * time.Second,
-			nextTick: 3 * time.Second,
-		},
-		{
-			timeout:  2 * time.Second,
-			elapsed:  3 * time.Second,
-			nextTick: 1 * time.Second,
-		},
-	}
-	for _, tc := range testCases {
-		name := fmt.Sprintf("TO:%d E:%d", tc.timeout, tc.elapsed)
-		t.Run(name, func(t *testing.T) {
-			nextTick := nextTickForRepetition(tc.timeout, tc.elapsed)
-			assert.Equal(t, tc.nextTick, nextTick)
 		})
 	}
 }
