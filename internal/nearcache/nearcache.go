@@ -17,6 +17,7 @@
 package nearcache
 
 import (
+	"sync/atomic"
 	"time"
 
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
@@ -42,10 +43,11 @@ type NearCache struct {
 	store  RecordStore
 	cfg    *nearcache.Config
 	lg     ilogger.LogAdaptor
-	doneCh <-chan struct{}
+	doneCh chan struct{}
+	state  int32
 }
 
-func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.LogAdaptor, doneCh <-chan struct{}) *NearCache {
+func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.LogAdaptor) *NearCache {
 	var rc nearCacheRecordValueConverter
 	var se nearCacheStorageEstimator
 	if cfg.InMemoryFormat == nearcache.InMemoryFormatBinary {
@@ -61,7 +63,7 @@ func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.L
 		cfg:    cfg,
 		store:  NewRecordStore(cfg, ss, rc, se),
 		lg:     lg,
-		doneCh: doneCh,
+		doneCh: make(chan struct{}),
 	}
 	if cfg.TimeToLiveSeconds > 0 || cfg.MaxIdleSeconds > 0 {
 		go nc.startExpirationTask(defaultExpirationTaskInitialDelay, defaultExpirationTaskPeriod)
@@ -75,6 +77,13 @@ func (nc *NearCache) Config() *nearcache.Config {
 
 func (nc *NearCache) Clear() {
 	nc.store.Clear()
+}
+
+func (nc *NearCache) Destroy() {
+	if atomic.CompareAndSwapInt32(&nc.state, 0, 1) {
+		close(nc.doneCh)
+		nc.store.Destroy()
+	}
 }
 
 func (nc *NearCache) Get(key interface{}) (interface{}, bool, error) {

@@ -79,12 +79,16 @@ func (rs *RecordStore) Clear() {
 	// checkAvailable() does not apply since rs.records is always created
 	rs.recordsMu.Lock()
 	size := len(rs.records)
-	rs.records = nil
+	rs.records = map[interface{}]*Record{}
 	rs.recordsMu.Unlock()
 	atomic.StoreInt64(&rs.stats.OwnedEntryCount, 0)
 	atomic.StoreInt64(&rs.stats.OwnedEntryMemoryCost, 0)
 	atomic.AddInt64(&rs.stats.Invalidations, int64(size))
 	rs.incrementInvalidationRequests()
+}
+
+func (rs *RecordStore) Destroy() {
+	rs.Clear()
 }
 
 func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err error) {

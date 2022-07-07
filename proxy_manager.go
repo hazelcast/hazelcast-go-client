@@ -33,6 +33,7 @@ type proxyManager struct {
 	invocationProxy *proxy
 	serviceBundle   creationBundle
 	refIDGenerator  *iproxy.ReferenceIDGenerator
+	ncmDestroyFn    func(service, object string)
 }
 
 func newProxyManager(bundle creationBundle) *proxyManager {
@@ -42,6 +43,7 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 		proxies:        map[string]interface{}{},
 		serviceBundle:  bundle,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
+		ncmDestroyFn:   bundle.NCMDestroyFn,
 	}
 	p, err := newProxy(context.Background(), pm.serviceBundle, "", "", pm.refIDGenerator, func(ctx context.Context) bool { return false }, false)
 	if err != nil {
@@ -174,9 +176,10 @@ func (m *proxyManager) remove(ctx context.Context, serviceName string, objectNam
 		return false
 	}
 	// run the local destroy method of Map
-	mp, ok := p.(*Map)
-	if ok {
+	if serviceName == ServiceNameMap {
+		mp := p.(*Map)
 		mp.destroyLocally(ctx)
+		m.ncmDestroyFn(serviceName, objectName)
 	}
 	delete(m.proxies, name)
 	return true

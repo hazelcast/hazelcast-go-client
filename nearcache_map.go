@@ -95,11 +95,11 @@ func (ncm *nearCacheMap) Destroy(ctx context.Context, name string) error {
 	ncm.lg.Trace(func() string {
 		return fmt.Sprintf("hazelcast.nearCacheMap.Destroy: %s", name)
 	})
+	// removeNearCacheInvalidationListener
 	s := ncm.invalidationListenerID.Load()
 	if s == nil {
 		return nil
 	}
-	// removeNearCacheInvalidationListener
 	sid := s.(types.UUID)
 	ncm.rt.DeregisterHandler(name)
 	return ncm.lb.Remove(ctx, sid)

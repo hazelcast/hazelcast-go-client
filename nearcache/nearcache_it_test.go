@@ -40,7 +40,7 @@ import (
 
 const (
 	nearCacheDefaultRecordCount = 1000
-	maxCacheSize                = 1
+	maxCacheSize                = 1000
 	maxTTLSeconds               = 2
 	maxIdleSeconds              = 1
 )
