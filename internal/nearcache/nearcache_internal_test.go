@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package nearcache
 
 import (
-	"sort"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -184,14 +185,33 @@ func TestFilterDataMembers(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := filterDataMembers(tc.mems)
-			// sort by UUID
-			sort.SliceStable(r, func(i, j int) bool {
-				return r[i].UUID.String() < r[j].UUID.String()
-			})
-			sort.SliceStable(tc.target, func(i, j int) bool {
-				return tc.target[i].UUID.String() < tc.target[j].UUID.String()
-			})
-			assert.Equal(t, tc.target, r)
+			assert.ElementsMatch(t, tc.target, r)
+		})
+	}
+}
+
+func TestNextTickForRepetition(t *testing.T) {
+	testCases := []struct {
+		timeout  time.Duration
+		elapsed  time.Duration
+		nextTick time.Duration
+	}{
+		{
+			timeout:  5 * time.Second,
+			elapsed:  2 * time.Second,
+			nextTick: 3 * time.Second,
+		},
+		{
+			timeout:  2 * time.Second,
+			elapsed:  3 * time.Second,
+			nextTick: 1 * time.Second,
+		},
+	}
+	for _, tc := range testCases {
+		name := fmt.Sprintf("TO:%d E:%d", tc.timeout, tc.elapsed)
+		t.Run(name, func(t *testing.T) {
+			nextTick := nextTickForRepetition(tc.timeout, tc.elapsed)
+			assert.Equal(t, tc.nextTick, nextTick)
 		})
 	}
 }

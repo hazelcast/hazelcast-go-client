@@ -440,8 +440,8 @@ func (g gaugeOS) updateDescr(bt *binTextStats) {
 }
 
 type gaugeNearCache struct {
-	serviceName string
 	f           func() func(service string) NearCacheStatsGetter
+	serviceName string
 }
 
 func newGaugeNearCache(svc string, f func() func(service string) NearCacheStatsGetter) gaugeNearCache {
@@ -513,24 +513,21 @@ func makePercentMD(prefix, metric string) metricDescriptor {
 }
 
 func makeNearCacheMSMD(ncName, metric string) metricDescriptor {
-	return metricDescriptor{
-		Prefix:             nearCacheDescriptorPrefix,
-		Metric:             metric,
-		Discriminator:      nearCacheDescriptorDiscriminator,
-		DiscriminatorValue: ncName,
-		HasUnit:            true,
-		Unit:               metricUnitMS,
-	}
+	return makeNearCacheMD(ncName, metric, metricUnitMS)
 }
 
 func makeNearCacheCountMD(ncName, metric string) metricDescriptor {
+	return makeNearCacheMD(ncName, metric, metricUnitCount)
+}
+
+func makeNearCacheMD(ncName, metric string, unit metricUnit) metricDescriptor {
 	return metricDescriptor{
 		Prefix:             nearCacheDescriptorPrefix,
 		Metric:             metric,
 		Discriminator:      nearCacheDescriptorDiscriminator,
 		DiscriminatorValue: ncName,
 		HasUnit:            true,
-		Unit:               metricUnitCount,
+		Unit:               unit,
 	}
 }
 

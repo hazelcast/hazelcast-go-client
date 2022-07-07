@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -53,10 +53,7 @@ func (s simpleEntry) LastAccessTime() int64 {
 }
 
 func TestLRUComparatorDoesNotPrematurelySelectNewlyCreatedEntries(t *testing.T) {
-	// 1. Create expected list of ordered elements by
-	// sorting entries based on their idle-times. Longest
-	// idle time must be the first element of the list.
-	// 2. Then sort given entries by using LRU eviction comparator.
+	// See: com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparatorTest#lru_comparator_does_not_prematurely_select_newly_created_entries
 	const now = 20
 	given := []nearcache.EvictableEntryView{
 		simpleEntry{creationTime: 1, lastAccessTime: 0},
@@ -121,6 +118,10 @@ func TestRandomEvictionPolicyComparator(t *testing.T) {
 }
 
 func evictionPolicyHelper(t *testing.T, given []nearcache.EvictableEntryView, sortGenFn func(sorted []nearcache.EvictableEntryView) func(i, j int) bool, cmp nearcache.EvictionPolicyComparator) {
+	// 1. Create expected list of ordered elements by
+	// sorting entries based on their idle-times. Longest
+	// idle time must be the first element of the list.
+	// 2. Then sort given entries by using LRU eviction comparator.
 	sorted := make([]nearcache.EvictableEntryView, len(given))
 	copy(sorted, given)
 	sortFn := sortGenFn(sorted)
@@ -130,6 +131,7 @@ func evictionPolicyHelper(t *testing.T, given []nearcache.EvictableEntryView, so
 		b := given[j]
 		return cmp.Compare(a, b) < 0
 	})
+	// 3. Check both lists are equal
 	assert.Equal(t, sorted, given)
 }
 

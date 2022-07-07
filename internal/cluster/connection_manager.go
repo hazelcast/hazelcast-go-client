@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -172,6 +172,10 @@ func (m *ConnectionManager) Start(ctx context.Context) error {
 // This method should be called before Start.
 func (m *ConnectionManager) SetInvocationService(s *invocation.Service) {
 	m.invocationService = s
+}
+
+func (m *ConnectionManager) ClientUUID() types.UUID {
+	return m.clientUUID
 }
 
 func (m *ConnectionManager) start(ctx context.Context) error {

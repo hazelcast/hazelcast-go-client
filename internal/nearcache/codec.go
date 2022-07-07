@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ const (
 	eventIMapInvalidationSequenceFieldOffset      = eventIMapInvalidationPartitionUUIDFieldOffset + proto.UUIDSizeInBytes
 )
 
-func DecodeInvalidationMsg(msg *proto.ClientMessage) (key serialization.Data, source types.UUID, partition types.UUID, seq int64) {
+func DecodeMapInvalidationMsg(msg *proto.ClientMessage) (key serialization.Data, source types.UUID, partition types.UUID, seq int64) {
 	it := msg.FrameIterator()
 	frame := it.Next()
 	source = codec.FixSizedTypesCodec.DecodeUUID(frame.Content, eventIMapInvalidationSourceUUIDFieldOffset)
@@ -41,7 +41,7 @@ func DecodeInvalidationMsg(msg *proto.ClientMessage) (key serialization.Data, so
 	return
 }
 
-func DecodeBatchInvalidationMsg(msg *proto.ClientMessage) (keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) {
+func DecodeMapBatchInvalidationMsg(msg *proto.ClientMessage) (keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) {
 	it := msg.FrameIterator()
 	it.Next()
 	keys = codec.DecodeListMultiFrameForData(it)

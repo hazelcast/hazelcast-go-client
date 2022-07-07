@@ -89,10 +89,10 @@ func (rs *RecordStore) Clear() {
 
 func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err error) {
 	// checkAvailable() does not apply since rs.records is always created
-	rs.recordsMu.RLock()
-	defer rs.recordsMu.RUnlock()
 	key = rs.makeMapKey(key)
+	rs.recordsMu.RLock()
 	rec, ok := rs.getRecord(key)
+	rs.recordsMu.RUnlock()
 	if !ok {
 		rs.incrementMisses()
 		return nil, false, nil
@@ -104,7 +104,7 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 	}
 	// instead of ALWAYS_FRESH staleReadDetector, the nil value used
 	if rs.staleReadDetector != nil && rs.staleReadDetector.IsStaleRead(rec) {
-		rs.invalidate(key)
+		rs.Invalidate(key)
 		rs.incrementMisses()
 		return nil, false, nil
 	}
@@ -112,7 +112,6 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 	if rs.recordExpired(rec, nowMS) {
 		rs.Invalidate(key)
 		rs.onExpire()
-		rs.incrementExpirations()
 		return nil, false, nil
 	}
 	// onRecordAccess
@@ -217,13 +216,14 @@ func (rs *RecordStore) remove(key interface{}) bool {
 }
 
 func (rs *RecordStore) sample(count int) []evictionCandidate {
-	// port of: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#sample
+	// see: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#sample
+	// currently we use builtin maps of the Go client, so another random sampling algorithm is used.
 	// note that count is fixed to 15 in the reference implementation, it is always positive
 	// assumes recordsMu is locked
 	samples := make([]evictionCandidate, count)
 	var idx int
 	for k, v := range rs.records {
-		// access to maps is random
+		// access to keys of maps is random
 		samples[idx] = evictionCandidate{
 			key:       k,
 			evictable: v,
@@ -347,7 +347,6 @@ func (rs *RecordStore) getKeyStorageMemoryCost(key interface{}) int64 {
 }
 
 func (rs *RecordStore) getRecordStorageMemoryCost(rec *Record) int64 {
-	// TODO:
 	return rs.estimator.GetRecordStorageMemoryCost(rec)
 }
 
@@ -617,6 +616,7 @@ func (e evictionCandidate) LastAccessTime() int64 {
 }
 
 func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evictionCandidate) evictionCandidate {
+	// see: com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator#evaluate
 	now := time.Now().UnixMilli()
 	var selected evictionCandidate
 	var hasSelected bool
@@ -624,6 +624,7 @@ func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evict
 		// initialize selected by setting it to current candidate.
 		if !hasSelected {
 			selected = current
+			hasSelected = true
 			continue
 		}
 		// then check if current candidate is expired.

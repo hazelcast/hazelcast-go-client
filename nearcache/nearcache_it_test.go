@@ -57,7 +57,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		m := tcx.M
 		t := tcx.T
 		ctx := context.Background()
-		const mapSize = 1
+		const mapSize = 1000
 		cls := tcx.Cluster
 		// 2. populate server side map
 		for i := 0; i < mapSize; i++ {
@@ -636,16 +636,13 @@ func assertNearCacheExpiration(tcx it.MapTestContext, size int32) {
 		if stats.OwnedEntryCount != 0 {
 			return false
 		}
-		if !assert.Equal(t, int64(0), stats.OwnedEntryMemoryCost) {
+		if stats.OwnedEntryMemoryCost != 0 {
 			return false
 		}
 		if stats.Expirations != int64(size) {
 			return false
 		}
 		if stats.Evictions != 0 {
-			return false
-		}
-		if !assert.Equal(t, int64(0), stats.Evictions) {
 			return false
 		}
 		return true

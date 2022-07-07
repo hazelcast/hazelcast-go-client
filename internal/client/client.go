@@ -91,11 +91,9 @@ func (c *Config) Validate() error {
 type ShutdownHandler func(ctx context.Context)
 
 type Client struct {
-	InvocationHandler    invocation.Handler
 	Logger               ilogger.LogAdaptor
+	InvocationHandler    invocation.Handler
 	ConnectionManager    *icluster.ConnectionManager
-	ClusterService       *icluster.Service
-	PartitionService     *icluster.PartitionService
 	ViewListenerService  *icluster.ViewListenerService
 	InvocationService    *invocation.Service
 	InvocationFactory    *icluster.ConnectionInvocationFactory
@@ -104,8 +102,10 @@ type Client struct {
 	StatsService         *stats.Service
 	heartbeatService     *icluster.HeartbeatService
 	clusterConfig        *cluster.Config
-	shutdownHandlers     []ShutdownHandler
+	PartitionService     *icluster.PartitionService
+	ClusterService       *icluster.Service
 	name                 string
+	shutdownHandlers     []ShutdownHandler
 	state                int32
 }
 

@@ -46,7 +46,8 @@ func NewManager(ic *client.Client, reconInterval, maxMiss int) *Manager {
 	inf := ic.InvocationFactory
 	lg := ic.Logger
 	mf := NewInvalidationMetaDataFetcher(cs, is, inf, lg)
-	rt := NewReparingTask(reconInterval, maxMiss, ss, ps, lg, mf, doneCh)
+	uuid := ic.ConnectionManager.ClientUUID()
+	rt := NewReparingTask(reconInterval, maxMiss, ss, ps, lg, mf, uuid, doneCh)
 	ncm := &Manager{
 		nearCaches:   map[string]*NearCache{},
 		nearCachesMu: &sync.RWMutex{},

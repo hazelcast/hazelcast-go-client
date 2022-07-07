@@ -38,9 +38,9 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 	dataEstimator := nearCacheDataStoreAdapter{ss: ss}
 	valueEstimator := nearCacheValueStoreAdapter{ss: ss}
 	testCases := []struct {
-		name      string
-		estimator nearCacheStorageEstimator
 		makeRec   func() *Record
+		estimator nearCacheStorageEstimator
+		name      string
 		cost      int64
 		cost32    int64 // cost for 32bit
 	}{
@@ -59,6 +59,18 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 			makeRec: func() *Record {
 				rec := &Record{}
 				rec.SetValue(nil)
+				return rec
+			},
+			cost:   84,
+			cost32: 80,
+		},
+		{
+			name:      "data estimator: record with nil value and serialization.Data type",
+			estimator: dataEstimator,
+			makeRec: func() *Record {
+				rec := &Record{}
+				var ds serialization.Data
+				rec.SetValue(ds)
 				return rec
 			},
 			cost:   84,

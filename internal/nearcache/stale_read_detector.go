@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package nearcache
 import (
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type StaleReadDetector struct {
@@ -37,7 +38,7 @@ func (sr StaleReadDetector) IsStaleRead(rec *Record) bool {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetectorImpl#isStaleRead
 	// key param in the original implementation is not used.
 	md := sr.rh.GetMetaDataContainer(rec.PartitionID())
-	return rec.UUID() != md.UUID() || rec.InvalidationSequence() < md.StaleSequence()
+	return !hasSameUUID(rec.UUID(), md.UUID()) || rec.InvalidationSequence() < md.StaleSequence()
 }
 
 func (sr StaleReadDetector) GetPartitionID(keyData serialization.Data) (int32, error) {
@@ -46,4 +47,8 @@ func (sr StaleReadDetector) GetPartitionID(keyData serialization.Data) (int32, e
 
 func (sr StaleReadDetector) GetMetaDataContainer(partitionID int32) *MetaDataContainer {
 	return sr.rh.GetMetaDataContainer(partitionID)
+}
+
+func hasSameUUID(u1, u2 types.UUID) bool {
+	return !u1.Default() && !u2.Default() && u1 == u2
 }

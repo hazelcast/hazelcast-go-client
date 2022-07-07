@@ -66,7 +66,7 @@ func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serializ
 			return fmt.Sprintf("registering invalidation listener: name: %s, local: %t", name, local)
 		})
 		if err := ncm.registerInvalidationListener(ctx, name, local); err != nil {
-			return nearCacheMap{}, fmt.Errorf("hazelcast.newNearCacheMap: registering invalidation handler: %w", err)
+			lg.Errorf("hazelcast.newNearCacheMap: registering invalidation handler: %w", err)
 		}
 	}
 	if ncc.Preloader.Enabled {
@@ -107,7 +107,6 @@ func (ncm *nearCacheMap) Destroy(ctx context.Context, name string) error {
 
 func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name string, local bool) error {
 	// port of: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#registerInvalidationListener
-	sid := types.NewUUID()
 	addMsg := codec.EncodeMapAddNearCacheInvalidationListenerRequest(name, eventTypeInvalidation, local)
 	rth, err := ncm.rt.RegisterAndGetHandler(ctx, name, ncm.nc)
 	if err != nil {
@@ -116,12 +115,12 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 	handler := func(msg *proto.ClientMessage) {
 		switch msg.Type() {
 		case inearcache.EventIMapInvalidationMessageType:
-			key, src, pt, sq := inearcache.DecodeInvalidationMsg(msg)
+			key, src, pt, sq := inearcache.DecodeMapInvalidationMsg(msg)
 			if err := ncm.handleInvalidationMsg(&rth, key, src, pt, sq); err != nil {
 				ncm.lg.Errorf("handling invalidation message: %w", err)
 			}
 		case inearcache.EventIMapBatchInvalidationMessageType:
-			keys, srcs, pts, sqs := inearcache.DecodeBatchInvalidationMsg(msg)
+			keys, srcs, pts, sqs := inearcache.DecodeMapBatchInvalidationMsg(msg)
 			if err := ncm.handleBatchInvalidationMsg(&rth, keys, srcs, pts, sqs); err != nil {
 				ncm.lg.Errorf("handling batch invalidation message: %w", err)
 			}
@@ -131,6 +130,7 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 			})
 		}
 	}
+	sid := types.NewUUID()
 	removeMsg := codec.EncodeMapRemoveEntryListenerRequest(name, sid)
 	if err := ncm.lb.Add(ctx, sid, addMsg, removeMsg, handler); err != nil {
 		return err
