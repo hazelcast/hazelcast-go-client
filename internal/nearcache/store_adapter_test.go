@@ -65,6 +65,18 @@ func TestGetRecordStorageMemoryCost(t *testing.T) {
 			cost32: 80,
 		},
 		{
+			name:      "data estimator: record with nil value and serialization.Data type",
+			estimator: dataEstimator,
+			makeRec: func() *Record {
+				rec := &Record{}
+				var ds serialization.Data
+				rec.SetValue(ds)
+				return rec
+			},
+			cost:   84,
+			cost32: 80,
+		},
+		{
 			name:      "data estimator: record with value",
 			estimator: dataEstimator,
 			makeRec: func() *Record {

@@ -108,12 +108,12 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 	handler := func(msg *proto.ClientMessage) {
 		switch msg.Type() {
 		case inearcache.EventIMapInvalidationMessageType:
-			key, src, pt, sq := inearcache.DecodeInvalidationMsg(msg)
+			key, src, pt, sq := inearcache.DecodeMapInvalidationMsg(msg)
 			if err := ncm.handleInvalidationMsg(&rth, key, src, pt, sq); err != nil {
 				ncm.lg.Errorf("handling invalidation message: %w", err)
 			}
 		case inearcache.EventIMapBatchInvalidationMessageType:
-			keys, srcs, pts, sqs := inearcache.DecodeBatchInvalidationMsg(msg)
+			keys, srcs, pts, sqs := inearcache.DecodeMapBatchInvalidationMsg(msg)
 			if err := ncm.handleBatchInvalidationMsg(&rth, keys, srcs, pts, sqs); err != nil {
 				ncm.lg.Errorf("handling batch invalidation message: %w", err)
 			}

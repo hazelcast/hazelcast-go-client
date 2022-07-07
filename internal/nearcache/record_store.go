@@ -347,7 +347,6 @@ func (rs *RecordStore) getKeyStorageMemoryCost(key interface{}) int64 {
 }
 
 func (rs *RecordStore) getRecordStorageMemoryCost(rec *Record) int64 {
-	// TODO:
 	return rs.estimator.GetRecordStorageMemoryCost(rec)
 }
 

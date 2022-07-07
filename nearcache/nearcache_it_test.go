@@ -55,7 +55,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		m := tcx.M
 		t := tcx.T
 		ctx := context.Background()
-		const mapSize = 1
+		const mapSize = 1000
 		cls := tcx.Cluster
 		// 2. populate server side map
 		for i := 0; i < mapSize; i++ {

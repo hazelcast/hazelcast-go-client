@@ -17,7 +17,6 @@
 package nearcache
 
 import (
-	"sync/atomic"
 	"time"
 
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
@@ -40,11 +39,10 @@ const (
 )
 
 type NearCache struct {
-	store                RecordStore
-	cfg                  *nearcache.Config
-	lg                   ilogger.LogAdaptor
-	doneCh               <-chan struct{}
-	expirationInProgress int32
+	store  RecordStore
+	cfg    *nearcache.Config
+	lg     ilogger.LogAdaptor
+	doneCh <-chan struct{}
 }
 
 func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.LogAdaptor, doneCh <-chan struct{}) *NearCache {
@@ -140,20 +138,30 @@ func (nc *NearCache) checkKeyFormat(key interface{}) {
 
 func (nc *NearCache) startExpirationTask(delay, timeout time.Duration) {
 	time.Sleep(delay)
-	timer := time.NewTicker(timeout)
+	timer := time.NewTimer(timeout)
 	defer timer.Stop()
+	tic := time.Now()
 	for {
 		select {
 		case <-nc.doneCh:
 			return
 		case <-timer.C:
-			if atomic.CompareAndSwapInt32(&nc.expirationInProgress, 0, 1) {
-				nc.lg.Debug(func() string {
-					return "running near cache expiration task"
-				})
-				nc.store.DoExpiration()
-				atomic.StoreInt32(&nc.expirationInProgress, 0)
-			}
+			nc.lg.Debug(func() string {
+				return "running near cache expiration task"
+			})
+			nc.store.DoExpiration()
 		}
+		toc := time.Now()
+		elapsed := toc.Sub(tic)
+		tic = toc
+		timer.Reset(nextTickForRepetition(timeout, elapsed))
 	}
+}
+
+func nextTickForRepetition(timeout, elapsed time.Duration) time.Duration {
+	nextTick := timeout - elapsed
+	if nextTick < 0 {
+		nextTick = elapsed % timeout
+	}
+	return nextTick
 }

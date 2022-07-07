@@ -53,12 +53,13 @@ type ReparingTask struct {
 	doneCh                      <-chan struct{}
 	invalidationMetaDataFetcher InvalidationMetaDataFetcher
 	lg                          ilogger.LogAdaptor
+	localUUID                   types.UUID
 	maxToleratedMissCount       int
 	partitionCount              int32
 	running                     int32
 }
 
-func NewReparingTask(recInt int, maxMissCnt int, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor, mf InvalidationMetaDataFetcher, doneCh <-chan struct{}) *ReparingTask {
+func NewReparingTask(recInt int, maxMissCnt int, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor, mf InvalidationMetaDataFetcher, uuid types.UUID, doneCh <-chan struct{}) *ReparingTask {
 	nc := &ReparingTask{
 		reconciliationIntervalNanos: int64(recInt) * 1_000_000_000,
 		maxToleratedMissCount:       maxMissCnt,
@@ -67,6 +68,7 @@ func NewReparingTask(recInt int, maxMissCnt int, ss *serialization.Service, ps *
 		ss:                          ss,
 		ps:                          ps,
 		lg:                          lg,
+		localUUID:                   uuid,
 		handlers:                    &sync.Map{},
 		partitionCount:              ps.PartitionCount(),
 	}
@@ -94,7 +96,7 @@ func (rt *ReparingTask) start() {
 }
 
 func (rt *ReparingTask) RegisterAndGetHandler(ctx context.Context, name string, nc *NearCache) (RepairingHandler, error) {
-	handler := NewRepairingHandler(name, nc, rt.partitionCount, rt.ss, rt.ps, rt.lg)
+	handler := NewRepairingHandler(name, nc, rt.partitionCount, rt.ss, rt.ps, rt.lg, rt.localUUID)
 	// ignoring the "loaded" return value
 	h, loaded := rt.handlers.LoadOrStore(name, handler)
 	if !loaded {
@@ -246,10 +248,11 @@ type RepairingHandler struct {
 	toNearCacheKey     func(key interface{}) (interface{}, error)
 	ss                 *serialization.Service
 	ps                 *cluster.PartitionService
+	localUUID          types.UUID
 	lg                 ilogger.LogAdaptor
 }
 
-func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor) RepairingHandler {
+func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor, uuid types.UUID) RepairingHandler {
 	mcs := make([]*MetaDataContainer, partitionCount)
 	for i := int32(0); i < partitionCount; i++ {
 		mcs[i] = NewMetaDataContainer()
@@ -269,6 +272,7 @@ func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *s
 		ss:                 ss,
 		ps:                 ps,
 		lg:                 lg,
+		localUUID:          uuid,
 	}
 }
 
@@ -304,7 +308,7 @@ func (h *RepairingHandler) Handle(key serialization.Data, source, partition type
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler#handle(com.hazelcast.internal.serialization.Data, java.util.UUID, java.util.UUID, long)
 	// Apply invalidation if it's not originated by local member/client.
 	// Since local Near Caches are invalidated immediately there is no need to invalidate them twice.
-	if source != partition {
+	if h.localUUID != source {
 		if key == nil {
 			h.nc.Clear()
 		} else {
