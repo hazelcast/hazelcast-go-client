@@ -440,8 +440,8 @@ func (g gaugeOS) updateDescr(bt *binTextStats) {
 }
 
 type gaugeNearCache struct {
-	serviceName string
 	f           func() func(service string) NearCacheStatsGetter
+	serviceName string
 }
 
 func newGaugeNearCache(svc string, f func() func(service string) NearCacheStatsGetter) gaugeNearCache {
