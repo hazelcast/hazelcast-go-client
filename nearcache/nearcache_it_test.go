@@ -472,16 +472,13 @@ func assertNearCacheExpiration(tcx it.MapTestContext, size int32) {
 		if stats.OwnedEntryCount != 0 {
 			return false
 		}
-		if !assert.Equal(t, int64(0), stats.OwnedEntryMemoryCost) {
+		if stats.OwnedEntryMemoryCost != 0 {
 			return false
 		}
 		if stats.Expirations != int64(size) {
 			return false
 		}
 		if stats.Evictions != 0 {
-			return false
-		}
-		if !assert.Equal(t, int64(0), stats.Evictions) {
 			return false
 		}
 		return true
