@@ -350,24 +350,10 @@ func (m *Map) ExecuteOnKey(ctx context.Context, entryProcessor interface{}, key 
 
 // ExecuteOnKeys applies the user defined EntryProcessor to the entries with the specified keys in the map.
 func (m *Map) ExecuteOnKeys(ctx context.Context, entryProcessor interface{}, keys ...interface{}) ([]interface{}, error) {
-	if len(keys) == 0 {
-		return nil, nil
+	if m.hasNearCache {
+		return m.ncm.ExecuteOnKeys(ctx, m, entryProcessor, keys)
 	}
-	processorData, err := m.validateAndSerialize(entryProcessor)
-	if err != nil {
-		return nil, err
-	}
-	keysDataList, err := m.convertToDataList(keys)
-	if err != nil {
-		return nil, err
-	}
-	request := codec.EncodeMapExecuteOnKeysRequest(m.name, processorData, keysDataList)
-	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
-	if err != nil {
-		return nil, err
-	}
-	pairs := codec.DecodeMapExecuteOnKeysResponse(resp)
-	return m.convertPairsToValues(pairs)
+	return m.executeOnKeysFromRemote(ctx, entryProcessor, keys)
 }
 
 // ExecuteOnEntriesWithPredicate applies the user defined EntryProcessor to all the entries in the map which satisfies the predicate.
@@ -477,7 +463,27 @@ func (m *Map) executeOnKeyFromRemote(ctx context.Context, entryProcessor interfa
 		return nil, err
 	}
 	return m.convertToObject(codec.DecodeMapExecuteOnKeyResponse(resp))
+}
 
+func (m *Map) executeOnKeysFromRemote(ctx context.Context, entryProcessor interface{}, keys []interface{}) ([]interface{}, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	processorData, err := m.validateAndSerialize(entryProcessor)
+	if err != nil {
+		return nil, err
+	}
+	keysDataList, err := m.convertToDataList(keys)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeMapExecuteOnKeysRequest(m.name, processorData, keysDataList)
+	resp, err := m.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
+	pairs := codec.DecodeMapExecuteOnKeysResponse(resp)
+	return m.convertPairsToValues(pairs)
 }
 
 func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {

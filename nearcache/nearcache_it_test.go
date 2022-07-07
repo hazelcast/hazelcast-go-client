@@ -457,7 +457,7 @@ func TestAfterExecuteOnKeyKeyIsInvalidatedFromNearCache(t *testing.T) {
 	tcx.Tester(func(tcx it.MapTestContext) {
 		t := tcx.T
 		m := tcx.M
-		const size = int32(10)
+		const size = int32(1000)
 		ctx := context.Background()
 		populateMap(tcx, size)
 		populateNearCache(tcx, size)
@@ -469,6 +469,37 @@ func TestAfterExecuteOnKeyKeyIsInvalidatedFromNearCache(t *testing.T) {
 			t.Fatal(err)
 		}
 		require.Equal(t, int64(size-1), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+	})
+}
+
+func TestAfterExecuteOnKeysKeysAreInvalidatedFromNearCache(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterExecuteOnKeyKeyIsInvalidatedFromNearCache
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(1000)
+		ctx := context.Background()
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		require.Equal(t, int64(size), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		const keyCount = size / 10
+		keySet := make(map[int32]struct{})
+		for len(keySet) < int(keyCount) {
+			key := int32(rand.Intn(int(size)))
+			keySet[key] = struct{}{}
+		}
+		keys := make([]interface{}, 0, keyCount)
+		for k := range keySet {
+			keys = append(keys, k)
+		}
+
+		// using a different entry processor
+		_, err := m.ExecuteOnKeys(ctx, &SimpleEntryProcessor{value: "value"}, keys...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int64(size-keyCount), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
 	})
 }
 
@@ -705,18 +736,4 @@ func (s SimpleEntryProcessor) WriteData(output serialization.DataOutput) {
 
 func (s *SimpleEntryProcessor) ReadData(input serialization.DataInput) {
 	s.value = input.ReadString()
-}
-
-type SimpleEntryProcessorFactory struct {
-}
-
-func (f SimpleEntryProcessorFactory) Create(id int32) serialization.IdentifiedDataSerializable {
-	if id == simpleEntryProcessorClassID {
-		return &SimpleEntryProcessor{}
-	}
-	panic(fmt.Sprintf("unknown class ID: %d", id))
-}
-
-func (f SimpleEntryProcessorFactory) FactoryID() int32 {
-	return simpleEntryProcessorFactoryID
 }

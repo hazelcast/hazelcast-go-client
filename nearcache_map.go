@@ -190,6 +190,23 @@ func (ncm *nearCacheMap) ExecuteOnKey(ctx context.Context, m *Map, entryProcesso
 	return m.executeOnKeyFromRemote(ctx, entryProcessor, key)
 }
 
+func (ncm *nearCacheMap) ExecuteOnKeys(ctx context.Context, m *Map, entryProcessor interface{}, keys []interface{}) ([]interface{}, error) {
+	ncKeys := make([]interface{}, len(keys))
+	for i, k := range keys {
+		nck, err := ncm.toNearCacheKey(k)
+		if err != nil {
+			return nil, err
+		}
+		ncKeys[i] = nck
+	}
+	defer func() {
+		for _, nck := range ncKeys {
+			ncm.nc.Invalidate(nck)
+		}
+	}()
+	return m.executeOnKeysFromRemote(ctx, entryProcessor, keys)
+}
+
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {
