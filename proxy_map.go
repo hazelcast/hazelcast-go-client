@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -180,7 +180,7 @@ func (m *Map) mapListenerEventHandler(listener MapListener) EntryNotifiedHandler
 			listener.MapCleared(event)
 		case EntryAllEvicted:
 			listener.MapEvicted(event)
-		default: 
+		default:
 			m.logger.Warnf("Not a known map event type: %d", event.EventType)
 		}
 	}
@@ -779,7 +779,7 @@ func (m *Map) PutIfAbsentWithTTLAndMaxIdle(ctx context.Context, key interface{},
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
-			return codec.DecodeMapPutIfAbsentWithMaxIdleResponse(response), nil
+			return m.convertToObject(codec.DecodeMapPutIfAbsentWithMaxIdleResponse(response))
 		}
 	}
 }
@@ -1149,7 +1149,7 @@ func (m *Map) putIfAbsent(ctx context.Context, key interface{}, value interface{
 		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
 			return nil, err
 		} else {
-			return codec.DecodeMapPutIfAbsentResponse(response), nil
+			return m.convertToObject(codec.DecodeMapPutIfAbsentResponse(response))
 		}
 	}
 }
