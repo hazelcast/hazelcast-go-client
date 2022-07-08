@@ -33,6 +33,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -1026,6 +1027,23 @@ func TestMap_EntryNotifiedEventToKeyAndPredicateWithAddListenerWithPredicateAndK
 
 func TestMap_Destroy(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		if err := m.Destroy(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestMap_Destroy_WithNearCache(t *testing.T) {
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{Name: tcx.MapName}
+			tcx.Config.AddNearCache(ncc)
+		},
+	}
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
 		if err := m.Destroy(context.Background()); err != nil {
 			t.Fatal(err)
 		}

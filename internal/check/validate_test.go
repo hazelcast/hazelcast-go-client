@@ -62,9 +62,8 @@ func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
 		value int64
 	}{
 		{"non-negative", -1},
-		{"32-bit", math.MaxInt32 + 1},
+		{"overflows int32", math.MaxInt32 + 1},
 	}
-
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			_, err := check.NonNegativeInt32(int(tc.value))

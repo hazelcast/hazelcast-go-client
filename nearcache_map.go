@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,26 +19,48 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/types"
+)
+
+const (
+	eventTypeInvalidation = 1 << 8
 )
 
 type nearCacheMap struct {
-	nc             *inearcache.NearCache
-	toNearCacheKey func(key interface{}) (interface{}, error)
-	ss             *serialization.Service
+	nc                     *inearcache.NearCache
+	toNearCacheKey         func(key interface{}) (interface{}, error)
+	ss                     *serialization.Service
+	rt                     *inearcache.ReparingTask
+	lb                     *cluster.ConnectionListenerBinder
+	lg                     logger.LogAdaptor
+	invalidationListenerID atomic.Value
 }
 
-func newNearCacheMap(nc *inearcache.NearCache, ncc *nearcache.Config, ss *serialization.Service) (nearCacheMap, error) {
+func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serialization.Service, rt *inearcache.ReparingTask, lg logger.LogAdaptor, name string, lb *cluster.ConnectionListenerBinder, local bool) (nearCacheMap, error) {
 	ncm := nearCacheMap{
 		nc: nc,
 		ss: ss,
+		rt: rt,
+		lb: lb,
+		lg: lg,
 	}
+	ncc := nc.Config()
 	if ncc.InvalidateOnChange() {
-		ncm.registerInvalidationListener()
+		lg.Debug(func() string {
+			return fmt.Sprintf("registering invalidation listener: name: %s, local: %t", name, local)
+		})
+		if err := ncm.registerInvalidationListener(ctx, name, local); err != nil {
+			lg.Errorf("hazelcast.newNearCacheMap: registering invalidation handler: %w", err)
+		}
 	}
 	if ncc.Preloader.Enabled {
 		if err := ncm.preload(); err != nil {
@@ -62,8 +84,52 @@ func newNearCacheMap(nc *inearcache.NearCache, ncc *nearcache.Config, ss *serial
 	return ncm, nil
 }
 
-func (ncm *nearCacheMap) registerInvalidationListener() {
-	fmt.Println("IMPLEMENT ME: registerInvalidationListener")
+func (ncm *nearCacheMap) Destroy(ctx context.Context, name string) error {
+	ncm.lg.Trace(func() string {
+		return fmt.Sprintf("hazelcast.nearCacheMap.Destroy: %s", name)
+	})
+	// removeNearCacheInvalidationListener
+	s := ncm.invalidationListenerID.Load()
+	if s == nil {
+		return nil
+	}
+	sid := s.(types.UUID)
+	ncm.rt.DeregisterHandler(name)
+	return ncm.lb.Remove(ctx, sid)
+}
+
+func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name string, local bool) error {
+	// port of: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#registerInvalidationListener
+	addMsg := codec.EncodeMapAddNearCacheInvalidationListenerRequest(name, eventTypeInvalidation, local)
+	rth, err := ncm.rt.RegisterAndGetHandler(ctx, name, ncm.nc)
+	if err != nil {
+		return fmt.Errorf("nearCacheMap.registerInvalidationListener: %w", err)
+	}
+	handler := func(msg *proto.ClientMessage) {
+		switch msg.Type() {
+		case inearcache.EventIMapInvalidationMessageType:
+			key, src, pt, sq := inearcache.DecodeMapInvalidationMsg(msg)
+			if err := ncm.handleInvalidationMsg(&rth, key, src, pt, sq); err != nil {
+				ncm.lg.Errorf("handling invalidation message: %w", err)
+			}
+		case inearcache.EventIMapBatchInvalidationMessageType:
+			keys, srcs, pts, sqs := inearcache.DecodeMapBatchInvalidationMsg(msg)
+			if err := ncm.handleBatchInvalidationMsg(&rth, keys, srcs, pts, sqs); err != nil {
+				ncm.lg.Errorf("handling batch invalidation message: %w", err)
+			}
+		default:
+			ncm.lg.Debug(func() string {
+				return fmt.Sprintf("invalid invalidation message type: %d", msg.Type())
+			})
+		}
+	}
+	sid := types.NewUUID()
+	removeMsg := codec.EncodeMapRemoveEntryListenerRequest(name, sid)
+	if err := ncm.lb.Add(ctx, sid, addMsg, removeMsg, handler); err != nil {
+		return err
+	}
+	ncm.invalidationListenerID.Store(sid)
+	return nil
 }
 
 func (ncm *nearCacheMap) preload() error {
@@ -237,4 +303,19 @@ func (ncm *nearCacheMap) getFromRemote(ctx context.Context, m *Map, key interfac
 		}
 	}
 	return value, nil
+}
+
+func (ncm *nearCacheMap) handleInvalidationMsg(rth *inearcache.RepairingHandler, key serialization.Data, source types.UUID, partition types.UUID, seq int64) error {
+	ncm.lg.Trace(func() string {
+		return fmt.Sprintf("nearCacheMap.handleInvalidationMsg: key: %v, source: %s, partition: %s, seq: %d",
+			key, source, partition, seq)
+	})
+	return rth.Handle(key, source, partition, seq)
+}
+
+func (ncm *nearCacheMap) handleBatchInvalidationMsg(rth *inearcache.RepairingHandler, keys []serialization.Data, sources []types.UUID, partitions []types.UUID, seqs []int64) error {
+	ncm.lg.Trace(func() string {
+		return fmt.Sprintf("nearCacheMap.handleBatchInvalidationMsg: key count: %d", len(keys))
+	})
+	return rth.HandleBatch(keys, sources, partitions, seqs)
 }

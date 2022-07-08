@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,21 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	pubhzerrors "github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
+)
+
+// see: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask
+// for the following constants
+const (
+	defaultMaxToleratedMissCount            = 10
+	defaultReconciliationIntervalSeconds    = 60
+	defaultMinReconciliationIntervalSeconds = 30
 )
 
 // Config contains configuration for a client.
@@ -44,6 +53,7 @@ type Config struct {
 	Serialization       serialization.Config              `json:",omitempty"`
 	Cluster             cluster.Config                    `json:",omitempty"`
 	Stats               StatsConfig                       `json:",omitempty"`
+	Invalidation        InvalidationConfig                `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.
@@ -121,6 +131,7 @@ func (c *Config) Clone() Config {
 		Serialization:     c.Serialization.Clone(),
 		Logger:            c.Logger.Clone(),
 		Stats:             c.Stats.clone(),
+		Invalidation:      c.Invalidation.Clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -143,6 +154,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.Stats.Validate(); err != nil {
+		return err
+	}
+	if err := c.Invalidation.Validate(); err != nil {
 		return err
 	}
 	c.ensureFlakeIDGenerators()
@@ -267,6 +281,63 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 		return err
 	}
 	return nil
+}
+
+type InvalidationConfig struct {
+	maxToleratedMissCount *int
+	// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
+	// Configuring a value of zero seconds disables the reconciliation task.
+	reconciliationIntervalSeconds *int
+	err                           error
+}
+
+func (pc InvalidationConfig) Clone() InvalidationConfig {
+	return InvalidationConfig{
+		maxToleratedMissCount:         pc.maxToleratedMissCount,
+		reconciliationIntervalSeconds: pc.reconciliationIntervalSeconds,
+		err:                           pc.err,
+	}
+}
+
+func (pc InvalidationConfig) Validate() error {
+	if pc.err != nil {
+		return fmt.Errorf("hazelcast.Invalidation: %w", pc.err)
+	}
+	return nil
+}
+
+func (pc *InvalidationConfig) SetMaxToleratedMissCount(count int) {
+	if err := check.NonNegativeInt32Config(count); err != nil {
+		pc.err = fmt.Errorf("MaxToleratedMissCount: %w", err)
+		return
+	}
+	pc.maxToleratedMissCount = &count
+}
+
+func (pc InvalidationConfig) MaxToleratedMissCount() int {
+	if pc.maxToleratedMissCount == nil {
+		return defaultMaxToleratedMissCount
+	}
+	return *pc.maxToleratedMissCount
+}
+
+func (pc *InvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
+	if err := check.NonNegativeInt32Config(seconds); err != nil {
+		pc.err = fmt.Errorf("invalid configuration: ReconciliationIntervalSeconds: %w", err)
+		return
+	}
+	if seconds != 0 && seconds < defaultMinReconciliationIntervalSeconds {
+		pc.err = fmt.Errorf("invalid configuration: ReconciliationIntervalSeconds: must be 0 or greater or equal to %d: %w", defaultMinReconciliationIntervalSeconds, pubhzerrors.ErrInvalidConfiguration)
+		return
+	}
+	pc.reconciliationIntervalSeconds = &seconds
+}
+
+func (pc *InvalidationConfig) ReconciliationIntervalSeconds() int {
+	if pc.reconciliationIntervalSeconds == nil {
+		return defaultReconciliationIntervalSeconds
+	}
+	return *pc.reconciliationIntervalSeconds
 }
 
 func matchingPointMatches(patterns map[string]nearcache.Config, itemName string) (string, error) {

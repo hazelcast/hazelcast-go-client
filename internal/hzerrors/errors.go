@@ -83,11 +83,15 @@ func NewClientError(msg string, wrapped, err error) *ClientError {
 }
 
 func (e ClientError) Error() string {
+	msg := ""
+	if e.Message != "" {
+		msg = fmt.Sprintf("%s: ", e.Message)
+	}
 	if e.WrappedErr != nil {
-		return fmt.Sprintf("%s: %s", e.Message, e.WrappedErr.Error())
+		return fmt.Sprintf("%s%s", msg, e.WrappedErr.Error())
 	}
 	if e.Err != nil {
-		return fmt.Sprintf("%s: %s", e.Message, e.Err.Error())
+		return fmt.Sprintf("%s%s", msg, e.Err.Error())
 	}
 	return e.Message
 }

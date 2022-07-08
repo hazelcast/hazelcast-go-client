@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@
 package nearcache
 
 import (
+	"sync/atomic"
+	"time"
+
+	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
@@ -28,12 +32,22 @@ const (
 	UpdateSemanticWriteUpdate
 )
 
+const (
+	// see: com.hazelcast.internal.nearcache.NearCache#DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS
+	defaultExpirationTaskInitialDelay = 5 * time.Second
+	// see: com.hazelcast.internal.nearcache.NearCache#DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS
+	defaultExpirationTaskPeriod = 5 * time.Second
+)
+
 type NearCache struct {
-	store RecordStore
-	cfg   *nearcache.Config
+	store  RecordStore
+	cfg    *nearcache.Config
+	lg     ilogger.LogAdaptor
+	doneCh chan struct{}
+	state  int32
 }
 
-func NewNearCache(cfg *nearcache.Config, ss *serialization.Service) *NearCache {
+func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.LogAdaptor) *NearCache {
 	var rc nearCacheRecordValueConverter
 	var se nearCacheStorageEstimator
 	if cfg.InMemoryFormat == nearcache.InMemoryFormatBinary {
@@ -45,15 +59,43 @@ func NewNearCache(cfg *nearcache.Config, ss *serialization.Service) *NearCache {
 		rc = adapter
 		se = adapter
 	}
-	return &NearCache{
-		cfg:   cfg,
-		store: NewRecordStore(cfg, ss, rc, se),
+	nc := &NearCache{
+		cfg:    cfg,
+		store:  NewRecordStore(cfg, ss, rc, se),
+		lg:     lg,
+		doneCh: make(chan struct{}),
+	}
+	if cfg.TimeToLiveSeconds > 0 || cfg.MaxIdleSeconds > 0 {
+		go nc.startExpirationTask(defaultExpirationTaskInitialDelay, defaultExpirationTaskPeriod)
+	}
+	return nc
+}
+
+func (nc *NearCache) Config() *nearcache.Config {
+	return nc.cfg
+}
+
+func (nc *NearCache) Clear() {
+	nc.store.Clear()
+}
+
+func (nc *NearCache) Destroy() {
+	if atomic.CompareAndSwapInt32(&nc.state, 0, 1) {
+		close(nc.doneCh)
+		nc.store.Destroy()
 	}
 }
 
 func (nc *NearCache) Get(key interface{}) (interface{}, bool, error) {
 	nc.checkKeyFormat(key)
 	return nc.store.Get(key)
+}
+
+func (nc *NearCache) GetRecord(key interface{}) (*Record, bool) {
+	// this function is exported only for tests.
+	// do not use outside of tests.
+	nc.checkKeyFormat(key)
+	return nc.store.GetRecord(key)
 }
 
 func (nc *NearCache) Invalidate(key interface{}) {
@@ -76,8 +118,8 @@ func (nc NearCache) InvalidationRequests() int64 {
 }
 
 func (nc *NearCache) TryReserveForUpdate(key interface{}, keyData serialization.Data, ups UpdateSemantic) (int64, error) {
-	// eviction stuff will be implemented in another PR
-	// nearCacheRecordStore.doEviction(false);
+	// port of: com.hazelcast.internal.nearcache.impl.DefaultNearCache#tryReserveForUpdate
+	nc.store.doEviction()
 	return nc.store.TryReserveForUpdate(key, keyData, ups)
 }
 
@@ -100,5 +142,22 @@ func (nc *NearCache) checkKeyFormat(key interface{}) {
 		}
 	} else if ok {
 		panic("key cannot be of type serialization.Data!")
+	}
+}
+
+func (nc *NearCache) startExpirationTask(delay, timeout time.Duration) {
+	time.Sleep(delay)
+	timer := time.NewTicker(timeout)
+	defer timer.Stop()
+	for {
+		select {
+		case <-nc.doneCh:
+			return
+		case <-timer.C:
+			nc.lg.Debug(func() string {
+				return "running near cache expiration task"
+			})
+			nc.store.DoExpiration()
+		}
 	}
 }

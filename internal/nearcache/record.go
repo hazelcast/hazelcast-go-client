@@ -24,26 +24,25 @@ import (
 )
 
 type Record struct {
-	CreationTime         int64
-	lastAccessTime       int64
-	ExpirationTime       int64
-	InvalidationSequence int64
+	invalidationSequence int64
 	reservationID        int64
 	value                internal.AtomicValue
-	UUID                 types.UUID
+	uuid                 atomic.Value
+	creationTime         int32
+	lastAccessTime       int32
+	expirationTime       int32
 	hits                 int32
 	cachedAsNil          int32
-	PartitionID          int32
+	partitionID          int32
 }
 
 func NewRecord(value interface{}, creationTime, expirationTime int64) *Record {
 	av := internal.AtomicValue{}
 	av.Store(&value)
-	return &Record{
-		CreationTime:   creationTime,
-		value:          av,
-		ExpirationTime: expirationTime,
-	}
+	rec := &Record{value: av}
+	rec.SetCreationTime(creationTime)
+	rec.SetExpirationTIme(expirationTime)
+	return rec
 }
 
 func (r *Record) Value() interface{} {
@@ -74,27 +73,50 @@ func (r *Record) SetReservationID(rid int64) {
 	atomic.StoreInt64(&r.reservationID, rid)
 }
 
-func (r *Record) LastAccessTimeMS() int64 {
-	return atomic.LoadInt64(&r.lastAccessTime)
+func (r *Record) CreationTime() int64 {
+	t := atomic.LoadInt32(&r.creationTime)
+	return RecomputeWithBaseTime(t)
 }
 
-func (r *Record) SetLastAccessTimeMS(ms int64) {
-	atomic.StoreInt64(&r.lastAccessTime, ms)
+func (r *Record) SetCreationTime(ms int64) {
+	secs := StripBaseTime(ms)
+	atomic.StoreInt32(&r.creationTime, secs)
 }
 
-func (r *Record) IsExpiredAtMS(ms int64) bool {
-	return r.ExpirationTime > 0 && r.ExpirationTime <= ms
+func (r *Record) LastAccessTime() int64 {
+	t := atomic.LoadInt32(&r.lastAccessTime)
+	return RecomputeWithBaseTime(t)
 }
 
-func (r *Record) IsIdleAtMS(maxIdleMS, nowMS int64) bool {
+func (r *Record) SetLastAccessTime(ms int64) {
+	secs := StripBaseTime(ms)
+	atomic.StoreInt32(&r.lastAccessTime, secs)
+}
+
+func (r *Record) ExpirationTime() int64 {
+	t := atomic.LoadInt32(&r.expirationTime)
+	return RecomputeWithBaseTime(t)
+}
+
+func (r *Record) SetExpirationTIme(ms int64) {
+	secs := StripBaseTime(ms)
+	atomic.StoreInt32(&r.expirationTime, secs)
+}
+
+func (r *Record) IsExpiredAt(ms int64) bool {
+	t := r.ExpirationTime()
+	return t > 0 && t <= ms
+}
+
+func (r *Record) IsIdleAt(maxIdleMS, nowMS int64) bool {
 	if maxIdleMS <= 0 {
 		return false
 	}
-	lat := r.LastAccessTimeMS()
+	lat := r.LastAccessTime()
 	if lat > 0 {
 		return lat+maxIdleMS < nowMS
 	}
-	return r.CreationTime+maxIdleMS < nowMS
+	return r.CreationTime()+maxIdleMS < nowMS
 }
 
 func (r *Record) CachedAsNil() bool {
@@ -103,4 +125,32 @@ func (r *Record) CachedAsNil() bool {
 
 func (r *Record) SetCachedAsNil() {
 	atomic.StoreInt32(&r.cachedAsNil, 1)
+}
+
+func (r *Record) InvalidationSequence() int64 {
+	return atomic.LoadInt64(&r.invalidationSequence)
+}
+
+func (r *Record) SetInvalidationSequence(v int64) {
+	atomic.StoreInt64(&r.invalidationSequence, v)
+}
+
+func (r *Record) PartitionID() int32 {
+	return atomic.LoadInt32(&r.partitionID)
+}
+
+func (r *Record) SetPartitionID(v int32) {
+	atomic.StoreInt32(&r.partitionID, v)
+}
+
+func (r *Record) UUID() types.UUID {
+	v := r.uuid.Load()
+	if v == nil {
+		return types.UUID{}
+	}
+	return v.(types.UUID)
+}
+
+func (r *Record) SetUUID(v types.UUID) {
+	r.uuid.Store(v)
 }

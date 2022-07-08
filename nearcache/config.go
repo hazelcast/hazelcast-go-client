@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package nearcache
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
@@ -28,7 +29,6 @@ const (
 	defaultEvictionPolicy           = EvictionPolicyLRU
 	defaultStoreInitialDelaySeconds = 600
 	defaultStoreIntervalSeconds     = 600
-	defaultMemoryFormat             = InMemoryFormatBinary
 )
 
 // Config is the Near Cache configuration.
@@ -98,14 +98,14 @@ func (c *Config) Validate() error {
 	if err := c.Preloader.Validate(); err != nil {
 		return err
 	}
-	if _, err := check.NonNegativeInt32(c.TimeToLiveSeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.TimeToLiveSeconds: out of range", err)
+	if err := check.NonNegativeInt32Config(c.TimeToLiveSeconds); err != nil {
+		return fmt.Errorf("nearcache.Config: TimeToLiveSeconds: %w", err)
 	}
-	if _, err := check.NonNegativeInt32(c.MaxIdleSeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.MaxIdleSeconds: out of range", err)
+	if err := check.NonNegativeInt32Config(c.MaxIdleSeconds); err != nil {
+		return fmt.Errorf("nearcache.Config: MaxIdleSeconds: %w", err)
 	}
 	if c.InMemoryFormat != InMemoryFormatBinary && c.InMemoryFormat != InMemoryFormatObject {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Config.InMemoryFormat: invalid memory format", nil)
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Config: InMemoryFormat: invalid memory format", nil)
 	}
 	return nil
 }

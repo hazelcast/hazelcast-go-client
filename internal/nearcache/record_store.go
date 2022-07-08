@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,33 +17,50 @@
 package nearcache
 
 import (
+	"fmt"
 	"math/bits"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
 
+const (
+	RecordNotReserved     int64 = -1
+	RecordReadPermitted   int64 = -2
+	RecordStoreTimeNotSet int64 = -1
+	// see: com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy#SAMPLE_COUNT
+	RecordStoreSampleCount = 15
+)
+
+// serialization.Data is not hashable, so using this to store keys.
+type dataString string
+
 type RecordStore struct {
-	stats            Stats
-	maxIdleMillis    int64
-	reservationID    int64
-	timeToLiveMillis int64
-	recordsMu        *sync.Mutex
-	records          map[interface{}]*Record
-	ss               *serialization.Service
-	valueConverter   nearCacheRecordValueConverter
-	estimator        nearCacheStorageEstimator
+	stats             nearcache.Stats
+	maxIdleMillis     int64
+	reservationID     int64
+	timeToLiveMillis  int64
+	recordsMu         *sync.RWMutex
+	records           map[interface{}]*Record
+	ss                *serialization.Service
+	valueConverter    nearCacheRecordValueConverter
+	estimator         nearCacheStorageEstimator
+	staleReadDetector *StaleReadDetector
+	evictionDisabled  bool
+	maxSize           int
+	cmp               nearcache.EvictionPolicyComparator
 }
 
 func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) RecordStore {
-	stats := Stats{
+	stats := nearcache.Stats{
 		CreationTime: time.Now(),
 	}
 	return RecordStore{
-		recordsMu:        &sync.Mutex{},
+		recordsMu:        &sync.RWMutex{},
 		records:          map[interface{}]*Record{},
 		maxIdleMillis:    int64(cfg.MaxIdleSeconds * 1000),
 		ss:               ss,
@@ -51,13 +68,35 @@ func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCac
 		valueConverter:   rc,
 		estimator:        se,
 		stats:            stats,
+		evictionDisabled: cfg.Eviction.EvictionPolicy() == nearcache.EvictionPolicyNone,
+		maxSize:          cfg.Eviction.Size(),
+		cmp:              getEvictionPolicyComparator(&cfg.Eviction),
 	}
+}
+
+func (rs *RecordStore) Clear() {
+	// port of: com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore#clear
+	// checkAvailable() does not apply since rs.records is always created
+	rs.recordsMu.Lock()
+	size := len(rs.records)
+	rs.records = map[interface{}]*Record{}
+	rs.recordsMu.Unlock()
+	atomic.StoreInt64(&rs.stats.OwnedEntryCount, 0)
+	atomic.StoreInt64(&rs.stats.OwnedEntryMemoryCost, 0)
+	atomic.AddInt64(&rs.stats.Invalidations, int64(size))
+	rs.incrementInvalidationRequests()
+}
+
+func (rs *RecordStore) Destroy() {
+	rs.Clear()
 }
 
 func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err error) {
 	// checkAvailable() does not apply since rs.records is always created
 	key = rs.makeMapKey(key)
+	rs.recordsMu.RLock()
 	rec, ok := rs.getRecord(key)
+	rs.recordsMu.RUnlock()
 	if !ok {
 		rs.incrementMisses()
 		return nil, false, nil
@@ -67,23 +106,20 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 		rs.incrementMisses()
 		return nil, false, nil
 	}
-	// to be handled in another PR
-	/*
-	   if (staleReadDetector.isStaleRead(key, record)) {
-	       invalidate(key);
-	       nearCacheStats.incrementMisses();
-	       return null;
-	   }
-	*/
+	// instead of ALWAYS_FRESH staleReadDetector, the nil value used
+	if rs.staleReadDetector != nil && rs.staleReadDetector.IsStaleRead(rec) {
+		rs.Invalidate(key)
+		rs.incrementMisses()
+		return nil, false, nil
+	}
 	nowMS := time.Now().UnixMilli()
 	if rs.recordExpired(rec, nowMS) {
 		rs.Invalidate(key)
-		// onExpire
-		rs.incrementExpirations()
+		rs.onExpire()
 		return nil, false, nil
 	}
 	// onRecordAccess
-	rec.SetLastAccessTimeMS(nowMS)
+	rec.SetLastAccessTime(nowMS)
 	rec.IncrementHits()
 	rs.incrementHits()
 	// recordToValue
@@ -98,22 +134,110 @@ func (rs *RecordStore) Get(key interface{}) (value interface{}, found bool, err 
 	return value, true, nil
 }
 
+func (rs *RecordStore) GetRecord(key interface{}) (*Record, bool) {
+	// this function is exported only for tests.
+	// do not use outside of tests.
+	rs.recordsMu.RLock()
+	defer rs.recordsMu.RUnlock()
+	key = rs.makeMapKey(key)
+	return rs.getRecord(key)
+}
+
 func (rs *RecordStore) Invalidate(key interface{}) {
+	rs.recordsMu.Lock()
+	rs.invalidate(key)
+	rs.recordsMu.Unlock()
+}
+
+func (rs *RecordStore) invalidate(key interface{}) {
+	// assumes rs.recordsMu is locked.
 	key = rs.makeMapKey(key)
 	var canUpdateStats bool
-	rs.recordsMu.Lock()
-	rec, keyExists := rs.records[key]
-	if keyExists {
+	rec, exists := rs.records[key]
+	if exists {
 		delete(rs.records, key)
 		canUpdateStats = rec.ReservationID() == RecordReadPermitted
 	}
-	rs.recordsMu.Unlock()
 	if canUpdateStats {
 		rs.decrementOwnedEntryCount()
 		rs.decrementOwnedEntryMemoryCost(rs.getTotalStorageMemoryCost(key, rec))
 		rs.incrementInvalidations()
 	}
 	rs.incrementInvalidationRequests()
+}
+
+func (rs *RecordStore) doEviction() bool {
+	// port of: com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore#doEviction
+	// note that the reference implementation never has withoutMaxSizeCheck == true
+	// checkAvailable doesn't apply
+	if rs.evictionDisabled {
+		return false
+	}
+	return rs.evict()
+}
+
+func (rs *RecordStore) DoExpiration() {
+	// port of: com.hazelcast.internal.nearcache.impl.store.BaseHeapNearCacheRecordStore#doExpiration
+	now := time.Now().UnixMilli()
+	rs.recordsMu.Lock()
+	for k, v := range rs.records {
+		if rs.recordExpired(v, now) {
+			rs.invalidate(k)
+			rs.onExpire()
+		}
+	}
+	rs.recordsMu.Unlock()
+}
+
+func (rs *RecordStore) onEvict(key interface{}, rec *Record, expired bool) {
+	// port of: com.hazelcast.internal.nearcache.impl.store.BaseHeapNearCacheRecordStore#onEvict
+	if expired {
+		rs.incrementExpirations()
+	} else {
+		rs.incrementEvictions()
+	}
+	rs.decrementOwnedEntryCount()
+	rs.decrementOwnedEntryMemoryCost(rs.getTotalStorageMemoryCost(key, rec))
+}
+
+func (rs *RecordStore) tryEvict(candidate evictionCandidate) bool {
+	// port of: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#tryEvict
+	if exists := rs.remove(candidate.Key()); !exists {
+		return false
+	}
+	rs.onEvict(candidate.key, candidate.evictable, false)
+	return true
+}
+
+func (rs *RecordStore) remove(key interface{}) bool {
+	// the key is already in the "made" form, so don't run on rs.makeMapKey on it
+	// assumes rs.recordsMu is locked elsewhere
+	if _, exists := rs.records[key]; !exists {
+		return false
+	}
+	delete(rs.records, key)
+	return true
+}
+
+func (rs *RecordStore) sample(count int) []evictionCandidate {
+	// see: com.hazelcast.internal.nearcache.impl.store.HeapNearCacheRecordMap#sample
+	// currently we use builtin maps of the Go client, so another random sampling algorithm is used.
+	// note that count is fixed to 15 in the reference implementation, it is always positive
+	// assumes recordsMu is locked
+	samples := make([]evictionCandidate, count)
+	var idx int
+	for k, v := range rs.records {
+		// access to keys of maps is random
+		samples[idx] = evictionCandidate{
+			key:       k,
+			evictable: v,
+		}
+		idx++
+		if idx >= count {
+			break
+		}
+	}
+	return samples
 }
 
 func (rs *RecordStore) TryPublishReserved(key, value interface{}, reservationID int64, deserialize bool) (interface{}, error) {
@@ -137,11 +261,6 @@ func (rs *RecordStore) TryPublishReserved(key, value interface{}, reservationID 
 		return rs.ss.ToObject(data)
 	}
 	return cached, nil
-}
-
-func (rs *RecordStore) DoEviction(withoutMaxSizeCheck bool) bool {
-	// TODO: implement this
-	return false
 }
 
 func (rs RecordStore) Stats() nearcache.Stats {
@@ -168,9 +287,9 @@ func (rs RecordStore) InvalidationRequests() int64 {
 }
 
 func (rs RecordStore) Size() int {
-	rs.recordsMu.Lock()
+	rs.recordsMu.RLock()
 	size := len(rs.records)
-	rs.recordsMu.Unlock()
+	rs.recordsMu.RUnlock()
 	return size
 }
 
@@ -178,7 +297,15 @@ func (rs RecordStore) makeMapKey(key interface{}) interface{} {
 	data, ok := key.(serialization.Data)
 	if ok {
 		// serialization.Data is not hashable, convert it to string
-		return string(data)
+		return dataString(data)
+	}
+	return key
+}
+
+func (rs RecordStore) unMakeMapKey(key interface{}) interface{} {
+	ds, ok := key.(dataString)
+	if ok {
+		return serialization.Data(ds)
 	}
 	return key
 }
@@ -192,6 +319,7 @@ func (rs *RecordStore) toValue(v interface{}) (interface{}, error) {
 }
 
 func (rs *RecordStore) publishReservedRecord(key, value interface{}, rec *Record, reservationID int64) (*Record, error) {
+	// port of: com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore#publishReservedRecord
 	if rec.ReservationID() != reservationID {
 		return rec, nil
 	}
@@ -223,12 +351,13 @@ func (rs *RecordStore) getKeyStorageMemoryCost(key interface{}) int64 {
 }
 
 func (rs *RecordStore) getRecordStorageMemoryCost(rec *Record) int64 {
-	// TODO:
 	return rs.estimator.GetRecordStorageMemoryCost(rec)
 }
 
 func (rs *RecordStore) getTotalStorageMemoryCost(key interface{}, rec *Record) int64 {
-	return rs.getKeyStorageMemoryCost(key) + rs.estimator.GetRecordStorageMemoryCost(rec)
+	key = rs.unMakeMapKey(key)
+	return rs.getKeyStorageMemoryCost(key) + rs.getRecordStorageMemoryCost(rec)
+
 }
 
 func (rs *RecordStore) incrementHits() {
@@ -267,10 +396,13 @@ func (rs *RecordStore) incrementInvalidationRequests() {
 	atomic.AddInt64(&rs.stats.InvalidationRequests, 1)
 }
 
+func (rs *RecordStore) incrementEvictions() {
+	atomic.AddInt64(&rs.stats.Evictions, 1)
+}
+
 func (rs *RecordStore) getRecord(key interface{}) (*Record, bool) {
-	rs.recordsMu.Lock()
+	// assumes recordsMu is locked
 	value, ok := rs.records[key]
-	rs.recordsMu.Unlock()
 	return value, ok
 }
 
@@ -280,10 +412,23 @@ func (rs *RecordStore) recordExpired(rec *Record, nowMS int64) bool {
 		// We can't check reserved records for expiry.
 		return false
 	}
-	if rec.IsExpiredAtMS(nowMS) {
+	if rec.IsExpiredAt(nowMS) {
 		return true
 	}
-	return rec.IsIdleAtMS(rs.maxIdleMillis, nowMS)
+	return rec.IsIdleAt(rs.maxIdleMillis, nowMS)
+}
+
+func (rs *RecordStore) evict() bool {
+	// port of: com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy#evict
+	// see: com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker#isEvictionRequired
+	rs.recordsMu.Lock()
+	defer rs.recordsMu.Unlock()
+	if len(rs.records) < rs.maxSize {
+		return false
+	}
+	samples := rs.sample(RecordStoreSampleCount)
+	c := evaluateForEviction(rs.cmp, samples)
+	return rs.tryEvict(c)
 }
 
 func (rs *RecordStore) canUpdateStats(rec *Record) bool {
@@ -325,12 +470,10 @@ func (rs *RecordStore) reserveForWriteUpdate(key interface{}, keyData serializat
 	defer rs.recordsMu.Unlock()
 	rec, ok := rs.records[key]
 	if !ok {
-		rec, err := rs.createRecord(nil)
+		rec, err := rs.newReservationRecord(key, keyData, reservationID)
 		if err != nil {
 			return nil, err
 		}
-		rec.SetReservationID(reservationID)
-		// initInvalidationMetaData(record, key, keyData);
 		return rec, nil
 	}
 	if rec.reservationID == RecordReadPermitted {
@@ -362,13 +505,11 @@ func (rs *RecordStore) reserveForReadUpdate(key interface{}, keyData serializati
 	if ok {
 		return rec, nil
 	}
-	rec, err := rs.createRecord(nil)
+	rec, err := rs.newReservationRecord(key, keyData, reservationID)
 	if err != nil {
 		return nil, err
 	}
-	rec.SetReservationID(reservationID)
 	rs.records[key] = rec
-	// initInvalidationMetaData(record, key, keyData);
 	return rec, nil
 }
 
@@ -386,6 +527,40 @@ func (rs *RecordStore) createRecord(value interface{}) (*Record, error) {
 	return NewRecord(value, created, expired), nil
 }
 
+func (rs *RecordStore) newReservationRecord(key interface{}, keyData serialization.Data, rid int64) (*Record, error) {
+	rec, err := rs.createRecord(nil)
+	if err != nil {
+		return nil, err
+	}
+	rec.SetReservationID(rid)
+	if err := rs.initInvalidationMetadata(rec, key, keyData); err != nil {
+		return nil, err
+	}
+	return rec, nil
+}
+
+func (rs *RecordStore) initInvalidationMetadata(rec *Record, key interface{}, keyData serialization.Data) error {
+	if rs.staleReadDetector == nil {
+		return nil
+	}
+	var err error
+	if keyData == nil {
+		keyData, err = rs.ss.ToData(key)
+		if err != nil {
+			return fmt.Errorf("nearcache.RecordStore.initInvalidationMetadata: converting key: %w", err)
+		}
+	}
+	pid, err := rs.staleReadDetector.GetPartitionID(keyData)
+	if err != nil {
+		return fmt.Errorf("nearcache.RecordStore.initInvalidationMetadata: getting partition ID: %w", err)
+	}
+	md := rs.staleReadDetector.GetMetaDataContainer(pid)
+	rec.SetPartitionID(pid)
+	rec.SetInvalidationSequence(md.Sequence())
+	rec.SetUUID(md.UUID())
+	return nil
+}
+
 func (rs *RecordStore) updateRecordValue(rec *Record, value interface{}) error {
 	value, err := rs.valueConverter.ConvertValue(value)
 	if err != nil {
@@ -393,4 +568,78 @@ func (rs *RecordStore) updateRecordValue(rec *Record, value interface{}) error {
 	}
 	rec.SetValue(value)
 	return nil
+}
+
+func (rs *RecordStore) onExpire() {
+	// port of: com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore#onExpire
+	rs.incrementExpirations()
+}
+
+func getEvictionPolicyComparator(cfg *nearcache.EvictionConfig) nearcache.EvictionPolicyComparator {
+	cmp := cfg.Comparator()
+	if cmp != nil {
+		return cmp
+	}
+	switch cfg.EvictionPolicy() {
+	case nearcache.EvictionPolicyLRU:
+		return LRUEvictionPolicyComparator
+	case nearcache.EvictionPolicyLFU:
+		return LFUEvictionPolicyComparator
+	case nearcache.EvictionPolicyRandom:
+		return RandomEvictionPolicyComparator
+	case nearcache.EvictionPolicyNone:
+		return nil
+	}
+	msg := fmt.Sprintf("unknown eviction polcy: %d", cfg.EvictionPolicy())
+	panic(ihzerrors.NewIllegalArgumentError(msg, nil))
+}
+
+type evictionCandidate struct {
+	key       interface{}
+	evictable *Record
+}
+
+func (e evictionCandidate) Key() interface{} {
+	return e.key
+}
+
+func (e evictionCandidate) Value() interface{} {
+	return e.evictable.Value()
+}
+
+func (e evictionCandidate) Hits() int64 {
+	return int64(e.evictable.Hits())
+}
+
+func (e evictionCandidate) CreationTime() int64 {
+	return e.evictable.CreationTime()
+}
+
+func (e evictionCandidate) LastAccessTime() int64 {
+	return e.evictable.LastAccessTime()
+}
+
+func evaluateForEviction(cmp nearcache.EvictionPolicyComparator, candies []evictionCandidate) evictionCandidate {
+	// see: com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator#evaluate
+	now := time.Now().UnixMilli()
+	var selected evictionCandidate
+	var hasSelected bool
+	for _, current := range candies {
+		// initialize selected by setting it to current candidate.
+		if !hasSelected {
+			selected = current
+			hasSelected = true
+			continue
+		}
+		// then check if current candidate is expired.
+		if current.evictable.IsExpiredAt(now) {
+			return current
+		}
+		// check if current candidate is more eligible than selected.
+		if cmp.Compare(current, selected) < 0 {
+			selected = current
+			hasSelected = true
+		}
+	}
+	return selected
 }
