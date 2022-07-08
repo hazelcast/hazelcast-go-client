@@ -283,14 +283,14 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 	return nil
 }
 
+// NearCacheInvalidationConfig contains invalidation configuration for all Near Caches.
 type NearCacheInvalidationConfig struct {
-	maxToleratedMissCount *int
-	// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
-	// Configuring a value of zero seconds disables the reconciliation task.
+	maxToleratedMissCount         *int
 	reconciliationIntervalSeconds *int
 	err                           error
 }
 
+// Clone returns a copy of the configuration.
 func (pc NearCacheInvalidationConfig) Clone() NearCacheInvalidationConfig {
 	return NearCacheInvalidationConfig{
 		maxToleratedMissCount:         pc.maxToleratedMissCount,
@@ -299,6 +299,7 @@ func (pc NearCacheInvalidationConfig) Clone() NearCacheInvalidationConfig {
 	}
 }
 
+// Validate validates the configuration and replaces missing configuration with defaults.
 func (pc NearCacheInvalidationConfig) Validate() error {
 	if pc.err != nil {
 		return fmt.Errorf("hazelcast.NearCacheInvalidation: %w", pc.err)
@@ -306,6 +307,8 @@ func (pc NearCacheInvalidationConfig) Validate() error {
 	return nil
 }
 
+// SetMaxToleratedMissCount is the number of miss counts before data in Near Cache is invalidated.
+// Default is 10.
 func (pc *NearCacheInvalidationConfig) SetMaxToleratedMissCount(count int) {
 	if err := check.NonNegativeInt32Config(count); err != nil {
 		pc.err = fmt.Errorf("MaxToleratedMissCount: %w", err)
@@ -321,6 +324,8 @@ func (pc NearCacheInvalidationConfig) MaxToleratedMissCount() int {
 	return *pc.maxToleratedMissCount
 }
 
+// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
+// Configuring a value of zero seconds disables the reconciliation task.
 func (pc *NearCacheInvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	if err := check.NonNegativeInt32Config(seconds); err != nil {
 		pc.err = fmt.Errorf("invalid configuration: ReconciliationIntervalSeconds: %w", err)
