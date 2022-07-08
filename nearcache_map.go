@@ -203,6 +203,23 @@ func (ncm *nearCacheMap) ExecuteOnKeys(ctx context.Context, m *Map, entryProcess
 	return m.executeOnKeysFromRemote(ctx, entryProcessor, ncKeys)
 }
 
+func (ncm *nearCacheMap) PutAll(ctx context.Context, m *Map, entries []types.Entry) error {
+	keys := make([]interface{}, len(entries))
+	for i, e := range entries {
+		k, err := ncm.toNearCacheKey(e.Key)
+		if err != nil {
+			return err
+		}
+		keys[i] = k
+	}
+	defer func() {
+		for _, k := range keys {
+			ncm.nc.Invalidate(k)
+		}
+	}()
+	return m.putAllFromRemote(ctx, entries)
+}
+
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {
@@ -350,6 +367,24 @@ func (ncm *nearCacheMap) RemoveIfSame(ctx context.Context, m *Map, key interface
 	}
 	defer ncm.nc.Invalidate(key)
 	return m.removeIfSameFromRemote(ctx, key, value)
+}
+
+func (ncm *nearCacheMap) Replace(ctx context.Context, m *Map, key interface{}, value interface{}) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.replaceFromRemote(ctx, key, value)
+}
+
+func (ncm *nearCacheMap) ReplaceIfSame(ctx context.Context, m *Map, key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.replaceIfSameFromRemote(ctx, key, oldValue, newValue)
 }
 
 func (ncm *nearCacheMap) Set(ctx context.Context, m *Map, key, value interface{}, ttl int64) error {

@@ -269,7 +269,7 @@ func (m *Map) Clear(ctx context.Context) error {
 	if m.hasNearCache {
 		return m.ncm.Clear(ctx, m)
 	}
-	return m.Clear(ctx)
+	return m.clearFromRemote(ctx)
 }
 
 // ContainsKey returns true if the map contains an entry with the given key.
@@ -555,6 +555,24 @@ func (m *Map) loadAllFromRemote(ctx context.Context, replaceExisting bool, keys 
 	return err
 }
 
+func (m *Map) putAllFromRemote(ctx context.Context, entries []types.Entry) error {
+	f := func(partitionID int32, entries []proto.Pair) cb.Future {
+		request := codec.EncodeMapPutAllRequest(m.name, entries, true)
+		now := time.Now()
+		return m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+			if attempt > 0 {
+				request = request.Copy()
+			}
+			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
+				return nil, err
+			} else {
+				return inv.GetWithContext(ctx)
+			}
+		})
+	}
+	return m.putAll(entries, f)
+}
+
 func (m *Map) putWithTTLFromRemote(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
 	lid := extractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
@@ -645,6 +663,34 @@ func (m *Map) removeFromRemote(ctx context.Context, key interface{}) (interface{
 		return nil, err
 	}
 	return m.convertToObject(codec.DecodeMapRemoveResponse(response))
+}
+
+func (m *Map) replaceFromRemote(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
+	keyData, valueData, err := m.validateAndSerialize2(key, value)
+	if err != nil {
+		return nil, err
+	}
+	lid := extractLockID(ctx)
+	request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return nil, err
+	}
+	return m.convertToObject(codec.DecodeMapReplaceResponse(response))
+}
+
+func (m *Map) replaceIfSameFromRemote(ctx context.Context, key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
+	lid := extractLockID(ctx)
+	keyData, oldValueData, newValueData, err := m.validateAndSerialize3(key, oldValue, newValue)
+	if err != nil {
+		return false, err
+	}
+	request := codec.EncodeMapReplaceIfSameRequest(m.name, keyData, oldValueData, newValueData, lid)
+	response, err := m.invokeOnKey(ctx, request, keyData)
+	if err != nil {
+		return false, err
+	}
+	return codec.DecodeMapReplaceIfSameResponse(response), nil
 }
 
 func (m *Map) removeIfSameFromRemote(ctx context.Context, key, value interface{}) (bool, error) {
@@ -958,21 +1004,10 @@ func (m *Map) PutAll(ctx context.Context, entries ...types.Entry) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	f := func(partitionID int32, entries []proto.Pair) cb.Future {
-		request := codec.EncodeMapPutAllRequest(m.name, entries, true)
-		now := time.Now()
-		return m.cb.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-			if attempt > 0 {
-				request = request.Copy()
-			}
-			if inv, err := m.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
-				return nil, err
-			} else {
-				return inv.GetWithContext(ctx)
-			}
-		})
+	if m.hasNearCache {
+		return m.ncm.PutAll(ctx, m, entries)
 	}
-	return m.putAll(entries, f)
+	return m.putAllFromRemote(ctx, entries)
 }
 
 // PutIfAbsent associates the specified key with the given value if it is not already associated.
@@ -1080,33 +1115,19 @@ func (m *Map) RemoveIfSame(ctx context.Context, key interface{}, value interface
 
 // Replace replaces the entry for a key only if it is currently mapped to some value and returns the previous value.
 func (m *Map) Replace(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
-	lid := extractLockID(ctx)
-	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
-		return nil, err
-	} else {
-		request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return nil, err
-		} else {
-			return m.convertToObject(codec.DecodeMapReplaceResponse(response))
-		}
+	if m.hasNearCache {
+		return m.ncm.Replace(ctx, m, key, value)
 	}
+	return m.replaceFromRemote(ctx, key, value)
 }
 
 // ReplaceIfSame replaces the entry for a key only if it is currently mapped to a given value.
 // Returns true if the value was replaced.
 func (m *Map) ReplaceIfSame(ctx context.Context, key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
-	lid := extractLockID(ctx)
-	if keyData, oldValueData, newValueData, err := m.validateAndSerialize3(key, oldValue, newValue); err != nil {
-		return false, err
-	} else {
-		request := codec.EncodeMapReplaceIfSameRequest(m.name, keyData, oldValueData, newValueData, lid)
-		if response, err := m.invokeOnKey(ctx, request, keyData); err != nil {
-			return false, err
-		} else {
-			return codec.DecodeMapReplaceIfSameResponse(response), nil
-		}
+	if m.hasNearCache {
+		return m.ncm.ReplaceIfSame(ctx, m, key, oldValue, newValue)
 	}
+	return m.replaceIfSameFromRemote(ctx, key, oldValue, newValue)
 }
 
 // Set sets the value for the given key.

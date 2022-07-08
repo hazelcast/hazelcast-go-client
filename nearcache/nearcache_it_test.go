@@ -698,6 +698,48 @@ func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 	invalidationRunner(t, testCases)
 }
 
+func TestAfterPulAllNearCacheIsInvalidated(t *testing.T) {
+	// this test does not exist in the reference implementation
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = 1000
+		keys := populateMapWithString(tcx, size)
+		populateNearCacheWithString(tcx, size)
+		oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
+		require.Equal(t, int64(size), oec)
+		entries := []types.Entry{}
+		for _, k := range keys {
+			entries = append(entries, types.Entry{Key: k, Value: k})
+		}
+		it.Must(m.PutAll(context.Background(), entries...))
+		oec = m.LocalMapStats().NearCacheStats.OwnedEntryCount
+		require.Equal(t, int64(0), oec)
+	})
+}
+
+func TestAfterReplaceNearCacheIsInvalidated(t *testing.T) {
+	// no corresponding test in the reference implementation
+	testCases := []mapTestCase{
+		{
+			name: "Replace",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v := it.MustValue(tcx.M.Replace(ctx, i, i))
+				require.Equal(t, i, v)
+			},
+		},
+		{
+			name: "ReplaceIfSame",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v := it.MustBool(tcx.M.ReplaceIfSame(ctx, i, i, i))
+				require.Equal(t, true, v)
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
 func TestAfterSetNearCacheIsInvalidated(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterSetAsyncNearCacheIsInvalidated
 	testCases := []mapTestCase{
@@ -747,6 +789,7 @@ func TestAfterEvictNearCacheIsInvalidated(t *testing.T) {
 }
 
 func TestAfterEvictAllNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterEvictAllNearCacheIsInvalidated
 	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
 	tcx.Tester(func(tcx it.MapTestContext) {
 		t := tcx.T
