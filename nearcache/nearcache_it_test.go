@@ -25,6 +25,7 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -646,7 +647,10 @@ func memberInvalidatesClientNearCache(t *testing.T, useTestMap bool, makeScript 
 	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
 	if useTestMap {
 		// hardcoded map name for LoadAll to work
-		tcx.MapName = "test-map"
+		tcx.NameMaker = func(p ...string) string {
+			suffix := strings.Join(p, "-")
+			return fmt.Sprintf("test-map-%s", suffix)
+		}
 	}
 	tcx.Tester(func(tcx it.MapTestContext) {
 		t := tcx.T
