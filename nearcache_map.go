@@ -52,15 +52,15 @@ type nearCacheMap struct {
 }
 
 func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serialization.Service, rt *inearcache.ReparingTask, lg logger.LogAdaptor, name string, lb *cluster.ConnectionListenerBinder, local bool) (nearCacheMap, error) {
-	ncc := nc.Config()
 	ncm := nearCacheMap{
 		nc:            nc,
 		ss:            ss,
 		rt:            rt,
 		lb:            lb,
 		lg:            lg,
-		serializeKeys: ncc.SerializeKeys,
+		serializeKeys: nc.Config().SerializeKeys,
 	}
+	ncc := nc.Config()
 	if ncc.InvalidateOnChange() {
 		lg.Debug(func() string {
 			return fmt.Sprintf("registering invalidation listener: name: %s, local: %t", name, local)
