@@ -134,6 +134,11 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 	return nil
 }
 
+func (ncm *nearCacheMap) Clear(ctx context.Context, m *Map) error {
+	ncm.nc.Clear()
+	return m.clearFromRemote(ctx)
+}
+
 func (ncm *nearCacheMap) ContainsKey(ctx context.Context, key interface{}, m *Map) (found bool, err error) {
 	key, err = ncm.toNearCacheKey(key)
 	if err != nil {

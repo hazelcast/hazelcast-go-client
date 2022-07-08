@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -106,6 +106,14 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 			tt.T = t
 			runner(tt)
 		})
+	}
+}
+
+func (tcx *MapTestContext) ExecuteScript(ctx context.Context, script string) {
+	clusterID := tcx.Cluster.ClusterID
+	_, err := tcx.Cluster.RC.ExecuteOnController(ctx, clusterID, script, Lang_JAVASCRIPT)
+	if err != nil {
+		panic(err)
 	}
 }
 

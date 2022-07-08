@@ -439,11 +439,15 @@ func (rs *RecordStore) TryReserveForUpdate(key interface{}, keyData serializatio
 	// checkAvailable()
 	// if there is no eviction configured we return if the Near Cache is full and it's a new key.
 	// we have to check the key, otherwise we might lose updates on existing keys.
-	/*
-	   if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
-	       return NOT_RESERVED;
-	   }
-	*/
+	if rs.evictionDisabled {
+		rs.recordsMu.RLock()
+		evictionRequired := len(rs.records) >= rs.maxSize
+		_, containsRecordKey := rs.records[key]
+		rs.recordsMu.RUnlock()
+		if evictionRequired && !containsRecordKey {
+			return RecordNotReserved, nil
+		}
+	}
 	rid := rs.nextReservationID()
 	var rec *Record
 	var err error
@@ -459,6 +463,10 @@ func (rs *RecordStore) TryReserveForUpdate(key interface{}, keyData serializatio
 		return RecordNotReserved, nil
 	}
 	return rid, nil
+}
+
+func (rs *RecordStore) evictionRequired() bool {
+	return rs.Size() >= rs.maxSize
 }
 
 func (rs *RecordStore) nextReservationID() int64 {

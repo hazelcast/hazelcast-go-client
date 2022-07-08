@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -34,6 +35,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -168,6 +170,71 @@ func TestGetNearCacheStatsBeforePopulation(t *testing.T) {
 	})
 }
 
+func TestNearCacheClearFromClient(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCache_clearFromClient
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		const size = int32(147)
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		if err := m.Clear(ctx); err != nil {
+			t.Fatal(err)
+		}
+		// Near Cache should be empty
+		for i := int32(0); i < size; i++ {
+			v, err := m.Get(ctx, i)
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Nil(t, v)
+		}
+	})
+}
+
+func TestNearCacheClearFromRemote(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCache_clearFromRemote
+	if err := os.Setenv(inearcache.EnvExpirationTaskInitialDelay, "0s"); err != nil {
+		t.Logf("WARNING, could not set: %s", inearcache.EnvExpirationTaskInitialDelay)
+	}
+	// ignoring the error
+	defer os.Setenv(inearcache.EnvExpirationTaskInitialDelay, "")
+	if err := os.Setenv(inearcache.EnvExpirationTaskPeriod, "1s"); err != nil {
+		t.Logf("WARNING, could not set: %s", inearcache.EnvExpirationTaskPeriod)
+	}
+	// ignoring the error
+	defer os.Setenv(inearcache.EnvExpirationTaskPeriod, "")
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		const size = int32(147)
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		tcx.ExecuteScript(ctx, fmt.Sprintf(`
+			var map = instance_0.getMap("%s");
+        	map.clear();
+		`, tcx.MapName))
+		// Near Cache should be empty
+		it.Eventually(t, func() bool {
+			for i := int32(0); i < size; i++ {
+				fmt.Println("i:", i)
+				v, err := m.Get(ctx, i)
+				if err != nil {
+					panic(err)
+				}
+				if v != nil {
+					return false
+				}
+			}
+			return true
+		})
+	})
+}
+
 func TestNearCacheMisses(t *testing.T) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheMisses
 	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
@@ -184,6 +251,64 @@ func TestNearCacheMisses(t *testing.T) {
 		stats := m.LocalMapStats().NearCacheStats
 		assert.Equal(t, expectedCacheMisses, stats.Misses)
 		assert.Equal(t, expectedCacheMisses, stats.OwnedEntryCount)
+	})
+}
+
+func TestNearCachePopulatedAndHitsGenerated(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCachePopulatedAndHitsGenerated
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		const size = 1278
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		// generate Near Cache hits
+		for i := int32(0); i < size; i++ {
+			v := it.MustValue(m.Get(ctx, i))
+			require.Equal(t, i, v)
+		}
+		stats := m.LocalMapStats().NearCacheStats
+		require.Equal(t, int64(size), stats.OwnedEntryCount)
+		require.Equal(t, int64(size), stats.Hits)
+	})
+}
+
+func TestNearCachePopulatedAndHitsGenerated_withInterleavedCacheHitGeneration(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCachePopulatedAndHitsGenerated_withInterleavedCacheHitGeneration
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		const size = 1278
+		for i := int32(0); i < size; i++ {
+			it.MustValue(m.Put(ctx, i, i))
+			// populate Near Cache
+			it.MustValue(m.Get(ctx, i))
+			// generate Near Cache hits
+			it.MustValue(m.Get(ctx, i))
+		}
+		stats := m.LocalMapStats().NearCacheStats
+		require.Equal(t, int64(size), stats.OwnedEntryCount)
+		require.Equal(t, int64(size), stats.Hits)
+	})
+}
+
+func TestRemovedKeyValueNotInNearCache(t *testing.T) {
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		const size = 1247
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		for i := int32(0); i < size; i++ {
+			it.MustValue(m.Remove(ctx, i))
+			require.Nil(t, it.MustValue(m.Get(ctx, i)))
+		}
 	})
 }
 
@@ -220,10 +345,26 @@ func TestNearCacheTTLExpiration(t *testing.T) {
 			tcx.Config.AddNearCache(ncc)
 		},
 	}
-	tcx.Tester(ttlTester)
+	tcx.Tester(ttlMaxIdleTester)
 }
 
-func ttlTester(tcx it.MapTestContext) {
+func TestNearCacheMaxIdleRecordsExpired(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheMaxIdleRecordsExpired
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{
+				Name:              tcx.MapName,
+				TimeToLiveSeconds: maxIdleSeconds,
+			}
+			ncc.SetInvalidateOnChange(false)
+			tcx.Config.AddNearCache(ncc)
+		},
+	}
+	tcx.Tester(ttlMaxIdleTester)
+}
+
+func ttlMaxIdleTester(tcx it.MapTestContext) {
 	populateServerMap(tcx, maxCacheSize)
 	populateNearCache(tcx, maxCacheSize)
 	assertNearCacheExpiration(tcx, maxCacheSize)
@@ -257,6 +398,176 @@ func TestNearCacheGet(t *testing.T) {
 		require.Equal(t, int64(size), stats.Hits)
 		require.Equal(t, int64(size), stats.OwnedEntryCount)
 	})
+}
+
+func TestNearCacheInvalidateOnChange(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidateOnChange
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		m := tcx.M
+		t := tcx.T
+		ctx := context.Background()
+		const size = 118
+		populateServerMapWithString(ctx, tcx, size)
+		// populate Near Cache
+		populateNearCacheWithString(tcx, size)
+		oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
+		require.Equal(t, int64(size), oec)
+		// invalidate Near Cache from server side
+		populateServerMapWithString(ctx, tcx, size)
+		it.Eventually(t, func() bool {
+			oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
+			t.Logf("OEC: %d", oec)
+			return oec == 0
+		})
+	})
+}
+
+func TestNearCacheInvalidation_WithLFU_whenMaxSizeExceeded(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidation_WithLFU_whenMaxSizeExceeded
+	ncc := makeNearCacheConfigWithEviction(nearcache.EvictionPolicyLFU)
+	assertNearCacheInvalidationWhenMaxSizeExceeded(t, ncc)
+}
+
+func TestNearCacheInvalidation_WithLRU_whenMaxSizeExceeded(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidation_WithLRU_whenMaxSizeExceeded
+	ncc := makeNearCacheConfigWithEviction(nearcache.EvictionPolicyLRU)
+	assertNearCacheInvalidationWhenMaxSizeExceeded(t, ncc)
+}
+
+func TestNearCacheInvalidation_WithNone_whenMaxSizeExceeded(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidation_WithNone_whenMaxSizeExceeded
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := makeNearCacheConfigWithEviction(nearcache.EvictionPolicyNone)
+			tcx.Config.AddNearCache(ncc)
+		},
+	}
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		const mapSize = maxCacheSize * 2
+		populateMap(tcx, mapSize)
+		populateNearCache(tcx, mapSize)
+		it.Eventually(t, func() bool {
+			oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
+			t.Logf("OEC: %d, %t", oec, oec == maxCacheSize)
+			return oec == maxCacheSize
+		})
+	})
+}
+
+func TestNearCacheInvalidationWithRandom_whenMaxSizeExceeded(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidation_WithRandom_whenMaxSizeExceeded
+	ncc := makeNearCacheConfigWithEviction(nearcache.EvictionPolicyRandom)
+	assertNearCacheInvalidationWhenMaxSizeExceeded(t, ncc)
+}
+
+func TestNearCacheIsRemoved_afterMapDestroy(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheIsRemoved_afterMapDestroy
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		const mapSize = 1000
+		populateMap(tcx, mapSize)
+		populateNearCache(tcx, mapSize)
+		oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
+		require.Equal(t, int64(mapSize), oec)
+		it.Must(m.Destroy(ctx))
+		m = it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
+		oec = m.LocalMapStats().NearCacheStats.OwnedEntryCount
+		require.Equal(t, int64(0), oec)
+	})
+}
+
+func makeNearCacheConfigWithEviction(policy nearcache.EvictionPolicy) nearcache.Config {
+	ec := nearcache.EvictionConfig{}
+	ec.SetEvictionPolicy(policy)
+	ec.SetSize(maxCacheSize)
+	ncc := nearcache.Config{
+		Name:     "*",
+		Eviction: ec,
+	}
+	ncc.SetInvalidateOnChange(true)
+	return ncc
+}
+
+func assertNearCacheInvalidationWhenMaxSizeExceeded(t *testing.T, ncc nearcache.Config) {
+	// see: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#assertNearCacheInvalidation_whenMaxSizeExceeded
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			tcx.Config.AddNearCache(ncc)
+		},
+	}
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		populateMap(tcx, maxCacheSize)
+		populateNearCache(tcx, maxCacheSize)
+		// trigger eviction
+		it.MustValue(m.Put(context.Background(), int32(0), int32(0)))
+		it.Eventually(t, func() bool {
+			oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
+			return oec < maxCacheSize
+		})
+	})
+}
+
+func TestNearCacheContainsKey(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheContainsKey
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		m := tcx.M
+		t := tcx.T
+		ctx := context.Background()
+		key := "key"
+		value := "value"
+		it.MustValue(m.Put(ctx, key, value))
+		v := it.MustValue(m.Get(ctx, key))
+		require.Equal(t, v, value)
+		require.True(t, it.MustBool(m.ContainsKey(ctx, key)))
+	})
+}
+
+func TestNearCacheContainsKey_AfterRemove(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheContainsKey_afterRemove
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		m := tcx.M
+		t := tcx.T
+		ctx := context.Background()
+		key := "key"
+		value := "value"
+		it.MustValue(m.Put(ctx, key, value))
+		v := it.MustValue(m.Get(ctx, key))
+		it.MustValue(m.Remove(ctx, key))
+		require.Equal(t, v, value)
+		require.False(t, it.MustBool(m.ContainsKey(ctx, key)))
+	})
+}
+
+func TestNearCacheContainsKey_whenKeyAbsent(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheContainsKey_whenKeyAbsent
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		ctx := context.Background()
+		require.False(t, it.MustBool(tcx.M.ContainsKey(ctx, "NOT_THERE")))
+	})
+}
+
+func TestNearCacheContainsNullKey(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheContainsNullKey
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		_, err := tcx.M.ContainsKey(context.Background(), nil)
+		require.Error(t, err)
+	})
+
 }
 
 type mapTestCase struct {
@@ -530,10 +841,10 @@ func TestAfterLoadAllWithDefinedKeysNearCacheIsInvalidated(t *testing.T) {
 			tcx.MapName = "test-map"
 			tcx.Tester(func(tcx it.MapTestContext) {
 				t := tcx.T
-				const mapSize = int32(1000)
+				const mapSize = 1000
 				ctx := context.Background()
-				keys := populateMapWithStore(tcx, mapSize)
-				populateNearCacheForMapWIthStore(tcx, mapSize)
+				keys := populateMapWithString(tcx, mapSize)
+				populateNearCacheWithString(tcx, mapSize)
 				if err := tc.f(ctx, tcx, keys); err != nil {
 					t.Fatal(err)
 				}
@@ -656,16 +967,10 @@ func memberInvalidatesClientNearCache(t *testing.T, useTestMap bool, makeScript 
 		t := tcx.T
 		const mapSize = 1000
 		// ignoring returned keys
-		_ = populateMapWithStore(tcx, mapSize)
-		populateNearCacheForMapWIthStore(tcx, mapSize)
-		rc := tcx.Cluster.RC
-		clusterID := tcx.Cluster.ClusterID
+		_ = populateMapWithString(tcx, mapSize)
+		populateNearCacheWithString(tcx, mapSize)
 		script := makeScript(tcx, mapSize)
-		resp, err := rc.ExecuteOnController(context.Background(), clusterID, script, it.Lang_JAVASCRIPT)
-		if err != nil {
-			panic(fmt.Errorf("executing on controller: %w", err))
-		}
-		t.Logf("%v, %v", resp.GetMessage(), resp.GetMessage())
+		tcx.ExecuteScript(context.Background(), script)
 		it.Eventually(t, func() bool {
 			oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
 			t.Logf("OEC: %d", oec)
@@ -764,9 +1069,9 @@ func populateMap(tcx it.MapTestContext, size int32) {
 	}
 }
 
-func populateMapWithStore(tcx it.MapTestContext, size int32) []interface{} {
+func populateMapWithString(tcx it.MapTestContext, size int) []interface{} {
 	keys := []interface{}{}
-	for i := 0; i < int(size); i++ {
+	for i := 0; i < size; i++ {
 		key := strconv.Itoa(i)
 		value := strconv.Itoa(i)
 		if _, err := tcx.M.Put(context.Background(), key, value); err != nil {
@@ -777,8 +1082,8 @@ func populateMapWithStore(tcx it.MapTestContext, size int32) []interface{} {
 	return keys
 }
 
-func populateNearCacheForMapWIthStore(tcx it.MapTestContext, size int32) {
-	for i := 0; i < int(size); i++ {
+func populateNearCacheWithString(tcx it.MapTestContext, size int) {
+	for i := 0; i < size; i++ {
 		key := strconv.Itoa(i)
 		v, err := tcx.M.Get(context.Background(), key)
 		if err != nil {
@@ -793,6 +1098,15 @@ func populateServerMap(tcx it.MapTestContext, size int32) {
 		v := strconv.Itoa(int(i))
 		it.MapSetOnServer(tcx.Cluster.ClusterID, tcx.MapName, v, v)
 	}
+}
+
+func populateServerMapWithString(ctx context.Context, tcx it.MapTestContext, size int) {
+	tcx.ExecuteScript(ctx, fmt.Sprintf(`
+			var serverMap = instance_0.getMap("%s");
+			for (var i = 0; i < %d; i++) {
+				serverMap.put(""+i, ""+i);
+			}
+		`, tcx.MapName, size))
 }
 
 func populateNearCache(tcx it.MapTestContext, size int32) {

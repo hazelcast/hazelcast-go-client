@@ -266,9 +266,10 @@ func (m *Map) AggregateWithPredicate(ctx context.Context, agg aggregate.Aggregat
 
 // Clear deletes all entries one by one and fires related events.
 func (m *Map) Clear(ctx context.Context) error {
-	request := codec.EncodeMapClearRequest(m.name)
-	_, err := m.invokeOnRandomTarget(ctx, request, nil)
-	return err
+	if m.hasNearCache {
+		return m.ncm.Clear(ctx, m)
+	}
+	return m.Clear(ctx)
 }
 
 // ContainsKey returns true if the map contains an entry with the given key.
@@ -411,6 +412,12 @@ func (m *Map) Get(ctx context.Context, key interface{}) (interface{}, error) {
 		return nil, err
 	}
 	return m.getFromRemote(ctx, keyData)
+}
+
+func (m *Map) clearFromRemote(ctx context.Context) error {
+	request := codec.EncodeMapClearRequest(m.name)
+	_, err := m.invokeOnRandomTarget(ctx, request, nil)
+	return err
 }
 
 func (m *Map) containsKeyFromRemote(ctx context.Context, key interface{}) (bool, error) {
