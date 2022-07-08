@@ -952,6 +952,7 @@ func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
 }
 
 func TestMemberLoadAllInvalidatesClientNearCache(t *testing.T) {
+	t.Skipf("this test is currently flaky")
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
 	f := func(tcx it.MapTestContext, size int32) string {
 		mode := "unisocket"
