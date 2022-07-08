@@ -533,6 +533,21 @@ func (m *Map) deleteFromRemote(ctx context.Context, key interface{}) error {
 	return nil
 }
 
+func (m *Map) loadAllFromRemote(ctx context.Context, replaceExisting bool, keys []interface{}) error {
+	var request *proto.ClientMessage
+	if len(keys) == 0 {
+		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
+	} else {
+		keyDatas, err := m.convertToDataList(keys)
+		if err != nil {
+			return err
+		}
+		request = codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
+	}
+	_, err := m.invokeOnRandomTarget(ctx, request, nil)
+	return err
+}
+
 func (m *Map) putWithTTLFromRemote(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
 	lid := extractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
@@ -868,18 +883,12 @@ func (m *Map) IsLocked(ctx context.Context, key interface{}) (bool, error) {
 
 // LoadAllWithoutReplacing loads all keys from the store at server side or loads the given keys if provided.
 func (m *Map) LoadAllWithoutReplacing(ctx context.Context, keys ...interface{}) error {
-	if len(keys) == 0 {
-		return nil
-	}
 	return m.loadAll(ctx, false, keys...)
 }
 
 // LoadAllReplacing loads all keys from the store at server side or loads the given keys if provided.
 // Replaces existing keys.
 func (m *Map) LoadAllReplacing(ctx context.Context, keys ...interface{}) error {
-	if len(keys) == 0 {
-		return nil
-	}
 	return m.loadAll(ctx, true, keys...)
 }
 
@@ -1270,18 +1279,10 @@ func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interfa
 	if len(keys) == 0 {
 		return nil
 	}
-	var request *proto.ClientMessage
-	if len(keys) == 0 {
-		request = codec.EncodeMapLoadAllRequest(m.name, replaceExisting)
-	} else {
-		keyDatas, err := m.convertToDataList(keys)
-		if err != nil {
-			return err
-		}
-		request = codec.EncodeMapLoadGivenKeysRequest(m.name, keyDatas, replaceExisting)
+	if m.hasNearCache {
+		return m.ncm.LoadAll(ctx, m, replaceExisting, keys)
 	}
-	_, err := m.invokeOnRandomTarget(ctx, request, nil)
-	return err
+	return m.loadAllFromRemote(ctx, replaceExisting, keys)
 }
 
 func (m *Map) convertToDataList(keys []interface{}) ([]serialization.Data, error) {

@@ -267,6 +267,23 @@ func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{})
 	return entries[:keyCount], nil
 }
 
+func (ncm *nearCacheMap) LoadAll(ctx context.Context, m *Map, replaceExisting bool, keys []interface{}) error {
+	ncKeys := make([]interface{}, len(keys))
+	for i, k := range keys {
+		nck, err := ncm.toNearCacheKey(k)
+		if err != nil {
+			return err
+		}
+		ncKeys[i] = nck
+	}
+	defer func() {
+		for _, nck := range ncKeys {
+			ncm.nc.Invalidate(nck)
+		}
+	}()
+	return m.loadAllFromRemote(ctx, replaceExisting, keys)
+}
+
 func (ncm *nearCacheMap) Put(ctx context.Context, m *Map, key, value interface{}, ttl int64) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {
