@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -118,14 +118,8 @@ func TestDefaultConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	target := nearcache.Config{
-		Name:     "default",
-		Eviction: nearcache.EvictionConfig{},
-		Preloader: nearcache.PreloaderConfig{
-			Enabled:                  false,
-			Directory:                "",
-			StoreIntervalSeconds:     600,
-			StoreInitialDelaySeconds: 600,
-		},
+		Name:              "default",
+		Eviction:          nearcache.EvictionConfig{},
 		InMemoryFormat:    nearcache.InMemoryFormatBinary,
 		SerializeKeys:     false,
 		TimeToLiveSeconds: math.MaxInt32,
@@ -211,40 +205,12 @@ func TestEvictionConfigInvalid(t *testing.T) {
 	}
 }
 
-func TestPreloaderConfigInvalid(t *testing.T) {
-	testCases := []testCase{
-		{
-			name: "negative store initial delay seconds",
-			cfg: nearcache.Config{
-				Preloader: nearcache.PreloaderConfig{
-					StoreInitialDelaySeconds: -1,
-				},
-			},
-		},
-		{
-			name: "negative store interval seconds",
-			cfg: nearcache.Config{
-				Preloader: nearcache.PreloaderConfig{
-					StoreIntervalSeconds: -1,
-				},
-			},
-		},
-	}
-	for _, tc := range testCases {
-		tc.Run(t)
-	}
-}
-
 func TestConfigInvalidNon32bit(t *testing.T) {
 	it.SkipIf(t, "arch = 386")
 	mi32 := math.MaxInt32 // makes compiler ignore MaxInt32+1 on 32 bit platforms
 	// big eviction size
 	ec := nearcache.EvictionConfig{}
 	ec.SetSize(mi32 + 1)
-	// big store initial delay seconds
-	pc1 := nearcache.PreloaderConfig{StoreInitialDelaySeconds: mi32 + 1}
-	// big store interval seconds
-	pc2 := nearcache.PreloaderConfig{StoreIntervalSeconds: mi32 + 1}
 	testCases := []testCase{
 		{
 			name: "big time to live",
@@ -257,14 +223,6 @@ func TestConfigInvalidNon32bit(t *testing.T) {
 		{
 			name: "big eviction size",
 			cfg:  nearcache.Config{Eviction: ec},
-		},
-		{
-			name: "big store initial delay seconds",
-			cfg:  nearcache.Config{Preloader: pc1},
-		},
-		{
-			name: "big store big store interval seconds seconds",
-			cfg:  nearcache.Config{Preloader: pc2},
 		},
 	}
 	for _, tc := range testCases {

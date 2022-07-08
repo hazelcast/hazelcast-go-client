@@ -39,8 +39,6 @@ type Config struct {
 	Name string
 	// Eviction is the optional eviction configuration for the Near Cache.
 	Eviction EvictionConfig
-	// Preloader is the optional preloader configuration for the Near Cache.
-	Preloader PreloaderConfig
 	// InMemoryFormat specifies how the entry values are stored in the Near Cache.
 	// InMemoryFormatBinary stores the values after serializing them.
 	// InMemoryFormatObject stores the values in their original form.
@@ -73,7 +71,6 @@ func (c Config) Clone() Config {
 		invalidateOnChange: c.invalidateOnChange,
 		Name:               c.Name,
 		Eviction:           c.Eviction.Clone(),
-		Preloader:          c.Preloader.Clone(),
 		InMemoryFormat:     c.InMemoryFormat,
 		SerializeKeys:      c.SerializeKeys,
 		TimeToLiveSeconds:  c.TimeToLiveSeconds,
@@ -93,9 +90,6 @@ func (c *Config) Validate() error {
 		c.MaxIdleSeconds = math.MaxInt32
 	}
 	if err := c.Eviction.Validate(); err != nil {
-		return err
-	}
-	if err := c.Preloader.Validate(); err != nil {
 		return err
 	}
 	if err := check.NonNegativeInt32Config(c.TimeToLiveSeconds); err != nil {
@@ -212,43 +206,4 @@ func (c *EvictionConfig) SetComparator(cmp EvictionPolicyComparator) {
 // Comparator returns the eviction policy comparator.
 func (c EvictionConfig) Comparator() EvictionPolicyComparator {
 	return c.comparator
-}
-
-// PreloaderConfig is the configuration for storing and pre-loading Near Cache keys.
-// Preloader re-populates Near Cache after client restart to provide fast access.
-// Saved preloader data is compatible between only the same versions of the Go client.
-// It is disabled by default.
-type PreloaderConfig struct {
-	// Directory is the directory to store preloader cache.
-	Directory string
-	// StoreInitialDelaySeconds is the time in seconds before the preloader starts saving the cache.
-	// Must be positive.
-	// By default it is 600 seconds.
-	StoreInitialDelaySeconds int
-	// StoreIntervalSeconds is the interval in seconds for persisting the cache.
-	// Must be positive.
-	// By default it is 600 seconds.
-	StoreIntervalSeconds int
-	// Enabled enables the preloader.
-	Enabled bool
-}
-
-func (c PreloaderConfig) Clone() PreloaderConfig {
-	return c
-}
-
-func (c *PreloaderConfig) Validate() error {
-	if c.StoreInitialDelaySeconds == 0 {
-		c.StoreInitialDelaySeconds = defaultStoreInitialDelaySeconds
-	}
-	if c.StoreIntervalSeconds == 0 {
-		c.StoreIntervalSeconds = defaultStoreIntervalSeconds
-	}
-	if _, err := check.NonNegativeInt32(c.StoreInitialDelaySeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Preloader.StoreInitialDelaySeconds must be positive", nil)
-	}
-	if _, err := check.NonNegativeInt32(c.StoreIntervalSeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Preloader.StoreIntervalSeconds must be positive", nil)
-	}
-	return nil
 }

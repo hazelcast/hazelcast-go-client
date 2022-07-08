@@ -69,11 +69,6 @@ func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serializ
 			lg.Errorf("hazelcast.newNearCacheMap: registering invalidation handler: %w", err)
 		}
 	}
-	if ncc.Preloader.Enabled {
-		if err := ncm.preload(); err != nil {
-			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
-		}
-	}
 	// toNearCacheKey returns the raw key if SerializeKeys is not true.
 	if ncc.SerializeKeys {
 		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
@@ -137,10 +132,6 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 	}
 	ncm.invalidationListenerID.Store(sid)
 	return nil
-}
-
-func (ncm *nearCacheMap) preload() error {
-	panic("implement me!")
 }
 
 func (ncm *nearCacheMap) ContainsKey(ctx context.Context, key interface{}, m *Map) (found bool, err error) {

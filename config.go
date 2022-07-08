@@ -42,18 +42,18 @@ const (
 // Config contains configuration for a client.
 // Zero value of Config is the default configuration.
 type Config struct {
-	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
-	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	NearCaches          map[string]nearcache.Config       `json:",omitempty"`
-	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
-	Labels              []string                          `json:",omitempty"`
-	ClientName          string                            `json:",omitempty"`
-	Logger              logger.Config                     `json:",omitempty"`
-	Failover            cluster.FailoverConfig            `json:",omitempty"`
-	Serialization       serialization.Config              `json:",omitempty"`
-	Cluster             cluster.Config                    `json:",omitempty"`
-	Stats               StatsConfig                       `json:",omitempty"`
-	Invalidation        InvalidationConfig                `json:",omitempty"`
+	lifecycleListeners    map[types.UUID]LifecycleStateChangeHandler
+	membershipListeners   map[types.UUID]cluster.MembershipStateChangeHandler
+	NearCaches            map[string]nearcache.Config       `json:",omitempty"`
+	FlakeIDGenerators     map[string]FlakeIDGeneratorConfig `json:",omitempty"`
+	Labels                []string                          `json:",omitempty"`
+	ClientName            string                            `json:",omitempty"`
+	Logger                logger.Config                     `json:",omitempty"`
+	Failover              cluster.FailoverConfig            `json:",omitempty"`
+	Serialization         serialization.Config              `json:",omitempty"`
+	Cluster               cluster.Config                    `json:",omitempty"`
+	Stats                 StatsConfig                       `json:",omitempty"`
+	NearCacheInvalidation NearCacheInvalidationConfig       `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.
@@ -122,16 +122,16 @@ func (c *Config) Clone() Config {
 	}
 	nccs := c.copyNearCacheConfig()
 	return Config{
-		ClientName:        c.ClientName,
-		Labels:            newLabels,
-		FlakeIDGenerators: newFlakeIDConfigs,
-		NearCaches:        nccs,
-		Cluster:           c.Cluster.Clone(),
-		Failover:          c.Failover.Clone(),
-		Serialization:     c.Serialization.Clone(),
-		Logger:            c.Logger.Clone(),
-		Stats:             c.Stats.clone(),
-		Invalidation:      c.Invalidation.Clone(),
+		ClientName:            c.ClientName,
+		Labels:                newLabels,
+		FlakeIDGenerators:     newFlakeIDConfigs,
+		NearCaches:            nccs,
+		Cluster:               c.Cluster.Clone(),
+		Failover:              c.Failover.Clone(),
+		Serialization:         c.Serialization.Clone(),
+		Logger:                c.Logger.Clone(),
+		Stats:                 c.Stats.clone(),
+		NearCacheInvalidation: c.NearCacheInvalidation.Clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -156,7 +156,7 @@ func (c *Config) Validate() error {
 	if err := c.Stats.Validate(); err != nil {
 		return err
 	}
-	if err := c.Invalidation.Validate(); err != nil {
+	if err := c.NearCacheInvalidation.Validate(); err != nil {
 		return err
 	}
 	c.ensureFlakeIDGenerators()
@@ -283,7 +283,7 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 	return nil
 }
 
-type InvalidationConfig struct {
+type NearCacheInvalidationConfig struct {
 	maxToleratedMissCount *int
 	// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
 	// Configuring a value of zero seconds disables the reconciliation task.
@@ -291,22 +291,22 @@ type InvalidationConfig struct {
 	err                           error
 }
 
-func (pc InvalidationConfig) Clone() InvalidationConfig {
-	return InvalidationConfig{
+func (pc NearCacheInvalidationConfig) Clone() NearCacheInvalidationConfig {
+	return NearCacheInvalidationConfig{
 		maxToleratedMissCount:         pc.maxToleratedMissCount,
 		reconciliationIntervalSeconds: pc.reconciliationIntervalSeconds,
 		err:                           pc.err,
 	}
 }
 
-func (pc InvalidationConfig) Validate() error {
+func (pc NearCacheInvalidationConfig) Validate() error {
 	if pc.err != nil {
-		return fmt.Errorf("hazelcast.Invalidation: %w", pc.err)
+		return fmt.Errorf("hazelcast.NearCacheInvalidation: %w", pc.err)
 	}
 	return nil
 }
 
-func (pc *InvalidationConfig) SetMaxToleratedMissCount(count int) {
+func (pc *NearCacheInvalidationConfig) SetMaxToleratedMissCount(count int) {
 	if err := check.NonNegativeInt32Config(count); err != nil {
 		pc.err = fmt.Errorf("MaxToleratedMissCount: %w", err)
 		return
@@ -314,14 +314,14 @@ func (pc *InvalidationConfig) SetMaxToleratedMissCount(count int) {
 	pc.maxToleratedMissCount = &count
 }
 
-func (pc InvalidationConfig) MaxToleratedMissCount() int {
+func (pc NearCacheInvalidationConfig) MaxToleratedMissCount() int {
 	if pc.maxToleratedMissCount == nil {
 		return defaultMaxToleratedMissCount
 	}
 	return *pc.maxToleratedMissCount
 }
 
-func (pc *InvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
+func (pc *NearCacheInvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	if err := check.NonNegativeInt32Config(seconds); err != nil {
 		pc.err = fmt.Errorf("invalid configuration: ReconciliationIntervalSeconds: %w", err)
 		return
@@ -333,7 +333,7 @@ func (pc *InvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	pc.reconciliationIntervalSeconds = &seconds
 }
 
-func (pc *InvalidationConfig) ReconciliationIntervalSeconds() int {
+func (pc *NearCacheInvalidationConfig) ReconciliationIntervalSeconds() int {
 	if pc.reconciliationIntervalSeconds == nil {
 		return defaultReconciliationIntervalSeconds
 	}

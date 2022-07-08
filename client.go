@@ -432,8 +432,8 @@ func (c *Client) getNearCacheManager(service string) *inearcache.Manager {
 	c.nearCacheMgrsMu.Lock()
 	mgr, ok = c.nearCacheMgrs[service]
 	if !ok {
-		ris := c.cfg.Invalidation.ReconciliationIntervalSeconds()
-		mis := c.cfg.Invalidation.MaxToleratedMissCount()
+		ris := c.cfg.NearCacheInvalidation.ReconciliationIntervalSeconds()
+		mis := c.cfg.NearCacheInvalidation.MaxToleratedMissCount()
 		mgr = inearcache.NewManager(c.ic, ris, mis)
 		c.nearCacheMgrs[service] = mgr
 	}
