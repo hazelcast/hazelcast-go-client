@@ -599,10 +599,14 @@ func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
 func TestMemberLoadAllInvalidatesClientNearCache(t *testing.T) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
 	f := func(tcx it.MapTestContext, size int32) string {
-		return `
-			var map = instance_0.getMap("test-map");
+		mode := "unisocket"
+		if tcx.Smart {
+			mode = "smart"
+		}
+		return fmt.Sprintf(`
+			var map = instance_0.getMap("test-map-%s");
         	map.loadAll(true);
-		`
+		`, mode)
 	}
 	memberInvalidatesClientNearCache(t, true, f)
 }
@@ -617,6 +621,21 @@ func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
 			}
 			var map = instance_0.getMap("%[2]s");
         	map.putAll(items);
+		`, size, tcx.MapName)
+	}
+	memberInvalidatesClientNearCache(t, false, f)
+}
+
+func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
+	// see: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberSetAll_invalidates_clientNearCache
+	f := func(tcx it.MapTestContext, size int32) string {
+		return fmt.Sprintf(`
+			var items = new java.util.HashMap(%[1]d);
+			for (var i = 0; i < %[1]d; i++) {
+		       items.put(""+i, ""+i);
+			}
+			var map = instance_0.getMap("%[2]s");
+        	map.setAll(items);
 		`, size, tcx.MapName)
 	}
 	memberInvalidatesClientNearCache(t, false, f)
