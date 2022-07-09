@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package it
+package skip_test
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/skip"
 )
 
 type skipTestCase struct {
@@ -31,60 +33,61 @@ type skipTestCase struct {
 }
 
 func TestSkipIf(t *testing.T) {
-	skipChecker := SkipChecker{
-		hzVer:      "5.1-SNAPSHOT",
-		ver:        "1.2.1",
-		os:         "windows",
-		arch:       "386",
-		enterprise: true,
-		race:       true,
-		ssl:        true,
+	skipChecker := skip.Checker{
+		HzVer:      "5.1-SNAPSHOT",
+		Ver:        "1.2.1",
+		OS:         "windows",
+		Arch:       "386",
+		Enterprise: true,
+		Race:       true,
+		SSL:        true,
+		Slow:       true,
 	}
 	testCases := []skipTestCase{
 		// Check parsing
 		panics("version < 1.0.0"),
 		panics("os windows"),
 		panics("enterprise = os"),
-		panics("enterprise = os, , ver > 0"),
-		panics("enterprise = os,, ver > 0"),
+		panics("enterprise = os, , Ver > 0"),
+		panics("enterprise = os,, Ver > 0"),
 		// Check OS based on non-existing OS
 		skips("os != non-existent"),
 		noSkip("os = non-existent"),
 		// Check client version
-		skips("ver > 0"),
-		skips("ver > 1"),
-		skips("ver > 1.1"),
-		skips("ver > 1.1.0"),
-		skips("ver > 1.1.1"),
-		skips("ver > 1.2.0"),
-		skips("ver > 1.2"),
-		skips("ver >= 1.2.0"),
-		skips("ver >= 1.2.1"),
-		skips("ver >= 1.2"),
-		noSkip("ver = 1.2.0"),
-		skips("ver = 1.2.1"),
-		noSkip("ver = 1.2"),
-		noSkip("ver <= 1.2.0"),
-		skips("ver <= 1.2.1"),
-		noSkip("ver <= 1.2"),
-		noSkip("ver < 1.2.0"),
-		noSkip("ver < 1.2.1"),
-		noSkip("ver < 1.2"),
-		skips("ver < 1.2.2"),
-		skips("ver < 1.3"),
-		skips("ver < 2"),
-		skips("ver != 1.2.0"),
-		noSkip("ver != 1.2.1"),
-		skips("ver != 1.2"),
-		skips("ver != 1"),
-		skips("ver != 1.3"),
-		skips("ver != 2"),
-		skips("ver ~ 1"),
-		skips("ver ~ 1.2"),
-		skips("ver ~ 1.2.1"),
-		noSkip("ver ~ 2"),
-		noSkip("ver ~ 1.3"),
-		noSkip("ver ~ 1.2.2"),
+		skips("Ver > 0"),
+		skips("Ver > 1"),
+		skips("Ver > 1.1"),
+		skips("Ver > 1.1.0"),
+		skips("Ver > 1.1.1"),
+		skips("Ver > 1.2.0"),
+		skips("Ver > 1.2"),
+		skips("Ver >= 1.2.0"),
+		skips("Ver >= 1.2.1"),
+		skips("Ver >= 1.2"),
+		noSkip("Ver = 1.2.0"),
+		skips("Ver = 1.2.1"),
+		noSkip("Ver = 1.2"),
+		noSkip("Ver <= 1.2.0"),
+		skips("Ver <= 1.2.1"),
+		noSkip("Ver <= 1.2"),
+		noSkip("Ver < 1.2.0"),
+		noSkip("Ver < 1.2.1"),
+		noSkip("Ver < 1.2"),
+		skips("Ver < 1.2.2"),
+		skips("Ver < 1.3"),
+		skips("Ver < 2"),
+		skips("Ver != 1.2.0"),
+		noSkip("Ver != 1.2.1"),
+		skips("Ver != 1.2"),
+		skips("Ver != 1"),
+		skips("Ver != 1.3"),
+		skips("Ver != 2"),
+		skips("Ver ~ 1"),
+		skips("Ver ~ 1.2"),
+		skips("Ver ~ 1.2.1"),
+		noSkip("Ver ~ 2"),
+		noSkip("Ver ~ 1.3"),
+		noSkip("Ver ~ 1.2.2"),
 		// Check Hazelcast version
 		skips("hz > 0"),
 		skips("hz > 1"),
@@ -147,9 +150,12 @@ func TestSkipIf(t *testing.T) {
 		// check SSL
 		skips("ssl"),
 		noSkip("!ssl"),
+		// check slow
+		skips("slow"),
+		noSkip("!slow"),
 		// Multiple conditions
-		skips("hz > 5.0, hz < 5.1.0, ver = 1.2.1, enterprise, !oss, os = windows, os != darwin, arch = 386, arch != amd64"),
-		noSkip("hz > 5.0, ver != 1.2.1"),
+		skips("hz > 5.0, hz < 5.1.0, Ver = 1.2.1, enterprise, !oss, os = windows, os != darwin, arch = 386, arch != amd64"),
+		noSkip("hz > 5.0, Ver != 1.2.1"),
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
