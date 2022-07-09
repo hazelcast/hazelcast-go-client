@@ -196,20 +196,16 @@ type Checker struct {
 // defaultSkipChecker creates and returns the default skip checker.
 func defaultSkipChecker() Checker {
 	_, enterprise := os.LookupEnv(enterpriseKey)
-	raceValue := os.Getenv(raceKey)
-	sslValue := os.Getenv(sslKey)
-	slowValue := os.Getenv(slowKey)
-	flakyValue := os.Getenv(flakyKey)
 	return Checker{
 		HzVer:      hzVersion(),
 		Ver:        internal.ClientVersion,
 		OS:         runtime.GOOS,
 		Arch:       runtime.GOARCH,
 		Enterprise: enterprise,
-		Race:       raceValue == "1",
-		SSL:        sslValue == "1",
-		Slow:       slowValue == "1",
-		Flaky:      flakyValue == "1",
+		Race:       isConditionEnabled(raceKey),
+		SSL:        isConditionEnabled(sslKey),
+		Slow:       isConditionEnabled(slowKey),
+		Flaky:      isConditionEnabled(flakyKey),
 	}
 }
 
@@ -499,4 +495,8 @@ func hzVersion() string {
 		version = "5.2"
 	}
 	return version
+}
+
+func isConditionEnabled(envKey string) bool {
+	return os.Getenv(envKey) == "1"
 }
