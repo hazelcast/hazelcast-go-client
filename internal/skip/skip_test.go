@@ -139,6 +139,7 @@ func TestSkipIf(t *testing.T) {
 		noSkip("arch = amd64"),
 		skips("arch != amd64"),
 		noSkip("arch != 386"),
+		skips("arch ~ 32bit"),
 		// check Enterprise
 		skips("enterprise"),
 		noSkip("!enterprise"),

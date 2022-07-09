@@ -244,7 +244,25 @@ func (s Checker) checkOS(op, right string) bool {
 // op is the comparison operator.
 // right is the given operating system architecture.
 // Consult runtime.GOARCH for the valid operating system architectures.
+// As a special case, "arch ~ 32bit" condition is supported.
+// That condition returns true for arch == 386, amd64p32, arm, armbe, mips, mips64p32, mips64p32le, mipsle, ppc, riscv, s390, sparc
 func (s Checker) checkArch(op, right string) bool {
+	b32 := [...]string{
+		"386", "amd64p32", "arm", "armbe", "mips",
+		"mips64p32", "mips64p32le", "mipsle", "ppc",
+		"riscv", "s390", "sparc",
+	}
+	if op == "~" {
+		if right != "32bit" {
+			panic("32bit is the only valid value for arch ~ operator")
+		}
+		for _, a := range b32 {
+			if s.Arch == a {
+				return true
+			}
+		}
+		return false
+	}
 	return checkEquality(s.Arch, op, right, skipArch)
 }
 

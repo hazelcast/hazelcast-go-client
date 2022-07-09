@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
+	"github.com/hazelcast/hazelcast-go-client/internal/skip"
 )
 
 func TestQueue_Add(t *testing.T) {
@@ -180,9 +180,7 @@ func TestQueue_DrainWithMaxSize(t *testing.T) {
 }
 
 func TestQueue_DrainWithMaxSize_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	it.QueueTester(t, func(t *testing.T, q *hz.Queue) {
 		_, err := q.DrainWithMaxSize(context.Background(), -1)
 		assert.Error(t, err)
