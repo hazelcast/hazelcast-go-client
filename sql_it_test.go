@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/skip"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -599,8 +600,8 @@ func TestSQLService_ExecuteStatementMismatchedParams(t *testing.T) {
 
 func TestSQLService_ExecuteProvidedSuggestion(t *testing.T) {
 	// todo this is a flaky test possibly due to member behaviour, will be refactored.
-	t.SkipNow()
-	it.SkipIf(t, "hz < 5.0")
+	it.MarkFlaky(t)
+	skip.If(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		ctx := context.Background()
 		// for create-mapping suggestion, map must have a value

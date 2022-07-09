@@ -42,6 +42,7 @@ func TestSkipIf(t *testing.T) {
 		Race:       true,
 		SSL:        true,
 		Slow:       true,
+		Flaky:      true,
 	}
 	testCases := []skipTestCase{
 		// Check parsing
@@ -153,6 +154,9 @@ func TestSkipIf(t *testing.T) {
 		// check slow
 		skips("slow"),
 		noSkip("!slow"),
+		// check flaky
+		skips("flaky"),
+		noSkip("!flaky"),
 		// Multiple conditions
 		skips("hz > 5.0, hz < 5.1.0, Ver = 1.2.1, enterprise, !oss, os = windows, os != darwin, arch = 386, arch != amd64"),
 		noSkip("hz > 5.0, Ver != 1.2.1"),

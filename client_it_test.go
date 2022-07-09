@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -234,8 +234,7 @@ func TestClientEventHandlingOrder(t *testing.T) {
 }
 
 func TestClientHeartbeat(t *testing.T) {
-	// Slow test.
-	t.SkipNow()
+	it.MarkSlow(t)
 	it.MapTesterWithConfig(t, func(config *hz.Config) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
@@ -706,7 +705,7 @@ func TestInvocationTimeout(t *testing.T) {
 
 func TestClientStartShutdownMemoryLeak(t *testing.T) {
 	// TODO make sure there is no leak, and find an upper memory limit for this
-	t.SkipNow()
+	it.MarkFlaky(t)
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
 		defer tc.Shutdown()

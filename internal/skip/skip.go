@@ -42,10 +42,13 @@ const (
 	skipNotSSL        = "!ssl"
 	skipSlow          = "slow"
 	skipNotSlow       = "!slow"
+	skipFlaky         = "flaky"
+	skipNotFlaky      = "!flaky"
 	enterpriseKey     = "HAZELCAST_ENTERPRISE_KEY"
 	raceKey           = "RACE_ENABLED"
 	sslKey            = "ENABLE_SSL"
 	slowKey           = "SLOW_ENABLED"
+	flakyKey          = "FLAKY_ENABLED"
 )
 
 var skipChecker = defaultSkipChecker()
@@ -154,6 +157,7 @@ KEY is one of the following keys:
 	race: existence of RACE_ENABLED environment variable with value "1"
 	ssl: existence of ENABLE_SSL environment variable with value "1"
 	slow: existence of SLOW_ENABLED environment variable with value "1"
+	flaky: existence of FLAKY_ENABLED environment variable with value "1"
 
 ! operator negates the value of the key.
 
@@ -186,6 +190,7 @@ type Checker struct {
 	Race       bool
 	SSL        bool
 	Slow       bool
+	Flaky      bool
 }
 
 // defaultSkipChecker creates and returns the default skip checker.
@@ -194,6 +199,7 @@ func defaultSkipChecker() Checker {
 	raceValue := os.Getenv(raceKey)
 	sslValue := os.Getenv(sslKey)
 	slowValue := os.Getenv(slowKey)
+	flakyValue := os.Getenv(flakyKey)
 	return Checker{
 		HzVer:      hzVersion(),
 		Ver:        internal.ClientVersion,
@@ -203,6 +209,7 @@ func defaultSkipChecker() Checker {
 		Race:       raceValue == "1",
 		SSL:        sslValue == "1",
 		Slow:       slowValue == "1",
+		Flaky:      flakyValue == "1",
 	}
 }
 
@@ -268,6 +275,11 @@ func (s Checker) isSlow() bool {
 	return s.Slow
 }
 
+// isFlaky returns true if FLAKY_ENABLED environment variable has the value "1".
+func (s Checker) isFlaky() bool {
+	return s.Flaky
+}
+
 // CanSkip skips returns true if all the given conditions evaluate to true.
 // Separate conditions with commas (,).
 func (s Checker) CanSkip(condStr string) bool {
@@ -326,6 +338,12 @@ func (s Checker) checkCondition(cond string) bool {
 	case skipNotSlow:
 		ensureLen(parts, 1, cond, "!slow")
 		return !s.isSlow()
+	case skipFlaky:
+		ensureLen(parts, 1, cond, "flaky")
+		return s.isFlaky()
+	case skipNotFlaky:
+		ensureLen(parts, 1, cond, "!flaky")
+		return !s.isFlaky()
 	default:
 		panic(fmt.Errorf(`unexpected test skip constant "%s" in %s`, parts[0], cond))
 	}

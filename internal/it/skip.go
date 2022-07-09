@@ -29,3 +29,17 @@ Deprecated: Use skip.If instead.
 func SkipIf(t *testing.T, conditions string) {
 	skip.If(t, conditions)
 }
+
+// MarkSlow marks a test "slow", so it is run only when slow tests are enabled.
+func MarkSlow(t *testing.T) {
+	skip.If(t, "!slow")
+}
+
+// MarkFlaky marks a test "flaky", so it is run only when flaky tests are enabled.
+func MarkFlaky(t *testing.T, see ...string) {
+	t.Logf("Note: %s is a known flaky test, it will run only when enabled.", t.Name())
+	for _, s := range see {
+		t.Logf("See: %s", s)
+	}
+	skip.If(t, "!flaky")
+}
