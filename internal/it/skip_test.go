@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,12 @@ type skipTestCase struct {
 func TestSkipIf(t *testing.T) {
 	skipChecker := SkipChecker{
 		hzVer:      "5.1-SNAPSHOT",
-		ver:        "1.2.0",
+		ver:        "1.2.1",
 		os:         "windows",
 		arch:       "386",
 		enterprise: true,
+		race:       true,
+		ssl:        true,
 	}
 	testCases := []skipTestCase{
 		// Check parsing
@@ -54,27 +56,39 @@ func TestSkipIf(t *testing.T) {
 		skips("ver > 1.1"),
 		skips("ver > 1.1.0"),
 		skips("ver > 1.1.1"),
-		noSkip("ver > 1.2.0"),
-		noSkip("ver > 1.2"),
+		skips("ver > 1.2.0"),
+		skips("ver > 1.2"),
 		skips("ver >= 1.2.0"),
+		skips("ver >= 1.2.1"),
 		skips("ver >= 1.2"),
-		skips("ver = 1.2.0"),
-		skips("ver = 1.2"),
-		skips("ver <= 1.2.0"),
-		skips("ver <= 1.2"),
+		noSkip("ver = 1.2.0"),
+		skips("ver = 1.2.1"),
+		noSkip("ver = 1.2"),
+		noSkip("ver <= 1.2.0"),
+		skips("ver <= 1.2.1"),
+		noSkip("ver <= 1.2"),
 		noSkip("ver < 1.2.0"),
+		noSkip("ver < 1.2.1"),
 		noSkip("ver < 1.2"),
-		skips("ver < 1.2.1"),
+		skips("ver < 1.2.2"),
 		skips("ver < 1.3"),
 		skips("ver < 2"),
-		noSkip("ver != 1.2.0"),
-		noSkip("ver != 1.2"),
+		skips("ver != 1.2.0"),
+		noSkip("ver != 1.2.1"),
+		skips("ver != 1.2"),
 		skips("ver != 1"),
 		skips("ver != 1.3"),
 		skips("ver != 2"),
+		skips("ver ~ 1"),
+		skips("ver ~ 1.2"),
+		skips("ver ~ 1.2.1"),
+		noSkip("ver ~ 2"),
+		noSkip("ver ~ 1.3"),
+		noSkip("ver ~ 1.2.2"),
 		// Check Hazelcast version
 		skips("hz > 0"),
 		skips("hz > 1"),
+		skips("hz > 4"),
 		skips("hz > 5"),
 		skips("hz > 5.0"),
 		skips("hz > 5.0.0"),
@@ -89,6 +103,8 @@ func TestSkipIf(t *testing.T) {
 		skips("hz = 5.1.0-SNAPSHOT"),
 		skips("hz = 5.1.0-preview.1"),
 		skips("hz = 5.1-SNAPSHOT"),
+		noSkip("hz = 5.1"),
+		noSkip("hz = 5"),
 		skips("hz <= 5.1.0"),
 		skips("hz <= 5.1"),
 		skips("hz <= 5.1-SNAPSHOT"),
@@ -101,6 +117,14 @@ func TestSkipIf(t *testing.T) {
 		skips("hz != 1"),
 		skips("hz != 1.3"),
 		skips("hz != 2"),
+		skips("hz ~ 5"),
+		skips("hz ~ 5.1"),
+		skips("hz ~ 5.1.0"),
+		skips("hz ~ 5.1.0-SNAPSHOT"),
+		skips("hz ~ 5.1.0-preview.2"),
+		noSkip("hz ~ 6"),
+		noSkip("hz ~ 5.2"),
+		noSkip("hz ~ 5.1.2"),
 		// check OS
 		skips("os = windows"),
 		noSkip("os = linux"),
@@ -117,9 +141,15 @@ func TestSkipIf(t *testing.T) {
 		// check OSSs
 		skips("!oss"),
 		noSkip("oss"),
+		// check race
+		skips("race"),
+		noSkip("!race"),
+		// check SSL
+		skips("ssl"),
+		noSkip("!ssl"),
 		// Multiple conditions
-		skips("hz > 5.0, hz < 5.1.0, ver = 1.2, enterprise, !oss, os = windows, os != darwin, arch = 386, arch != amd64"),
-		noSkip("hz > 5.0, ver != 1.2"),
+		skips("hz > 5.0, hz < 5.1.0, ver = 1.2.1, enterprise, !oss, os = windows, os != darwin, arch = 386, arch != amd64"),
+		noSkip("hz > 5.0, ver != 1.2.1"),
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

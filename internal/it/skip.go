@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,13 @@ const (
 	skipNotEnterprise = "!enterprise"
 	skipOSS           = "oss"
 	skipNotOSS        = "!oss"
+	skipRace          = "race"
+	skipNotRace       = "!race"
+	skipSSL           = "ssl"
+	skipNotSSL        = "!ssl"
 	enterpriseKey     = "HAZELCAST_ENTERPRISE_KEY"
+	raceKey           = "RACE_ENABLED"
+	sslKey            = "ENABLE_SSL"
 )
 
 var skipChecker = defaultSkipChecker()
@@ -56,11 +62,11 @@ KEY is one of the following keys:
 	hz: Hazelcast version
 	ver: Go Client version
 	os: Operating system name, taken from runtime.GOOS
-	arch: Operating system name, taken from runtime.GOARCH
+	arch: Operating system architecture, taken from runtime.GOARCH
 
 hz and ver keys support the following operators:
 
-	<, <=, =, !=, >=, >
+	<, <=, =, !=, >=, >, ~=
 
 os and arch key support the following operators:
 
@@ -70,8 +76,65 @@ VERSION has the following format:
 
 	Major[.Minor[.Patch[...]]][-SUFFIX]
 
-If minor, patch, etc. are not given, they are assumed to be 0.
+Tilde (~) operator uses the version in the right operand to set the precision, that is the number of version components to compare.
+If the precision of the left operand is less than the right, then the missing version components on the left operand is set to zero.
+Suffixes are not used in the comparison.
+
+The following conditions are evaluated to true:
+
+	(assuming hz == 5.1.2)
+	hz ~ 5
+	hz ~ 5.1
+	hz ~ 5.1.2
+	hz ~ 5.1.2-SNAPSHOT
+
+	(assuming hz == 5.1-SNAPSHOT)
+	hz ~ 5
+	hz ~ 5.1
+	hz ~ 5.1.0
+	hz ~ 5.1.0-SNAPSHOT
+
+The following conditions are evaluated to false:
+
+	(assuming hz == 5.1.2)
+	hz ~ 6
+	hz ~ 5.2
+	hz ~ 5.1.3
+	hz ~ 5.1.3-SNAPSHOT
+
+	(assuming hz == 5.1-SNAPSHOT)
+	hz ~ 6
+	hz ~ 5.2
+	hz ~ 5.1.1
+
+For other comparison operators, if minor, patch, etc. are not given, they are assumed to be 0.
 A version with a suffix is less than a version without suffix, if their Major, Minor, Patch, ... are the same.
+
+The following conditions are evaluated to true:
+
+	(assuming hz == 5.1.2)
+	hz > 5
+	hz > 5.1
+	hz = 5.1.2
+	hz < 5.1.2-SNAPSHOT
+
+	(assuming hz == 5.1-SNAPSHOT)
+	hz > 5
+	hz < 5.1
+	hz < 5.1.0
+	hz = 5.1.0-SNAPSHOT
+
+The following conditions are evaluated to false:
+
+	(assuming hz == 5.1.2)
+	hz = 5
+	hz = 5.1
+	hz > 5.1.2
+
+	(assuming hz == 5.1-SNAPSHOT)
+	hz = 5
+	hz = 5.1
+	hz = 5.1.0
 
 Boolean conditions
 
@@ -85,6 +148,8 @@ KEY is one of the following keys:
 				(existence of HAZELCAST_ENTERPRISE_KEY environment variable)
 	oss: Whether the Hazelcast cluster is open source
 		 (non-existence of HAZELCAST_ENTERPRISE_KEY environment variable)
+	race: existence of RACE_ENABLED environment variable with value "1"
+	ssl: existence of ENABLE_SSL environment variable with value "1"
 
 ! operator negates the value of the key.
 
@@ -114,17 +179,23 @@ type SkipChecker struct {
 	os         string
 	arch       string
 	enterprise bool
+	race       bool
+	ssl        bool
 }
 
 // defaultSkipChecker creates and returns the default skip checker.
 func defaultSkipChecker() SkipChecker {
 	_, enterprise := os.LookupEnv(enterpriseKey)
+	raceValue := os.Getenv(raceKey)
+	sslValue := os.Getenv(sslKey)
 	return SkipChecker{
 		hzVer:      HzVersion(),
 		ver:        internal.ClientVersion,
 		os:         runtime.GOOS,
 		arch:       runtime.GOARCH,
 		enterprise: enterprise,
+		race:       raceValue == "1",
+		ssl:        sslValue == "1",
 	}
 }
 
@@ -175,6 +246,16 @@ func (s SkipChecker) isOSS() bool {
 	return !s.enterprise
 }
 
+// isRace returns true if RACE_ENABLED environment variable has the value "1".
+func (s SkipChecker) isRace() bool {
+	return s.race
+}
+
+// isSSL returns true if SSL_ENABLED environment variable has the value "1".
+func (s SkipChecker) isSSL() bool {
+	return s.ssl
+}
+
 // CanSkip skips returns true if all the given conditions evaluate to true.
 // Separate conditions with commas (,).
 func (s SkipChecker) CanSkip(condStr string) bool {
@@ -215,6 +296,18 @@ func (s SkipChecker) checkCondition(cond string) bool {
 	case skipNotOSS:
 		ensureLen(parts, 1, cond, "!oss")
 		return !s.isOSS()
+	case skipRace:
+		ensureLen(parts, 1, cond, "race")
+		return s.isRace()
+	case skipNotRace:
+		ensureLen(parts, 1, cond, "!race")
+		return !s.isRace()
+	case skipSSL:
+		ensureLen(parts, 1, cond, "ssl")
+		return s.isSSL()
+	case skipNotSSL:
+		ensureLen(parts, 1, cond, "!ssl")
+		return !s.isSSL()
 	default:
 		panic(fmt.Errorf(`unexpected test skip constant "%s" in %s`, parts[0], cond))
 	}
@@ -227,20 +320,21 @@ func ensureLen(parts []string, expected int, condition, example string) {
 }
 
 func checkVersion(left, operator, right string) bool {
-	cmp := compareVersions(left, right)
 	switch operator {
 	case "=":
-		return cmp == 0
+		return compareVersions(left, right) == 0
 	case "!=":
-		return cmp != 0
+		return compareVersions(left, right) != 0
 	case ">":
-		return cmp > 0
+		return compareVersions(left, right) > 0
 	case ">=":
-		return cmp >= 0
+		return compareVersions(left, right) >= 0
 	case "<":
-		return cmp < 0
+		return compareVersions(left, right) < 0
 	case "<=":
-		return cmp <= 0
+		return compareVersions(left, right) <= 0
+	case "~":
+		return looselyEqual(left, right)
 	default:
 		panic(fmt.Errorf(`unexpected test skip operator "%s" to compare versions`, operator))
 	}
@@ -250,9 +344,7 @@ func compareVersions(left, right string) int {
 	var leftHasSuffix, rightHasSuffix bool
 	leftHasSuffix, left = stripSuffix(left)
 	rightHasSuffix, right = stripSuffix(right)
-	// versionNumbers describe the numbers of the present version
 	leftNums := strings.Split(left, ".")
-	// checkNumbers describe the numbers received to test for
 	rightNums := strings.Split(right, ".")
 	// make rightNums and leftNums the same length by filling the shorter one with zeros.
 	if len(rightNums) < len(leftNums) {
@@ -282,6 +374,27 @@ func compareVersions(left, right string) int {
 		return 1
 	}
 	return 0
+}
+
+// looselyEqual uses right version for the precision
+func looselyEqual(left, right string) bool {
+	_, left = stripSuffix(left)
+	_, right = stripSuffix(right)
+	leftNums := strings.Split(left, ".")
+	rightNums := strings.Split(right, ".")
+	minNums := len(rightNums)
+	if len(leftNums) < minNums {
+		// fill left num with zeros
+		leftNums = equalizeVersions(leftNums, rightNums)
+	}
+	for i := 0; i < minNums; i++ {
+		r := mustAtoi(rightNums[i])
+		l := mustAtoi(leftNums[i])
+		if r != l {
+			return false
+		}
+	}
+	return true
 }
 
 // stripSuffix checks and removes suffix, e.g., "-beta1" from the version.
