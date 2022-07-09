@@ -420,7 +420,10 @@ func getLoggerLevel() logger.Level {
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {
-	config.Logger.Level = getLoggerLevel()
+	lv := getLoggerLevel()
+	if lv == logger.TraceLevel {
+		config.Logger.Level = lv
+	}
 	client, err := hz.StartNewClientWithConfig(context.Background(), *config)
 	if err != nil {
 		panic(err)

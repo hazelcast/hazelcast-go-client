@@ -43,7 +43,7 @@ const (
 )
 
 type NearCache struct {
-	store  RecordStore
+	store  *RecordStore
 	cfg    *nearcache.Config
 	lg     ilogger.LogAdaptor
 	doneCh chan struct{}

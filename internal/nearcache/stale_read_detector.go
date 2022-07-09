@@ -23,11 +23,11 @@ import (
 )
 
 type StaleReadDetector struct {
-	rh RepairingHandler
+	rh *RepairingHandler
 	ps *icluster.PartitionService
 }
 
-func NewStaleReadDetector(rh RepairingHandler, ps *icluster.PartitionService) StaleReadDetector {
+func NewStaleReadDetector(rh *RepairingHandler, ps *icluster.PartitionService) StaleReadDetector {
 	return StaleReadDetector{
 		rh: rh,
 		ps: ps,
