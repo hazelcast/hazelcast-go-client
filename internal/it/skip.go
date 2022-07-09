@@ -30,16 +30,28 @@ func SkipIf(t *testing.T, conditions string) {
 	skip.If(t, conditions)
 }
 
-// MarkSlow marks a test "slow", so it is run only when slow tests are enabled.
+// MarkSlow marks a test "slow", so it is run only when slow test mode is enabled.
+// Note that if "all" mode is enabled, the test runs disregard of whether slow test mode is enabled or disabled.
 func MarkSlow(t *testing.T) {
-	skip.If(t, "!slow")
+	skip.If(t, "!slow, !all")
 }
 
-// MarkFlaky marks a test "flaky", so it is run only when flaky tests are enabled.
+// MarkFlaky marks a test "flaky", so it is run only when flaky test mode is enabled.
+// Note that if "all" mode is enabled, the test runs disregard of whether flaky test mode is enabled or disabled.
 func MarkFlaky(t *testing.T, see ...string) {
 	t.Logf("Note: %s is a known flaky test, it will run only when enabled.", t.Name())
 	for _, s := range see {
 		t.Logf("See: %s", s)
 	}
-	skip.If(t, "!flaky")
+	skip.If(t, "!flaky, !all")
+}
+
+// MarkRacy marks a test "racy", so it is run only when race detector is not enabled.
+// Note that if "all" mode is enabled, the test runs disregard of whether the race detector is enabled or disabled.
+func MarkRacy(t *testing.T, see ...string) {
+	t.Logf("Note: %s is a test with a known race condition, it won't run when race detector is enabled.", t.Name())
+	for _, s := range see {
+		t.Logf("See: %s", s)
+	}
+	skip.If(t, "race, !all")
 }

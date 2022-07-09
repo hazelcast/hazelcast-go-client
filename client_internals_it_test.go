@@ -45,6 +45,7 @@ import (
 // Tests that require the hazelcastinternal tag.
 
 func TestListenersAfterClientDisconnected(t *testing.T) {
+	it.MarkRacy(t)
 	t.Run("MemberHostname_ClientIP_AddEntryListener", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501, addEntryListener)
 	})
@@ -222,6 +223,7 @@ func TestClusterID(t *testing.T) {
 }
 
 func TestClientInternal_ClusterID(t *testing.T) {
+	it.MarkRacy(t)
 	tc := it.StartNewClusterWithOptions("ci-cluster-id", 55701, 1)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -269,6 +271,7 @@ func TestClientInternal_OrderedMembers(t *testing.T) {
 }
 
 func TestClientInternal_ConnectedToMember(t *testing.T) {
+	it.MarkRacy(t)
 	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55701, 2)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))

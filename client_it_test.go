@@ -103,18 +103,21 @@ func TestClientRunning(t *testing.T) {
 }
 
 func TestClientPortRangeAllAddresses(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", "0.0.0.0"}
 	}, 4, 3)
 }
 
 func TestClientPortRangeMultipleAddresses(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
 }
 
 func TestClientPortRangeSingleAddress(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{fmt.Sprintf("localhost:%d", validPort), "127.0.0.1", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
@@ -329,6 +332,7 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 }
 
 func TestClusterReconnection_ShutdownCluster(t *testing.T) {
+	it.MarkRacy(t)
 	ctx := context.Background()
 	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
 	mu := &sync.Mutex{}
@@ -677,6 +681,7 @@ func TestClientVersion(t *testing.T) {
 }
 
 func TestInvocationTimeout(t *testing.T) {
+	it.MarkRacy(t)
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
 		defer tc.Shutdown()

@@ -43,6 +43,7 @@ func TestSkipIf(t *testing.T) {
 		SSL:        true,
 		Slow:       true,
 		Flaky:      true,
+		All:        true,
 	}
 	testCases := []skipTestCase{
 		// Check parsing
@@ -158,6 +159,9 @@ func TestSkipIf(t *testing.T) {
 		// check flaky
 		skips("flaky"),
 		noSkip("!flaky"),
+		// check all
+		skips("all"),
+		noSkip("!all"),
 		// Multiple conditions
 		skips("hz > 5.0, hz < 5.1.0, Ver = 1.2.1, enterprise, !oss, os = windows, os != darwin, arch = 386, arch != amd64"),
 		noSkip("hz > 5.0, Ver != 1.2.1"),
@@ -166,11 +170,12 @@ func TestSkipIf(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			sc := skipChecker
 			if tc.panics {
-				assert.Panics(t, func() { sc.CanSkip(tc.conditions) })
+				assert.Panics(t, func() {
+					sc.CanSkip(tc.conditions)
+				})
 				return
 			}
-			skip := sc.CanSkip(tc.conditions)
-			assert.Equal(t, tc.skips, skip)
+			assert.Equal(t, tc.skips, sc.CanSkip(tc.conditions))
 		})
 	}
 }

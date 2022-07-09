@@ -44,11 +44,13 @@ const (
 	skipNotSlow       = "!slow"
 	skipFlaky         = "flaky"
 	skipNotFlaky      = "!flaky"
+	skipAll           = "all"
+	skipNotAll        = "!all"
 	enterpriseKey     = "HAZELCAST_ENTERPRISE_KEY"
-	raceKey           = "RACE_ENABLED"
 	sslKey            = "ENABLE_SSL"
 	slowKey           = "SLOW_ENABLED"
 	flakyKey          = "FLAKY_ENABLED"
+	allKey            = "ALL_ENABLED"
 )
 
 var skipChecker = defaultSkipChecker()
@@ -191,6 +193,7 @@ type Checker struct {
 	SSL        bool
 	Slow       bool
 	Flaky      bool
+	All        bool
 }
 
 // defaultSkipChecker creates and returns the default skip checker.
@@ -202,10 +205,11 @@ func defaultSkipChecker() Checker {
 		OS:         runtime.GOOS,
 		Arch:       runtime.GOARCH,
 		Enterprise: enterprise,
-		Race:       isConditionEnabled(raceKey),
+		Race:       raceDetectorEnabled,
 		SSL:        isConditionEnabled(sslKey),
 		Slow:       isConditionEnabled(slowKey),
 		Flaky:      isConditionEnabled(flakyKey),
+		All:        isConditionEnabled(allKey),
 	}
 }
 
@@ -294,6 +298,11 @@ func (s Checker) isFlaky() bool {
 	return s.Flaky
 }
 
+// isAll returns true if ALL_ENABLED environment variable has the value "1".
+func (s Checker) isAll() bool {
+	return s.All
+}
+
 // CanSkip skips returns true if all the given conditions evaluate to true.
 // Separate conditions with commas (,).
 func (s Checker) CanSkip(condStr string) bool {
@@ -358,6 +367,12 @@ func (s Checker) checkCondition(cond string) bool {
 	case skipNotFlaky:
 		ensureLen(parts, 1, cond, "!flaky")
 		return !s.isFlaky()
+	case skipAll:
+		ensureLen(parts, 1, cond, "all")
+		return s.isAll()
+	case skipNotAll:
+		ensureLen(parts, 1, cond, "!all")
+		return !s.isAll()
 	default:
 		panic(fmt.Errorf(`unexpected test skip constant "%s" in %s`, parts[0], cond))
 	}
