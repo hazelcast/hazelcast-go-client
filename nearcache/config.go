@@ -17,8 +17,10 @@
 package nearcache
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"unsafe"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -124,6 +126,30 @@ func (c Config) InvalidateOnChange() bool {
 	return *c.invalidateOnChange
 }
 
+func (c *Config) UnmarshalJSON(b []byte) error {
+	var cfg configForMarshal
+	if err := json.Unmarshal(b, &cfg); err != nil {
+		return fmt.Errorf("unmarshalling Near Cache configuration: %w", err)
+	}
+	*c = *(*Config)(unsafe.Pointer(&cfg))
+	return nil
+}
+
+func (c Config) MarshalJSON() ([]byte, error) {
+	cfg := *(*configForMarshal)(unsafe.Pointer(&c))
+	return json.Marshal(cfg)
+}
+
+type configForMarshal struct {
+	InvalidateOnChange *bool `json:",omitempty"`
+	Name               string
+	Eviction           EvictionConfig
+	InMemoryFormat     InMemoryFormat
+	SerializeKeys      bool
+	TimeToLiveSeconds  int
+	MaxIdleSeconds     int
+}
+
 /*
 EvictionConfig is the configuration for eviction.
 
@@ -136,10 +162,10 @@ The default values of the eviction configuration are:
 Eviction policy and comparator are mutually exclusive.
 */
 type EvictionConfig struct {
-	evictionPolicy *EvictionPolicy
-	size           *int32
-	comparator     EvictionPolicyComparator
-	err            error
+	policy     *EvictionPolicy
+	size       *int32
+	comparator EvictionPolicyComparator
+	err        error
 }
 
 // Clone returns a copy of the configuration.
@@ -152,29 +178,29 @@ func (c *EvictionConfig) Validate() error {
 	if c.err != nil {
 		return c.err
 	}
-	if c.evictionPolicy != nil && c.comparator != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Eviction: only one of EvictionPolicy or Comparator can be configured", nil)
+	if c.policy != nil && c.comparator != nil {
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Eviction: only one of Policy or Comparator can be configured", nil)
 	}
 	return nil
 }
 
-// SetEvictionPolicy sets the eviction policy of this eviction configuration.
+// SetPolicy sets the eviction policy of this eviction configuration.
 // The default policy is EvictionPolicyLRU which evicts the least recently used entries.
-func (c *EvictionConfig) SetEvictionPolicy(policy EvictionPolicy) {
+func (c *EvictionConfig) SetPolicy(policy EvictionPolicy) {
 	if policy < 0 || policy >= evictionPolicyCount {
-		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.Eviction.SetEvictionPolicy: invalid policy", nil)
+		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.Eviction.SetPolicy: invalid policy", nil)
 		return
 	}
-	c.evictionPolicy = &policy
+	c.policy = &policy
 }
 
-// EvictionPolicy returns the eviction policy of this eviction configuration.
-// See the documentation for SetEvictionPolicy.
-func (c EvictionConfig) EvictionPolicy() EvictionPolicy {
-	if c.evictionPolicy == nil {
+// Policy returns the eviction policy of this eviction configuration.
+// See the documentation for SetPolicy.
+func (c EvictionConfig) Policy() EvictionPolicy {
+	if c.policy == nil {
 		return defaultEvictionPolicy
 	}
-	return *c.evictionPolicy
+	return *c.policy
 }
 
 // SetSize sets the number of maximum entries before an eviction occurs.
@@ -206,4 +232,28 @@ func (c *EvictionConfig) SetComparator(cmp EvictionPolicyComparator) {
 // Comparator returns the eviction policy comparator.
 func (c EvictionConfig) Comparator() EvictionPolicyComparator {
 	return c.comparator
+}
+
+// UnmarshalJSON unmarshals the eviction config from a byte array.
+func (c *EvictionConfig) UnmarshalJSON(b []byte) error {
+	var d evictionConfigForMarshal
+	if err := json.Unmarshal(b, &d); err != nil {
+		return fmt.Errorf("unmarshalling eviction config: %w", err)
+	}
+	*c = *(*EvictionConfig)(unsafe.Pointer(&d))
+	return nil
+}
+
+// MarshalJSON marshals the eviction config to a byte array.
+func (c EvictionConfig) MarshalJSON() ([]byte, error) {
+	d := *(*evictionConfigForMarshal)(unsafe.Pointer(&c))
+	return json.Marshal(d)
+}
+
+// evictionConfigForMarshal is used for marshaling/unmarshalling EvictionConfig to/from JSON.
+type evictionConfigForMarshal struct {
+	Policy     *EvictionPolicy `json:",omitempty"`
+	Size       *int32          `json:",omitempty"`
+	comparator EvictionPolicyComparator
+	err        error
 }

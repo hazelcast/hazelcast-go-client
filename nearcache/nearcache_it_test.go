@@ -484,7 +484,7 @@ func TestNearCacheIsRemoved_afterMapDestroy(t *testing.T) {
 
 func makeNearCacheConfigWithEviction(policy nearcache.EvictionPolicy) nearcache.Config {
 	ec := nearcache.EvictionConfig{}
-	ec.SetEvictionPolicy(policy)
+	ec.SetPolicy(policy)
 	ec.SetSize(maxCacheSize)
 	ncc := nearcache.Config{
 		Name:     "*",

@@ -68,7 +68,7 @@ func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCac
 		valueConverter:   rc,
 		estimator:        se,
 		stats:            stats,
-		evictionDisabled: cfg.Eviction.EvictionPolicy() == nearcache.EvictionPolicyNone,
+		evictionDisabled: cfg.Eviction.Policy() == nearcache.EvictionPolicyNone,
 		maxSize:          cfg.Eviction.Size(),
 		cmp:              getEvictionPolicyComparator(&cfg.Eviction),
 	}
@@ -588,7 +588,7 @@ func getEvictionPolicyComparator(cfg *nearcache.EvictionConfig) nearcache.Evicti
 	if cmp != nil {
 		return cmp
 	}
-	switch cfg.EvictionPolicy() {
+	switch cfg.Policy() {
 	case nearcache.EvictionPolicyLRU:
 		return LRUEvictionPolicyComparator
 	case nearcache.EvictionPolicyLFU:
@@ -598,7 +598,7 @@ func getEvictionPolicyComparator(cfg *nearcache.EvictionConfig) nearcache.Evicti
 	case nearcache.EvictionPolicyNone:
 		return nil
 	}
-	msg := fmt.Sprintf("unknown eviction polcy: %d", cfg.EvictionPolicy())
+	msg := fmt.Sprintf("unknown eviction polcy: %d", cfg.Policy())
 	panic(ihzerrors.NewIllegalArgumentError(msg, nil))
 }
 
