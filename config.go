@@ -124,8 +124,8 @@ func (c *Config) Clone() Config {
 		newFlakeIDConfigs[k] = v
 	}
 	nccs := c.copyNearCacheConfig()
-	newNCs := make([]nearcache.Config, 0, len(nccs))
-	for _, v := range nccs {
+	newNCs := make([]nearcache.Config, 0, len(c.NearCaches))
+	for _, v := range c.NearCaches {
 		newNCs = append(newNCs, v)
 	}
 	return Config{
