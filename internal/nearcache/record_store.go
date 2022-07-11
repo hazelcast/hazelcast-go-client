@@ -224,6 +224,9 @@ func (rs *RecordStore) sample(count int) []evictionCandidate {
 	// currently we use builtin maps of the Go client, so another random sampling algorithm is used.
 	// note that count is fixed to 15 in the reference implementation, it is always positive
 	// assumes recordsMu is locked
+	if len(rs.records) < count {
+		count = len(rs.records)
+	}
 	samples := make([]evictionCandidate, count)
 	var idx int
 	for k, v := range rs.records {
