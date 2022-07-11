@@ -55,11 +55,11 @@ type RecordStore struct {
 	cmp               nearcache.EvictionPolicyComparator
 }
 
-func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) RecordStore {
+func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCacheRecordValueConverter, se nearCacheStorageEstimator) *RecordStore {
 	stats := nearcache.Stats{
 		CreationTime: time.Now(),
 	}
-	return RecordStore{
+	return &RecordStore{
 		recordsMu:        &sync.RWMutex{},
 		records:          map[interface{}]*Record{},
 		maxIdleMillis:    int64(cfg.MaxIdleSeconds * 1000),
@@ -68,7 +68,7 @@ func NewRecordStore(cfg *nearcache.Config, ss *serialization.Service, rc nearCac
 		valueConverter:   rc,
 		estimator:        se,
 		stats:            stats,
-		evictionDisabled: cfg.Eviction.EvictionPolicy() == nearcache.EvictionPolicyNone,
+		evictionDisabled: cfg.Eviction.Policy() == nearcache.EvictionPolicyNone,
 		maxSize:          cfg.Eviction.Size(),
 		cmp:              getEvictionPolicyComparator(&cfg.Eviction),
 	}
@@ -263,7 +263,7 @@ func (rs *RecordStore) TryPublishReserved(key, value interface{}, reservationID 
 	return cached, nil
 }
 
-func (rs RecordStore) Stats() nearcache.Stats {
+func (rs *RecordStore) Stats() nearcache.Stats {
 	return nearcache.Stats{
 		CreationTime:                rs.stats.CreationTime,
 		OwnedEntryCount:             atomic.LoadInt64(&rs.stats.OwnedEntryCount),
@@ -282,18 +282,18 @@ func (rs RecordStore) Stats() nearcache.Stats {
 	}
 }
 
-func (rs RecordStore) InvalidationRequests() int64 {
+func (rs *RecordStore) InvalidationRequests() int64 {
 	return atomic.LoadInt64(&rs.stats.InvalidationRequests)
 }
 
-func (rs RecordStore) Size() int {
+func (rs *RecordStore) Size() int {
 	rs.recordsMu.RLock()
 	size := len(rs.records)
 	rs.recordsMu.RUnlock()
 	return size
 }
 
-func (rs RecordStore) makeMapKey(key interface{}) interface{} {
+func (rs *RecordStore) makeMapKey(key interface{}) interface{} {
 	data, ok := key.(serialization.Data)
 	if ok {
 		// serialization.Data is not hashable, convert it to string
@@ -302,7 +302,7 @@ func (rs RecordStore) makeMapKey(key interface{}) interface{} {
 	return key
 }
 
-func (rs RecordStore) unMakeMapKey(key interface{}) interface{} {
+func (rs *RecordStore) unMakeMapKey(key interface{}) interface{} {
 	ds, ok := key.(DataString)
 	if ok {
 		return serialization.Data(ds)
@@ -588,7 +588,7 @@ func getEvictionPolicyComparator(cfg *nearcache.EvictionConfig) nearcache.Evicti
 	if cmp != nil {
 		return cmp
 	}
-	switch cfg.EvictionPolicy() {
+	switch cfg.Policy() {
 	case nearcache.EvictionPolicyLRU:
 		return LRUEvictionPolicyComparator
 	case nearcache.EvictionPolicyLFU:
@@ -598,7 +598,7 @@ func getEvictionPolicyComparator(cfg *nearcache.EvictionConfig) nearcache.Evicti
 	case nearcache.EvictionPolicyNone:
 		return nil
 	}
-	msg := fmt.Sprintf("unknown eviction polcy: %d", cfg.EvictionPolicy())
+	msg := fmt.Sprintf("unknown eviction polcy: %d", cfg.Policy())
 	panic(ihzerrors.NewIllegalArgumentError(msg, nil))
 }
 

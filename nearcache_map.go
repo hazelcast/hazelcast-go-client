@@ -52,15 +52,15 @@ type nearCacheMap struct {
 }
 
 func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serialization.Service, rt *inearcache.ReparingTask, lg logger.LogAdaptor, name string, lb *cluster.ConnectionListenerBinder, local bool) (nearCacheMap, error) {
-	ncc := nc.Config()
 	ncm := nearCacheMap{
 		nc:            nc,
 		ss:            ss,
 		rt:            rt,
 		lb:            lb,
 		lg:            lg,
-		serializeKeys: ncc.SerializeKeys,
+		serializeKeys: nc.Config().SerializeKeys,
 	}
+	ncc := nc.Config()
 	if ncc.InvalidateOnChange() {
 		lg.Debug(func() string {
 			return fmt.Sprintf("registering invalidation listener: name: %s, local: %t", name, local)
@@ -111,12 +111,12 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 		switch msg.Type() {
 		case inearcache.EventIMapInvalidationMessageType:
 			key, src, pt, sq := inearcache.DecodeMapInvalidationMsg(msg)
-			if err := ncm.handleInvalidationMsg(&rth, key, src, pt, sq); err != nil {
+			if err := ncm.handleInvalidationMsg(rth, key, src, pt, sq); err != nil {
 				ncm.lg.Errorf("handling invalidation message: %w", err)
 			}
 		case inearcache.EventIMapBatchInvalidationMessageType:
 			keys, srcs, pts, sqs := inearcache.DecodeMapBatchInvalidationMsg(msg)
-			if err := ncm.handleBatchInvalidationMsg(&rth, keys, srcs, pts, sqs); err != nil {
+			if err := ncm.handleBatchInvalidationMsg(rth, keys, srcs, pts, sqs); err != nil {
 				ncm.lg.Errorf("handling batch invalidation message: %w", err)
 			}
 		default:

@@ -95,7 +95,7 @@ func (rt *ReparingTask) start() {
 	}
 }
 
-func (rt *ReparingTask) RegisterAndGetHandler(ctx context.Context, name string, nc *NearCache) (RepairingHandler, error) {
+func (rt *ReparingTask) RegisterAndGetHandler(ctx context.Context, name string, nc *NearCache) (*RepairingHandler, error) {
 	handler := NewRepairingHandler(name, nc, rt.partitionCount, rt.ss, rt.ps, rt.lg, rt.localUUID)
 	// ignoring the "loaded" return value
 	h, loaded := rt.handlers.LoadOrStore(name, handler)
@@ -109,7 +109,7 @@ func (rt *ReparingTask) RegisterAndGetHandler(ctx context.Context, name string, 
 		go rt.start()
 		atomic.StoreInt64(&rt.lastAntiEntropyRunNanos, time.Now().UnixNano())
 	}
-	return h.(RepairingHandler), nil
+	return h.(*RepairingHandler), nil
 }
 
 func (rt *ReparingTask) DeregisterHandler(name string) {
@@ -117,7 +117,7 @@ func (rt *ReparingTask) DeregisterHandler(name string) {
 	rt.handlers.Delete(name)
 }
 
-func (rt *ReparingTask) initRepairingHandler(ctx context.Context, handler RepairingHandler) {
+func (rt *ReparingTask) initRepairingHandler(ctx context.Context, handler *RepairingHandler) {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#initRepairingHandler
 	rt.lg.Trace(func() string {
 		return "nearcache.ReparingTask.initRepairingHandler: initializing"
@@ -127,7 +127,7 @@ func (rt *ReparingTask) initRepairingHandler(ctx context.Context, handler Repair
 	}
 }
 
-func (rt *ReparingTask) initRepairingHandlerAsync(handler RepairingHandler) {
+func (rt *ReparingTask) initRepairingHandlerAsync(handler *RepairingHandler) {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask#initRepairingHandlerAsync
 	rt.lg.Trace(func() string {
 		return "nearcache.ReparingTask.initRepairingHandler: initializing"
@@ -143,7 +143,7 @@ func (rt *ReparingTask) initRepairingHandlerAsync(handler RepairingHandler) {
 		}
 	}()
 }
-func (rt *ReparingTask) initRepairingHandlerAsyncRun(handler RepairingHandler, roundNumber int32) {
+func (rt *ReparingTask) initRepairingHandlerAsyncRun(handler *RepairingHandler, roundNumber int32) {
 	// reference implementation calls initRepairingHandler, but I think that's wrong
 	if rt.invalidationMetaDataFetcher.Init(context.Background(), handler) {
 		return
@@ -175,7 +175,7 @@ func (rt *ReparingTask) run() {
 // fixSequenceGaps marks relevant data as stale if missed invalidation event count is above the max tolerated miss count.
 func (rt *ReparingTask) fixSequenceGaps() {
 	rt.handlers.Range(func(_, value interface{}) bool {
-		handler := value.(RepairingHandler)
+		handler := value.(*RepairingHandler)
 		if rt.isAboveMaxToleratedMissCount(handler) {
 			rt.updateLastKnownStaleSequences(handler)
 		}
@@ -183,7 +183,7 @@ func (rt *ReparingTask) fixSequenceGaps() {
 	})
 }
 
-func (rt *ReparingTask) isAboveMaxToleratedMissCount(handler RepairingHandler) bool {
+func (rt *ReparingTask) isAboveMaxToleratedMissCount(handler *RepairingHandler) bool {
 	var total int64
 	for i := int32(0); i < rt.partitionCount; i++ {
 		md := handler.GetMetaDataContainer(i)
@@ -199,7 +199,7 @@ func (rt *ReparingTask) isAboveMaxToleratedMissCount(handler RepairingHandler) b
 	return false
 }
 
-func (rt *ReparingTask) updateLastKnownStaleSequences(handler RepairingHandler) {
+func (rt *ReparingTask) updateLastKnownStaleSequences(handler *RepairingHandler) {
 	for i := int32(0); i < rt.partitionCount; i++ {
 		md := handler.GetMetaDataContainer(i)
 		mc := md.MissedSequenceCount()
@@ -231,9 +231,9 @@ func (rt *ReparingTask) runAntiEntropy(ctx context.Context) {
 		return "nearcache.ReparingTask.runAntiEntropy"
 	})
 	// get a copy of the handlers, so we don't have to deal with sync.Map.
-	handlers := map[string]RepairingHandler{}
+	handlers := map[string]*RepairingHandler{}
 	rt.handlers.Range(func(k, v interface{}) bool {
-		handlers[k.(string)] = v.(RepairingHandler)
+		handlers[k.(string)] = v.(*RepairingHandler)
 		return true
 	})
 	rt.invalidationMetaDataFetcher.fetchMetadata(ctx, handlers)
@@ -252,7 +252,7 @@ type RepairingHandler struct {
 	lg                 ilogger.LogAdaptor
 }
 
-func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor, uuid types.UUID) RepairingHandler {
+func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *serialization.Service, ps *cluster.PartitionService, lg ilogger.LogAdaptor, uuid types.UUID) *RepairingHandler {
 	mcs := make([]*MetaDataContainer, partitionCount)
 	for i := int32(0); i < partitionCount; i++ {
 		mcs[i] = NewMetaDataContainer()
@@ -264,7 +264,7 @@ func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *s
 		}
 		return ss.ToObject(key.(serialization.Data))
 	}
-	return RepairingHandler{
+	return &RepairingHandler{
 		name:               name,
 		nc:                 nc,
 		metadataContainers: mcs,
@@ -276,11 +276,11 @@ func NewRepairingHandler(name string, nc *NearCache, partitionCount int32, ss *s
 	}
 }
 
-func (h RepairingHandler) Name() string {
+func (h *RepairingHandler) Name() string {
 	return h.name
 }
 
-func (h RepairingHandler) GetMetaDataContainer(partition int32) *MetaDataContainer {
+func (h *RepairingHandler) GetMetaDataContainer(partition int32) *MetaDataContainer {
 	return h.metadataContainers[partition]
 }
 
@@ -407,7 +407,7 @@ func (h *RepairingHandler) CheckOrRepairSequence(partition int32, nextSeq int64,
 	}
 }
 
-func (h RepairingHandler) getPartitionIDOrDefault(key serialization.Data) (int32, error) {
+func (h *RepairingHandler) getPartitionIDOrDefault(key serialization.Data) (int32, error) {
 	if key == nil {
 		// name is used to determine partition ID of map-wide events like clear()
 		// since key is nil, we are using name to find the partition ID
@@ -441,7 +441,7 @@ func (mc *MetaDataContainer) SetUUID(uuid types.UUID) {
 	mc.uuid.Store(uuid)
 }
 
-func (mc MetaDataContainer) UUID() types.UUID {
+func (mc *MetaDataContainer) UUID() types.UUID {
 	return mc.uuid.Load().(types.UUID)
 }
 
@@ -453,7 +453,7 @@ func (mc *MetaDataContainer) SetSequence(seq int64) {
 	atomic.StoreInt64(&mc.seq, seq)
 }
 
-func (mc MetaDataContainer) Sequence() int64 {
+func (mc *MetaDataContainer) Sequence() int64 {
 	return atomic.LoadInt64(&mc.seq)
 }
 
@@ -469,7 +469,7 @@ func (mc *MetaDataContainer) SetStaleSequence(seq int64) {
 	atomic.StoreInt64(&mc.staleSeq, seq)
 }
 
-func (mc MetaDataContainer) StaleSequence() int64 {
+func (mc *MetaDataContainer) StaleSequence() int64 {
 	return atomic.LoadInt64(&mc.staleSeq)
 }
 
@@ -485,7 +485,7 @@ func (mc *MetaDataContainer) SetMissedSequenceCount(count int64) {
 	atomic.StoreInt64(&mc.missedSeqs, count)
 }
 
-func (mc MetaDataContainer) MissedSequenceCount() int64 {
+func (mc *MetaDataContainer) MissedSequenceCount() int64 {
 	return atomic.LoadInt64(&mc.missedSeqs)
 }
 
@@ -514,9 +514,9 @@ func NewInvalidationMetaDataFetcher(cs *cluster.Service, is *invocation.Service,
 	return df
 }
 
-func (df InvalidationMetaDataFetcher) Init(ctx context.Context, handler RepairingHandler) bool {
+func (df InvalidationMetaDataFetcher) Init(ctx context.Context, handler *RepairingHandler) bool {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#init
-	handlers := map[string]RepairingHandler{
+	handlers := map[string]*RepairingHandler{
 		handler.Name(): handler,
 	}
 	invs := df.fetchMembersMetadataFor(ctx, []string{handler.Name()})
@@ -532,7 +532,7 @@ func (df InvalidationMetaDataFetcher) Init(ctx context.Context, handler Repairin
 	return true
 }
 
-func (df InvalidationMetaDataFetcher) fetchMetadata(ctx context.Context, handlers map[string]RepairingHandler) {
+func (df InvalidationMetaDataFetcher) fetchMetadata(ctx context.Context, handlers map[string]*RepairingHandler) {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#fetchMetadata
 	if len(handlers) == 0 {
 		return
@@ -588,7 +588,7 @@ func (df *InvalidationMetaDataFetcher) extractMemberMetadata(ctx context.Context
 	return npsPairs, psPairs, nil
 }
 
-func (df *InvalidationMetaDataFetcher) processMemberMetadata(ctx context.Context, inv invocation.Invocation, handlers map[string]RepairingHandler) {
+func (df *InvalidationMetaDataFetcher) processMemberMetadata(ctx context.Context, inv invocation.Invocation, handlers map[string]*RepairingHandler) {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#processMemberMetadata
 	npsPairs, psPairs, err := df.extractMemberMetadata(ctx, inv)
 	if err != nil {
@@ -609,7 +609,7 @@ func (df InvalidationMetaDataFetcher) handleErrorWhileProcessingMetadata(err err
 	df.lg.Warnf("can't fetch or extract invalidation metadata: %s", err.Error())
 }
 
-func (df *InvalidationMetaDataFetcher) initUUIDs(psPairs []proto.Pair, handlers map[string]RepairingHandler) {
+func (df *InvalidationMetaDataFetcher) initUUIDs(psPairs []proto.Pair, handlers map[string]*RepairingHandler) {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#initUuid
 	for _, p := range psPairs {
 		partition := p.Key.(int32)
@@ -620,7 +620,7 @@ func (df *InvalidationMetaDataFetcher) initUUIDs(psPairs []proto.Pair, handlers 
 	}
 }
 
-func (df *InvalidationMetaDataFetcher) initSequence(npsPairs []proto.Pair, handlers map[string]RepairingHandler) {
+func (df *InvalidationMetaDataFetcher) initSequence(npsPairs []proto.Pair, handlers map[string]*RepairingHandler) {
 	// port of: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#initSequence
 	for _, np := range npsPairs {
 		handler := handlers[np.Key.(string)]
@@ -633,7 +633,7 @@ func (df *InvalidationMetaDataFetcher) initSequence(npsPairs []proto.Pair, handl
 	}
 }
 
-func (df *InvalidationMetaDataFetcher) repairUUIDs(psPairs []proto.Pair, handlers map[string]RepairingHandler) {
+func (df *InvalidationMetaDataFetcher) repairUUIDs(psPairs []proto.Pair, handlers map[string]*RepairingHandler) {
 	// see: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#repairUuids
 	for _, p := range psPairs {
 		k := p.Key.(int32)
@@ -644,7 +644,7 @@ func (df *InvalidationMetaDataFetcher) repairUUIDs(psPairs []proto.Pair, handler
 	}
 }
 
-func (df *InvalidationMetaDataFetcher) repairSequences(npsPairs []proto.Pair, handlers map[string]RepairingHandler) {
+func (df *InvalidationMetaDataFetcher) repairSequences(npsPairs []proto.Pair, handlers map[string]*RepairingHandler) {
 	// see: com.hazelcast.internal.nearcache.impl.invalidation.InvalidationMetaDataFetcher#repairSequences
 	for _, np := range npsPairs {
 		handler := handlers[np.Key.(string)]

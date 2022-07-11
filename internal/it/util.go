@@ -25,6 +25,7 @@ import (
 	"os"
 	"reflect"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -420,7 +421,10 @@ func getLoggerLevel() logger.Level {
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {
-	config.Logger.Level = getLoggerLevel()
+	lv := getLoggerLevel()
+	if lv == logger.TraceLevel {
+		config.Logger.Level = lv
+	}
 	client, err := hz.StartNewClientWithConfig(context.Background(), *config)
 	if err != nil {
 		panic(err)
@@ -467,4 +471,23 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 	case <-timer.C:
 		t.FailNow()
 	}
+}
+
+func EqualStringContent(b1, b2 []byte) bool {
+	s1 := sortedString(b1)
+	s2 := sortedString(b2)
+	return s1 == s2
+}
+
+func sortedString(b []byte) string {
+	bc := make([]byte, len(b))
+	copy(bc, b)
+	sort.Slice(bc, func(i, j int) bool {
+		return bc[i] < bc[j]
+	})
+	s := strings.ReplaceAll(string(bc), " ", "")
+	s = strings.ReplaceAll(s, "\t", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
 }
