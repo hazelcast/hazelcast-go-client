@@ -119,13 +119,61 @@ Note that Near Cache configuration is specific to the server or client itself.
 A data structure on a server may not have Near Cache configured while the same data structure on a client may have Near Cache configured.
 They also can have different Near Cache configurations.
 
-If you are using Near Cache, you should take into account that your hits to the keys in the Near Cache are not reflected as hits to the original keys on the primary members.
-This has for example an impact o Map's maximum idle seconds or time-to-live seconds expiration.
+If you are using the Near Cache, you should take into account that your hits to the keys in the Near Cache are not reflected as hits to the original keys on the primary members.
+This has for example an impact on Map's maximum idle seconds or time-to-live seconds expiration.
 Therefore, even though there is a hit on a key in Near Cache, your original key on the primary member may expire.
 
 Note: Near Cache works only when you access data via map.Get(k).
 Data returned using a predicate is not stored in the Near Cache.
 
+Checkout the nearcache package for configuration options.
+
+Warning: Storing keys in serialized form is required when the key cannot be compared for equality, such as slices.
+That can be accomplished by setting SerializeKeys: true, shown in the example below:
+
+	ncc := nearcache.Config{
+		Name: "mymap*",
+		SerializeKeys: true
+	}
+
+Following Map methods support the Near Cache:
+
+	* Clear
+	* ContainsKey
+	* Delete
+	* Evict
+	* EvictAll
+	* ExecuteOnKey
+	* ExecuteOnKeys
+	* Get
+	* GetAll
+	* LoadAllReplacing
+	* LoadAllWithoutReplacing
+	* LocalMapStats
+	* Put
+	* PutWithMaxIdle
+	* PutWithTTL
+	* PutWithTTLAndMaxIdle
+	* PutAll
+	* PutIfAbsent
+	* PutIfAbsentWithTTL
+	* PutIfAbsentWithTTLAndMaxIdle
+	* PutTransient
+	* PutTransientWithMaxIdle
+	* PutTransientWithTTL
+	* PutTransientWithTTLAndMaxIdle
+	* Remove
+	* RemoveIfSame
+	* RemoveAll
+	* Replace
+	* ReplaceIfSame
+	* Set
+	* SetWithTTL
+	* SetWithTTLAndMaxIdle
+	* TryPut
+	* TryPutWithTimeout
+	* TryRemove
+	* TryRemoveWithTimeout
 
 */
 type Map struct {

@@ -152,6 +152,8 @@ Here are all configuration items with their default values:
 
 	config.Logger.Level = logger.InfoLevel
 
+Checkout the nearcache package for the documentation about the Near Cache.
+
 Listening for Distributed Object Events
 
 You can listen to creation and destroy events for distributed objects by attaching a listener to the client.

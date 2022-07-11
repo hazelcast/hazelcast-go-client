@@ -49,7 +49,7 @@ type Config struct {
 	// SerializeKeys specifies how the entry keys are stored in the Near Cache.
 	// If false, keys are stored in their original form.
 	// If true, keys are stored after serializing them.
-	// Storing keys in serialized form is required when the key is not hashable, such as slices.
+	// Storing keys in serialized form is required when the key cannot be compared for equality, such as slices.
 	// The default is false.
 	SerializeKeys bool
 	// TimeToLiveSeconds is the maximum number of seconds for each entry to stay in the Near Cache (time to live).

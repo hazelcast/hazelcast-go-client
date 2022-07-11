@@ -185,6 +185,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+// MarshalJSON marshals the configuratio to JSON.
 func (c Config) MarshalJSON() ([]byte, error) {
 	mc := configForMarshal(c.Clone())
 	mc.NearCaches = nil
@@ -293,6 +294,7 @@ type FlakeIDGeneratorConfig struct {
 	PrefetchExpiry types.Duration `json:",omitempty"`
 }
 
+// Validate validates the configuration and adds the defaults.
 func (f *FlakeIDGeneratorConfig) Validate() error {
 	if f.PrefetchCount == 0 {
 		f.PrefetchCount = defaultFlakeIDPrefetchCount
@@ -329,7 +331,8 @@ func (pc NearCacheInvalidationConfig) Validate() error {
 	return nil
 }
 
-// SetMaxToleratedMissCount is the number of miss counts before data in Near Cache is invalidated.
+// SetMaxToleratedMissCount sets the max tolerated miss count.
+// Max tolerated miss count is the number of miss counts before data in Near Cache is invalidated.
 // Default is 10.
 func (pc *NearCacheInvalidationConfig) SetMaxToleratedMissCount(count int) {
 	if err := check.NonNegativeInt32Config(count); err != nil {
@@ -339,6 +342,7 @@ func (pc *NearCacheInvalidationConfig) SetMaxToleratedMissCount(count int) {
 	pc.maxToleratedMissCount = &count
 }
 
+// MaxToleratedMissCount is the number of miss counts before data in Near Cache is invalidated.
 func (pc NearCacheInvalidationConfig) MaxToleratedMissCount() int {
 	if pc.maxToleratedMissCount == nil {
 		return defaultMaxToleratedMissCount
@@ -346,7 +350,8 @@ func (pc NearCacheInvalidationConfig) MaxToleratedMissCount() int {
 	return *pc.maxToleratedMissCount
 }
 
-// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
+// SetReconciliationIntervalSeconds sets the reconciliation interval.
+// Reconciliation interval is the time for the reconciliation task interval.
 // Configuring a value of zero seconds disables the reconciliation task.
 func (pc *NearCacheInvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	if err := check.NonNegativeInt32Config(seconds); err != nil {
@@ -360,6 +365,7 @@ func (pc *NearCacheInvalidationConfig) SetReconciliationIntervalSeconds(seconds 
 	pc.reconciliationIntervalSeconds = &seconds
 }
 
+// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
 func (pc *NearCacheInvalidationConfig) ReconciliationIntervalSeconds() int {
 	if pc.reconciliationIntervalSeconds == nil {
 		return defaultReconciliationIntervalSeconds
@@ -367,6 +373,7 @@ func (pc *NearCacheInvalidationConfig) ReconciliationIntervalSeconds() int {
 	return *pc.reconciliationIntervalSeconds
 }
 
+// UnmarshalJSON unmarshals the configuration from JSON.
 func (pc *NearCacheInvalidationConfig) UnmarshalJSON(b []byte) error {
 	var cfg nearCacheInvalidationConfigForMarshal
 	if err := json.Unmarshal(b, &cfg); err != nil {
@@ -376,6 +383,7 @@ func (pc *NearCacheInvalidationConfig) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON marshals the configuration to JSON.
 func (pc NearCacheInvalidationConfig) MarshalJSON() ([]byte, error) {
 	cfg := *(*nearCacheInvalidationConfigForMarshal)(unsafe.Pointer(&pc))
 	return json.Marshal(cfg)
