@@ -17,11 +17,16 @@
 package nearcache
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -186,4 +191,30 @@ func TestFilterDataMembers(t *testing.T) {
 			assert.ElementsMatch(t, tc.target, r)
 		})
 	}
+}
+
+func TestRecordStore_sample(t *testing.T) {
+	sc := &serialization.Config{}
+	ss, err := iserialization.NewService(sc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ncc := &nearcache.Config{}
+	vsa := &nearCacheValueStoreAdapter{ss: ss}
+	rs := NewRecordStore(ncc, ss, vsa, vsa)
+	const maxSampleCnt = 5
+	rs.records = makeRecords(maxSampleCnt)
+	samples := rs.sample(maxSampleCnt * 2)
+	assert.Len(t, samples, maxSampleCnt)
+}
+
+func makeRecords(count int) map[interface{}]*Record {
+	res := map[interface{}]*Record{}
+	ct := time.Now().UnixMilli()
+	for i := 0; i < count; i++ {
+		value := fmt.Sprintf("val-%d", i)
+		et := time.Now().Add(1 * time.Hour).UnixMilli()
+		res[value] = NewRecord(i, ct, et)
+	}
+	return res
 }
