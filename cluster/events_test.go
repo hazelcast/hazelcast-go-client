@@ -24,13 +24,13 @@ import (
 
 func TestMembershipState_String(t *testing.T) {
 	for _, s := range []struct {
+		info  string
 		want  string
 		state cluster.MembershipState
-		info  string
 	}{
-		{want: "added", state: cluster.MembershipStateAdded, info: "membership added state"},
-		{want: "removed", state: cluster.MembershipStateRemoved, info: "membership removed state"},
-		{want: "UNKNOWN", state: 2, info: "unknown membership state"},
+		{info: "membership added state", want: "added", state: cluster.MembershipStateAdded},
+		{info: "membership removed state", want: "removed", state: cluster.MembershipStateRemoved},
+		{info: "unknown membership state", want: "UNKNOWN", state: 2},
 	} {
 		t.Run(s.info, func(t *testing.T) {
 			if s.state.String() != s.want {

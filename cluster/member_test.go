@@ -71,16 +71,16 @@ func TestMemberInfo_PublicAddress(t *testing.T) {
 
 func TestEndpointQualifierType_String(t *testing.T) {
 	for _, qt := range []struct {
+		info          string
 		want          string
 		qualifierType cluster.EndpointQualifierType
-		info          string
 	}{
-		{want: "member", qualifierType: cluster.EndpointQualifierTypeMember, info: "EndpointQualifierTypeMember"},
-		{want: "client", qualifierType: cluster.EndpointQualifierTypeClient, info: "EndpointQualifierTypeClient"},
-		{want: "wan", qualifierType: cluster.EndpointQualifierTypeWan, info: "EndpointQualifierTypeWan"},
-		{want: "rest", qualifierType: cluster.EndpointQualifierTypeRest, info: "EndpointQualifierTypeRest"},
-		{want: "memcache", qualifierType: cluster.EndpointQualifierTypeMemCache, info: "EndpointQualifierTypeMemCache"},
-		{want: "UNKNOWN", qualifierType: 5, info: "UNKNOWN EndpointQualifierType"},
+		{info: "EndpointQualifierTypeMember", want: "member", qualifierType: cluster.EndpointQualifierTypeMember},
+		{info: "EndpointQualifierTypeClient", want: "client", qualifierType: cluster.EndpointQualifierTypeClient},
+		{info: "EndpointQualifierTypeWan", want: "wan", qualifierType: cluster.EndpointQualifierTypeWan},
+		{info: "EndpointQualifierTypeRest", want: "rest", qualifierType: cluster.EndpointQualifierTypeRest},
+		{info: "EndpointQualifierTypeMemCache", want: "memcache", qualifierType: cluster.EndpointQualifierTypeMemCache},
+		{info: "UNKNOWN EndpointQualifierType", want: "UNKNOWN", qualifierType: 5},
 	} {
 		t.Run(qt.info, func(t *testing.T) {
 			if qt.qualifierType.String() != qt.want {

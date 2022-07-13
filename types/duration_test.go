@@ -27,7 +27,7 @@ import (
 
 func TestDuration_String(t *testing.T) {
 	dr := types.Duration(time.Minute)
-	assert.Equal(t, dr.String(), time.Minute.String())
+	assert.Equal(t, time.Minute.String(), dr.String())
 }
 
 func TestDuration_MarshalText(t *testing.T) {
@@ -35,7 +35,7 @@ func TestDuration_MarshalText(t *testing.T) {
 	want := `1m0s`
 	text, err := dr.MarshalText()
 	if err != nil {
-		return
+		t.Fatal(err)
 	}
-	assert.Equal(t, string(text), want)
+	assert.Equal(t, want, string(text))
 }

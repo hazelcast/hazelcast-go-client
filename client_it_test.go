@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -115,7 +116,7 @@ func TestClient_AddLifecycleListener(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
 		if err = client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
@@ -157,7 +158,6 @@ func TestClient_RemoveLifecycleListener(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.Eventually(t, func() bool {
-			// ensures that client is
 			return !client.Running() && lifecycleEventReceived == 1
 		})
 	})

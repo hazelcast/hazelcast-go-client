@@ -21,7 +21,6 @@ import (
 	"errors"
 	"reflect"
 	"sort"
-	"sync"
 	"testing"
 	"time"
 
@@ -32,7 +31,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/logger"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -45,8 +43,6 @@ func TestDefaultConfig(t *testing.T) {
 }
 
 func TestConfig_SetLabels(t *testing.T) {
-	config := hazelcast.NewConfig()
-	m := sync.Mutex{}
 	for _, tc := range []struct {
 		info           string
 		expectedLength int
@@ -59,11 +55,7 @@ func TestConfig_SetLabels(t *testing.T) {
 		{"hybrid strings slice", 3, []string{"a", "", "c"}},
 	} {
 		t.Run(tc.info, func(t *testing.T) {
-			m.Lock()
-			defer func(config *hazelcast.Config) {
-				*config = hazelcast.NewConfig()
-			}(&config)
-			defer m.Unlock()
+			config := hazelcast.NewConfig()
 			config.SetLabels(tc.input...)
 			got := len(config.Labels)
 			if got != tc.expectedLength {
@@ -93,13 +85,6 @@ func TestConfig_Clone(t *testing.T) {
 		},
 		Labels:     []string{"test-client-label"},
 		ClientName: "test-client",
-		// Each config's clone method is assumed to working fine by itself.
-		// This test is only validating hazelcast config's clone receiver.
-		Logger:        logger.Config{},
-		Failover:      cluster.FailoverConfig{},
-		Serialization: serialization.Config{},
-		Cluster:       cluster.Config{},
-		Stats:         hazelcast.StatsConfig{},
 	}
 	err := cfg.Validate()
 	if err != nil {

@@ -17,51 +17,47 @@
 package cluster_test
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 func TestReconnectMode_MarshalText(t *testing.T) {
-	t.Logf("roconnection-mode on")
+	t.Logf("reconnection-mode on")
 	rmOn := cluster.ReconnectModeOn
 	text, err := rmOn.MarshalText()
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, text, []byte(`on`))
-	t.Logf("roconnection-mode off")
+	require.Equal(t, []byte(`on`), text)
+	t.Logf("reconnection-mode off")
 	rmOff := cluster.ReconnectModeOff
 	text, err = rmOff.MarshalText()
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, text, []byte(`off`))
-	t.Logf("roconnection-mode invalid")
+	require.Equal(t, []byte(`off`), text)
+	t.Logf("reconnection-mode invalid")
 	rmInvalid := cluster.ReconnectModeOff + 1
 	_, err = rmInvalid.MarshalText()
-	errors.Is(err, hzerrors.ErrIllegalState)
+	require.Error(t, err, "should be an error")
 }
 
 func TestReconnectMode_UnmarshalText(t *testing.T) {
 	rm := cluster.ReconnectMode(0)
-	t.Logf("roconnection-mode on")
+	t.Logf("reconnection-mode on")
 	if err := rm.UnmarshalText([]byte(`on`)); err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, rm, cluster.ReconnectModeOn)
-	t.Logf("roconnection-mode off")
+	require.Equal(t, cluster.ReconnectModeOn, rm)
+	t.Logf("reconnection-mode off")
 	if err := rm.UnmarshalText([]byte(`off`)); err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, rm, cluster.ReconnectModeOff)
-	t.Logf("roconnection-mode invalid")
+	require.Equal(t, cluster.ReconnectModeOff, rm)
+	t.Logf("reconnection-mode invalid")
 	err := rm.UnmarshalText([]byte(`invalid`))
-	if !errors.Is(err, hzerrors.ErrIllegalState) {
-		t.Fatal("error types does not match")
-	}
+	require.Error(t, err, "should be an error")
 }

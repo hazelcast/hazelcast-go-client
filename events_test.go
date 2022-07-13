@@ -52,13 +52,11 @@ func TestLifecycleState_String(t *testing.T) {
 }
 
 func TestLifecycleStateChanged_EventName(t *testing.T) {
-	// event name is independent of the state
 	event := hazelcast.LifecycleStateChanged{}
 	assert.Equal(t, event.EventName(), "lifecyclestatechanged")
 }
 
 func TestMessagePublished_EventName(t *testing.T) {
-	// event name is independent of the state
 	event := hazelcast.MessagePublished{}
 	assert.Equal(t, event.EventName(), "messagepublished")
 }

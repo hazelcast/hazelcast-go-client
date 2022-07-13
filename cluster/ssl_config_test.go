@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	hzerror "github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 func TestSSLConfig_SetCAPath(t *testing.T) {
@@ -42,8 +42,8 @@ func TestSSLConfig_SetCAPath(t *testing.T) {
 	} {
 		t.Run(tc.info, func(t *testing.T) {
 			err := sslConfig.SetCAPath(tc.caPath)
-			if tc.isError == true && !errors.Is(err, hzerrors.NewIOError(err.Error(), err)) {
-				t.Fatalf("error type is incorrect, want %v", hzerrors.NewIOError(err.Error(), err))
+			if tc.isError == true && !errors.Is(err, hzerror.ErrIO) {
+				t.Fatalf("error type is incorrect, want %v", hzerror.ErrIO)
 			}
 		})
 	}
