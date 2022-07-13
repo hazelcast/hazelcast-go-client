@@ -23,7 +23,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -107,12 +106,7 @@ func TestGetAllChecksNearCacheFirst(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sort.Slice(vs, func(i, j int) bool {
-			k1 := vs[i].Key.(int64)
-			k2 := vs[j].Key.(int64)
-			return k1 < k2
-		})
-		require.Equal(t, target, vs)
+		require.ElementsMatch(t, target, vs)
 		stats := m.LocalMapStats().NearCacheStats
 		require.Equal(t, int64(size), stats.OwnedEntryCount)
 		require.Equal(t, int64(size), stats.Hits)
@@ -140,12 +134,7 @@ func TestGetAllPopulatesNearCache(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sort.Slice(vs, func(i, j int) bool {
-			k1 := vs[i].Key.(int64)
-			k2 := vs[j].Key.(int64)
-			return k1 < k2
-		})
-		require.Equal(t, target, vs)
+		require.ElementsMatch(t, target, vs)
 		stats := m.LocalMapStats().NearCacheStats
 		require.Equal(t, int64(size), stats.OwnedEntryCount)
 	})
@@ -493,7 +482,6 @@ func TestAfterExecuteOnKeysKeysAreInvalidatedFromNearCache(t *testing.T) {
 		for k := range keySet {
 			keys = append(keys, k)
 		}
-
 		// using a different entry processor
 		_, err := m.ExecuteOnKeys(ctx, &SimpleEntryProcessor{value: "value"}, keys...)
 		if err != nil {
