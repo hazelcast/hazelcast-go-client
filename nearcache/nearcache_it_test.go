@@ -22,6 +22,7 @@ package nearcache_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -32,6 +33,8 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -70,6 +73,70 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		// 5. assert number of entries in client Near Cache
 		nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
 		require.Equal(t, mapSize, nca.Size())
+	})
+}
+
+func TestGetAllChecksNearCacheFirst(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAllChecksNearCacheFirst
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		var keys []interface{}
+		var target []types.Entry
+		const size = 1003
+		for i := int64(0); i < size; i++ {
+			if _, err := m.Put(ctx, i, i); err != nil {
+				t.Fatal(err)
+			}
+			keys = append(keys, i)
+			target = append(target, types.Entry{Key: i, Value: i})
+		}
+		// populate Near Cache
+		for i := int64(0); i < size; i++ {
+			v, err := m.Get(ctx, i)
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, i, v)
+		}
+		// GetAll() generates the Near Cache hits
+		vs, err := m.GetAll(ctx, keys...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.ElementsMatch(t, target, vs)
+		stats := m.LocalMapStats().NearCacheStats
+		require.Equal(t, int64(size), stats.OwnedEntryCount)
+		require.Equal(t, int64(size), stats.Hits)
+	})
+}
+
+func TestGetAllPopulatesNearCache(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testGetAllPopulatesNearCache
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, false)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		ctx := context.Background()
+		var keys []interface{}
+		var target []types.Entry
+		const size = 1214
+		for i := int64(0); i < size; i++ {
+			if _, err := m.Put(ctx, i, i); err != nil {
+				t.Fatal(err)
+			}
+			keys = append(keys, i)
+			target = append(target, types.Entry{Key: i, Value: i})
+		}
+		vs, err := m.GetAll(ctx, keys...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.ElementsMatch(t, target, vs)
+		stats := m.LocalMapStats().NearCacheStats
+		require.Equal(t, int64(size), stats.OwnedEntryCount)
 	})
 }
 
@@ -240,6 +307,70 @@ func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 				require.Equal(t, i, v)
 			},
 		},
+		{
+			name: "PutWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutWithTTL(ctx, i, i, 10*time.Second)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
+		{
+			name: "PutTransient",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.PutTransient(ctx, i, i); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "PutTransientWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.PutTransientWithTTL(ctx, i, i, 10*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "PutTransientWithTTLAndMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				if err := tcx.M.PutTransientWithTTLAndMaxIdle(ctx, i, i, 10*time.Second, 5*time.Second); err != nil {
+					tcx.T.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "PutIfAbsent",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutIfAbsent(ctx, i, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
+		{
+			name: "PutIfAbsentWithTTL",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutIfAbsentWithTTL(ctx, i, i, 10*time.Second)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
+		{
+			name: "PutIfAbsentWithTTLAndMaxIdle",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				v, err := tcx.M.PutIfAbsentWithTTLAndMaxIdle(ctx, i, i, 10*time.Second, 5*time.Second)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				require.Equal(t, i, v)
+			},
+		},
 	}
 	invalidationRunner(t, testCases)
 }
@@ -273,6 +404,91 @@ func TestAfterSetNearCacheIsInvalidated(t *testing.T) {
 		},
 	}
 	invalidationRunner(t, testCases)
+}
+
+func TestAfterEvictNearCacheIsInvalidated(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterEvictNearCacheIsInvalidated
+	testCases := []mapTestCase{
+		{
+			name: "Evict",
+			f: func(ctx context.Context, tcx it.MapTestContext, i int32) {
+				b, err := tcx.M.Evict(ctx, i)
+				if err != nil {
+					tcx.T.Fatal(err)
+				}
+				assert.True(t, true, b)
+			},
+		},
+	}
+	invalidationRunner(t, testCases)
+}
+
+func TestAfterEvictAllNearCacheIsInvalidated(t *testing.T) {
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(1000)
+		ctx := context.Background()
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		require.Equal(t, int64(size), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		if err := m.EvictAll(ctx); err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int64(0), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+	})
+}
+
+func TestAfterExecuteOnKeyKeyIsInvalidatedFromNearCache(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterExecuteOnKeyKeyIsInvalidatedFromNearCache
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(1000)
+		ctx := context.Background()
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		require.Equal(t, int64(size), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		randomKey := int32(rand.Intn(int(size)))
+		// using a different entry processor
+		_, err := m.ExecuteOnKey(ctx, &SimpleEntryProcessor{value: "value"}, randomKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int64(size-1), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+	})
+}
+
+func TestAfterExecuteOnKeysKeysAreInvalidatedFromNearCache(t *testing.T) {
+	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterExecuteOnKeyKeyIsInvalidatedFromNearCache
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(1000)
+		ctx := context.Background()
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		require.Equal(t, int64(size), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		const keyCount = size / 10
+		keySet := make(map[int32]struct{})
+		for len(keySet) < int(keyCount) {
+			key := int32(rand.Intn(int(size)))
+			keySet[key] = struct{}{}
+		}
+		keys := make([]interface{}, 0, keyCount)
+		for k := range keySet {
+			keys = append(keys, k)
+		}
+		// using a different entry processor
+		_, err := m.ExecuteOnKeys(ctx, &SimpleEntryProcessor{value: "value"}, keys...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, int64(size-keyCount), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+	})
 }
 
 func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
@@ -483,4 +699,29 @@ func assertNearCacheExpiration(tcx it.MapTestContext, size int32) {
 		}
 		return true
 	})
+}
+
+// this is the same entry processor from the hazelcast_test package.
+// TODO: move this to it
+const simpleEntryProcessorFactoryID = 66
+const simpleEntryProcessorClassID = 1
+
+type SimpleEntryProcessor struct {
+	value string
+}
+
+func (s SimpleEntryProcessor) FactoryID() int32 {
+	return simpleEntryProcessorFactoryID
+}
+
+func (s SimpleEntryProcessor) ClassID() int32 {
+	return simpleEntryProcessorClassID
+}
+
+func (s SimpleEntryProcessor) WriteData(output serialization.DataOutput) {
+	output.WriteString(s.value)
+}
+
+func (s *SimpleEntryProcessor) ReadData(input serialization.DataInput) {
+	s.value = input.ReadString()
 }

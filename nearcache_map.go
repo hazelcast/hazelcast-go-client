@@ -35,6 +35,11 @@ const (
 	eventTypeInvalidation = 1 << 8
 )
 
+type keyReservation struct {
+	Key interface{}
+	ID  int64
+}
+
 type nearCacheMap struct {
 	nc                     *inearcache.NearCache
 	toNearCacheKey         func(key interface{}) (interface{}, error)
@@ -43,15 +48,17 @@ type nearCacheMap struct {
 	lb                     *cluster.ConnectionListenerBinder
 	lg                     logger.LogAdaptor
 	invalidationListenerID atomic.Value
+	serializeKeys          bool
 }
 
 func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serialization.Service, rt *inearcache.ReparingTask, lg logger.LogAdaptor, name string, lb *cluster.ConnectionListenerBinder, local bool) (nearCacheMap, error) {
 	ncm := nearCacheMap{
-		nc: nc,
-		ss: ss,
-		rt: rt,
-		lb: lb,
-		lg: lg,
+		nc:            nc,
+		ss:            ss,
+		rt:            rt,
+		lb:            lb,
+		lg:            lg,
+		serializeKeys: nc.Config().SerializeKeys,
 	}
 	ncc := nc.Config()
 	if ncc.InvalidateOnChange() {
@@ -160,6 +167,46 @@ func (ncm *nearCacheMap) Delete(ctx context.Context, m *Map, key interface{}) er
 	return m.deleteFromRemote(ctx, key)
 }
 
+func (ncm *nearCacheMap) Evict(ctx context.Context, m *Map, key interface{}) (bool, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.evictFromRemote(ctx, key)
+}
+
+func (ncm *nearCacheMap) EvictAll(ctx context.Context, m *Map) error {
+	ncm.nc.Clear()
+	return m.evictAllFromRemote(ctx)
+}
+
+func (ncm *nearCacheMap) ExecuteOnKey(ctx context.Context, m *Map, entryProcessor interface{}, key interface{}) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return nil, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.executeOnKeyFromRemote(ctx, entryProcessor, key)
+}
+
+func (ncm *nearCacheMap) ExecuteOnKeys(ctx context.Context, m *Map, entryProcessor interface{}, keys []interface{}) ([]interface{}, error) {
+	ncKeys := make([]interface{}, len(keys))
+	for i, k := range keys {
+		nck, err := ncm.toNearCacheKey(k)
+		if err != nil {
+			return nil, err
+		}
+		ncKeys[i] = nck
+	}
+	defer func() {
+		for _, nck := range ncKeys {
+			ncm.nc.Invalidate(nck)
+		}
+	}()
+	return m.executeOnKeysFromRemote(ctx, entryProcessor, ncKeys)
+}
+
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {
@@ -182,6 +229,44 @@ func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (inte
 	return value, nil
 }
 
+func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{}) ([]types.Entry, error) {
+	// see: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#getAllInternal
+	entries := make([]types.Entry, len(keys))
+	missKeys, err := ncm.populateResultFromNearCache(keys, entries)
+	if err != nil {
+		return nil, fmt.Errorf("nearCacheMap.GetAll: populating result from near cache: %w", err)
+	}
+	if len(missKeys) == 0 {
+		return entries, nil
+	}
+	keyDatas := make([]serialization.Data, len(keys))
+	for i, k := range missKeys {
+		kd, err := ncm.ss.ToData(k)
+		if err != nil {
+			return nil, err
+		}
+		keyDatas[i] = kd
+	}
+	resMap, err := ncm.getNearCacheReservations(keys, keyDatas)
+	if err != nil {
+		return nil, err
+	}
+	partitionToKeys, err := m.partitionToKeys(keys, false)
+	if err != nil {
+		return nil, err
+	}
+	defer ncm.releaseRemainingReservedKeys(resMap)
+	pairs, err := m.getAllFromRemote(ctx, len(missKeys), partitionToKeys)
+	if err != nil {
+		return nil, fmt.Errorf("nearCacheMap.GetAll: getting keys from remote: %w", err)
+	}
+	keyCount, err := ncm.populateResultFromRemote(pairs, entries, resMap)
+	if err != nil {
+		return nil, err
+	}
+	return entries[:keyCount], nil
+}
+
 func (ncm *nearCacheMap) Put(ctx context.Context, m *Map, key, value interface{}, ttl int64) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {
@@ -198,6 +283,42 @@ func (ncm *nearCacheMap) PutWithMaxIdle(ctx context.Context, m *Map, key, value 
 	}
 	defer ncm.nc.Invalidate(key)
 	return m.putWithMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
+}
+
+func (ncm *nearCacheMap) PutTransientWithTTL(ctx context.Context, m *Map, key interface{}, value interface{}, ttl int64) error {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.putTransientWithTTLFromRemote(ctx, key, value, ttl)
+}
+
+func (ncm *nearCacheMap) PutTransientWithTTLAndMaxIdle(ctx context.Context, m *Map, key interface{}, value interface{}, ttl int64, maxIdle int64) error {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.putTransientWithTTLAndMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
+}
+
+func (ncm *nearCacheMap) PutIfAbsentWithTTL(ctx context.Context, m *Map, key interface{}, value interface{}, ttl int64) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return nil, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.putIfAbsentWithTTLFromRemote(ctx, key, value, ttl)
+}
+
+func (ncm *nearCacheMap) PutIfAbsentWithTTLAndMaxIdle(ctx context.Context, m *Map, key interface{}, value interface{}, ttl time.Duration, maxIdle time.Duration) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return nil, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.putIfAbsentWithTTLAndMaxIdleFromRemote(ctx, key, value, ttl, maxIdle)
 }
 
 func (ncm *nearCacheMap) Remove(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
@@ -318,4 +439,89 @@ func (ncm *nearCacheMap) handleBatchInvalidationMsg(rth *inearcache.RepairingHan
 		return fmt.Sprintf("nearCacheMap.handleBatchInvalidationMsg: key count: %d", len(keys))
 	})
 	return rth.HandleBatch(keys, sources, partitions, seqs)
+}
+
+func (ncm *nearCacheMap) populateResultFromNearCache(keys []interface{}, entries []types.Entry) ([]interface{}, error) {
+	// see: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#populateResultFromNearCache
+	var missKeys []interface{}
+	var i int
+	for _, k := range keys {
+		nk, err := ncm.toNearCacheKey(k)
+		if err != nil {
+			return nil, err
+		}
+		cached, ok, err := ncm.getCachedValue(nk, true)
+		if err != nil {
+			return nil, err
+		}
+		if ok && cached != nil {
+			entries[i] = types.Entry{Key: k, Value: cached}
+			i++
+			continue
+		}
+		missKeys = append(missKeys, k)
+	}
+	return missKeys, nil
+}
+
+func (ncm *nearCacheMap) getNearCacheReservations(keys []interface{}, keyDatas []serialization.Data) (map[inearcache.DataString]keyReservation, error) {
+	res := make(map[inearcache.DataString]keyReservation, len(keys))
+	for i, k := range keys {
+		kd := keyDatas[i]
+		rid, err := ncm.nc.TryReserveForUpdate(k, kd, inearcache.UpdateSemanticReadUpdate)
+		if err != nil {
+			return nil, err
+		}
+		if rid != inearcache.RecordNotReserved {
+			res[inearcache.DataString(kd)] = keyReservation{Key: k, ID: rid}
+		}
+	}
+	return res, nil
+}
+
+func (ncm *nearCacheMap) releaseRemainingReservedKeys(rks map[inearcache.DataString]keyReservation) {
+	// see: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#releaseRemainingReservedKeys
+	serialize := ncm.serializeKeys
+	for kds, rk := range rks {
+		var key interface{}
+		if serialize {
+			key = kds
+		} else {
+			key = rk.Key
+		}
+		ncm.nc.Invalidate(key)
+	}
+}
+
+func (ncm *nearCacheMap) populateResultFromRemote(pairs []proto.Pair, entries []types.Entry, reservations map[inearcache.DataString]keyReservation) (int, error) {
+	// see: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#populateResultFromRemote
+	// assumes entries has max capacity.
+	serialize := ncm.serializeKeys
+	i := len(entries) - len(pairs)
+	for _, p := range pairs {
+		kd := p.Key.(serialization.Data)
+		k, err := ncm.ss.ToObject(kd)
+		if err != nil {
+			return 0, err
+		}
+		e := types.Entry{Key: k}
+		kds := inearcache.DataString(kd)
+		kr, ok := reservations[kds]
+		if !ok {
+			continue
+		}
+		if serialize {
+			k = kd
+		}
+		vd := p.Value.(serialization.Data)
+		v, err := ncm.nc.TryPublishReserved(k, vd, kr.ID)
+		if err != nil {
+			return 0, err
+		}
+		e.Value = v
+		entries[i] = e
+		i++
+		delete(reservations, kds)
+	}
+	return i, nil
 }
