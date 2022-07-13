@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -117,12 +116,7 @@ func TestGetAllChecksNearCacheFirst(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sort.Slice(vs, func(i, j int) bool {
-			k1 := vs[i].Key.(int64)
-			k2 := vs[j].Key.(int64)
-			return k1 < k2
-		})
-		require.Equal(t, target, vs)
+		require.ElementsMatch(t, target, vs)
 		stats := m.LocalMapStats().NearCacheStats
 		require.Equal(t, int64(size), stats.OwnedEntryCount)
 		require.Equal(t, int64(size), stats.Hits)
@@ -150,12 +144,7 @@ func TestGetAllPopulatesNearCache(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sort.Slice(vs, func(i, j int) bool {
-			k1 := vs[i].Key.(int64)
-			k2 := vs[j].Key.(int64)
-			return k1 < k2
-		})
-		require.Equal(t, target, vs)
+		require.ElementsMatch(t, target, vs)
 		stats := m.LocalMapStats().NearCacheStats
 		require.Equal(t, int64(size), stats.OwnedEntryCount)
 	})
@@ -347,22 +336,6 @@ func TestNearCacheTTLExpiration(t *testing.T) {
 			ncc := nearcache.Config{
 				Name:              tcx.MapName,
 				TimeToLiveSeconds: maxTTLSeconds,
-			}
-			ncc.SetInvalidateOnChange(false)
-			tcx.Config.AddNearCache(ncc)
-		},
-	}
-	tcx.Tester(ttlMaxIdleTester)
-}
-
-func TestNearCacheMaxIdleRecordsExpired(t *testing.T) {
-	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheMaxIdleRecordsExpired
-	tcx := it.MapTestContext{
-		T: t,
-		ConfigCallback: func(tcx it.MapTestContext) {
-			ncc := nearcache.Config{
-				Name:              tcx.MapName,
-				TimeToLiveSeconds: maxIdleSeconds,
 			}
 			ncc.SetInvalidateOnChange(false)
 			tcx.Config.AddNearCache(ncc)
@@ -855,7 +828,6 @@ func TestAfterExecuteOnKeysKeysAreInvalidatedFromNearCache(t *testing.T) {
 		for k := range keySet {
 			keys = append(keys, k)
 		}
-
 		// using a different entry processor
 		_, err := m.ExecuteOnKeys(ctx, &SimpleEntryProcessor{value: "value"}, keys...)
 		if err != nil {
