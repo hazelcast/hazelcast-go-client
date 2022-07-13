@@ -101,6 +101,10 @@ func TestConfig_Clone(t *testing.T) {
 		Cluster:       cluster.Config{},
 		Stats:         hazelcast.StatsConfig{},
 	}
+	err := cfg.Validate()
+	if err != nil {
+		return
+	}
 	newCfg := cfg.Clone()
 	assert.True(t, reflect.DeepEqual(newCfg.FlakeIDGenerators, cfg.FlakeIDGenerators))
 	assert.True(t, reflect.DeepEqual(newCfg.Labels, cfg.Labels))
