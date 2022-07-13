@@ -203,16 +203,18 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 
 // EnsureClient prevents client start to fail the test when the client is not allowed in the cluster.
 func EnsureClient(config hz.Config) *hz.Client {
-	for {
+	for i := 0; i < 60; i++ {
 		client, err := hz.StartNewClientWithConfig(context.Background(), config)
 		if err != nil {
 			if errors.Is(err, hzerrors.ErrClientNotAllowedInCluster) {
+				time.Sleep(1 * time.Second)
 				continue
 			}
 			panic(err)
 		}
 		return client
 	}
+	panic("the client could not connect to the cluster in 60 seconds.")
 }
 
 func NewUniqueObjectName(service string, labels ...string) string {
