@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -36,6 +37,7 @@ import (
 	"go.uber.org/goleak"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -197,6 +199,22 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 		panic(err)
 	}
 	return client
+}
+
+// EnsureClient prevents client start to fail the test when the client is not allowed in the cluster.
+func EnsureClient(config hz.Config) *hz.Client {
+	for i := 0; i < 60; i++ {
+		client, err := hz.StartNewClientWithConfig(context.Background(), config)
+		if err != nil {
+			if errors.Is(err, hzerrors.ErrClientNotAllowedInCluster) {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			panic(err)
+		}
+		return client
+	}
+	panic("the client could not connect to the cluster in 60 seconds.")
 }
 
 func NewUniqueObjectName(service string, labels ...string) string {
