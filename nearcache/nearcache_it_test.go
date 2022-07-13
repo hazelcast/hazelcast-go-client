@@ -62,6 +62,13 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		m := tcx.M
 		t := tcx.T
 		ctx := context.Background()
+		// assert cluster size
+		it.Eventually(t, func() bool {
+			ci := hz.NewClientInternal(tcx.Client)
+			mems := ci.OrderedMembers()
+			t.Logf("member count: %d, expected: %d", len(mems), it.MemberCount())
+			return len(mems) == it.MemberCount()
+		})
 		const mapSize = 1000
 		cls := tcx.Cluster
 		// 2. populate server side map
