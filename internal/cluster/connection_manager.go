@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -127,6 +127,7 @@ type ConnectionManager struct {
 	clusterService       *Service
 	invocationService    *invocation.Service
 	connMap              *connectionMap
+	doneChMu             *sync.RWMutex
 	doneCh               chan struct{}
 	clusterIDMu          *sync.Mutex
 	clusterID            *types.UUID
@@ -159,6 +160,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		failoverConfig:       bundle.FailoverConfig,
 		clusterIDMu:          &sync.Mutex{},
 		randGen:              rand.New(rand.NewSource(time.Now().Unix())),
+		doneChMu:             &sync.RWMutex{},
 	}
 	return manager
 }
@@ -281,7 +283,9 @@ func (m *ConnectionManager) Stop() {
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
 		return
 	}
+	m.doneChMu.RLock()
 	close(m.doneCh)
+	m.doneChMu.RUnlock()
 	m.connMap.CloseAll(nil)
 }
 
@@ -346,7 +350,9 @@ func (m *ConnectionManager) someNonLiteConnection() *Connection {
 }
 
 func (m *ConnectionManager) reset() {
+	m.doneChMu.Lock()
 	m.doneCh = make(chan struct{})
+	m.doneChMu.Unlock()
 	m.clusterIDMu.Lock()
 	if m.clusterID != nil {
 		m.prevClusterID = m.clusterID
@@ -600,12 +606,19 @@ func (m *ConnectionManager) syncConnections() {
 	defer ticker.Stop()
 	for {
 		select {
-		case <-m.doneCh:
+		case <-m.getDoneCh():
 			return
 		case <-ticker.C:
 			m.connectAllMembers(context.Background())
 		}
 	}
+}
+
+func (m *ConnectionManager) getDoneCh() <-chan struct{} {
+	m.doneChMu.RLock()
+	ch := m.doneCh
+	m.doneChMu.RUnlock()
+	return ch
 }
 
 func (m *ConnectionManager) networkConfig() *pubcluster.NetworkConfig {
