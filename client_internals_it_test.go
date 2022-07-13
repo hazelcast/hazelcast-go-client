@@ -49,28 +49,28 @@ func TestListenersAfterClientDisconnected(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501, addEntryListener)
 	})
 	t.Run("MemberHostname_ClientIP_AddListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501, addListener)
+		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46502, addListener)
 	})
 
 	t.Run("MemberHostname_ClientHostname_AddEntryListener", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501, addEntryListener)
 	})
 	t.Run("MemberHostname_ClientHostname_AddListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501, addListener)
+		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47502, addListener)
 	})
 
 	t.Run("MemberIP_ClientIP", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501, addEntryListener)
 	})
 	t.Run("MemberIP_ClientIP_AddListener_AddEntryListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501, addListener)
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48502, addListener)
 	})
 
 	t.Run("MemberIP_ClientHostname_AddEntryListener", func(t *testing.T) {
 		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501, addEntryListener)
 	})
 	t.Run("MemberIP_ClientHostname_AddListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501, addListener)
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49502, addListener)
 	})
 }
 
@@ -222,7 +222,7 @@ func TestClusterID(t *testing.T) {
 }
 
 func TestClientInternal_ClusterID(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-cluster-id", 55701, 1)
+	tc := it.StartNewClusterWithOptions("ci-cluster-id", 55711, 1)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -235,7 +235,7 @@ func TestClientInternal_ClusterID(t *testing.T) {
 func TestClientInternal_OrderedMembers(t *testing.T) {
 	t.Skipf("flaky test: https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
-	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55701, 1)
+	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55721, 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -269,7 +269,7 @@ func TestClientInternal_OrderedMembers(t *testing.T) {
 }
 
 func TestClientInternal_ConnectedToMember(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55701, 2)
+	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55731, 2)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -401,7 +401,7 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 }
 
 func clientInternalTester(t *testing.T, clusterName string, f func(t *testing.T, ci *hz.ClientInternal)) {
-	tc := it.StartNewClusterWithOptions(clusterName, 55701, 1)
+	tc := it.StartNewClusterWithOptions(clusterName, 55751, 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
