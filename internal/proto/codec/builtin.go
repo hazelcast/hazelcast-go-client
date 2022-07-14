@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -249,6 +249,18 @@ func DecodeNullableEntryList(frameIterator *proto.ForwardFrameIterator, keyDecod
 	return DecodeEntryList(frameIterator, keyDecoder, valueDecoder)
 }
 
+func DecodeEntryListForStringAndEntryListIntegerLong(it *proto.ForwardFrameIterator) []proto.Pair {
+	var result []proto.Pair
+	it.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(it) {
+		key := DecodeString(it)
+		value := DecodeEntryListIntegerLong(it)
+		result = append(result, proto.NewPair(key, value))
+	}
+	it.Next()
+	return result
+}
+
 func DecodeEntryListForDataAndData(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
 	result := make([]proto.Pair, 0)
 	frameIterator.Next()
@@ -308,6 +320,30 @@ func DecodeEntryListUUIDListInteger(frameIterator *proto.ForwardFrameIterator) [
 	result := make([]proto.Pair, keySize)
 	for i := 0; i < keySize; i++ {
 		result[i] = proto.NewPair(keys[i], values[i])
+	}
+	return result
+}
+
+func DecodeEntryListIntegerUUID(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
+	frame := frameIterator.Next()
+	entryCount := len(frame.Content) / proto.EntryListIntegerUUIDEntrySizeInBytes
+	result := make([]proto.Pair, entryCount)
+	for i := 0; i < entryCount; i++ {
+		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntryListIntegerUUIDEntrySizeInBytes))
+		value := FixSizedTypesCodec.DecodeUUID(frame.Content, int32(i*proto.EntryListIntegerUUIDEntrySizeInBytes+proto.IntSizeInBytes))
+		result[i] = proto.NewPair(key, value)
+	}
+	return result
+}
+
+func DecodeEntryListIntegerLong(iterator *proto.ForwardFrameIterator) []proto.Pair {
+	frame := iterator.Next()
+	entryCount := len(frame.Content) / proto.EntryListIntegerLongSizeInBytes
+	result := make([]proto.Pair, entryCount)
+	for i := 0; i < entryCount; i++ {
+		key := FixSizedTypesCodec.DecodeInt(frame.Content, int32(i*proto.EntryListIntegerLongSizeInBytes))
+		value := FixSizedTypesCodec.DecodeLong(frame.Content, int32(i*proto.EntryListIntegerLongSizeInBytes+proto.IntSizeInBytes))
+		result[i] = proto.NewPair(key, value)
 	}
 	return result
 }

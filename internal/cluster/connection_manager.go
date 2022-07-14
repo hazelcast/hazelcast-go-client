@@ -176,6 +176,10 @@ func (m *ConnectionManager) SetInvocationService(s *invocation.Service) {
 	m.invocationService = s
 }
 
+func (m *ConnectionManager) ClientUUID() types.UUID {
+	return m.clientUUID
+}
+
 func (m *ConnectionManager) start(ctx context.Context) error {
 	atomic.StoreInt32(&m.state, starting)
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })

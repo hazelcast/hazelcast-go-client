@@ -20,9 +20,14 @@
 package hazelcast
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
@@ -43,4 +48,58 @@ func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 
 func (ci *ClientInternal) ClusterService() *cluster.Service {
 	return ci.client.ic.ClusterService
+}
+
+func (ci *ClientInternal) SerializationService() *serialization.Service {
+	return ci.client.ic.SerializationService
+}
+
+// MakeNearCacheAdapterFromMap returns the nearcache of the given map.
+// It returns an interface{} instead of it.NearCacheAdapter in order not to introduce an import cycle.
+func MakeNearCacheAdapterFromMap(m *Map) interface{} {
+	if m.hasNearCache {
+		return NearCacheTestAdapter{m: m}
+	}
+	panic("hazelcast.MakeNearCacheAdapterFromMap: map has no near cache")
+}
+
+type NearCacheTestAdapter struct {
+	m *Map
+}
+
+func (n NearCacheTestAdapter) Size() int {
+	return n.m.ncm.nc.Size()
+}
+
+func (n NearCacheTestAdapter) Get(key interface{}) (interface{}, error) {
+	return n.m.Get(context.Background(), key)
+}
+
+func (n NearCacheTestAdapter) GetFromNearCache(key interface{}) (interface{}, error) {
+	key = n.ToNearCacheKey(key)
+	v, ok, err := n.m.ncm.nc.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return v, nil
+}
+
+func (n NearCacheTestAdapter) GetRecord(key interface{}) (*inearcache.Record, bool) {
+	key = n.ToNearCacheKey(key)
+	return n.m.ncm.nc.GetRecord(key)
+}
+
+func (n NearCacheTestAdapter) InvalidationRequests() int64 {
+	return n.m.ncm.nc.InvalidationRequests()
+}
+
+func (n NearCacheTestAdapter) ToNearCacheKey(key interface{}) interface{} {
+	key, err := n.m.ncm.toNearCacheKey(key)
+	if err != nil {
+		panic(fmt.Errorf("hazelcast.NearCacheTestAdapter.ToNearCacheKey: %w", err))
+	}
+	return key
 }
