@@ -468,10 +468,6 @@ func (rs *RecordStore) TryReserveForUpdate(key interface{}, keyData serializatio
 	return rid, nil
 }
 
-func (rs *RecordStore) evictionRequired() bool {
-	return rs.Size() >= rs.maxSize
-}
-
 func (rs *RecordStore) nextReservationID() int64 {
 	return atomic.AddInt64(&rs.reservationID, 1)
 }

@@ -35,25 +35,12 @@ const (
 
 // Config is the Near Cache configuration.
 type Config struct {
+	// Eviction is the optional eviction configuration for the Near Cache.
+	Eviction           EvictionConfig
 	invalidateOnChange *bool
 	// Name is the name of this Near Cache configuration.
 	// If the name is not specified, it is set to "default".
 	Name string
-	// Eviction is the optional eviction configuration for the Near Cache.
-	Eviction EvictionConfig
-	// InMemoryFormat specifies how the entry values are stored in the Near Cache.
-	// InMemoryFormatBinary stores the values after serializing them.
-	// InMemoryFormatObject stores the values in their original form.
-	// The default is InMemoryFormatBinary.
-	InMemoryFormat InMemoryFormat
-	// SerializeKeys specifies how the entry keys are stored in the Near Cache.
-	// If false, keys are stored in their original form.
-	// If true, keys are stored after serializing them.
-	// Storing keys in serialized form is required when the key cannot be compared for equality, such as slices.
-	// The default is false.
-	SerializeKeys bool
-	// TimeToLiveSeconds is the maximum number of seconds for each entry to stay in the Near Cache (time to live).
-	// Entries that are older than TimeToLiveSeconds will automatically be evicted from the Near Cache.
 	// Must be non-negative.
 	// The value 0 means math.MaxInt32
 	// The default is 0.
@@ -65,6 +52,17 @@ type Config struct {
 	// The value 0 means math.MaxInt32
 	// The default is 0.
 	MaxIdleSeconds int
+	// SerializeKeys specifies how the entry keys are stored in the Near Cache.
+	// If false, keys are stored in their original form.
+	// If true, keys are stored after serializing them.
+	// Storing keys in serialized form is required when the key is not hashable, such as slices.
+	// The default is false.
+	SerializeKeys bool
+	// InMemoryFormat specifies how the entry values are stored in the Near Cache.
+	// InMemoryFormatBinary stores the values after serializing them.
+	// InMemoryFormatObject stores the values in their original form.
+	// The default is InMemoryFormatBinary.
+	InMemoryFormat InMemoryFormat
 }
 
 // Clone returns a copy of the configuration.
@@ -141,13 +139,13 @@ func (c Config) MarshalJSON() ([]byte, error) {
 }
 
 type configForMarshal struct {
+	Eviction           EvictionConfig
 	InvalidateOnChange *bool `json:",omitempty"`
 	Name               string
-	Eviction           EvictionConfig
-	InMemoryFormat     InMemoryFormat
-	SerializeKeys      bool
 	TimeToLiveSeconds  int
 	MaxIdleSeconds     int
+	SerializeKeys      bool
+	InMemoryFormat     InMemoryFormat
 }
 
 /*

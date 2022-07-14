@@ -32,6 +32,8 @@ type MapTestContext struct {
 	Config         *hz.Config
 	ConfigCallback func(testContext MapTestContext)
 	NameMaker      func(...string) string
+	Before         func(tcx MapTestContext)
+	After          func(tcx MapTestContext)
 	MapName        string
 	Smart          bool
 }
@@ -96,6 +98,12 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 			tt := tcx
 			tt.Smart = true
 			tt.T = t
+			if tt.Before != nil {
+				tt.Before(tt)
+			}
+			if tt.After != nil {
+				defer tt.After(tt)
+			}
 			runner(tt)
 		})
 	}
