@@ -179,7 +179,16 @@ You can use multiple SkipIf statements to skip if one one of the conditions is s
 */
 func If(t *testing.T, conditions string) {
 	if skipChecker.CanSkip(conditions) {
-		t.Skipf("Skipping test since: %s", conditions)
+		t.Skipf("Skipping test since: %s holds", conditions)
+	}
+}
+
+// IfNot can be used to skip a test case if the list of comma-separated conditions does not hold.
+// It is the reverse of skip.If.
+// See the documentation about skip.If.
+func IfNot(t *testing.T, conditions string) {
+	if !skipChecker.CanSkip(conditions) {
+		t.Skipf("Skipping test since: %s does not hold", conditions)
 	}
 }
 
@@ -252,11 +261,21 @@ func (s Checker) checkArch(op, right string) bool {
 		"mips64p32", "mips64p32le", "mipsle", "ppc",
 		"riscv", "s390", "sparc",
 	}
+	b64 := [...]string{
+		"amd64", "arm64", "arm64be", "loong64", "mips64",
+		"mips64le", "ppc64", "ppc64le", "riscv64",
+		"s390x", "sparc64", "wasm",
+	}
 	if op == "~" {
-		if right != "32bit" {
-			panic("32bit is the only valid value for arch ~ operator")
+		var b []string
+		if right == "32bit" {
+			b = b32[:]
+		} else if right == "64bit" {
+			b = b64[:]
+		} else {
+			panic("32bit and 64bit are the only valid values for arch ~ operator")
 		}
-		for _, a := range b32 {
+		for _, a := range b {
 			if s.Arch == a {
 				return true
 			}
