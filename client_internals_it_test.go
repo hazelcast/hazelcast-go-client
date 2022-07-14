@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ func TestNotReceivedInvocation(t *testing.T) {
 	// This test skips sending an invocation to the member in order to simulate lost connection.
 	// After 5 seconds, a GroupLost event is published to simulate the disconnection.
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("not-received-invocation", 55701, 1)
+		tc := it.StartNewClusterWithOptions("not-received-invocation", 55741, 1)
 		defer tc.Shutdown()
 		ctx := context.Background()
 		config := tc.DefaultConfig()
@@ -194,7 +194,7 @@ func TestClusterID(t *testing.T) {
 				wg.Done()
 			}
 		})
-		c := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		c := ensureClient(config)
 		defer func(ctx context.Context, c *hz.Client) {
 			err := c.Shutdown(ctx)
 			if err != nil {
@@ -222,7 +222,7 @@ func TestClusterID(t *testing.T) {
 }
 
 func TestClientInternal_ClusterID(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-cluster-id", 55701, 1)
+	tc := it.StartNewClusterWithOptions("ci-cluster-id", 55711, 1)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -235,7 +235,7 @@ func TestClientInternal_ClusterID(t *testing.T) {
 func TestClientInternal_OrderedMembers(t *testing.T) {
 	t.Skipf("flaky test: https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
-	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55701, 1)
+	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55721, 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -269,7 +269,7 @@ func TestClientInternal_OrderedMembers(t *testing.T) {
 }
 
 func TestClientInternal_ConnectedToMember(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55701, 2)
+	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55731, 2)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -401,7 +401,7 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 }
 
 func clientInternalTester(t *testing.T, clusterName string, f func(t *testing.T, ci *hz.ClientInternal)) {
-	tc := it.StartNewClusterWithOptions(clusterName, 55701, 1)
+	tc := it.StartNewClusterWithOptions(clusterName, 55751, 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -456,4 +456,20 @@ func DecodeMCGetMemberConfigResponse(clientMessage *proto.ClientMessage) string 
 	frameIterator.Next()
 
 	return codec.DecodeString(frameIterator)
+}
+
+// ensureClient prevents client start to fail the test when the client is not allowed in the cluster.
+func ensureClient(config hz.Config) *hz.Client {
+	for i := 0; i < 60; i++ {
+		client, err := hz.StartNewClientWithConfig(context.Background(), config)
+		if err != nil {
+			if errors.Is(err, hzerrors.ErrClientNotAllowedInCluster) {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			panic(err)
+		}
+		return client
+	}
+	panic("the client could not connect to the cluster in 60 seconds.")
 }

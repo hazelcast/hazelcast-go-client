@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -93,13 +94,17 @@ func TestMap_PutWithTTLAndMaxIdle(t *testing.T) {
 func TestMap_PutIfAbsent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsent(context.Background(), "key", targetValue); err != nil {
+		v, err := m.PutIfAbsent(context.Background(), "key", targetValue)
+		if err != nil {
 			t.Fatal(err)
 		}
+		it.AssertEquals(t, nil, v)
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
-		if _, err := m.PutIfAbsent(context.Background(), "key", "another-value"); err != nil {
+		v, err = m.PutIfAbsent(context.Background(), "key", "another-value")
+		if err != nil {
 			t.Fatal(err)
 		}
+		it.AssertEquals(t, "value", v)
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 	})
 }
@@ -107,9 +112,11 @@ func TestMap_PutIfAbsent(t *testing.T) {
 func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsentWithTTL(context.Background(), "key", targetValue, 1*time.Second); err != nil {
+		v, err := m.PutIfAbsentWithTTL(context.Background(), "key", targetValue, 1*time.Second)
+		if err != nil {
 			t.Fatal(err)
 		}
+		assert.Equal(t, nil, v)
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(context.Background(), "key")) == nil
@@ -120,9 +127,11 @@ func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsentWithTTLAndMaxIdle(context.Background(), "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+		v, err := m.PutIfAbsentWithTTLAndMaxIdle(context.Background(), "key", targetValue, 1*time.Second, 1*time.Second)
+		if err != nil {
 			t.Fatal(err)
 		}
+		assert.Equal(t, nil, v)
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(context.Background(), "key")) == nil
@@ -1032,6 +1041,23 @@ func TestMap_Destroy(t *testing.T) {
 	})
 }
 
+func TestMap_Destroy_WithNearCache(t *testing.T) {
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{Name: tcx.MapName}
+			tcx.Config.AddNearCache(ncc)
+		},
+	}
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		if err := m.Destroy(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func TestMap_Aggregate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
@@ -1081,6 +1107,7 @@ func TestMap_AggregateWithPredicate(t *testing.T) {
 }
 
 func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
+	it.SkipIf(t, "hz > 4.1.9, hz < 4.3")
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"

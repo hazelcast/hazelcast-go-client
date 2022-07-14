@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
-	"sort"
 	"testing"
 	"time"
 
@@ -30,7 +29,9 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/logger"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -232,6 +233,16 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 			"PrefetchCount": 42,
 			"PrefetchExpiry": "42s"
 		}
+	},
+	"NearCaches": [
+		{
+			"Name": "mymap*",
+			"InvalidateOnChange": false,
+			"Eviction": {"Policy": "RANDOM"}
+		}
+	],
+	"NearCacheInvalidation": {
+		"ReconciliationIntervalSeconds": 10
 	}
 }
 `
@@ -252,6 +263,19 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	assert.Equal(t, types.Duration(2*time.Minute), config.Stats.Period)
 	assert.Equal(t, int32(42), config.FlakeIDGenerators["bar"].PrefetchCount)
 	assert.Equal(t, types.Duration(42*time.Second), config.FlakeIDGenerators["bar"].PrefetchExpiry)
+	evc := nearcache.EvictionConfig{}
+	evc.SetPolicy(nearcache.EvictionPolicyRandom)
+	ncc := nearcache.Config{
+		Name:     "mymap*",
+		Eviction: evc,
+	}
+	ncc.SetInvalidateOnChange(false)
+	ncc2, ok, err := config.GetNearCache("mymap*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.True(t, ok)
+	assert.Equal(t, ncc, ncc2)
 }
 
 func TestMarshalDefaultConfig(t *testing.T) {
@@ -260,8 +284,42 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
-	assertStringEquivalent(t, target, string(b))
+	target := `{"NearCacheInvalidation":{},"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
+	if !it.EqualStringContent([]byte(target), b) {
+		t.Logf("expected: %s", target)
+		t.Logf("got     : %s", string(b))
+		t.Fatal()
+	}
+}
+
+func TestMarshalWithNearCacheConfig(t *testing.T) {
+	config := hazelcast.Config{}
+	ncc := nearcache.Config{Name: "foo"}
+	config.AddNearCache(ncc)
+	config.NearCacheInvalidation.SetReconciliationIntervalSeconds(50)
+	config.NearCacheInvalidation.SetMaxToleratedMissCount(100)
+	b, err := json.Marshal(&config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := `
+		{
+			"NearCaches":[
+				{"Name":"foo","Eviction":{},"InMemoryFormat":"binary","SerializeKeys":false,"TimeToLiveSeconds":0,"MaxIdleSeconds":0}
+			],
+			"Logger":{},
+			"Failover":{},
+			"Serialization":{},
+			"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},
+			"Stats":{},
+			"NearCacheInvalidation":{"MaxToleratedMissCount":100,"ReconciliationIntervalSeconds":50}
+		}`
+	if !it.EqualStringContent([]byte(target), b) {
+		t.Logf("expected: %s", target)
+		t.Logf("got     : %s", string(b))
+		t.Fatal()
+	}
+
 }
 
 func TestValidateFlakeIDGeneratorConfig(t *testing.T) {
@@ -402,6 +460,28 @@ func TestConfig_AddExistingFlakeIDGenerator(t *testing.T) {
 	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
 }
 
+func TestConfig_AddNearCache(t *testing.T) {
+	config := hazelcast.Config{}
+	ncc := nearcache.Config{Name: "foo"}
+	config.AddNearCache(ncc)
+	assert.NoError(t, config.Validate())
+	ncc2, ok, err := config.GetNearCache("foo")
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.Equal(t, ncc, ncc2)
+}
+
+func TestConfig_Validate_NearCache_Fails(t *testing.T) {
+	config := hazelcast.Config{}
+	ncc := nearcache.Config{Name: "foo"}
+	ncc.TimeToLiveSeconds = -1
+	config.AddNearCache(ncc)
+	err := config.Validate()
+	if !errors.Is(err, hzerrors.ErrInvalidConfiguration) {
+		t.Fatalf("expected ErrInvalidConfiguration")
+	}
+}
+
 func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, "", c.ClientName)
 	assert.Equal(t, []string(nil), c.Labels)
@@ -443,17 +523,4 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, logger.InfoLevel, c.Logger.Level)
 
 	assert.Equal(t, false, c.Failover.Enabled)
-}
-
-func assertStringEquivalent(t *testing.T, s1, s2 string) {
-	assert.Equal(t, len(s1), len(s2))
-	s1sl := []byte(s1)
-	s2sl := []byte(s2)
-	sort.Slice(s1sl, func(i, j int) bool {
-		return s1sl[i] < s1sl[j]
-	})
-	sort.Slice(s2sl, func(i, j int) bool {
-		return s2sl[i] < s2sl[j]
-	})
-	assert.Equal(t, s1sl, s2sl)
 }

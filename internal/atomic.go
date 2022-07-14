@@ -14,17 +14,29 @@
  * limitations under the License.
  */
 
-package event
+package internal
 
 import (
-	"reflect"
+	"sync/atomic"
+	"unsafe"
 )
 
-// MakeSubscriptionID creates subscription ID from a function
-func MakeSubscriptionID(fun interface{}) int64 {
-	value := reflect.ValueOf(fun)
-	if value.Kind() != reflect.Func {
-		panic("not a func")
+// AtomicValue keeps the pointer to an interface{}.
+// Storing and loading values is concurrency-safe.
+type AtomicValue struct {
+	value unsafe.Pointer
+}
+
+// Store stores the given interface{} pointer.
+func (a *AtomicValue) Store(v *interface{}) {
+	atomic.StorePointer(&a.value, unsafe.Pointer(v))
+}
+
+// Load loads the given interface{} pointer and returns an interface{}.
+func (a *AtomicValue) Load() interface{} {
+	v := (*interface{})(atomic.LoadPointer(&a.value))
+	if v == nil {
+		return v
 	}
-	return int64(value.Pointer())
+	return *v
 }

@@ -1,0 +1,45 @@
+name: "Test Go Client with Race Detector Enabled"
+on: ["push", "pull_request"]
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    env:
+      GOPATH: "${{ github.workspace }}"
+      HZ_VERSION: "5.1.2"
+    defaults:
+      run:
+        shell: "bash"
+        working-directory: "$HOME/hazelcast-go-client"
+    steps:
+      - name: "Checkout Code"
+        uses: "actions/checkout@v2"
+        with:
+          path: "$HOME/hazelcast-go-client"
+
+      - name: "Install Dependencies"
+        run: |
+          sudo apt-get update &&\
+          sudo apt-get install -y openjdk-8-jdk-headless maven
+
+      - name: "Start Hazelcast Remote Controller"
+        run: |
+          bash ./rc.sh start
+          sleep 2
+
+      - name: "Setup Go"
+        uses: "actions/setup-go@v2"
+        with:
+          go-version: "1.18"
+
+      - name: "Install Go tools"
+        run: |
+          go install golang.org/x/tools/...@v0.1.11
+          go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
+
+      - name: "Go mod tidy"
+        run: |
+          go mod tidy
+
+      - name: "Run Tests with Race Detection"
+        run: |
+          make test-race

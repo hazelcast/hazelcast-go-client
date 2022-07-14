@@ -3,7 +3,7 @@
 PORT ?= 5050
 MEMBER_COUNT ?= 3
 COVERAGE_OUT ?= coverage.out
-TEST_FLAGS ?= -v -count 1 -timeout 25m -tags=hazelcastinternal,hazelcastinternaltest
+TEST_FLAGS ?= -v -count 1 -p 1 -timeout 50m -tags=hazelcastinternal,hazelcastinternaltest
 PACKAGES = $(go list ./... | grep -v org-website)
 
 build:
@@ -14,7 +14,7 @@ test: test-all
 test-all:
 	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) $(PACKAGES) ./...
 
-test-all-race:
+test-race:
 	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -race $(PACKAGES)
 
 test-cover:
