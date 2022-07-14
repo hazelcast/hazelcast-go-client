@@ -43,6 +43,8 @@ func TestReconnectMode_MarshalText(t *testing.T) {
 					return
 				}
 				t.Fatal(err)
+			} else if err == nil && tc.hasErr {
+				t.Fatal("got nil want an error")
 			}
 			assert.Equal(t, tc.expected, got)
 		})
@@ -69,6 +71,8 @@ func TestReconnectMode_UnmarshalText(t *testing.T) {
 					return
 				}
 				t.Fatal(err)
+			} else if err == nil && tc.hasErr {
+				t.Fatal("got nil want to error")
 			}
 			assert.Equal(t, tc.expected, rm)
 		})

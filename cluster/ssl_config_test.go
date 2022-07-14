@@ -42,6 +42,8 @@ func TestSSLConfig_SetCAPath(t *testing.T) {
 			err := sslConfig.SetCAPath(tc.caPath)
 			if err != nil && !tc.hasError {
 				t.Fatal(err)
+			} else if err == nil && tc.hasError {
+				t.Fatal("got nil want an error")
 			}
 		})
 	}
