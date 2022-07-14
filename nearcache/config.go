@@ -142,8 +142,8 @@ type configForMarshal struct {
 	Name               string
 	TimeToLiveSeconds  int
 	MaxIdleSeconds     int
-	InMemoryFormat     InMemoryFormat
 	SerializeKeys      bool
+	InMemoryFormat     InMemoryFormat
 }
 
 /*
