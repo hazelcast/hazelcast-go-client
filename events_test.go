@@ -21,27 +21,24 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/hazelcast/hazelcast-go-client/internal/event"
 )
 
-func TestEntryNotified_EventName(t *testing.T) {
-	en := hazelcast.EntryNotified{}
-	assert.Equal(t, en.EventName(), "entrynotified")
-}
-
 func TestLifecycleState_String(t *testing.T) {
-	for _, tc := range []struct {
+	testCases := []struct {
 		state          hazelcast.LifecycleState
 		expectedString string
 	}{
-		{hazelcast.LifecycleStateStarting, "starting"},
-		{hazelcast.LifecycleStateStarted, "started"},
-		{hazelcast.LifecycleStateShuttingDown, "shutting down"},
-		{hazelcast.LifecycleStateShutDown, "shutdown"},
-		{hazelcast.LifecycleStateConnected, "client connected"},
-		{hazelcast.LifecycleStateDisconnected, "client disconnected"},
-		{hazelcast.LifecycleStateChangedCluster, "changed cluster"},
-		{hazelcast.LifecycleStateChangedCluster + 1, "UNKNOWN"},
-	} {
+		{state: hazelcast.LifecycleStateStarting, expectedString: "starting"},
+		{state: hazelcast.LifecycleStateStarted, expectedString: "started"},
+		{state: hazelcast.LifecycleStateShuttingDown, expectedString: "shutting down"},
+		{state: hazelcast.LifecycleStateShutDown, expectedString: "shutdown"},
+		{state: hazelcast.LifecycleStateConnected, expectedString: "client connected"},
+		{state: hazelcast.LifecycleStateDisconnected, expectedString: "client disconnected"},
+		{state: hazelcast.LifecycleStateChangedCluster, expectedString: "changed cluster"},
+		{state: hazelcast.LifecycleStateChangedCluster + 1, expectedString: "UNKNOWN"},
+	}
+	for _, tc := range testCases {
 		t.Run(tc.expectedString, func(t *testing.T) {
 			got := tc.state.String()
 			if tc.state.String() != tc.expectedString {
@@ -51,32 +48,23 @@ func TestLifecycleState_String(t *testing.T) {
 	}
 }
 
-func TestLifecycleStateChanged_EventName(t *testing.T) {
-	event := hazelcast.LifecycleStateChanged{}
-	assert.Equal(t, event.EventName(), "lifecyclestatechanged")
-}
-
-func TestMessagePublished_EventName(t *testing.T) {
-	event := hazelcast.MessagePublished{}
-	assert.Equal(t, event.EventName(), "messagepublished")
-}
-
-func TestQueueItemNotified_EventName(t *testing.T) {
-	event := hazelcast.QueueItemNotified{}
-	assert.Equal(t, event.EventName(), "queue.itemnotified")
-}
-
-func TestListItemNotified_EventName(t *testing.T) {
-	event := hazelcast.ListItemNotified{}
-	assert.Equal(t, event.EventName(), "list.itemnotified")
-}
-
-func TestSetItemNotified_EventName(t *testing.T) {
-	event := hazelcast.SetItemNotified{}
-	assert.Equal(t, event.EventName(), "set.itemnotified")
-}
-
-func TestDistributedObjectNotified_EventName(t *testing.T) {
-	event := hazelcast.DistributedObjectNotified{}
-	assert.Equal(t, event.EventName(), "distributedobjectnotified")
+func Test_EventName(t *testing.T) {
+	testCases := []struct {
+		event          interface{}
+		expectedString string
+	}{
+		{event: &hazelcast.LifecycleStateChanged{}, expectedString: "lifecyclestatechanged"},
+		{event: &hazelcast.MessagePublished{}, expectedString: "messagepublished"},
+		{event: &hazelcast.EntryNotified{}, expectedString: "entrynotified"},
+		{event: &hazelcast.QueueItemNotified{}, expectedString: "queue.itemnotified"},
+		{event: &hazelcast.ListItemNotified{}, expectedString: "list.itemnotified"},
+		{event: &hazelcast.SetItemNotified{}, expectedString: "set.itemnotified"},
+		{event: &hazelcast.DistributedObjectNotified{}, expectedString: "distributedobjectnotified"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.expectedString, func(t *testing.T) {
+			e, _ := tc.event.(event.Event)
+			assert.Equal(t, tc.expectedString, e.EventName())
+		})
+	}
 }

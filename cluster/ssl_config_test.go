@@ -17,62 +17,50 @@
 package cluster_test
 
 import (
-	"crypto/tls"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	hzerror "github.com/hazelcast/hazelcast-go-client/hzerrors"
 )
 
 func TestSSLConfig_SetCAPath(t *testing.T) {
 	sslConfig := cluster.SSLConfig{
 		Enabled: true,
 	}
-	for _, tc := range []struct {
-		info    string
-		caPath  string
-		isError bool
+	testCases := []struct {
+		info     string
+		caPath   string
+		hasError bool
 	}{
-		{info: "invalid certificate authority", caPath: "non-exist-filepath", isError: true},
-		{info: "valid certificate authority", caPath: "../testdata/server1-cert.pem", isError: false},
-		{info: "another valid certificate authority", caPath: "../testdata/server2-cert.pem", isError: false},
-	} {
+		{info: "invalid certificate authority", caPath: "non-exist-filepath", hasError: true},
+		{info: "valid certificate authority", caPath: "testdata/server1-cert.pem", hasError: false},
+		{info: "another valid certificate authority", caPath: "testdata/server2-cert.pem", hasError: false},
+	}
+	for _, tc := range testCases {
 		t.Run(tc.info, func(t *testing.T) {
 			err := sslConfig.SetCAPath(tc.caPath)
-			if tc.isError == true && !errors.Is(err, hzerror.ErrIO) {
-				t.Fatalf("error type is incorrect, want %v", hzerror.ErrIO)
+			if err == nil && tc.hasError == true {
+				t.Fatalf("want error %v, got nil", err)
 			}
 		})
 	}
 }
 
 func TestSSLConfig_AddClientCertAndKeyPath(t *testing.T) {
-	var (
-		err       error
-		tlsConfig *tls.Config
-	)
 	sslConfig := cluster.SSLConfig{
 		Enabled: true,
 	}
-	t.Log("invalid both client certificate path and key path")
-	err = sslConfig.AddClientCertAndKeyPath("non-exist-filepath", "non-exist-filepath")
+	// invalid both client certificate path and key path
+	err := sslConfig.AddClientCertAndKeyPath("non-exist-filepath", "non-exist-filepath")
 	require.Error(t, err)
-	tlsConfig = sslConfig.TLSConfig()
-	require.Equal(t, len(tlsConfig.Certificates), 0)
-	t.Log("valid client certificate, key pair")
-	err = sslConfig.AddClientCertAndKeyPath("../testdata/client1-cert.pem", "../testdata/client1-key.pem")
+	require.Equal(t, len(sslConfig.TLSConfig().Certificates), 0)
+	// valid client certificate, key pair
+	err = sslConfig.AddClientCertAndKeyPath("testdata/client1-cert.pem", "testdata/client1-key.pem")
 	require.NoError(t, err)
-	tlsConfig = sslConfig.TLSConfig()
-	require.Equal(t, len(tlsConfig.Certificates), 1)
-	t.Log("another valid client certificate, key pair")
-	err = sslConfig.AddClientCertAndKeyPath("../testdata/client2-cert.pem", "../testdata/client2-key.pem")
+	require.Equal(t, len(sslConfig.TLSConfig().Certificates), 1)
+	// another valid client certificate, key pair
+	err = sslConfig.AddClientCertAndKeyPath("testdata/client2-cert.pem", "testdata/client2-key.pem")
 	require.NoError(t, err)
-	tlsConfig = sslConfig.TLSConfig()
-	require.Equal(t, len(tlsConfig.Certificates), 2)
-}
-
-func TestSSLConfig_AddClientCertAndEncryptedKeyPath(t *testing.T) {
+	require.Equal(t, len(sslConfig.TLSConfig().Certificates), 2)
 }

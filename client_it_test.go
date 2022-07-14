@@ -138,13 +138,13 @@ func TestClient_AddLifecycleListener(t *testing.T) {
 }
 
 func TestClient_RemoveLifecycleListener(t *testing.T) {
-	var lifecycleEventReceived int32 = 1
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var lifecycleEventReceived int32
 		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 			// shutting down event is published before the actual shutdown is occurred
-			// client must not be shutdown before published that event
+			// client must not be shutdown before that event was published
 			if event.State == hz.LifecycleStateShuttingDown {
-				atomic.SwapInt32(&lifecycleEventReceived, 0)
+				atomic.AddInt32(&lifecycleEventReceived, 1)
 			}
 		})
 		if err != nil {
@@ -158,7 +158,7 @@ func TestClient_RemoveLifecycleListener(t *testing.T) {
 			t.Fatal(err)
 		}
 		it.Eventually(t, func() bool {
-			return !client.Running() && lifecycleEventReceived == 1
+			return !client.Running() && lifecycleEventReceived == 0
 		})
 	})
 }
@@ -173,8 +173,8 @@ func TestClient_AddMembershipListener(t *testing.T) {
 	wgRemoved.Add(1)
 	ctx := context.Background()
 	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", 15701, memberCount)
-	cfg := cls.DefaultConfig()
-	client, err := hz.StartNewClientWithConfig(ctx, cfg)
+	defer cls.Shutdown()
+	client, err := hz.StartNewClientWithConfig(ctx, cls.DefaultConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,10 +187,10 @@ func TestClient_AddMembershipListener(t *testing.T) {
 	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
 		switch event.State {
 		case cluster.MembershipStateAdded:
-			t.Logf("MembershipStateAdded")
+			t.Log("MembershipStateAdded")
 			wgAdded.Done()
 		case cluster.MembershipStateRemoved:
-			t.Logf("MembershipStateRemoved")
+			t.Log("MembershipStateRemoved")
 			wgRemoved.Done()
 		}
 	})
@@ -211,9 +211,10 @@ func TestClient_AddMembershipListener(t *testing.T) {
 }
 
 func TestClient_RemoveMembershipListener(t *testing.T) {
-	var added int32 = 1
+	var removed int32
 	ctx := context.Background()
 	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", 15701, 2)
+	defer cls.Shutdown()
 	cfg := cls.DefaultConfig()
 	client, err := hz.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
@@ -228,8 +229,8 @@ func TestClient_RemoveMembershipListener(t *testing.T) {
 	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
 		switch event.State {
 		case cluster.MembershipStateRemoved:
-			t.Logf("MembershipStateRemoved")
-			atomic.SwapInt32(&added, 0)
+			t.Log("MembershipStateRemoved")
+			atomic.SwapInt32(&removed, 1)
 		}
 	})
 	if err != nil {
@@ -245,10 +246,11 @@ func TestClient_RemoveMembershipListener(t *testing.T) {
 	assert.True(t, ok, "rc cannot terminate member")
 	go func() {
 		time.Sleep(time.Minute * 1)
-		_ = client.Shutdown(ctx)
+		// error is ignored for the simplicity
+		client.Shutdown(ctx)
 	}()
 	it.Eventually(t, func() bool {
-		return !client.Running() && added == 1
+		return !client.Running() && removed == 0
 	})
 }
 
@@ -264,10 +266,10 @@ func TestClientRunning(t *testing.T) {
 
 func TestClient_Name(t *testing.T) {
 	clientName := "test-client-name"
-	cnfCallBack := func(config *hz.Config) {
+	cb := func(config *hz.Config) {
 		config.ClientName = clientName
 	}
-	it.TesterWithConfigBuilder(t, cnfCallBack, func(t *testing.T, client *hz.Client) {
+	it.TesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client) {
 		assert.Equal(t, clientName, client.Name())
 	})
 }

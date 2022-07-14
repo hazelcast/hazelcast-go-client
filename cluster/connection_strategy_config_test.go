@@ -19,45 +19,54 @@ package cluster_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
 func TestReconnectMode_MarshalText(t *testing.T) {
-	t.Logf("reconnection-mode on")
-	rmOn := cluster.ReconnectModeOn
-	text, err := rmOn.MarshalText()
-	if err != nil {
-		t.Error(err)
+	testCases := []struct {
+		info     string
+		expected []byte
+		rm       cluster.ReconnectMode
+		hasErr   bool
+	}{
+		{info: "reconnection-mode on", expected: []byte(`on`), rm: cluster.ReconnectModeOn, hasErr: false},
+		{info: "reconnection-mode off", expected: []byte(`off`), rm: cluster.ReconnectModeOff, hasErr: false},
+		{info: "reconnection-mode invalid", expected: nil, rm: cluster.ReconnectModeOff + 1, hasErr: true},
 	}
-	require.Equal(t, []byte(`on`), text)
-	t.Logf("reconnection-mode off")
-	rmOff := cluster.ReconnectModeOff
-	text, err = rmOff.MarshalText()
-	if err != nil {
-		t.Error(err)
+	for _, tc := range testCases {
+		t.Run(tc.info, func(t *testing.T) {
+			got, err := tc.rm.MarshalText()
+			if tc.hasErr {
+				assert.Error(t, err)
+			} else {
+				assert.Equal(t, tc.expected, got)
+			}
+		})
 	}
-	require.Equal(t, []byte(`off`), text)
-	t.Logf("reconnection-mode invalid")
-	rmInvalid := cluster.ReconnectModeOff + 1
-	_, err = rmInvalid.MarshalText()
-	require.Error(t, err, "should be an error")
 }
 
 func TestReconnectMode_UnmarshalText(t *testing.T) {
-	rm := cluster.ReconnectMode(0)
-	t.Logf("reconnection-mode on")
-	if err := rm.UnmarshalText([]byte(`on`)); err != nil {
-		t.Fatal(err)
+	testCases := []struct {
+		info     string
+		input    []byte
+		expected cluster.ReconnectMode
+		hasErr   bool
+	}{
+		{info: "reconnection-mode on", input: []byte(`on`), expected: cluster.ReconnectModeOn, hasErr: false},
+		{info: "reconnection-mode off", input: []byte(`off`), expected: cluster.ReconnectModeOff, hasErr: false},
+		{info: "reconnection-mode invalid", input: []byte(`invalid`), expected: -1, hasErr: true},
 	}
-	require.Equal(t, cluster.ReconnectModeOn, rm)
-	t.Logf("reconnection-mode off")
-	if err := rm.UnmarshalText([]byte(`off`)); err != nil {
-		t.Fatal(err)
+	for _, tc := range testCases {
+		t.Run(tc.info, func(t *testing.T) {
+			rm := cluster.ReconnectMode(0)
+			err := rm.UnmarshalText(tc.input)
+			if tc.hasErr {
+				assert.Error(t, err)
+			} else {
+				assert.Equal(t, tc.expected, rm)
+			}
+		})
 	}
-	require.Equal(t, cluster.ReconnectModeOff, rm)
-	t.Logf("reconnection-mode invalid")
-	err := rm.UnmarshalText([]byte(`invalid`))
-	require.Error(t, err, "should be an error")
 }

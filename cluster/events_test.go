@@ -19,6 +19,8 @@ package cluster_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
@@ -33,9 +35,7 @@ func TestMembershipState_String(t *testing.T) {
 		{info: "unknown membership state", want: "UNKNOWN", state: 2},
 	} {
 		t.Run(s.info, func(t *testing.T) {
-			if s.state.String() != s.want {
-				t.Fatalf("got %v want %v", s.state.String(), s.want)
-			}
+			assert.Equal(t, s.want, s.state.String())
 		})
 	}
 }
@@ -46,7 +46,5 @@ func TestMembershipStateChanged_EventName(t *testing.T) {
 	}
 	got := msc.EventName()
 	want := "cluster.membershipstatechanged"
-	if got != want {
-		t.Fatalf("got %v want %v", got, want)
-	}
+	assert.Equal(t, want, got)
 }

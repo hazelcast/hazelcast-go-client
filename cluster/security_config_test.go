@@ -33,6 +33,5 @@ func TestSecurityConfig_CloneAndValidate(t *testing.T) {
 	if !reflect.DeepEqual(newCfg, cfg) {
 		t.Fatal("cannot cloned")
 	}
-	err := cfg.Validate()
-	it.Must(err)
+	it.Must(cfg.Validate())
 }

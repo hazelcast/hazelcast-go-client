@@ -17,35 +17,35 @@
 package cluster_test
 
 import (
-	"context"
+	"fmt"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client"
+	"github.com/stretchr/testify/require"
+
+	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
 func TestConfig_SetLoadBalancer(t *testing.T) {
-	// test needs information about current member loads.
-	// this information is needed to be supplied through rc.
-	var (
-		lb cluster.LoadBalancer = cluster.NewRoundRobinLoadBalancer()
-		//targetAddrs                      = []cluster.Address{"localhost:17001", "localhost:17002", "localhost:17003"}
-	)
-	//var addrs []cluster.Address
-	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("cluster_SetLoadBalancer", 17001, 3)
-	cfg := cls.DefaultConfig()
-	cfg.Cluster.SetLoadBalancer(lb)
-	client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-
+	firstMemberPort := 17001
+	memberAddresses := []cluster.Address{
+		cluster.Address(fmt.Sprintf("localhost:%v", firstMemberPort)),
+		cluster.Address(fmt.Sprintf("localhost:%v", firstMemberPort+1)),
+		cluster.Address(fmt.Sprintf("localhost:%v", firstMemberPort+2)),
 	}
-	defer func(ctx context.Context, client *hazelcast.Client) {
-		err = client.Shutdown(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}(ctx, client)
+	orderedTestCases := []struct {
+		info     string
+		expected cluster.Address
+	}{
+		{info: "firstMember", expected: cluster.Address(fmt.Sprintf("localhost:%v", firstMemberPort))},
+		{info: "secondMember", expected: cluster.Address(fmt.Sprintf("localhost:%v", firstMemberPort+1))},
+		{info: "thirdMember", expected: cluster.Address(fmt.Sprintf("localhost:%v", firstMemberPort+2))},
+	}
+	cfg := hz.Config{}
+	cfg.Cluster.SetLoadBalancer(cluster.NewRoundRobinLoadBalancer())
+	lb := cfg.Cluster.LoadBalancer()
+	for _, tc := range orderedTestCases {
+		// order is important, OneOf takes the next member address based on given load balancer
+		require.Equal(t, lb.OneOf(memberAddresses), tc.expected)
+	}
 }

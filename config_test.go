@@ -48,11 +48,11 @@ func TestConfig_SetLabels(t *testing.T) {
 		expectedLength int
 		input          []string
 	}{
-		{"non-empty single string slice", 1, []string{"client-label"}},
-		{"empty single string slice", 1, []string{""}},
-		{"empty slice", 0, []string{}},
-		{"non-empty multiple string slice", 2, []string{"a", "b"}},
-		{"hybrid strings slice", 3, []string{"a", "", "c"}},
+		{info: "non-empty single string slice", expectedLength: 1, input: []string{"client-label"}},
+		{info: "empty single string slice", expectedLength: 1, input: []string{""}},
+		{info: "empty slice", expectedLength: 0, input: []string{}},
+		{info: "non-empty multiple string slice", expectedLength: 2, input: []string{"a", "b"}},
+		{info: "hybrid strings slice", expectedLength: 3, input: []string{"a", "", "c"}},
 	} {
 		t.Run(tc.info, func(t *testing.T) {
 			config := hazelcast.NewConfig()
@@ -62,11 +62,7 @@ func TestConfig_SetLabels(t *testing.T) {
 				t.Fatalf("got %v want %v", got, tc.expectedLength)
 			}
 			labels := config.Labels
-			for i := 0; i < got; i++ {
-				if labels[i] != tc.input[i] {
-					t.Fatalf("got %v want %v", labels[i], tc.input[i])
-				}
-			}
+			assert.Equal(t, labels, tc.input)
 		})
 	}
 }
