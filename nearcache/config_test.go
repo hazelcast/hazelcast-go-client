@@ -390,9 +390,9 @@ func configWithNearCacheNames(names ...string) (hazelcast.Config, []nearcache.Co
 }
 
 type evictionConfigTestCase struct {
+	cfg      nearcache.EvictionConfig
 	name     string
 	text     string
-	cfg      nearcache.EvictionConfig
 	hasError bool
 }
 
