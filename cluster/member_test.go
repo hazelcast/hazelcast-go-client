@@ -84,7 +84,7 @@ func TestEndpointQualifierType_String(t *testing.T) {
 	}
 	for _, qt := range testCases {
 		t.Run(qt.info, func(t *testing.T) {
-			assert.Equal(t, qt.qualifierType.String(), qt.want, fmt.Sprintf(""))
+			assert.Equal(t, qt.qualifierType.String(), qt.want)
 		})
 	}
 }
