@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,6 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	defer b.regsMu.Unlock()
 	reg, ok := b.regs[id]
 	if !ok {
-		b.regsMu.Unlock()
 		return nil
 	}
 	delete(b.regs, id)

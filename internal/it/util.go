@@ -20,12 +20,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/rand"
 	"os"
 	"reflect"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -37,7 +37,6 @@ import (
 	"go.uber.org/goleak"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -201,22 +200,6 @@ func MustClient(client *hz.Client, err error) *hz.Client {
 	return client
 }
 
-// EnsureClient prevents client start to fail the test when the client is not allowed in the cluster.
-func EnsureClient(config hz.Config) *hz.Client {
-	for i := 0; i < 60; i++ {
-		client, err := hz.StartNewClientWithConfig(context.Background(), config)
-		if err != nil {
-			if errors.Is(err, hzerrors.ErrClientNotAllowedInCluster) {
-				time.Sleep(1 * time.Second)
-				continue
-			}
-			panic(err)
-		}
-		return client
-	}
-	panic("the client could not connect to the cluster in 60 seconds.")
-}
-
 func NewUniqueObjectName(service string, labels ...string) string {
 	ls := strings.Join(labels, "_")
 	if ls != "" {
@@ -374,6 +357,16 @@ func xmlConfig(clusterName string, port int) string {
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
 			</map>
+			<map name="test-map-smart">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<map name="test-map-unisocket">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
 			<serialization>
 				<data-serializable-factories>
 					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
@@ -428,7 +421,10 @@ func getLoggerLevel() logger.Level {
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {
-	config.Logger.Level = getLoggerLevel()
+	lv := getLoggerLevel()
+	if lv == logger.TraceLevel {
+		config.Logger.Level = lv
+	}
 	client, err := hz.StartNewClientWithConfig(context.Background(), *config)
 	if err != nil {
 		panic(err)
@@ -439,7 +435,7 @@ func getDefaultClient(config *hz.Config) *hz.Client {
 // Eventually asserts that given condition will be met in 2 minutes,
 // checking target function every 200 milliseconds.
 func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
-	if !assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs) {
+	if !assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs...) {
 		t.FailNow()
 	}
 }
@@ -475,4 +471,23 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 	case <-timer.C:
 		t.FailNow()
 	}
+}
+
+func EqualStringContent(b1, b2 []byte) bool {
+	s1 := sortedString(b1)
+	s2 := sortedString(b2)
+	return s1 == s2
+}
+
+func sortedString(b []byte) string {
+	bc := make([]byte, len(b))
+	copy(bc, b)
+	sort.Slice(bc, func(i, j int) bool {
+		return bc[i] < bc[j]
+	})
+	s := strings.ReplaceAll(string(bc), " ", "")
+	s = strings.ReplaceAll(s, "\t", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
 }

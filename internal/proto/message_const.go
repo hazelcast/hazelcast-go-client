@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,25 @@
 package proto
 
 const (
-	TypeFieldOffset                   = 0
-	MessageTypeOffset                 = 0
-	ByteSizeInBytes                   = 1
-	BooleanSizeInBytes                = 1
-	ShortSizeInBytes                  = 2
-	CharSizeInBytes                   = 2
-	IntSizeInBytes                    = 4
-	FloatSizeInBytes                  = 4
-	LongSizeInBytes                   = 8
-	DoubleSizeInBytes                 = 8
-	UUIDSizeInBytes                   = 17
-	UuidSizeInBytes                   = 17 // Deprecated
-	EntryListUUIDLongEntrySizeInBytes = UUIDSizeInBytes + LongSizeInBytes
-	LocalDateSizeInBytes              = IntSizeInBytes + 2*ByteSizeInBytes
-	LocalTimeSizeInBytes              = 3*ByteSizeInBytes + IntSizeInBytes
-	LocalDateTimeSizeInBytes          = LocalDateSizeInBytes + LocalTimeSizeInBytes
-	OffsetDateTimeSizeInBytes         = LocalDateTimeSizeInBytes + IntSizeInBytes
+	TypeFieldOffset                      = 0
+	MessageTypeOffset                    = 0
+	ByteSizeInBytes                      = 1
+	BooleanSizeInBytes                   = 1
+	ShortSizeInBytes                     = 2
+	CharSizeInBytes                      = 2
+	IntSizeInBytes                       = 4
+	FloatSizeInBytes                     = 4
+	LongSizeInBytes                      = 8
+	DoubleSizeInBytes                    = 8
+	UUIDSizeInBytes                      = 17
+	UuidSizeInBytes                      = 17 // Deprecated
+	EntryListUUIDLongEntrySizeInBytes    = UUIDSizeInBytes + LongSizeInBytes
+	EntryListIntegerLongSizeInBytes      = IntSizeInBytes + LongSizeInBytes
+	EntryListIntegerUUIDEntrySizeInBytes = IntSizeInBytes + UUIDSizeInBytes
+	LocalDateSizeInBytes                 = IntSizeInBytes + 2*ByteSizeInBytes
+	LocalTimeSizeInBytes                 = 3*ByteSizeInBytes + IntSizeInBytes
+	LocalDateTimeSizeInBytes             = LocalDateSizeInBytes + LocalTimeSizeInBytes
+	OffsetDateTimeSizeInBytes            = LocalDateTimeSizeInBytes + IntSizeInBytes
 
 	CorrelationIDFieldOffset   = TypeFieldOffset + IntSizeInBytes
 	CorrelationIDOffset        = MessageTypeOffset + IntSizeInBytes
