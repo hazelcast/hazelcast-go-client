@@ -40,8 +40,8 @@ func TestSSLConfig_SetCAPath(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.info, func(t *testing.T) {
 			err := sslConfig.SetCAPath(tc.caPath)
-			if err == nil && tc.hasError == true {
-				t.Fatalf("want error %v, got nil", err)
+			if err != nil && !tc.hasError {
+				t.Fatal(err)
 			}
 		})
 	}

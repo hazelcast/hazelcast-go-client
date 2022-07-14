@@ -430,10 +430,10 @@ func filterConnectedMembers(ci *hz.ClientInternal) []cluster.MemberInfo {
 }
 
 const (
-	mcGetMemberConfigCodecRequestMessageType  = int32(0x200500)
-	mCGetMemberConfigCodecResponseMessageType = int32(0x200501)
+	McGetMemberConfigCodecRequestMessageType  = int32(0x200500)
+	MCGetMemberConfigCodecResponseMessageType = int32(0x200501)
 
-	mcGetMemberConfigCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+	McGetMemberConfigCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
 // Gets the effective config of a member rendered as XML.
@@ -442,9 +442,9 @@ func EncodeMCGetMemberConfigRequest() *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, mcGetMemberConfigCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, McGetMemberConfigCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(mcGetMemberConfigCodecRequestMessageType)
+	clientMessage.SetMessageType(McGetMemberConfigCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	return clientMessage

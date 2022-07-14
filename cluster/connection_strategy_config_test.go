@@ -38,11 +38,13 @@ func TestReconnectMode_MarshalText(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.info, func(t *testing.T) {
 			got, err := tc.rm.MarshalText()
-			if tc.hasErr {
-				assert.Error(t, err)
-			} else {
-				assert.Equal(t, tc.expected, got)
+			if err != nil {
+				if tc.hasErr {
+					return
+				}
+				t.Fatal(err)
 			}
+			assert.Equal(t, tc.expected, got)
 		})
 	}
 }
@@ -62,11 +64,13 @@ func TestReconnectMode_UnmarshalText(t *testing.T) {
 		t.Run(tc.info, func(t *testing.T) {
 			rm := cluster.ReconnectMode(0)
 			err := rm.UnmarshalText(tc.input)
-			if tc.hasErr {
-				assert.Error(t, err)
-			} else {
-				assert.Equal(t, tc.expected, rm)
+			if err != nil {
+				if tc.hasErr {
+					return
+				}
+				t.Fatal(err)
 			}
+			assert.Equal(t, tc.expected, rm)
 		})
 	}
 }

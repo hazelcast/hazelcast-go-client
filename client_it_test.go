@@ -185,16 +185,14 @@ func TestClient_AddMembershipListener(t *testing.T) {
 			wgRemoved.Done()
 		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	require.Nil(t, err)
+	require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
 	// member which is not connected by the client initially.
 	uuid := cls.MemberUUIDs[1]
 	//uuid := cls.MemberUUIDs[0]
 	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, uuid)
 	it.Must(err)
-	assert.True(t, ok, "rc cannot terminate member")
+	require.True(t, ok, "rc cannot terminate member")
 	wgRemoved.Wait()
 	_, err = cls.RC.StartMember(ctx, cls.ClusterID)
 	it.Must(err)
@@ -221,25 +219,19 @@ func TestClient_RemoveMembershipListener(t *testing.T) {
 		switch event.State {
 		case cluster.MembershipStateRemoved:
 			t.Log("MembershipStateRemoved")
-			atomic.SwapInt32(&removed, 1)
+			atomic.AddInt32(&removed, 1)
 		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	require.Nil(t, err)
+	require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
 	err = client.RemoveMembershipListener(subscriptionID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[1])
 	it.Must(err)
-	assert.True(t, ok, "rc cannot terminate member")
-	go func() {
-		time.Sleep(time.Minute * 1)
-		// error is ignored for the simplicity
-		client.Shutdown(ctx)
-	}()
+	require.True(t, ok, "rc cannot terminate member")
+	client.Shutdown(ctx)
 	it.Eventually(t, func() bool {
 		return !client.Running() && removed == 0
 	})
