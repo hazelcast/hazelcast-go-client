@@ -168,6 +168,7 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 }
 
 func TestClusterID(t *testing.T) {
+	t.Skipf("flaky, see: https://github.com/hazelcast/hazelcast-go-client/issues/844")
 	it.SkipIf(t, "oss")
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
