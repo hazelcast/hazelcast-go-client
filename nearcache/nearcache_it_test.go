@@ -49,6 +49,7 @@ const (
 
 func TestSmokeNearCachePopulation(t *testing.T) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#smoke_near_cache_population
+	t.Skipf("this test is flaky, to be addressed before the release")
 	tcx := it.MapTestContext{
 		T: t,
 		ConfigCallback: func(tcx it.MapTestContext) {
