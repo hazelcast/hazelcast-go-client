@@ -19,7 +19,10 @@ package nearcache
 import (
 	"fmt"
 	"math"
+	"strings"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 // InMemoryFormat specifies how the entry values are stored in the Near Cache.
@@ -31,6 +34,34 @@ const (
 	// InMemoryFormatObject stores the values in their original form.
 	InMemoryFormatObject
 )
+
+// UnmarshalText unmarshals the in memory format from a byte array.
+func (m *InMemoryFormat) UnmarshalText(b []byte) error {
+	s := string(b)
+	switch strings.ToLower(s) {
+	case "binary":
+		*m = InMemoryFormatBinary
+	case "object":
+		*m = InMemoryFormatObject
+	default:
+		msg := fmt.Sprintf("unknown in memory format: %s", s)
+		return hzerrors.NewIllegalArgumentError(msg, nil)
+	}
+	return nil
+}
+
+// MarshalText marshals the text in memory format to a byte array.
+func (m InMemoryFormat) MarshalText() ([]byte, error) {
+	switch m {
+	case InMemoryFormatBinary:
+		return []byte("binary"), nil
+	case InMemoryFormatObject:
+		return []byte("object"), nil
+	default:
+		err := hzerrors.NewIllegalArgumentError(fmt.Sprintf("unknown in memory format: %d", m), nil)
+		return nil, err
+	}
+}
 
 // EvictionPolicy specifies which entry is evicted.
 type EvictionPolicy int32
@@ -60,6 +91,40 @@ func (p EvictionPolicy) String() string {
 		return "RANDOM"
 	}
 	panic(fmt.Errorf("unknown eviction policy: %d", p))
+}
+
+func (p *EvictionPolicy) UnmarshalText(b []byte) error {
+	s := string(b)
+	switch strings.ToLower(s) {
+	case "lru":
+		*p = EvictionPolicyLRU
+	case "lfu":
+		*p = EvictionPolicyLFU
+	case "none":
+		*p = EvictionPolicyNone
+	case "random":
+		*p = EvictionPolicyRandom
+	default:
+		msg := fmt.Sprintf("unknown eviction policy: %s", s)
+		return hzerrors.NewIllegalArgumentError(msg, nil)
+	}
+	return nil
+}
+
+func (p EvictionPolicy) MarshalText() ([]byte, error) {
+	switch p {
+	case EvictionPolicyLRU:
+		return []byte("lru"), nil
+	case EvictionPolicyLFU:
+		return []byte("lfu"), nil
+	case EvictionPolicyNone:
+		return []byte("none"), nil
+	case EvictionPolicyRandom:
+		return []byte("random"), nil
+	default:
+		err := hzerrors.NewIllegalArgumentError(fmt.Sprintf("unknown policy: %d", p), nil)
+		return nil, err
+	}
 }
 
 // Stats contains statistics for a Near Cache instance.

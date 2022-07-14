@@ -17,8 +17,10 @@
 package nearcache
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"unsafe"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -33,38 +35,32 @@ const (
 
 // Config is the Near Cache configuration.
 type Config struct {
+	// Eviction is the optional eviction configuration for the Near Cache.
+	Eviction           EvictionConfig
 	invalidateOnChange *bool
 	// Name is the name of this Near Cache configuration.
 	// If the name is not specified, it is set to "default".
 	Name string
-	// Eviction is the optional eviction configuration for the Near Cache.
-	Eviction EvictionConfig
-	// Preloader is the optional preloader configuration for the Near Cache.
-	Preloader PreloaderConfig
-	// InMemoryFormat specifies how the entry values are stored in the Near Cache.
-	// InMemoryFormatBinary stores the values after serializing them.
-	// InMemoryFormatObject stores the values in their original form.
-	// The default is InMemoryFormatBinary.
-	InMemoryFormat InMemoryFormat
+	// Must be non-negative.
+	// The value 0 means math.MaxInt32
+	// The default is 0.
+	TimeToLiveSeconds int
+	// Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
+	// Must be non-negative.
+	// The value 0 means math.MaxInt32
+	// The default is 0.
+	MaxIdleSeconds int
 	// SerializeKeys specifies how the entry keys are stored in the Near Cache.
 	// If false, keys are stored in their original form.
 	// If true, keys are stored after serializing them.
 	// Storing keys in serialized form is required when the key is not hashable, such as slices.
 	// The default is false.
 	SerializeKeys bool
-	// TimeToLiveSeconds is the maximum number of seconds for each entry to stay in the Near Cache (time to live).
-	// Entries that are older than TimeToLiveSeconds will automatically be evicted from the Near Cache.
-	// Must be non-negative.
-	// The value 0 means math.MaxInt32
-	// The default is 0.
-	TimeToLiveSeconds int
-	// MaxIdleSeconds is the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
-	// Entries that are not read (touched) more than MaxIdleSeconds value will get removed from the Near Cache.
-	// Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
-	// Must be non-negative.
-	// The value 0 means math.MaxInt32
-	// The default is 0.
-	MaxIdleSeconds int
+	// InMemoryFormat specifies how the entry values are stored in the Near Cache.
+	// InMemoryFormatBinary stores the values after serializing them.
+	// InMemoryFormatObject stores the values in their original form.
+	// The default is InMemoryFormatBinary.
+	InMemoryFormat InMemoryFormat
 }
 
 // Clone returns a copy of the configuration.
@@ -73,7 +69,6 @@ func (c Config) Clone() Config {
 		invalidateOnChange: c.invalidateOnChange,
 		Name:               c.Name,
 		Eviction:           c.Eviction.Clone(),
-		Preloader:          c.Preloader.Clone(),
 		InMemoryFormat:     c.InMemoryFormat,
 		SerializeKeys:      c.SerializeKeys,
 		TimeToLiveSeconds:  c.TimeToLiveSeconds,
@@ -93,9 +88,6 @@ func (c *Config) Validate() error {
 		c.MaxIdleSeconds = math.MaxInt32
 	}
 	if err := c.Eviction.Validate(); err != nil {
-		return err
-	}
-	if err := c.Preloader.Validate(); err != nil {
 		return err
 	}
 	if err := check.NonNegativeInt32Config(c.TimeToLiveSeconds); err != nil {
@@ -130,6 +122,30 @@ func (c Config) InvalidateOnChange() bool {
 	return *c.invalidateOnChange
 }
 
+func (c *Config) UnmarshalJSON(b []byte) error {
+	var cfg configForMarshal
+	if err := json.Unmarshal(b, &cfg); err != nil {
+		return fmt.Errorf("unmarshalling Near Cache configuration: %w", err)
+	}
+	*c = *(*Config)(unsafe.Pointer(&cfg))
+	return nil
+}
+
+func (c Config) MarshalJSON() ([]byte, error) {
+	cfg := *(*configForMarshal)(unsafe.Pointer(&c))
+	return json.Marshal(cfg)
+}
+
+type configForMarshal struct {
+	Eviction           EvictionConfig
+	InvalidateOnChange *bool `json:",omitempty"`
+	Name               string
+	TimeToLiveSeconds  int
+	MaxIdleSeconds     int
+	SerializeKeys      bool
+	InMemoryFormat     InMemoryFormat
+}
+
 /*
 EvictionConfig is the configuration for eviction.
 
@@ -142,10 +158,10 @@ The default values of the eviction configuration are:
 Eviction policy and comparator are mutually exclusive.
 */
 type EvictionConfig struct {
-	evictionPolicy *EvictionPolicy
-	size           *int32
-	comparator     EvictionPolicyComparator
-	err            error
+	policy     *EvictionPolicy
+	size       *int32
+	comparator EvictionPolicyComparator
+	err        error
 }
 
 // Clone returns a copy of the configuration.
@@ -158,29 +174,29 @@ func (c *EvictionConfig) Validate() error {
 	if c.err != nil {
 		return c.err
 	}
-	if c.evictionPolicy != nil && c.comparator != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Eviction: only one of EvictionPolicy or Comparator can be configured", nil)
+	if c.policy != nil && c.comparator != nil {
+		return ihzerrors.NewInvalidConfigurationError("nearcache.Eviction: only one of Policy or Comparator can be configured", nil)
 	}
 	return nil
 }
 
-// SetEvictionPolicy sets the eviction policy of this eviction configuration.
+// SetPolicy sets the eviction policy of this eviction configuration.
 // The default policy is EvictionPolicyLRU which evicts the least recently used entries.
-func (c *EvictionConfig) SetEvictionPolicy(policy EvictionPolicy) {
+func (c *EvictionConfig) SetPolicy(policy EvictionPolicy) {
 	if policy < 0 || policy >= evictionPolicyCount {
-		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.Eviction.SetEvictionPolicy: invalid policy", nil)
+		c.err = ihzerrors.NewInvalidConfigurationError("nearcache.Eviction.SetPolicy: invalid policy", nil)
 		return
 	}
-	c.evictionPolicy = &policy
+	c.policy = &policy
 }
 
-// EvictionPolicy returns the eviction policy of this eviction configuration.
-// See the documentation for SetEvictionPolicy.
-func (c EvictionConfig) EvictionPolicy() EvictionPolicy {
-	if c.evictionPolicy == nil {
+// Policy returns the eviction policy of this eviction configuration.
+// See the documentation for SetPolicy.
+func (c EvictionConfig) Policy() EvictionPolicy {
+	if c.policy == nil {
 		return defaultEvictionPolicy
 	}
-	return *c.evictionPolicy
+	return *c.policy
 }
 
 // SetSize sets the number of maximum entries before an eviction occurs.
@@ -214,41 +230,26 @@ func (c EvictionConfig) Comparator() EvictionPolicyComparator {
 	return c.comparator
 }
 
-// PreloaderConfig is the configuration for storing and pre-loading Near Cache keys.
-// Preloader re-populates Near Cache after client restart to provide fast access.
-// Saved preloader data is compatible between only the same versions of the Go client.
-// It is disabled by default.
-type PreloaderConfig struct {
-	// Directory is the directory to store preloader cache.
-	Directory string
-	// StoreInitialDelaySeconds is the time in seconds before the preloader starts saving the cache.
-	// Must be positive.
-	// By default it is 600 seconds.
-	StoreInitialDelaySeconds int
-	// StoreIntervalSeconds is the interval in seconds for persisting the cache.
-	// Must be positive.
-	// By default it is 600 seconds.
-	StoreIntervalSeconds int
-	// Enabled enables the preloader.
-	Enabled bool
-}
-
-func (c PreloaderConfig) Clone() PreloaderConfig {
-	return c
-}
-
-func (c *PreloaderConfig) Validate() error {
-	if c.StoreInitialDelaySeconds == 0 {
-		c.StoreInitialDelaySeconds = defaultStoreInitialDelaySeconds
+// UnmarshalJSON unmarshals the eviction config from a byte array.
+func (c *EvictionConfig) UnmarshalJSON(b []byte) error {
+	var d evictionConfigForMarshal
+	if err := json.Unmarshal(b, &d); err != nil {
+		return fmt.Errorf("unmarshalling eviction config: %w", err)
 	}
-	if c.StoreIntervalSeconds == 0 {
-		c.StoreIntervalSeconds = defaultStoreIntervalSeconds
-	}
-	if _, err := check.NonNegativeInt32(c.StoreInitialDelaySeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Preloader.StoreInitialDelaySeconds must be positive", nil)
-	}
-	if _, err := check.NonNegativeInt32(c.StoreIntervalSeconds); err != nil {
-		return ihzerrors.NewInvalidConfigurationError("nearcache.Preloader.StoreIntervalSeconds must be positive", nil)
-	}
+	*c = *(*EvictionConfig)(unsafe.Pointer(&d))
 	return nil
+}
+
+// MarshalJSON marshals the eviction config to a byte array.
+func (c EvictionConfig) MarshalJSON() ([]byte, error) {
+	d := *(*evictionConfigForMarshal)(unsafe.Pointer(&c))
+	return json.Marshal(d)
+}
+
+// evictionConfigForMarshal is used for marshaling/unmarshalling EvictionConfig to/from JSON.
+type evictionConfigForMarshal struct {
+	Policy     *EvictionPolicy `json:",omitempty"`
+	Size       *int32          `json:",omitempty"`
+	comparator EvictionPolicyComparator
+	err        error
 }

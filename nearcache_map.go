@@ -69,11 +69,6 @@ func newNearCacheMap(ctx context.Context, nc *inearcache.NearCache, ss *serializ
 			lg.Errorf("hazelcast.newNearCacheMap: registering invalidation handler: %w", err)
 		}
 	}
-	if ncc.Preloader.Enabled {
-		if err := ncm.preload(); err != nil {
-			return nearCacheMap{}, fmt.Errorf("preloading near cache: %w", err)
-		}
-	}
 	// toNearCacheKey returns the raw key if SerializeKeys is not true.
 	if ncc.SerializeKeys {
 		ncm.toNearCacheKey = func(key interface{}) (interface{}, error) {
@@ -116,12 +111,12 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 		switch msg.Type() {
 		case inearcache.EventIMapInvalidationMessageType:
 			key, src, pt, sq := inearcache.DecodeMapInvalidationMsg(msg)
-			if err := ncm.handleInvalidationMsg(&rth, key, src, pt, sq); err != nil {
+			if err := ncm.handleInvalidationMsg(rth, key, src, pt, sq); err != nil {
 				ncm.lg.Errorf("handling invalidation message: %w", err)
 			}
 		case inearcache.EventIMapBatchInvalidationMessageType:
 			keys, srcs, pts, sqs := inearcache.DecodeMapBatchInvalidationMsg(msg)
-			if err := ncm.handleBatchInvalidationMsg(&rth, keys, srcs, pts, sqs); err != nil {
+			if err := ncm.handleBatchInvalidationMsg(rth, keys, srcs, pts, sqs); err != nil {
 				ncm.lg.Errorf("handling batch invalidation message: %w", err)
 			}
 		default:
@@ -139,8 +134,9 @@ func (ncm *nearCacheMap) registerInvalidationListener(ctx context.Context, name 
 	return nil
 }
 
-func (ncm *nearCacheMap) preload() error {
-	panic("implement me!")
+func (ncm *nearCacheMap) Clear(ctx context.Context, m *Map) error {
+	ncm.nc.Clear()
+	return m.clearFromRemote(ctx)
 }
 
 func (ncm *nearCacheMap) ContainsKey(ctx context.Context, key interface{}, m *Map) (found bool, err error) {
@@ -207,6 +203,23 @@ func (ncm *nearCacheMap) ExecuteOnKeys(ctx context.Context, m *Map, entryProcess
 	return m.executeOnKeysFromRemote(ctx, entryProcessor, ncKeys)
 }
 
+func (ncm *nearCacheMap) PutAll(ctx context.Context, m *Map, entries []types.Entry) error {
+	keys := make([]interface{}, len(entries))
+	for i, e := range entries {
+		k, err := ncm.toNearCacheKey(e.Key)
+		if err != nil {
+			return err
+		}
+		keys[i] = k
+	}
+	defer func() {
+		for _, k := range keys {
+			ncm.nc.Invalidate(k)
+		}
+	}()
+	return m.putAllFromRemote(ctx, entries)
+}
+
 func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (interface{}, error) {
 	key, err := ncm.toNearCacheKey(key)
 	if err != nil {
@@ -265,6 +278,23 @@ func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{})
 		return nil, err
 	}
 	return entries[:keyCount], nil
+}
+
+func (ncm *nearCacheMap) LoadAll(ctx context.Context, m *Map, replaceExisting bool, keys []interface{}) error {
+	ncKeys := make([]interface{}, len(keys))
+	for i, k := range keys {
+		nck, err := ncm.toNearCacheKey(k)
+		if err != nil {
+			return err
+		}
+		ncKeys[i] = nck
+	}
+	defer func() {
+		for _, nck := range ncKeys {
+			ncm.nc.Invalidate(nck)
+		}
+	}()
+	return m.loadAllFromRemote(ctx, replaceExisting, keys)
 }
 
 func (ncm *nearCacheMap) Put(ctx context.Context, m *Map, key, value interface{}, ttl int64) (interface{}, error) {
@@ -337,6 +367,24 @@ func (ncm *nearCacheMap) RemoveIfSame(ctx context.Context, m *Map, key interface
 	}
 	defer ncm.nc.Invalidate(key)
 	return m.removeIfSameFromRemote(ctx, key, value)
+}
+
+func (ncm *nearCacheMap) Replace(ctx context.Context, m *Map, key interface{}, value interface{}) (interface{}, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.replaceFromRemote(ctx, key, value)
+}
+
+func (ncm *nearCacheMap) ReplaceIfSame(ctx context.Context, m *Map, key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
+	key, err := ncm.toNearCacheKey(key)
+	if err != nil {
+		return false, err
+	}
+	defer ncm.nc.Invalidate(key)
+	return m.replaceIfSameFromRemote(ctx, key, oldValue, newValue)
 }
 
 func (ncm *nearCacheMap) Set(ctx context.Context, m *Map, key, value interface{}, ttl int64) error {

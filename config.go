@@ -17,9 +17,11 @@
 package hazelcast
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	pubhzerrors "github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -42,18 +44,19 @@ const (
 // Config contains configuration for a client.
 // Zero value of Config is the default configuration.
 type Config struct {
-	lifecycleListeners  map[types.UUID]LifecycleStateChangeHandler
-	membershipListeners map[types.UUID]cluster.MembershipStateChangeHandler
-	NearCaches          map[string]nearcache.Config       `json:",omitempty"`
-	FlakeIDGenerators   map[string]FlakeIDGeneratorConfig `json:",omitempty"`
-	Labels              []string                          `json:",omitempty"`
-	ClientName          string                            `json:",omitempty"`
-	Logger              logger.Config                     `json:",omitempty"`
-	Failover            cluster.FailoverConfig            `json:",omitempty"`
-	Serialization       serialization.Config              `json:",omitempty"`
-	Cluster             cluster.Config                    `json:",omitempty"`
-	Stats               StatsConfig                       `json:",omitempty"`
-	Invalidation        InvalidationConfig                `json:",omitempty"`
+	lifecycleListeners    map[types.UUID]LifecycleStateChangeHandler
+	membershipListeners   map[types.UUID]cluster.MembershipStateChangeHandler
+	nearCaches            map[string]nearcache.Config
+	NearCaches            []nearcache.Config                `json:",omitempty"`
+	FlakeIDGenerators     map[string]FlakeIDGeneratorConfig `json:",omitempty"`
+	Labels                []string                          `json:",omitempty"`
+	ClientName            string                            `json:",omitempty"`
+	Logger                logger.Config                     `json:",omitempty"`
+	Failover              cluster.FailoverConfig            `json:",omitempty"`
+	Serialization         serialization.Config              `json:",omitempty"`
+	Cluster               cluster.Config                    `json:",omitempty"`
+	Stats                 StatsConfig                       `json:",omitempty"`
+	NearCacheInvalidation NearCacheInvalidationConfig       `json:",omitempty"`
 }
 
 // NewConfig creates the default configuration.
@@ -85,7 +88,7 @@ func (c *Config) AddMembershipListener(handler cluster.MembershipStateChangeHand
 // AddNearCache adds a near cache configuration.
 func (c *Config) AddNearCache(cfg nearcache.Config) {
 	c.ensureNearCacheConfigs()
-	c.NearCaches[cfg.Name] = cfg
+	c.nearCaches[cfg.Name] = cfg
 }
 
 // GetNearCache returns the first configuration that matches the given pattern.
@@ -100,7 +103,7 @@ func (c *Config) GetNearCache(pattern string) (nearcache.Config, bool, error) {
 		return nc, true, nil
 	}
 	// config not found, return the default if it exists
-	nc, ok = c.NearCaches["default"]
+	nc, ok = c.nearCaches["default"]
 	return nc, ok, nil
 }
 
@@ -121,17 +124,22 @@ func (c *Config) Clone() Config {
 		newFlakeIDConfigs[k] = v
 	}
 	nccs := c.copyNearCacheConfig()
+	newNCs := make([]nearcache.Config, 0, len(c.NearCaches))
+	for _, v := range c.NearCaches {
+		newNCs = append(newNCs, v)
+	}
 	return Config{
-		ClientName:        c.ClientName,
-		Labels:            newLabels,
-		FlakeIDGenerators: newFlakeIDConfigs,
-		NearCaches:        nccs,
-		Cluster:           c.Cluster.Clone(),
-		Failover:          c.Failover.Clone(),
-		Serialization:     c.Serialization.Clone(),
-		Logger:            c.Logger.Clone(),
-		Stats:             c.Stats.clone(),
-		Invalidation:      c.Invalidation.Clone(),
+		ClientName:            c.ClientName,
+		Labels:                newLabels,
+		FlakeIDGenerators:     newFlakeIDConfigs,
+		nearCaches:            nccs,
+		NearCaches:            newNCs,
+		Cluster:               c.Cluster.Clone(),
+		Failover:              c.Failover.Clone(),
+		Serialization:         c.Serialization.Clone(),
+		Logger:                c.Logger.Clone(),
+		Stats:                 c.Stats.clone(),
+		NearCacheInvalidation: c.NearCacheInvalidation.Clone(),
 		// both lifecycleListeners and membershipListeners are not used verbatim in client creator
 		// so no need to copy them
 		lifecycleListeners:  c.lifecycleListeners,
@@ -156,7 +164,7 @@ func (c *Config) Validate() error {
 	if err := c.Stats.Validate(); err != nil {
 		return err
 	}
-	if err := c.Invalidation.Validate(); err != nil {
+	if err := c.NearCacheInvalidation.Validate(); err != nil {
 		return err
 	}
 	c.ensureFlakeIDGenerators()
@@ -166,12 +174,24 @@ func (c *Config) Validate() error {
 		}
 	}
 	c.ensureNearCacheConfigs()
-	for _, cfg := range c.NearCaches {
+	for _, nc := range c.NearCaches {
+		c.AddNearCache(nc)
+	}
+	for _, cfg := range c.nearCaches {
 		if err := cfg.Validate(); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (c Config) MarshalJSON() ([]byte, error) {
+	mc := configForMarshal(c.Clone())
+	mc.NearCaches = nil
+	for _, v := range c.nearCaches {
+		mc.NearCaches = append(mc.NearCaches, v)
+	}
+	return json.Marshal(mc)
 }
 
 func (c *Config) ensureLifecycleListeners() {
@@ -193,16 +213,16 @@ func (c *Config) ensureFlakeIDGenerators() {
 }
 
 func (c *Config) ensureNearCacheConfigs() {
-	if c.NearCaches == nil {
-		c.NearCaches = map[string]nearcache.Config{}
+	if c.nearCaches == nil {
+		c.nearCaches = map[string]nearcache.Config{}
 	}
 }
 
 func (c *Config) lookupNearCacheByPattern(itemName string) (nearcache.Config, bool, error) {
-	if candidate, ok := c.NearCaches[itemName]; ok {
+	if candidate, ok := c.nearCaches[itemName]; ok {
 		return candidate, true, nil
 	}
-	key, err := matchingPointMatches(c.NearCaches, itemName)
+	key, err := matchingPointMatches(c.nearCaches, itemName)
 	if err != nil {
 		return nearcache.Config{}, false, err
 	}
@@ -210,7 +230,7 @@ func (c *Config) lookupNearCacheByPattern(itemName string) (nearcache.Config, bo
 		// not found
 		return nearcache.Config{}, false, nil
 	}
-	return c.NearCaches[key], true, nil
+	return c.nearCaches[key], true, nil
 }
 
 // AddFlakeIDGenerator validates the values and adds new FlakeIDGeneratorConfig with the given name.
@@ -229,12 +249,14 @@ func (c *Config) AddFlakeIDGenerator(name string, prefetchCount int32, prefetchE
 
 func (c Config) copyNearCacheConfig() map[string]nearcache.Config {
 	c.ensureNearCacheConfigs()
-	configs := make(map[string]nearcache.Config, len(c.NearCaches))
-	for k, v := range c.NearCaches {
+	configs := make(map[string]nearcache.Config, len(c.nearCaches))
+	for k, v := range c.nearCaches {
 		configs[k] = v.Clone()
 	}
 	return configs
 }
+
+type configForMarshal Config
 
 // StatsConfig contains configuration for Management Center.
 type StatsConfig struct {
@@ -283,7 +305,7 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 	return nil
 }
 
-type InvalidationConfig struct {
+type NearCacheInvalidationConfig struct {
 	maxToleratedMissCount *int
 	// ReconciliationIntervalSeconds is the time in seconds for the reconciliation task interval.
 	// Configuring a value of zero seconds disables the reconciliation task.
@@ -291,22 +313,22 @@ type InvalidationConfig struct {
 	err                           error
 }
 
-func (pc InvalidationConfig) Clone() InvalidationConfig {
-	return InvalidationConfig{
+func (pc NearCacheInvalidationConfig) Clone() NearCacheInvalidationConfig {
+	return NearCacheInvalidationConfig{
 		maxToleratedMissCount:         pc.maxToleratedMissCount,
 		reconciliationIntervalSeconds: pc.reconciliationIntervalSeconds,
 		err:                           pc.err,
 	}
 }
 
-func (pc InvalidationConfig) Validate() error {
+func (pc NearCacheInvalidationConfig) Validate() error {
 	if pc.err != nil {
-		return fmt.Errorf("hazelcast.Invalidation: %w", pc.err)
+		return fmt.Errorf("hazelcast.NearCacheInvalidation: %w", pc.err)
 	}
 	return nil
 }
 
-func (pc *InvalidationConfig) SetMaxToleratedMissCount(count int) {
+func (pc *NearCacheInvalidationConfig) SetMaxToleratedMissCount(count int) {
 	if err := check.NonNegativeInt32Config(count); err != nil {
 		pc.err = fmt.Errorf("MaxToleratedMissCount: %w", err)
 		return
@@ -314,14 +336,14 @@ func (pc *InvalidationConfig) SetMaxToleratedMissCount(count int) {
 	pc.maxToleratedMissCount = &count
 }
 
-func (pc InvalidationConfig) MaxToleratedMissCount() int {
+func (pc NearCacheInvalidationConfig) MaxToleratedMissCount() int {
 	if pc.maxToleratedMissCount == nil {
 		return defaultMaxToleratedMissCount
 	}
 	return *pc.maxToleratedMissCount
 }
 
-func (pc *InvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
+func (pc *NearCacheInvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	if err := check.NonNegativeInt32Config(seconds); err != nil {
 		pc.err = fmt.Errorf("invalid configuration: ReconciliationIntervalSeconds: %w", err)
 		return
@@ -333,11 +355,25 @@ func (pc *InvalidationConfig) SetReconciliationIntervalSeconds(seconds int) {
 	pc.reconciliationIntervalSeconds = &seconds
 }
 
-func (pc *InvalidationConfig) ReconciliationIntervalSeconds() int {
+func (pc *NearCacheInvalidationConfig) ReconciliationIntervalSeconds() int {
 	if pc.reconciliationIntervalSeconds == nil {
 		return defaultReconciliationIntervalSeconds
 	}
 	return *pc.reconciliationIntervalSeconds
+}
+
+func (pc *NearCacheInvalidationConfig) UnmarshalJSON(b []byte) error {
+	var cfg nearCacheInvalidationConfigForMarshal
+	if err := json.Unmarshal(b, &cfg); err != nil {
+		return fmt.Errorf("unmarshalling Near Cache invalidation configuration: %w", err)
+	}
+	*pc = *(*NearCacheInvalidationConfig)(unsafe.Pointer(&cfg))
+	return nil
+}
+
+func (pc NearCacheInvalidationConfig) MarshalJSON() ([]byte, error) {
+	cfg := *(*nearCacheInvalidationConfigForMarshal)(unsafe.Pointer(&pc))
+	return json.Marshal(cfg)
 }
 
 func matchingPointMatches(patterns map[string]nearcache.Config, itemName string) (string, error) {
@@ -378,4 +414,10 @@ func getMatchingPoint(pattern, itemName string) int {
 		return -1
 	}
 	return len(first) + len(second)
+}
+
+type nearCacheInvalidationConfigForMarshal struct {
+	MaxToleratedMissCount         *int `json:",omitempty"`
+	ReconciliationIntervalSeconds *int `json:",omitempty"`
+	err                           error
 }

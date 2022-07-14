@@ -54,12 +54,14 @@ func NewManager(ic *client.Client, reconInterval, maxMiss int) *Manager {
 		ss:           ss,
 		rt:           rt,
 		lg:           lg,
+		doneCh:       doneCh,
 	}
 	return ncm
 }
 
 func (m *Manager) Stop() {
 	if atomic.CompareAndSwapInt32(&m.state, 0, 1) {
+		close(m.doneCh)
 		m.nearCachesMu.Lock()
 		for _, nc := range m.nearCaches {
 			nc.Destroy()

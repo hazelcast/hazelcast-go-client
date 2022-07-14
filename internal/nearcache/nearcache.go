@@ -17,6 +17,7 @@
 package nearcache
 
 import (
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -36,11 +37,13 @@ const (
 	// see: com.hazelcast.internal.nearcache.NearCache#DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_SECONDS
 	defaultExpirationTaskInitialDelay = 5 * time.Second
 	// see: com.hazelcast.internal.nearcache.NearCache#DEFAULT_EXPIRATION_TASK_PERIOD_SECONDS
-	defaultExpirationTaskPeriod = 5 * time.Second
+	defaultExpirationTaskPeriod   = 5 * time.Second
+	EnvExpirationTaskInitialDelay = "TESTONLY_NC_EXPIRATION_INITIAL_DELAY"
+	EnvExpirationTaskPeriod       = "TESTONLY_NC_EXPIRATION_TASK_PERIOD"
 )
 
 type NearCache struct {
-	store  RecordStore
+	store  *RecordStore
 	cfg    *nearcache.Config
 	lg     ilogger.LogAdaptor
 	doneCh chan struct{}
@@ -66,7 +69,9 @@ func NewNearCache(cfg *nearcache.Config, ss *serialization.Service, lg ilogger.L
 		doneCh: make(chan struct{}),
 	}
 	if cfg.TimeToLiveSeconds > 0 || cfg.MaxIdleSeconds > 0 {
-		go nc.startExpirationTask(defaultExpirationTaskInitialDelay, defaultExpirationTaskPeriod)
+		delay := nc.parseDurationOrDefault(EnvExpirationTaskInitialDelay, defaultExpirationTaskInitialDelay)
+		period := nc.parseDurationOrDefault(EnvExpirationTaskPeriod, defaultExpirationTaskPeriod)
+		go nc.startExpirationTask(delay, period)
 	}
 	return nc
 }
@@ -160,4 +165,17 @@ func (nc *NearCache) startExpirationTask(delay, timeout time.Duration) {
 			nc.store.DoExpiration()
 		}
 	}
+}
+
+func (nc *NearCache) parseDurationOrDefault(envName string, d time.Duration) time.Duration {
+	str := os.Getenv(envName)
+	if str == "" {
+		return d
+	}
+	dur, err := time.ParseDuration(str)
+	if err != nil {
+		nc.lg.Warnf("nearcache.NearCache.parseDurationOrDefault: ignoring %s", envName)
+		return d
+	}
+	return dur
 }
