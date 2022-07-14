@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -94,13 +94,17 @@ func TestMap_PutWithTTLAndMaxIdle(t *testing.T) {
 func TestMap_PutIfAbsent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsent(context.Background(), "key", targetValue); err != nil {
+		v, err := m.PutIfAbsent(context.Background(), "key", targetValue)
+		if err != nil {
 			t.Fatal(err)
 		}
+		it.AssertEquals(t, nil, v)
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
-		if _, err := m.PutIfAbsent(context.Background(), "key", "another-value"); err != nil {
+		v, err = m.PutIfAbsent(context.Background(), "key", "another-value")
+		if err != nil {
 			t.Fatal(err)
 		}
+		it.AssertEquals(t, "value", v)
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 	})
 }
@@ -108,9 +112,11 @@ func TestMap_PutIfAbsent(t *testing.T) {
 func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsentWithTTL(context.Background(), "key", targetValue, 1*time.Second); err != nil {
+		v, err := m.PutIfAbsentWithTTL(context.Background(), "key", targetValue, 1*time.Second)
+		if err != nil {
 			t.Fatal(err)
 		}
+		assert.Equal(t, nil, v)
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(context.Background(), "key")) == nil
@@ -121,9 +127,11 @@ func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsentWithTTLAndMaxIdle(context.Background(), "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+		v, err := m.PutIfAbsentWithTTLAndMaxIdle(context.Background(), "key", targetValue, 1*time.Second, 1*time.Second)
+		if err != nil {
 			t.Fatal(err)
 		}
+		assert.Equal(t, nil, v)
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(context.Background(), "key")) == nil
@@ -1099,6 +1107,7 @@ func TestMap_AggregateWithPredicate(t *testing.T) {
 }
 
 func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
+	it.SkipIf(t, "hz > 4.1.9, hz < 4.3")
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"

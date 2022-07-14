@@ -14,7 +14,7 @@ test: test-all
 test-all:
 	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) $(PACKAGES) ./...
 
-test-all-race:
+test-race:
 	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -race $(PACKAGES)
 
 test-cover:
