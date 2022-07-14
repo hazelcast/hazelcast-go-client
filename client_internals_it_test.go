@@ -194,7 +194,7 @@ func TestClusterID(t *testing.T) {
 				wg.Done()
 			}
 		})
-		c := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		c := ensureClient(config)
 		defer func(ctx context.Context, c *hz.Client) {
 			err := c.Shutdown(ctx)
 			if err != nil {
@@ -224,7 +224,7 @@ func TestClusterID(t *testing.T) {
 func TestClientInternal_ClusterID(t *testing.T) {
 	tc := it.StartNewClusterWithOptions("ci-cluster-id", 55711, 1)
 	ctx := context.Background()
-	client := it.EnsureClient(tc.DefaultConfig())
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
 	ci := hz.NewClientInternal(client)
 	assert.NotEqual(t, types.UUID{}, ci.ClusterID())
@@ -456,4 +456,20 @@ func DecodeMCGetMemberConfigResponse(clientMessage *proto.ClientMessage) string 
 	frameIterator.Next()
 
 	return codec.DecodeString(frameIterator)
+}
+
+// ensureClient prevents client start to fail the test when the client is not allowed in the cluster.
+func ensureClient(config hz.Config) *hz.Client {
+	for i := 0; i < 60; i++ {
+		client, err := hz.StartNewClientWithConfig(context.Background(), config)
+		if err != nil {
+			if errors.Is(err, hzerrors.ErrClientNotAllowedInCluster) {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			panic(err)
+		}
+		return client
+	}
+	panic("the client could not connect to the cluster in 60 seconds.")
 }
