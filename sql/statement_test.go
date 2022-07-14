@@ -63,7 +63,7 @@ func TestStatement_SetCursorBufferSize_ExpectSigned32Bit(t *testing.T) {
 	skip.If(t, "arch ~ 32bit")
 	v := math.MaxInt32
 	value := v + 1
-	errString := "setting cursor buffer size: signed 32-bit integer number expected: 2147483648: illegal argument error"
+	errString := "setting cursor buffer size: integer overflows int32: illegal argument error"
 	var stmt Statement
 	err := stmt.SetCursorBufferSize(value)
 	assert.Equal(t, errString, err.Error())
