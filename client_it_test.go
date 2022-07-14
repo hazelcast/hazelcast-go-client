@@ -96,9 +96,9 @@ func TestClientLifecycleEvents(t *testing.T) {
 }
 
 func TestClient_AddLifecycleListener(t *testing.T) {
-	receivedStates := []hz.LifecycleState{}
-	receivedStatesMu := &sync.RWMutex{}
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var receivedStates []hz.LifecycleState
+		receivedStatesMu := &sync.RWMutex{}
 		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
 			receivedStatesMu.Lock()
 			defer receivedStatesMu.Unlock()
@@ -113,18 +113,11 @@ func TestClient_AddLifecycleListener(t *testing.T) {
 			}
 			receivedStates = append(receivedStates, event.State)
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.Nil(t, err)
 		require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
 		if err = client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
 		}
-		defer func() {
-			receivedStatesMu.Lock()
-			receivedStates = []hz.LifecycleState{}
-			receivedStatesMu.Unlock()
-		}()
 		targetStates := []hz.LifecycleState{
 			hz.LifecycleStateShuttingDown,
 			hz.LifecycleStateShutDown,
@@ -147,10 +140,8 @@ func TestClient_RemoveLifecycleListener(t *testing.T) {
 				atomic.AddInt32(&lifecycleEventReceived, 1)
 			}
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		require.Nil(t, err)
+		require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
 		if err = client.RemoveLifecycleListener(subscriptionID); err != nil {
 			t.Fatal(err)
 		}
