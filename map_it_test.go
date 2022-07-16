@@ -1477,9 +1477,9 @@ func TestMap_TryRemoveWithTimeout(t *testing.T) {
 		if err := m.Lock(ctx1, "foo"); err != nil {
 			t.Fatal(err)
 		}
-		// TryPut with a different lock context returns false
+		// TryRemove with a different lock context returns false
 		ctx2 := m.NewLockContext(context.Background())
-		ok, err := m.TryPutWithTimeout(ctx2, "foo", "bar", 1*time.Second)
+		ok, err := m.TryRemoveWithTimeout(ctx2, "foo", 1*time.Second)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1491,8 +1491,8 @@ func TestMap_TryRemoveWithTimeout(t *testing.T) {
 				panic(err)
 			}
 		}()
-		// TryPut after the timeout
-		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 2*time.Minute)
+		// TryRemove after the timeout
+		ok, err = m.TryRemoveWithTimeout(ctx2, "foo", 2*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}

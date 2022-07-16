@@ -413,6 +413,47 @@ func xmlSSLConfig(clusterName string, port int) string {
 			`, clusterName, port)
 }
 
+func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+			<cluster-name>%s</cluster-name>
+			<network>
+				<port>%d</port>
+				<ssl enabled="true">
+					<factory-class-name>
+						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
+					</factory-class-name>
+					<properties>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="trustStore">com/hazelcast/nio/ssl-mutual-auth/server1_knows_client1/server1.truststore
+						</property>
+						<property name="trustStorePassword">password</property>
+						<property name="trustManagerAlgorithm">SunX509</property>
+						<property name="javax.net.ssl.mutualAuthentication">REQUIRED</property>
+						<property name="keyManagerAlgorithm">SunX509</property>
+						<property name="protocol">TLSv1.2</property>
+					</properties>
+				</ssl>
+			</network>
+			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
+		</hazelcast>
+			`, clusterName, port)
+}
+
 func getLoggerLevel() logger.Level {
 	if TraceLoggingEnabled() {
 		return logger.TraceLevel
