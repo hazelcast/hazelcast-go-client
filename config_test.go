@@ -19,6 +19,7 @@ package hazelcast_test
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -40,6 +41,56 @@ func TestDefaultConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkDefault(t, &config)
+}
+
+func TestConfig_SetLabels(t *testing.T) {
+	for _, tc := range []struct {
+		info           string
+		expectedLength int
+		input          []string
+	}{
+		{info: "non-empty single string slice", expectedLength: 1, input: []string{"client-label"}},
+		{info: "empty single string slice", expectedLength: 1, input: []string{""}},
+		{info: "empty slice", expectedLength: 0, input: []string{}},
+		{info: "non-empty multiple string slice", expectedLength: 2, input: []string{"a", "b"}},
+		{info: "hybrid strings slice", expectedLength: 3, input: []string{"a", "", "c"}},
+	} {
+		t.Run(tc.info, func(t *testing.T) {
+			config := hazelcast.NewConfig()
+			config.SetLabels(tc.input...)
+			got := len(config.Labels)
+			if got != tc.expectedLength {
+				t.Fatalf("got %v want %v", got, tc.expectedLength)
+			}
+			labels := config.Labels
+			assert.Equal(t, labels, tc.input)
+		})
+	}
+}
+
+func TestConfig_Clone(t *testing.T) {
+	cfg := hazelcast.Config{
+		FlakeIDGenerators: map[string]hazelcast.FlakeIDGeneratorConfig{
+			"test-flakeID-key-1": {
+				PrefetchCount:  50_000,
+				PrefetchExpiry: types.Duration(time.Minute * 2),
+			},
+			"test-flakeID-key-2": {
+				PrefetchCount:  90_000,
+				PrefetchExpiry: types.Duration(time.Minute * 5),
+			},
+		},
+		Labels:     []string{"test-client-label"},
+		ClientName: "test-client",
+	}
+	err := cfg.Validate()
+	if err != nil {
+		return
+	}
+	newCfg := cfg.Clone()
+	assert.True(t, reflect.DeepEqual(newCfg.FlakeIDGenerators, cfg.FlakeIDGenerators))
+	assert.True(t, reflect.DeepEqual(newCfg.Labels, cfg.Labels))
+	assert.True(t, reflect.DeepEqual(newCfg.ClientName, cfg.ClientName))
 }
 
 func TestNewConfig_SetAddress(t *testing.T) {
