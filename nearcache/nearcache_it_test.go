@@ -49,7 +49,6 @@ const (
 
 func TestSmokeNearCachePopulation(t *testing.T) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#smoke_near_cache_population
-	t.Skipf("this test is flaky, to be addressed before the release")
 	tcx := it.MapTestContext{
 		T: t,
 		ConfigCallback: func(tcx it.MapTestContext) {
@@ -924,7 +923,6 @@ func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
 }
 
 func TestMemberLoadAllInvalidatesClientNearCache(t *testing.T) {
-	t.Skipf("this test is currently flaky")
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
 	f := func(tcx it.MapTestContext, size int32) string {
 		mode := "unisocket"
