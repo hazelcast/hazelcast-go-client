@@ -25,7 +25,6 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -925,16 +924,12 @@ func TestAfterTryPutNearCacheIsInvalidated(t *testing.T) {
 func TestMemberLoadAllInvalidatesClientNearCache(t *testing.T) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
 	f := func(tcx it.MapTestContext, size int32) string {
-		mode := "unisocket"
-		if tcx.Smart {
-			mode = "smart"
-		}
 		return fmt.Sprintf(`
-			var map = instance_0.getMap("test-map-%s");
+			var map = instance_0.getMap("%s");
         	map.loadAll(true);
-		`, mode)
+		`, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, true, f)
+	memberInvalidatesClientNearCache(t, f)
 }
 
 func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
@@ -949,7 +944,7 @@ func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
         	map.putAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, false, f)
+	memberInvalidatesClientNearCache(t, f)
 }
 
 func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
@@ -964,32 +959,36 @@ func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
         	map.setAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, false, f)
+	memberInvalidatesClientNearCache(t, f)
 }
 
-func memberInvalidatesClientNearCache(t *testing.T, useTestMap bool, makeScript func(tcx it.MapTestContext, size int32) string) {
+func memberInvalidatesClientNearCache(t *testing.T, makeScript func(tcx it.MapTestContext, size int32) string) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
 	tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatBinary, true)
-	if useTestMap {
-		// hardcoded map name for LoadAll to work
-		tcx.NameMaker = func(p ...string) string {
-			suffix := strings.Join(p, "-")
-			return fmt.Sprintf("test-map-%s", suffix)
-		}
-	}
-	tcx.Tester(func(tcx it.MapTestContext) {
-		t := tcx.T
-		const mapSize = 1000
-		// ignoring returned keys
-		_ = populateMapWithString(tcx, mapSize)
-		populateNearCacheWithString(tcx, mapSize)
-		script := makeScript(tcx, mapSize)
-		tcx.ExecuteScript(context.Background(), script)
-		it.Eventually(t, func() bool {
-			oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
-			t.Logf("OEC: %d", oec)
-			return 0 == oec
-		})
+	clusterName := t.Name()
+	tcx.MapName = it.NewUniqueObjectName("map")
+	const port = 51001
+	clsCfg := xmlConfig(clusterName, tcx.MapName, port)
+	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
+	defer cls.Shutdown()
+	tcx.Cluster = cls
+	ctx := context.Background()
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, cls.DefaultConfig()))
+	tcx.Client = client
+	m := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
+	tcx.M = m
+	t = tcx.T
+	const mapSize = 1000
+	// ignoring returned keys
+	_ = populateMapWithString(tcx, mapSize)
+	populateNearCacheWithString(tcx, mapSize)
+	script := makeScript(tcx, mapSize)
+	t.Logf("executing member-side script: %s\nmap: %s", script, tcx.MapName)
+	tcx.ExecuteScript(context.Background(), script)
+	it.Eventually(t, func() bool {
+		oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
+		t.Logf("OEC: %d", oec)
+		return 0 == oec
 	})
 }
 
@@ -1238,4 +1237,23 @@ func expirationAfter(tcx it.MapTestContext) {
 	_ = os.Setenv(inearcache.EnvExpirationTaskInitialDelay, "")
 	// ignoring the error
 	_ = os.Setenv(inearcache.EnvExpirationTaskPeriod, "")
+}
+
+func xmlConfig(clusterName string, mapName string, port int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+               <port>%d</port>
+            </network>
+			<map name="%s">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+        </hazelcast>
+	`, clusterName, port, mapName)
 }
