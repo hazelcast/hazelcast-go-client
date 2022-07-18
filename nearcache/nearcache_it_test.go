@@ -48,43 +48,48 @@ const (
 
 func TestSmokeNearCachePopulation(t *testing.T) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#smoke_near_cache_population
+	const memberCount = 3
 	tcx := it.MapTestContext{
 		T: t,
-		ConfigCallback: func(tcx it.MapTestContext) {
-			ncc := nearcache.Config{Name: tcx.MapName}
-			ncc.SetInvalidateOnChange(true)
-			tcx.Config.AddNearCache(ncc)
-		},
-		Before: expirationBefore,
-		After:  expirationAfter,
 	}
-	tcx.Tester(func(tcx it.MapTestContext) {
-		m := tcx.M
-		t := tcx.T
-		ctx := context.Background()
-		// assert cluster size
-		it.Eventually(t, func() bool {
-			ci := hz.NewClientInternal(tcx.Client)
-			mems := ci.OrderedMembers()
-			t.Logf("member count: %d, expected: %d", len(mems), it.MemberCount())
-			return len(mems) == it.MemberCount()
-		})
-		const mapSize = 1000
-		cls := tcx.Cluster
-		// 2. populate server side map
-		for i := 0; i < mapSize; i++ {
-			v := strconv.Itoa(i)
-			it.MapSetOnServer(cls.ClusterID, tcx.MapName, v, v)
-		}
-		// 4. populate client Near Cache
-		for i := int32(0); i < mapSize; i++ {
-			v := it.MustValue(m.Get(ctx, i))
-			require.Equal(t, i, v)
-		}
-		// 5. assert number of entries in client Near Cache
-		nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
-		require.Equal(t, mapSize, nca.Size())
+	clusterName := t.Name()
+	tcx.MapName = it.NewUniqueObjectName("map")
+	const port = 52001
+	clsCfg := smokeXMLConfig(clusterName, port)
+	cls := it.StartNewClusterWithConfig(memberCount, clsCfg, port)
+	defer cls.Shutdown()
+	tcx.Cluster = cls
+	ctx := context.Background()
+	ncc := nearcache.Config{Name: tcx.MapName}
+	ncc.SetInvalidateOnChange(true)
+	cfg := cls.DefaultConfig()
+	cfg.AddNearCache(ncc)
+	tcx.Config = &cfg
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	tcx.Client = client
+	m := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
+	tcx.M = m
+	// assert cluster size
+	it.Eventually(t, func() bool {
+		ci := hz.NewClientInternal(tcx.Client)
+		mems := ci.OrderedMembers()
+		t.Logf("member count: %d, expected: %d", len(mems), memberCount)
+		return len(mems) == memberCount
 	})
+	const mapSize = 1000
+	// 2. populate server side map
+	for i := 0; i < mapSize; i++ {
+		v := strconv.Itoa(i)
+		it.MapSetOnServer(cls.ClusterID, tcx.MapName, v, v)
+	}
+	// 4. populate client Near Cache
+	for i := int32(0); i < mapSize; i++ {
+		v := it.MustValue(m.Get(ctx, i))
+		require.Equal(t, i, v)
+	}
+	// 5. assert number of entries in client Near Cache
+	nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
+	require.Equal(t, mapSize, nca.Size())
 }
 
 func TestGetAllChecksNearCacheFirst(t *testing.T) {
@@ -284,6 +289,7 @@ func TestNearCachePopulatedAndHitsGenerated_withInterleavedCacheHitGeneration(t 
 }
 
 func TestRemovedKeyValueNotInNearCache(t *testing.T) {
+	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testRemovedKeyValueNotInNearCache
 	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatObject, true)
 	tcx.Tester(func(tcx it.MapTestContext) {
 		t := tcx.T
@@ -964,16 +970,28 @@ func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
 
 func memberInvalidatesClientNearCache(t *testing.T, makeScript func(tcx it.MapTestContext, size int32) string) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
-	tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatBinary, true)
+	tcx := it.MapTestContext{
+		T:      t,
+		Before: expirationBefore,
+		After:  expirationAfter,
+	}
 	clusterName := t.Name()
 	tcx.MapName = it.NewUniqueObjectName("map")
 	const port = 51001
-	clsCfg := xmlConfig(clusterName, tcx.MapName, port)
+	clsCfg := invalidationXMLConfig(clusterName, tcx.MapName, port)
 	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
 	defer cls.Shutdown()
 	tcx.Cluster = cls
 	ctx := context.Background()
-	client := it.MustClient(hz.StartNewClientWithConfig(nil, cls.DefaultConfig()))
+	ncc := nearcache.Config{
+		Name:           tcx.MapName,
+		InMemoryFormat: nearcache.InMemoryFormatBinary,
+	}
+	ncc.SetInvalidateOnChange(true)
+	cfg := cls.DefaultConfig()
+	cfg.AddNearCache(ncc)
+	tcx.Config = &cfg
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
 	tcx.Client = client
 	m := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
 	tcx.M = m
@@ -1239,7 +1257,7 @@ func expirationAfter(tcx it.MapTestContext) {
 	_ = os.Setenv(inearcache.EnvExpirationTaskPeriod, "")
 }
 
-func xmlConfig(clusterName string, mapName string, port int) string {
+func invalidationXMLConfig(clusterName string, mapName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -1256,4 +1274,23 @@ func xmlConfig(clusterName string, mapName string, port int) string {
 			</map>
         </hazelcast>
 	`, clusterName, port, mapName)
+}
+
+func smokeXMLConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+               <port>%d</port>
+            </network>
+			<properties>
+				<property name="hazelcast.map.invalidation.batchfrequency.seconds">1</property>
+				<property name="hazelcast.internal.nearcache.expiration.task.initial.delay.seconds">0</property>
+				<property name="hazelcast.internal.nearcache.expiration.task.period.seconds">1</property>
+			</properties>
+        </hazelcast>
+	`, clusterName, port)
 }
