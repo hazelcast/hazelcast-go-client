@@ -97,6 +97,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		v := it.MustValue(m.Get(ctx, i))
 		require.Equal(t, i, v)
 	}
+	t.Logf("stats: %#v", m.LocalMapStats().NearCacheStats)
 	// 5. assert number of entries in client Near Cache
 	nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
 	require.Equal(t, mapSize, nca.Size())
@@ -606,6 +607,7 @@ func TestAfterDeleteNearCacheIsInvalidated(t *testing.T) {
 
 func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterPutAsyncNearCacheIsInvalidated
+	it.SkipIf(t, "hz > 4.1.9, hz < 4.3")
 	testCases := []mapTestCase{
 		{
 			name: "Put",
