@@ -66,6 +66,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 	cfg.AddNearCache(ncc)
 	tcx.Config = &cfg
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	defer client.Shutdown(ctx)
 	tcx.Client = client
 	m := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
 	tcx.M = m
@@ -82,6 +83,15 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 		v := strconv.Itoa(i)
 		it.MapSetOnServer(cls.ClusterID, tcx.MapName, v, v)
 	}
+	// make sure the size of the map is correct
+	it.Eventually(t, func() bool {
+		size, err := m.Size(ctx)
+		if err != nil {
+			panic(err)
+		}
+		t.Logf("map size: %d", size)
+		return size == mapSize
+	})
 	// 4. populate client Near Cache
 	for i := int32(0); i < mapSize; i++ {
 		v := it.MustValue(m.Get(ctx, i))
