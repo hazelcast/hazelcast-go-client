@@ -49,49 +49,27 @@ const (
 func TestSmokeNearCachePopulation(t *testing.T) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#smoke_near_cache_population
 	const memberCount = 3
-	tcx := it.MapTestContext{
-		T: t,
-	}
 	clusterName := t.Name()
-	tcx.MapName = it.NewUniqueObjectName("map")
+	mapName := it.NewUniqueObjectName("map")
 	const port = 52001
 	clsCfg := smokeXMLConfig(clusterName, port)
 	cls := it.StartNewClusterWithConfig(memberCount, clsCfg, port)
 	defer cls.Shutdown()
-	tcx.Cluster = cls
-	ctx := context.Background()
-	ncc := nearcache.Config{Name: tcx.MapName}
-	ncc.SetInvalidateOnChange(true)
-	cfg := cls.DefaultConfig()
-	cfg.AddNearCache(ncc)
-	tcx.Config = &cfg
-	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
-	defer client.Shutdown(ctx)
-	tcx.Client = client
-	m := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
-	tcx.M = m
-	// assert cluster size
-	it.Eventually(t, func() bool {
-		ci := hz.NewClientInternal(tcx.Client)
-		mems := ci.OrderedMembers()
-		t.Logf("member count: %d, expected: %d", len(mems), memberCount)
-		return len(mems) == memberCount
-	})
 	const mapSize = 1000
 	// 2. populate server side map
 	for i := 0; i < mapSize; i++ {
 		v := strconv.Itoa(i)
-		it.MapSetOnServer(cls.ClusterID, tcx.MapName, v, v)
+		it.MapSetOnServer(cls.ClusterID, mapName, v, v)
 	}
-	// make sure the size of the map is correct
-	it.Eventually(t, func() bool {
-		size, err := m.Size(ctx)
-		if err != nil {
-			panic(err)
-		}
-		t.Logf("map size: %d", size)
-		return size == mapSize
-	})
+	// 3. add client with Near Cache
+	ctx := context.Background()
+	ncc := nearcache.Config{Name: mapName}
+	ncc.SetInvalidateOnChange(true)
+	cfg := cls.DefaultConfig()
+	cfg.AddNearCache(ncc)
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	defer client.Shutdown(ctx)
+	m := it.MustValue(client.GetMap(ctx, mapName)).(*hz.Map)
 	// 4. populate client Near Cache
 	for i := int32(0); i < mapSize; i++ {
 		v := it.MustValue(m.Get(ctx, i))
