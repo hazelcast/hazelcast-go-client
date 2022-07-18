@@ -170,7 +170,7 @@ All conditions should be satisfied to skip.
 
 	skip.If(t, "ver > 1.1, hz = 5, os != windows, !enterprise")
 
-You can use multiple SkipIf statements to skip if one one of the conditions is satisfied:
+You can use multiple skip.If statements to skip when one of the conditions is satisfied:
 
 	// skip if the OS is windows or client version is greater than 1.3.2 and the Hazelcast cluster is open source:
 	skip.If(t, "os = windows")
