@@ -125,9 +125,7 @@ func (c *Config) Clone() Config {
 	}
 	nccs := c.copyNearCacheConfig()
 	newNCs := make([]nearcache.Config, 0, len(c.NearCaches))
-	for _, v := range c.NearCaches {
-		newNCs = append(newNCs, v)
-	}
+	newNCs = append(newNCs, c.NearCaches...)
 	return Config{
 		ClientName:            c.ClientName,
 		Labels:                newLabels,
@@ -185,7 +183,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// MarshalJSON marshals the configuratio to JSON.
+// MarshalJSON marshals the configuration to JSON.
 func (c Config) MarshalJSON() ([]byte, error) {
 	mc := configForMarshal(c.Clone())
 	mc.NearCaches = nil

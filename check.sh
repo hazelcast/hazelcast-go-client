@@ -42,7 +42,7 @@ staticcheck -tags hazelcastinternal $(go list ./... | grep -v org-website) | \
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment
 # If missing install via: go get -u golang.org/x/tools/...
 # Structs in following files should not be sorted due to: https://pkg.go.dev/sync/atomic#pkg-note-BUG
-fieldalignment -tags $(go list ./... | grep -v org-website) 2>&1 | \
+fieldalignment -tags $(go list ./... | grep -v org-website | grep -v examples) 2>&1 | \
   grep -v "internal/cluster/connection_manager.go" | \
   grep -v "internal/cluster/view_listener_service.go" | \
   grep -v "flake_id_generator.go" | \

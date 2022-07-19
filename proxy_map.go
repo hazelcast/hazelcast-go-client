@@ -108,7 +108,7 @@ If you have a data structure that is mostly read, then you should consider creat
 
 These benefits do not come for free. See the following trade-offs:
 
-    * Members with a Near Cache has to hold the extra cached data, which increases memory consumption.
+    * Clients with a Near Cache has to hold the extra cached data, which increases memory consumption.
     * If invalidation is enabled and entries are updated frequently, then invalidations will be costly.
     * Near Cache breaks the strong consistency guarantees; you might be reading stale data.
 
@@ -124,7 +124,7 @@ This has for example an impact on Map's maximum idle seconds or time-to-live sec
 Therefore, even though there is a hit on a key in Near Cache, your original key on the primary member may expire.
 
 Note: Near Cache works only when you access data via map.Get(k).
-Data returned using a predicate is not stored in the Near Cache.
+Data returned using a predicate or an SQL query is not stored in the Near Cache.
 
 Checkout the nearcache package for configuration options.
 

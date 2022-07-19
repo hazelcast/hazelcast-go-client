@@ -53,6 +53,9 @@ func main() {
 		panic(err)
 	}
 	m, err := cl.GetMap(context.Background(), mapName)
+	if err != nil {
+		panic(err)
+	}
 	// populate the map
 	for i := 0; i < keyCount; i++ {
 		value := fmt.Sprintf("value-%d", i)

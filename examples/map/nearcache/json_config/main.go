@@ -53,11 +53,11 @@ func main() {
 		bye(err.Error())
 	}
 	ctx := context.Background()
-	cl, err := hazelcast.StartNewClientWithConfig(ctx, config.Client)
+	client, err := hazelcast.StartNewClientWithConfig(ctx, config.Client)
 	if err != nil {
 		panic(err)
 	}
-	m, err := cl.GetMap(context.Background(), config.MapName)
+	m, err := client.GetMap(ctx, config.MapName)
 	if err != nil {
 		panic(err)
 	}
