@@ -136,6 +136,12 @@ That can be accomplished by setting SerializeKeys: true, shown in the example be
 		SerializeKeys: true
 	}
 
+The following types cannot be used as keys without setting SerializeKeys==true:
+
+	* Maps
+	* Slices
+	* Structs with having at least one field with an incomparable type.
+
 Following Map methods support the Near Cache:
 
 	* Clear
