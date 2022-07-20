@@ -25,6 +25,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -957,6 +958,59 @@ func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
 		`, size, tcx.MapName)
 	}
 	memberInvalidatesClientNearCache(t, 51021, f)
+}
+
+func TestForceRepairingTaskRun(t *testing.T) {
+	// TODO: mark this test slow.
+	// this is a test for covering async init of RepairingTask.
+	clusterName := t.Name()
+	mapName := it.NewUniqueObjectName("map")
+	const port = 53001
+	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
+	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
+	const mapSize = 1000
+	// populate server side map
+	for i := 0; i < mapSize; i++ {
+		v := strconv.Itoa(i)
+		it.MapSetOnServer(cls.ClusterID, mapName, v, v)
+	}
+	// add client with Near Cache
+	ctx := context.Background()
+	cfg := cls.DefaultConfig()
+	ncc := nearcache.Config{
+		Name: mapName,
+	}
+	// setting invalidation on change to false, since we'll handle that in the test.
+	ncc.SetInvalidateOnChange(false)
+	cfg.AddNearCache(ncc)
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	defer client.Shutdown(ctx)
+	ic := hz.NewClientInternal(client)
+	mgr := ic.NewNearCacheManager(1, 1)
+	defer mgr.Stop()
+	m := it.MustValue(client.GetMap(ctx, mapName)).(*hz.Map)
+	nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
+	for i := int32(0); i < mapSize; i++ {
+		if _, err := m.Get(ctx, i); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cls.Shutdown()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		// metadata fetcher waits for 60 seconds.
+		time.Sleep(65 * time.Second)
+		cls = it.StartNewClusterWithConfig(1, clsCfg, port)
+		wg.Done()
+	}()
+	defer cls.Shutdown()
+	_, err := mgr.RepairingTask().RegisterAndGetHandler(ctx, mapName, nca.NearCache())
+	if err != nil {
+		panic(err)
+	}
+	time.Sleep(2 * time.Second)
+	wg.Wait()
 }
 
 func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tcx it.MapTestContext, size int32) string) {
