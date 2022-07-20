@@ -925,7 +925,7 @@ func TestMemberLoadAllInvalidatesClientNearCache(t *testing.T) {
         	map.loadAll(true);
 		`, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, f)
+	memberInvalidatesClientNearCache(t, 51001, f)
 }
 
 func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
@@ -940,11 +940,12 @@ func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
         	map.putAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, f)
+	memberInvalidatesClientNearCache(t, 51011, f)
 }
 
 func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
 	// see: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberSetAll_invalidates_clientNearCache
+	it.SkipIf(t, "hz > 4, hz < 4.1")
 	f := func(tcx it.MapTestContext, size int32) string {
 		return fmt.Sprintf(`
 			var items = new java.util.HashMap(%[1]d);
@@ -955,10 +956,10 @@ func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
         	map.setAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, f)
+	memberInvalidatesClientNearCache(t, 51021, f)
 }
 
-func memberInvalidatesClientNearCache(t *testing.T, makeScript func(tcx it.MapTestContext, size int32) string) {
+func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tcx it.MapTestContext, size int32) string) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
 	tcx := it.MapTestContext{
 		T:      t,
@@ -967,7 +968,6 @@ func memberInvalidatesClientNearCache(t *testing.T, makeScript func(tcx it.MapTe
 	}
 	clusterName := t.Name()
 	tcx.MapName = it.NewUniqueObjectName("map")
-	const port = 51001
 	clsCfg := invalidationXMLConfig(clusterName, tcx.MapName, port)
 	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
 	defer cls.Shutdown()
