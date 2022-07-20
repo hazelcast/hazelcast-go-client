@@ -1033,7 +1033,7 @@ func TestRepairingTaskRun(t *testing.T) {
 	// this is a test for covering sync init of RepairingTask.
 	clusterName := t.Name()
 	mapName := it.NewUniqueObjectName("map")
-	const port = 53001
+	const port = 53011
 	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
 	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
 	defer cls.Shutdown()
@@ -1087,6 +1087,7 @@ func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tc
 	cfg.AddNearCache(ncc)
 	tcx.Config = &cfg
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	defer client.Shutdown(ctx)
 	tcx.Client = client
 	m := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
 	tcx.M = m
