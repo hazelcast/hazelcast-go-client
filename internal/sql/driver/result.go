@@ -98,13 +98,7 @@ func (r *QueryResult) Len() int {
 // It can be safely called more than once and it is concurrency-safe.
 // It implements database/sql/Rows interface.
 func (r *QueryResult) Close() error {
-	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
-		close(r.doneCh)
-		if err := r.ss.closeQuery(r.queryID, r.conn); err != nil {
-			return err
-		}
-	}
-	return nil
+	return r.closeQuery()
 }
 
 // Next requests the next batch of rows from the member.
@@ -120,7 +114,7 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 	rowCount := int32(len(cols[0]))
 	if r.index >= rowCount {
 		if r.page.Last {
-			atomic.StoreInt32(&r.state, closed)
+			r.close()
 			return io.EOF
 		}
 		if err := r.fetchNextPage(context.Background()); err != nil {
@@ -134,6 +128,22 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 	}
 	r.index++
 	return nil
+}
+
+func (r *QueryResult) closeQuery() error {
+	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
+		close(r.doneCh)
+		if err := r.ss.closeQuery(r.queryID, r.conn); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *QueryResult) close() {
+	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
+		close(r.doneCh)
+	}
 }
 
 func (r *QueryResult) fetchNextPage(ctx context.Context) error {

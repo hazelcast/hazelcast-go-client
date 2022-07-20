@@ -30,8 +30,9 @@ jobs:
         env:
           HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
           HZ_VERSION: 5.1
-          SSL_ENABLED: 1
+          ENABLE_SSL: 1
           MEMBER_COUNT: 3
         run: |
           ./rc.sh start
+          go mod tidy
           make test-cover

@@ -14,22 +14,38 @@
  * limitations under the License.
  */
 
-package event
+package internal_test
 
-import "testing"
+import (
+	"strconv"
+	"testing"
 
-func TestMakeSubscriptionID(t *testing.T) {
-	subscriptionID := MakeSubscriptionID(func() {})
-	if subscriptionID == 0 {
-		t.Fatalf("unexpected 0")
+	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/internal"
+)
+
+func TestAtomicValue_Store(t *testing.T) {
+	type St struct {
+		a int
+		b bool
 	}
-}
-
-func TestMakeSubscriptionIDFails(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.Fatalf("expected a panic")
-		}
-	}()
-	MakeSubscriptionID(42)
+	testCases := []struct {
+		value interface{}
+	}{
+		{value: nil},
+		{value: "foo"},
+		{value: 123},
+		{value: []string{"foo", "bar", "zoo"}},
+		{value: St{a: 10, b: false}},
+		{value: &St{a: 10, b: false}},
+	}
+	for i, tc := range testCases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			av := internal.AtomicValue{}
+			av.Store(&tc.value)
+			ret := av.Load()
+			assert.Equal(t, tc.value, ret)
+		})
+	}
 }

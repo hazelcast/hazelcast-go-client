@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ func BenchmarkerWithConfigBuilder(b *testing.B, configCallback func(*hz.Config),
 
 func MapBenchmarker(t *testing.B, fixture func(m *hz.Map), f func(t *testing.B, m *hz.Map)) {
 	configCallback := func(cb *hz.Config) {
+		cb.Logger.Level = logger.WarnLevel
 	}
 	MapBenchmarkerWithConfigBuilder(t, configCallback, fixture, f)
 }
@@ -137,6 +138,5 @@ func getMap(mapName string, configCallback func(*hz.Config), smart bool) (*hz.Cl
 		configCallback(&config)
 	}
 	config.Cluster.Unisocket = !smart
-	config.Logger.Level = logger.ErrorLevel
 	return GetClientMapWithConfig(mapName, &config)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ type creationBundle struct {
 	ListenerBinder       *cluster.ConnectionListenerBinder
 	Config               *Config
 	Logger               logger.LogAdaptor
+	NCMDestroyFn         func(service, object string)
 }
 
 func (b creationBundle) Check() {
@@ -101,6 +102,9 @@ func (b creationBundle) Check() {
 	if b.Logger.Logger == nil {
 		panic("LogAdaptor is nil")
 	}
+	if b.NCMDestroyFn == nil {
+		panic("NearCacheManager is nil")
+	}
 }
 
 type proxy struct {
@@ -114,23 +118,14 @@ type proxy struct {
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	cb                   *cb.CircuitBreaker
 	refIDGen             *iproxy.ReferenceIDGenerator
-	removeFromCacheFn    func() bool
+	removeFromCacheFn    func(ctx context.Context) bool
 	serviceName          string
 	name                 string
 	smart                bool
 }
 
-func newProxy(
-	ctx context.Context,
-	bundle creationBundle,
-	serviceName string,
-	objectName string,
-	refIDGen *iproxy.ReferenceIDGenerator,
-	removeFromCacheFn func() bool,
-	remote bool) (*proxy, error) {
-
+func newProxy(ctx context.Context, bundle creationBundle, svc string, obj string, idg *iproxy.ReferenceIDGenerator, removeFromCacheFn func(ctx context.Context) bool, remote bool) (*proxy, error) {
 	bundle.Check()
-	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -138,8 +133,8 @@ func newProxy(
 			return time.Duration((attempt+1)*100) * time.Millisecond
 		}))
 	p := &proxy{
-		serviceName:          serviceName,
-		name:                 objectName,
+		serviceName:          svc,
+		name:                 obj,
 		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
@@ -150,7 +145,7 @@ func newProxy(
 		logger:               bundle.Logger,
 		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
-		refIDGen:             refIDGen,
+		refIDGen:             idg,
 		smart:                !bundle.Config.Cluster.Unisocket,
 	}
 	if !remote {
@@ -174,7 +169,7 @@ func (p *proxy) create(ctx context.Context) error {
 // Clears and releases all resources for this object.
 func (p *proxy) Destroy(ctx context.Context) error {
 	// wipe from proxy manager cache
-	if !p.removeFromCacheFn() {
+	if !p.removeFromCacheFn(ctx) {
 		// no need to destroy on cluster, since the proxy is stale and was already destroyed
 		return nil
 	}
@@ -410,23 +405,29 @@ func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingVal
 }
 
 func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) entryNotifiedHandler {
-	return func(
-		binKey, binValue, binOldValue, binMergingValue iserialization.Data,
-		binEventType int32,
-		binUUID types.UUID,
-		affectedEntries int32) {
-		key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
+	return func(binKey, binValue, binOldValue, binMergingValue iserialization.Data, binEventType int32, binUUID types.UUID, affectedEntries int32) {
+		event, err := p.prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMergingValue, binEventType, binUUID, affectedEntries)
 		if err != nil {
-			p.logger.Errorf("error at AddEntryListener: %w", err)
+			p.logger.Errorf("error while preparing entry notified event: %w", err)
 			return
 		}
-		// prevent panic if member not found
-		var member pubcluster.MemberInfo
-		if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
-			member = *m
-		}
-		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
+		handler(event)
 	}
+}
+
+func (p *proxy) prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMergingValue iserialization.Data, binEventType int32, binUUID types.UUID, affectedEntries int32) (*EntryNotified, error) {
+	key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
+	if err != nil {
+		return nil, err
+	}
+	// prevent panic if member not found
+	var member pubcluster.MemberInfo
+	if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
+		member = *m
+	}
+	eventType := EntryEventType(binEventType)
+	event := newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), eventType)
+	return event, nil
 }
 
 func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {

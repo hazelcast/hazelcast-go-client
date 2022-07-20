@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -28,14 +29,17 @@ import (
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
-	ClientVersion = internal.ClientVersion
+	// ClientVersion is the semantic versioning compatible client version.
+	ClientVersion = internal.CurrentClientVersion
 )
 
 // StartNewClient creates and starts a new client with the default configuration.
@@ -66,6 +70,9 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
+	nearCacheMgrsMu         *sync.RWMutex
+	nearCacheMgrs           map[string]*inearcache.Manager
+	cfg                     *Config
 }
 
 func newClient(config Config) (*Client, error) {
@@ -73,6 +80,7 @@ func newClient(config Config) (*Client, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
+	var c *Client
 	icc := &client.Config{
 		Name:          config.ClientName,
 		Cluster:       &config.Cluster,
@@ -87,12 +95,24 @@ func newClient(config Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := &Client{
+	c = &Client{
 		ic:                      ic,
 		lifecycleListenerMap:    map[types.UUID]int64{},
 		lifecycleListenerMapMu:  &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
+		nearCacheMgrsMu:         &sync.RWMutex{},
+		nearCacheMgrs:           map[string]*inearcache.Manager{},
+		cfg:                     &config,
+	}
+	if c.ic.StatsService != nil {
+		c.ic.StatsService.SetNCStatsGetter(func(service string) stats.NearCacheStatsGetter {
+			ncmgr, ok := c.nearCacheMgrs[service]
+			if !ok {
+				return nil
+			}
+			return ncmgr
+		})
 	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
@@ -123,7 +143,27 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if c.ic.State() != client.Ready {
 		return nil, hzerrors.ErrClientNotActive
 	}
-	return c.proxyManager.getMap(ctx, name)
+	m, err := c.proxyManager.getMap(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	ncc, ok, err := c.cfg.GetNearCache(name)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		// there is a near cache config for this map
+		ncmgr := c.getNearCacheManager(ServiceNameMap)
+		nc := ncmgr.GetOrCreateNearCache(name, ncc)
+		ss := c.ic.SerializationService
+		rt := ncmgr.RepairingTask()
+		m.ncm, err = newNearCacheMap(ctx, nc, ss, rt, c.ic.Logger, name, m.proxy.listenerBinder, m.smart)
+		if err != nil {
+			return nil, err
+		}
+		m.hasNearCache = true
+	}
+	return m, nil
 }
 
 // GetReplicatedMap returns a replicated map instance.
@@ -371,6 +411,47 @@ func (c *Client) createComponents(config *Config) {
 		ListenerBinder:       listenerBinder,
 		Logger:               c.ic.Logger,
 	}
+	destroyNearCacheFun := func(service, object string) {
+		c.nearCacheMgrsMu.RLock()
+		defer c.nearCacheMgrsMu.RUnlock()
+		ncmgr, ok := c.nearCacheMgrs[service]
+		if !ok {
+			return
+		}
+		ncmgr.DestroyNearCache(object)
+	}
+	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
+}
+
+func (c *Client) getNearCacheManager(service string) *inearcache.Manager {
+	c.nearCacheMgrsMu.RLock()
+	mgr, ok := c.nearCacheMgrs[service]
+	c.nearCacheMgrsMu.RUnlock()
+	if ok {
+		return mgr
+	}
+	c.nearCacheMgrsMu.Lock()
+	mgr, ok = c.nearCacheMgrs[service]
+	if !ok {
+		ris := c.cfg.NearCacheInvalidation.ReconciliationIntervalSeconds()
+		mis := c.cfg.NearCacheInvalidation.MaxToleratedMissCount()
+		mgr = inearcache.NewManager(c.ic, ris, mis)
+		c.nearCacheMgrs[service] = mgr
+	}
+	c.nearCacheMgrsMu.Unlock()
+	return mgr
+}
+
+func (c *Client) stopNearCacheManagers(ctx context.Context) {
+	c.nearCacheMgrsMu.RLock()
+	for s, m := range c.nearCacheMgrs {
+		c.ic.Logger.Debug(func() string {
+			return fmt.Sprintf("stopping near cache manager for %s", s)
+		})
+		m.Stop()
+	}
+	c.nearCacheMgrsMu.RUnlock()
 }
