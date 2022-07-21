@@ -116,10 +116,10 @@ func newClient(config Config) (*Client, error) {
 	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
-	// create and assign shutdown handlers to be executed in internal shutdown
-	shutdownHandlers := make(map[client.ShutdownHandlerType]func(ctx context.Context))
-	shutdownHandlers[client.ProxyShutdownHandler] = c.proxyManager.destroyProxies
-	c.ic.ShutdownHandlers = shutdownHandlers
+	// introduce shutdown handlers to be executed in internal shutdown
+	c.ic.ShutdownHandlers = make(map[client.ShutdownHandlerType]func(ctx context.Context))
+	c.ic.ShutdownHandlers.AddShutdownHandler(client.ProxyShutdownHandler, c.proxyManager.destroyProxies)
+	c.ic.ShutdownHandlers.AddShutdownHandler(client.NearCacheShutdownHandler, c.stopNearCacheManagers)
 	return c, nil
 }
 
@@ -423,7 +423,6 @@ func (c *Client) createComponents(config *Config) {
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
-	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
 }
 
 func (c *Client) getNearCacheManager(service string) *inearcache.Manager {

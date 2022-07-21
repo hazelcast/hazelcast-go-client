@@ -88,21 +88,32 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-type ShutdownHandler func(ctx context.Context)
-
 type ShutdownHandlerType int
 
-const ProxyShutdownHandler ShutdownHandlerType = iota
+type ShutdownHandler map[ShutdownHandlerType]func(ctx context.Context)
 
-func executeShutdownHandlers(
-	ctx context.Context,
-	m map[ShutdownHandlerType]func(ctx context.Context)) {
-	for _, f := range m {
+const (
+	ProxyShutdownHandler ShutdownHandlerType = iota
+	NearCacheShutdownHandler
+)
+
+func (shutdownHandler *ShutdownHandler) AddShutdownHandler(handlerID ShutdownHandlerType, handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	if _, ok := (*shutdownHandler)[handlerID]; ok {
+		panic(fmt.Errorf("handlerID: %d was already added to shutdown handler before", handlerID))
+	}
+	(*shutdownHandler)[handlerID] = handler
+}
+
+func (shutdownHandler *ShutdownHandler) executeShutdownHandlers(ctx context.Context) {
+	for _, f := range *shutdownHandler {
 		f(ctx)
 	}
 }
 
 type Client struct {
+	InvocationHandler    invocation.Handler
+	ShutdownHandlers     ShutdownHandler
 	Logger               ilogger.LogAdaptor
 	ConnectionManager    *icluster.ConnectionManager
 	ViewListenerService  *icluster.ViewListenerService
@@ -116,7 +127,6 @@ type Client struct {
 	PartitionService     *icluster.PartitionService
 	ClusterService       *icluster.Service
 	name                 string
-	shutdownHandlers     []ShutdownHandler
 	state                int32
 }
 
@@ -144,11 +154,6 @@ func New(config *Config) (*Client, error) {
 	}
 	c.createComponents(config)
 	return c, nil
-}
-
-func (c *Client) AddShutdownHandler(f ShutdownHandler) {
-	// this is supposed to be called during client initialization, so there's no risk of races.
-	c.shutdownHandlers = append(c.shutdownHandlers, f)
 }
 
 // Name returns client's name.
@@ -191,14 +196,14 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		ctx = context.Background()
 	}
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
-	executeShutdownHandlers(ctx, c.ShutdownHandlers)
+	c.ShutdownHandlers.executeShutdownHandlers(ctx)
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
 	c.ConnectionManager.Stop()
 	if c.StatsService != nil {
 		c.StatsService.Stop()
 	}
-	for _, h := range c.shutdownHandlers {
+	for _, h := range c.ShutdownHandlers {
 		h(ctx)
 	}
 	atomic.StoreInt32(&c.state, Stopped)
