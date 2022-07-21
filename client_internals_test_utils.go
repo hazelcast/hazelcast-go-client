@@ -54,17 +54,28 @@ func (ci *ClientInternal) SerializationService() *serialization.Service {
 	return ci.client.ic.SerializationService
 }
 
+func (ci *ClientInternal) NewNearCacheManager(reconInterval, maxMiss int) *inearcache.Manager {
+	return inearcache.NewManager(ci.client.ic, reconInterval, maxMiss)
+}
+
 // MakeNearCacheAdapterFromMap returns the nearcache of the given map.
 // It returns an interface{} instead of it.NearCacheAdapter in order not to introduce an import cycle.
 func MakeNearCacheAdapterFromMap(m *Map) interface{} {
 	if m.hasNearCache {
-		return NearCacheTestAdapter{m: m}
+		return &NearCacheTestAdapter{m: m}
 	}
 	panic("hazelcast.MakeNearCacheAdapterFromMap: map has no near cache")
 }
 
 type NearCacheTestAdapter struct {
 	m *Map
+}
+
+func (n *NearCacheTestAdapter) NearCache() *inearcache.NearCache {
+	if n.m.hasNearCache {
+		return n.m.ncm.nc
+	}
+	panic("hazelcast.NearCacheTestAdapter.NearCache: map has no near cache")
 }
 
 func (n NearCacheTestAdapter) Size() int {

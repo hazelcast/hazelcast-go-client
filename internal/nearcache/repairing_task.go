@@ -481,10 +481,6 @@ func (mc *MetaDataContainer) CASStaleSequence(lastKnown, lastReceived int64) boo
 	return atomic.CompareAndSwapInt64(&mc.staleSeq, lastKnown, lastReceived)
 }
 
-func (mc *MetaDataContainer) SetMissedSequenceCount(count int64) {
-	atomic.StoreInt64(&mc.missedSeqs, count)
-}
-
 func (mc *MetaDataContainer) MissedSequenceCount() int64 {
 	return atomic.LoadInt64(&mc.missedSeqs)
 }

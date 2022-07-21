@@ -36,4 +36,5 @@ type NearCacheAdapter interface {
 	GetRecord(key interface{}) (*inearcache.Record, bool)
 	InvalidationRequests() int64
 	ToNearCacheKey(key interface{}) interface{}
+	NearCache() *inearcache.NearCache
 }
