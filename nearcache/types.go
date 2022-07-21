@@ -93,6 +93,7 @@ func (p EvictionPolicy) String() string {
 	panic(fmt.Errorf("unknown eviction policy: %d", p))
 }
 
+// UnmarshalText unmarshals the given byte array to an EvictionPolicy.
 func (p *EvictionPolicy) UnmarshalText(b []byte) error {
 	s := string(b)
 	switch strings.ToLower(s) {
@@ -111,6 +112,7 @@ func (p *EvictionPolicy) UnmarshalText(b []byte) error {
 	return nil
 }
 
+// MarshalText marshals EvictionPolicy to text.
 func (p EvictionPolicy) MarshalText() ([]byte, error) {
 	switch p {
 	case EvictionPolicyLRU:

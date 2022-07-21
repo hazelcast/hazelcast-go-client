@@ -1,0 +1,22 @@
+{
+  "Client": {
+    "Cluster": {
+      "Network": {
+        "Addresses": ["localhost:5701"]
+      }
+    },
+    "NearCaches": [
+      {
+        "Name": "mymap*",
+        "InMemoryFormat": "object",
+        "Eviction": {
+          "Policy": "lfu",
+          "Size": 500
+        }
+      }
+    ]
+  },
+  "MapName": "mymap1",
+  "KeyCount": 1000,
+  "Repeat": 100
+}
