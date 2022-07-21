@@ -369,24 +369,36 @@ func TestNearCacheGet(t *testing.T) {
 
 func TestNearCacheInvalidateOnChange(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidateOnChange
-	tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatObject, true)
-	tcx.Tester(func(tcx it.MapTestContext) {
-		m := tcx.M
-		t := tcx.T
-		ctx := context.Background()
-		const size = 118
-		populateServerMapWithString(ctx, tcx, size)
-		// populate Near Cache
-		populateNearCacheWithString(tcx, size)
-		oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
-		require.Equal(t, int64(size), oec)
-		// invalidate Near Cache from server side
-		populateServerMapWithString(ctx, tcx, size)
-		it.Eventually(t, func() bool {
-			oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
-			t.Logf("OEC: %d", oec)
-			return oec == 0
-		})
+	tcx := it.MapTestContext{T: t}
+	const port = 54001
+	clusterName := t.Name()
+	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
+	tcx.Cluster = it.StartNewClusterWithConfig(1, clsCfg, port)
+	defer tcx.Cluster.Shutdown()
+	ctx := context.Background()
+	const size = 118
+	tcx.MapName = it.NewUniqueObjectName("map")
+	populateServerMapWithString(ctx, tcx, size)
+	ncc := nearcache.Config{
+		Name: tcx.MapName,
+	}
+	ncc.SetInvalidateOnChange(true)
+	cfg := tcx.Cluster.DefaultConfig()
+	cfg.AddNearCache(ncc)
+	tcx.Config = &cfg
+	tcx.Client = it.MustClient(hz.StartNewClientWithConfig(ctx, *tcx.Config))
+	defer tcx.Client.Shutdown(ctx)
+	tcx.M = it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
+	// populate Near Cache
+	populateNearCacheWithString(tcx, size)
+	oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
+	require.Equal(t, int64(size), oec)
+	// invalidate Near Cache from server side
+	populateServerMapWithString(ctx, tcx, size)
+	it.Eventually(t, func() bool {
+		oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
+		t.Logf("OEC: %d", oec)
+		return oec == 0
 	})
 }
 
