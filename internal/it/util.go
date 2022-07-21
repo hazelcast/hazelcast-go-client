@@ -342,6 +342,16 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	return config
 }
 
+func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
+	config := hz.Config{}
+	config.Cluster.Name = c.ClusterID
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", c.Port))
+	if TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	return config
+}
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"

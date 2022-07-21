@@ -66,7 +66,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 	ctx := context.Background()
 	ncc := nearcache.Config{Name: mapName}
 	ncc.SetInvalidateOnChange(true)
-	cfg := cls.DefaultConfig()
+	cfg := cls.DefaultConfigWithNoSSL()
 	cfg.AddNearCache(ncc)
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
 	defer client.Shutdown(ctx)
@@ -383,7 +383,7 @@ func TestNearCacheInvalidateOnChange(t *testing.T) {
 		Name: tcx.MapName,
 	}
 	ncc.SetInvalidateOnChange(true)
-	cfg := tcx.Cluster.DefaultConfig()
+	cfg := tcx.Cluster.DefaultConfigWithNoSSL()
 	cfg.AddNearCache(ncc)
 	tcx.Config = &cfg
 	tcx.Client = it.MustClient(hz.StartNewClientWithConfig(ctx, *tcx.Config))
@@ -988,13 +988,12 @@ func TestForceRepairingTaskRun(t *testing.T) {
 	}
 	// add client with Near Cache
 	ctx := context.Background()
-	cfg := cls.DefaultConfig()
+	cfg := cls.DefaultConfigWithNoSSL()
 	cfg.NearCacheInvalidation.SetReconciliationIntervalSeconds(30)
 	cfg.NearCacheInvalidation.SetMaxToleratedMissCount(1)
 	ncc := nearcache.Config{
 		Name: mapName,
 	}
-	// setting invalidation on change to false, since we'll handle that in the test.
 	ncc.SetInvalidateOnChange(true)
 	cfg.AddNearCache(ncc)
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
@@ -1015,9 +1014,13 @@ func TestForceRepairingTaskRun(t *testing.T) {
 	go func() {
 		time.Sleep(2 * time.Second)
 		cls = it.StartNewClusterWithConfig(1, clsCfg, port)
+		t.Logf("starting the new cluster: %p", &cls)
 		wg.Done()
 	}()
-	defer cls.Shutdown()
+	defer func() {
+		t.Logf("stopping the new cluster: %p", &cls)
+		cls.Shutdown()
+	}()
 	_, err := mgr.RepairingTask().RegisterAndGetHandler(ctx, mapName, nca.NearCache())
 	if err != nil {
 		panic(err)
@@ -1057,7 +1060,7 @@ func TestRepairingTaskRun(t *testing.T) {
 	}
 	// add client with Near Cache
 	ctx := context.Background()
-	cfg := cls.DefaultConfig()
+	cfg := cls.DefaultConfigWithNoSSL()
 	ncc := nearcache.Config{
 		Name: mapName,
 	}
@@ -1095,7 +1098,7 @@ func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tc
 		InMemoryFormat: nearcache.InMemoryFormatBinary,
 	}
 	ncc.SetInvalidateOnChange(true)
-	cfg := cls.DefaultConfig()
+	cfg := cls.DefaultConfigWithNoSSL()
 	cfg.AddNearCache(ncc)
 	tcx.Config = &cfg
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
