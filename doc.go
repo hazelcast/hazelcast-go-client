@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ If you are using Hazelcast and Go Client on the same computer, generally the def
 This is great for trying out the client.
 However, if you run the client on a different computer than any of the cluster members, you may need to do some simple configurations such as specifying the member addresses.
 
-The Hazelcast IMDG members and clients have their own configuration options.
+The Hazelcast members and clients have their own configuration options.
 You may need to reflect some of the member side configurations on the client side to properly connect to the cluster.
 
 In order to configure the client, you only need to create a new `hazelcast.Config{}`, which you can pass to `hazelcast.StartNewClientWithConnfig` function:
@@ -151,6 +151,8 @@ Here are all configuration items with their default values:
 	config.Stats.Period = types.Duration(5 * time.Second)
 
 	config.Logger.Level = logger.InfoLevel
+
+Checkout the nearcache package for the documentation about the Near Cache.
 
 Listening for Distributed Object Events
 
