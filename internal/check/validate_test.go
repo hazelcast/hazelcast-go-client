@@ -26,7 +26,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
-	"github.com/hazelcast/hazelcast-go-client/internal/skip"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 

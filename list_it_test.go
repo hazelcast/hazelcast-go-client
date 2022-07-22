@@ -27,7 +27,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/skip"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 )
 
 func TestList_AddListener(t *testing.T) {

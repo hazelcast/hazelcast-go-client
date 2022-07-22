@@ -21,8 +21,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"github.com/hazelcast/hazelcast-go-client/internal/skip"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 

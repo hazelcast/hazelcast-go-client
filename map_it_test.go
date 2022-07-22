@@ -33,7 +33,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/skip"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"

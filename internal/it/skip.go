@@ -19,7 +19,7 @@ package it
 import (
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/skip"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 )
 
 /*
