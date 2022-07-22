@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -258,18 +258,21 @@ func TestClient_Name(t *testing.T) {
 }
 
 func TestClientPortRangeAllAddresses(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", "0.0.0.0"}
 	}, 4, 3)
 }
 
 func TestClientPortRangeMultipleAddresses(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
 }
 
 func TestClientPortRangeSingleAddress(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{fmt.Sprintf("localhost:%d", validPort), "127.0.0.1", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
@@ -389,8 +392,7 @@ func TestClientEventHandlingOrder(t *testing.T) {
 }
 
 func TestClientHeartbeat(t *testing.T) {
-	// Slow test.
-	t.SkipNow()
+	it.MarkSlow(t)
 	it.MapTesterWithConfig(t, func(config *hz.Config) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
@@ -485,6 +487,7 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 }
 
 func TestClusterReconnection_ShutdownCluster(t *testing.T) {
+	it.MarkRacy(t)
 	ctx := context.Background()
 	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
 	mu := &sync.Mutex{}
@@ -833,6 +836,7 @@ func TestClientVersion(t *testing.T) {
 }
 
 func TestInvocationTimeout(t *testing.T) {
+	it.MarkRacy(t)
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
 		defer tc.Shutdown()
@@ -861,7 +865,7 @@ func TestInvocationTimeout(t *testing.T) {
 
 func TestClientStartShutdownMemoryLeak(t *testing.T) {
 	// TODO make sure there is no leak, and find an upper memory limit for this
-	t.SkipNow()
+	it.MarkFlaky(t)
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
 		defer tc.Shutdown()

@@ -26,14 +26,12 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
-	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 func TestValidateAsNonNegativeInt32(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	testCases := []struct {
 		value         int
 		expectedValue int32
@@ -53,10 +51,7 @@ func TestValidateAsNonNegativeInt32(t *testing.T) {
 }
 
 func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
-
+	skip.If(t, "arch ~ 32bit")
 	testCases := []struct {
 		msg   string
 		value int64
