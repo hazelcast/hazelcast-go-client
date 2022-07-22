@@ -245,18 +245,9 @@ func (m *proxyManager) destroyProxies(ctx context.Context) {
 			})
 			continue
 		}
-		ds, ok := p.(proxyDestroyer)
-		if !ok {
-			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
-				return fmt.Sprintf("proxy %s key cannot be destroyed, proxy argument does not implement proxyDestroyer", key)
-			})
-			continue
-		}
-		err := ds.Destroy(ctx)
-		if err != nil {
-			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
-				return fmt.Sprintf("proxy %s key cannot be destroyed", key)
-			})
+		ds := p.(proxyDestroyer)
+		if err := ds.Destroy(ctx); err != nil {
+			m.serviceBundle.Logger.Errorf("proxy %s key cannot be destroyed: %w", key, err)
 		}
 	}
 }

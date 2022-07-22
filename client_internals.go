@@ -85,10 +85,6 @@ func NewClientInternal(c *Client) *ClientInternal {
 	}
 }
 
-func (ci *ClientInternal) ProxyManagerProxies() map[string]interface{} {
-	return ci.client.proxyManager.proxies
-}
-
 // Client returns the wrapped Client instance.
 func (ci *ClientInternal) Client() *Client {
 	return ci.client

@@ -54,6 +54,10 @@ func (ci *ClientInternal) SerializationService() *serialization.Service {
 	return ci.client.ic.SerializationService
 }
 
+func (ci *ClientInternal) ProxyManagerProxies() map[string]interface{} {
+	return ci.client.proxyManager.proxies
+}
+
 // MakeNearCacheAdapterFromMap returns the nearcache of the given map.
 // It returns an interface{} instead of it.NearCacheAdapter in order not to introduce an import cycle.
 func MakeNearCacheAdapterFromMap(m *Map) interface{} {
