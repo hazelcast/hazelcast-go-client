@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -364,14 +364,6 @@ func TestExtractCursorBufferSize(t *testing.T) {
 			Panics: true,
 		},
 	}
-	if !runtime.Is32BitArch() {
-		v := math.MaxInt32
-		testCases = append(testCases, cursorBufferSizeTestCase{
-			Name:   "> 32bit",
-			CtxFn:  func() context.Context { return pubdriver.WithCursorBufferSize(context.Background(), v+1) },
-			Panics: true,
-		})
-	}
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			if tc.Panics {
@@ -382,6 +374,14 @@ func TestExtractCursorBufferSize(t *testing.T) {
 			assert.Equal(t, tc.Target, idriver.ExtractCursorBufferSize(ctx))
 		})
 	}
+}
+
+func TestExtractCursorBufferSize_Expect32Bit(t *testing.T) {
+	skip.If(t, "arch ~ 32bit")
+	v := math.MaxInt32
+	assert.Panics(t, func() {
+		pubdriver.WithCursorBufferSize(context.Background(), v+1)
+	})
 }
 
 func TestExtractTimeoutMillis(t *testing.T) {
