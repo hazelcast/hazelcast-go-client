@@ -34,6 +34,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -598,7 +599,7 @@ func TestAfterDeleteNearCacheIsInvalidated(t *testing.T) {
 
 func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterPutAsyncNearCacheIsInvalidated
-	it.SkipIf(t, "hz > 4.1.9, hz < 4.3")
+	skip.If(t, "hz ~ 4.2")
 	testCases := []mapTestCase{
 		{
 			name: "Put",
