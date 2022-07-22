@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -57,14 +57,13 @@ const (
 )
 
 const (
-	maxIndexAttributes               = 255
-	defaultLockID                    = 0
-	lockIDKey          lockIDKeyType = "__hz_lock_id"
-	leaseUnset                       = -1
+	maxIndexAttributes = 255
+	defaultLockID      = 0
+	leaseUnset         = -1
 )
 
 type lockID int64
-type lockIDKeyType string
+type lockIDKey struct{}
 
 type creationBundle struct {
 	InvocationService    *invocation.Service
@@ -74,7 +73,8 @@ type creationBundle struct {
 	InvocationFactory    *cluster.ConnectionInvocationFactory
 	ListenerBinder       *cluster.ConnectionListenerBinder
 	Config               *Config
-	Logger               ilogger.Logger
+	Logger               logger.LogAdaptor
+	NCMDestroyFn         func(service, object string)
 }
 
 func (b creationBundle) Check() {
@@ -99,13 +99,16 @@ func (b creationBundle) Check() {
 	if b.Config == nil {
 		panic("Config is nil")
 	}
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
+	}
+	if b.NCMDestroyFn == nil {
+		panic("NearCacheManager is nil")
 	}
 }
 
 type proxy struct {
-	logger               ilogger.Logger
+	logger               logger.LogAdaptor
 	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
@@ -115,23 +118,14 @@ type proxy struct {
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	cb                   *cb.CircuitBreaker
 	refIDGen             *iproxy.ReferenceIDGenerator
-	removeFromCacheFn    func() bool
+	removeFromCacheFn    func(ctx context.Context) bool
 	serviceName          string
 	name                 string
 	smart                bool
 }
 
-func newProxy(
-	ctx context.Context,
-	bundle creationBundle,
-	serviceName string,
-	objectName string,
-	refIDGen *iproxy.ReferenceIDGenerator,
-	removeFromCacheFn func() bool,
-	remote bool) (*proxy, error) {
-
+func newProxy(ctx context.Context, bundle creationBundle, svc string, obj string, idg *iproxy.ReferenceIDGenerator, removeFromCacheFn func(ctx context.Context) bool, remote bool) (*proxy, error) {
 	bundle.Check()
-	// TODO: make circuit breaker configurable
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -139,8 +133,8 @@ func newProxy(
 			return time.Duration((attempt+1)*100) * time.Millisecond
 		}))
 	p := &proxy{
-		serviceName:          serviceName,
-		name:                 objectName,
+		serviceName:          svc,
+		name:                 obj,
 		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
@@ -151,7 +145,7 @@ func newProxy(
 		logger:               bundle.Logger,
 		cb:                   circuitBreaker,
 		removeFromCacheFn:    removeFromCacheFn,
-		refIDGen:             refIDGen,
+		refIDGen:             idg,
 		smart:                !bundle.Config.Cluster.Unisocket,
 	}
 	if !remote {
@@ -175,7 +169,7 @@ func (p *proxy) create(ctx context.Context) error {
 // Clears and releases all resources for this object.
 func (p *proxy) Destroy(ctx context.Context) error {
 	// wipe from proxy manager cache
-	if !p.removeFromCacheFn() {
+	if !p.removeFromCacheFn(ctx) {
 		// no need to destroy on cluster, since the proxy is stale and was already destroyed
 		return nil
 	}
@@ -187,15 +181,15 @@ func (p *proxy) Destroy(ctx context.Context) error {
 	return nil
 }
 
-func (p *proxy) validateAndSerialize(arg1 interface{}) (*iserialization.Data, error) {
+func (p *proxy) validateAndSerialize(arg1 interface{}) (iserialization.Data, error) {
 	if check.Nil(arg1) {
 		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
 	return p.serializationService.ToData(arg1)
 }
 
-func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data *iserialization.Data,
-	arg2Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1Data iserialization.Data,
+	arg2Data iserialization.Data, err error) {
 	if check.Nil(arg1) || check.Nil(arg2) {
 		return nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
@@ -207,8 +201,8 @@ func (p *proxy) validateAndSerialize2(arg1 interface{}, arg2 interface{}) (arg1D
 	return
 }
 
-func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data *iserialization.Data,
-	arg2Data *iserialization.Data, arg3Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 interface{}) (arg1Data iserialization.Data,
+	arg2Data iserialization.Data, arg3Data iserialization.Data, err error) {
 	if check.Nil(arg1) || check.Nil(arg2) || check.Nil(arg3) {
 		return nil, nil, nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
 	}
@@ -224,7 +218,7 @@ func (p *proxy) validateAndSerialize3(arg1 interface{}, arg2 interface{}, arg3 i
 	return
 }
 
-func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Data iserialization.Data, err error) {
 	if check.Nil(agg) {
 		return nil, ihzerrors.NewIllegalArgumentError("aggregate should not be nil", nil)
 	}
@@ -232,7 +226,7 @@ func (p *proxy) validateAndSerializeAggregate(agg aggregate.Aggregator) (arg1Dat
 	return
 }
 
-func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data *iserialization.Data, err error) {
+func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Data iserialization.Data, err error) {
 	if check.Nil(pred) {
 		return nil, ihzerrors.NewIllegalArgumentError("predicate should not be nil", nil)
 	}
@@ -240,8 +234,8 @@ func (p *proxy) validateAndSerializePredicate(pred predicate.Predicate) (arg1Dat
 	return
 }
 
-func (p *proxy) validateAndSerializeValues(values []interface{}) ([]*iserialization.Data, error) {
-	valuesData := make([]*iserialization.Data, len(values))
+func (p *proxy) validateAndSerializeValues(values []interface{}) ([]iserialization.Data, error) {
+	valuesData := make([]iserialization.Data, len(values))
 	for i, value := range values {
 		if data, err := p.validateAndSerialize(value); err != nil {
 			return nil, err
@@ -263,7 +257,7 @@ func (p *proxy) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMe
 	}
 }
 
-func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData *iserialization.Data) (*proto.ClientMessage, error) {
+func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData iserialization.Data) (*proto.ClientMessage, error) {
 	if partitionID, err := p.partitionService.GetPartitionID(keyData); err != nil {
 		return nil, err
 	} else {
@@ -302,11 +296,11 @@ func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.Clien
 	return inv, err
 }
 
-func (p *proxy) convertToObject(data *iserialization.Data) (interface{}, error) {
+func (p *proxy) convertToObject(data iserialization.Data) (interface{}, error) {
 	return p.serializationService.ToObject(data)
 }
 
-func (p *proxy) convertToObjects(values []*iserialization.Data) ([]interface{}, error) {
+func (p *proxy) convertToObjects(values []iserialization.Data) ([]interface{}, error) {
 	decodedValues := make([]interface{}, len(values))
 	for i, value := range values {
 		if decodedValue, err := p.convertToObject(value); err != nil {
@@ -318,7 +312,7 @@ func (p *proxy) convertToObjects(values []*iserialization.Data) ([]interface{}, 
 	return decodedValues, nil
 }
 
-func (p *proxy) convertToData(object interface{}) (*iserialization.Data, error) {
+func (p *proxy) convertToData(object interface{}) (iserialization.Data, error) {
 	return p.serializationService.ToData(object)
 }
 
@@ -343,11 +337,11 @@ func (p *proxy) partitionToPairs(keyValuePairs []types.Entry) (map[int32][]proto
 func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error) {
 	kvPairs := make([]types.Entry, len(pairs))
 	for i, pair := range pairs {
-		key, err := p.convertToObject(pair.Key().(*iserialization.Data))
+		key, err := p.convertToObject(pair.Key.(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}
-		value, err := p.convertToObject(pair.Value().(*iserialization.Data))
+		value, err := p.convertToObject(pair.Value.(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}
@@ -359,7 +353,7 @@ func (p *proxy) convertPairsToEntries(pairs []proto.Pair) ([]types.Entry, error)
 func (p *proxy) convertPairsToValues(pairs []proto.Pair) ([]interface{}, error) {
 	values := make([]interface{}, len(pairs))
 	for i, pair := range pairs {
-		value, err := p.convertToObject(pair.Value().(*iserialization.Data))
+		value, err := p.convertToObject(pair.Value.(iserialization.Data))
 		if err != nil {
 			return nil, err
 		}
@@ -397,7 +391,7 @@ func (p *proxy) stringToPartitionID(key string) (int32, error) {
 	}
 }
 
-func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue *iserialization.Data) (key, value, oldValue, mergingValue interface{}, err error) {
+func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue iserialization.Data) (key, value, oldValue, mergingValue interface{}, err error) {
 	if key, err = p.convertToObject(binKey); err != nil {
 		err = fmt.Errorf("invalid key: %w", err)
 	} else if value, err = p.convertToObject(binValue); err != nil {
@@ -411,23 +405,29 @@ func (p *proxy) decodeEntryNotified(binKey, binValue, binOldValue, binMergingVal
 }
 
 func (p *proxy) makeEntryNotifiedListenerHandler(handler EntryNotifiedHandler) entryNotifiedHandler {
-	return func(
-		binKey, binValue, binOldValue, binMergingValue *iserialization.Data,
-		binEventType int32,
-		binUUID types.UUID,
-		affectedEntries int32) {
-		key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
+	return func(binKey, binValue, binOldValue, binMergingValue iserialization.Data, binEventType int32, binUUID types.UUID, affectedEntries int32) {
+		event, err := p.prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMergingValue, binEventType, binUUID, affectedEntries)
 		if err != nil {
-			p.logger.Errorf("error at AddEntryListener: %w", err)
+			p.logger.Errorf("error while preparing entry notified event: %w", err)
 			return
 		}
-		// prevent panic if member not found
-		var member pubcluster.MemberInfo
-		if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
-			member = *m
-		}
-		handler(newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), EntryEventType(binEventType)))
+		handler(event)
 	}
+}
+
+func (p *proxy) prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMergingValue iserialization.Data, binEventType int32, binUUID types.UUID, affectedEntries int32) (*EntryNotified, error) {
+	key, value, oldValue, mergingValue, err := p.decodeEntryNotified(binKey, binValue, binOldValue, binMergingValue)
+	if err != nil {
+		return nil, err
+	}
+	// prevent panic if member not found
+	var member pubcluster.MemberInfo
+	if m := p.clusterService.GetMemberByUUID(binUUID); m != nil {
+		member = *m
+	}
+	eventType := EntryEventType(binEventType)
+	event := newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), eventType)
+	return event, nil
 }
 
 func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
@@ -435,7 +435,7 @@ func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) e
 }
 
 type entryNotifiedHandler func(
-	binKey, binValue, binOldValue, binMergingValue *iserialization.Data,
+	binKey, binValue, binOldValue, binMergingValue iserialization.Data,
 	binEventType int32,
 	binUUID types.UUID,
 	affectedEntries int32)
@@ -454,7 +454,7 @@ func extractLockID(ctx context.Context) int64 {
 	if ctx == nil {
 		return defaultLockID
 	}
-	lidv := ctx.Value(lockIDKey)
+	lidv := ctx.Value(lockIDKey{})
 	if lidv == nil {
 		return defaultLockID
 	}

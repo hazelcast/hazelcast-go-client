@@ -31,12 +31,12 @@ import (
 const envCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
 
 type DiscoveryClient struct {
-	logger     logger.Logger
+	logger     logger.LogAdaptor
 	httpClient *rest.HTTPClient
 	token      string
 }
 
-func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.Logger) *DiscoveryClient {
+func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.LogAdaptor) *DiscoveryClient {
 	return &DiscoveryClient{
 		token:      config.Token,
 		httpClient: rest.NewHTTPClient(),

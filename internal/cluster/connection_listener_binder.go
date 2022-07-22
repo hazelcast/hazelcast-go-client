@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+var listenerBinderConnectionEventSubID = event.NextSubscriptionID()
+
 type listenerRegistration struct {
 	addRequest    *proto.ClientMessage
 	removeRequest *proto.ClientMessage
@@ -38,7 +40,7 @@ type listenerRegistration struct {
 }
 
 type ConnectionListenerBinder struct {
-	logger                logger.Logger
+	logger                logger.LogAdaptor
 	connectionManager     *ConnectionManager
 	invocationFactory     *ConnectionInvocationFactory
 	eventDispatcher       *event.DispatchService
@@ -57,7 +59,7 @@ func NewConnectionListenerBinder(
 	invocationService *invocation.Service,
 	invocationFactory *ConnectionInvocationFactory,
 	eventDispatcher *event.DispatchService,
-	logger logger.Logger,
+	logger logger.LogAdaptor,
 	smart bool) *ConnectionListenerBinder {
 	binder := &ConnectionListenerBinder{
 		connectionManager:     connManager,
@@ -72,7 +74,7 @@ func NewConnectionListenerBinder(
 		logger:                logger,
 		smart:                 smart,
 	}
-	eventDispatcher.Subscribe(EventConnection, event.DefaultSubscriptionID, binder.handleConnectionEvent)
+	eventDispatcher.Subscribe(EventConnection, listenerBinderConnectionEventSubID, binder.handleConnectionEvent)
 	return binder
 }
 
@@ -101,7 +103,7 @@ func (b *ConnectionListenerBinder) Add(ctx context.Context, id types.UUID, add *
 	}
 	b.updateCorrelationIDs(id, corrIDs)
 	for _, conn := range conns {
-		b.addSubscriptionToMember(id, conn.memberUUID)
+		b.addSubscriptionToMember(id, conn.MemberUUID())
 	}
 	return nil
 }
@@ -114,7 +116,6 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	defer b.regsMu.Unlock()
 	reg, ok := b.regs[id]
 	if !ok {
-		b.regsMu.Unlock()
 		return nil
 	}
 	delete(b.regs, id)
@@ -124,7 +125,7 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 		return fmt.Sprintf("removing listener %s:\nconns: %v,\nregs: %v", id, conns, b.regs)
 	})
 	for _, conn := range conns {
-		b.removeMemberSubscriptions(conn.memberUUID)
+		b.removeMemberSubscriptions(conn.MemberUUID())
 	}
 	return b.sendRemoveListenerRequests(ctx, reg.removeRequest, conns...)
 }
@@ -250,7 +251,7 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionStateChan
 	for regID, reg := range b.regs {
 		if b.connExists(e.Conn, regID) {
 			b.logger.Trace(func() string {
-				return fmt.Sprintf("listener %s already subscribed to member %s", regID, e.Conn.memberUUID)
+				return fmt.Sprintf("listener %s already subscribed to member %s", regID, e.Conn.MemberUUID())
 			})
 			continue
 		}
@@ -263,14 +264,14 @@ func (b *ConnectionListenerBinder) handleConnectionOpened(e *ConnectionStateChan
 			return
 		}
 		b.updateCorrelationIDs(regID, corrIDs)
-		b.addSubscriptionToMember(regID, e.Conn.memberUUID)
+		b.addSubscriptionToMember(regID, e.Conn.MemberUUID())
 	}
 }
 
 func (b *ConnectionListenerBinder) handleConnectionClosed(e *ConnectionStateChangedEvent) {
 	atomic.AddInt32(&b.connectionCount, -1)
 	b.regsMu.Lock()
-	b.removeMemberSubscriptions(e.Conn.memberUUID)
+	b.removeMemberSubscriptions(e.Conn.MemberUUID())
 	b.regsMu.Unlock()
 }
 
@@ -279,7 +280,7 @@ func (b *ConnectionListenerBinder) connExists(conn *Connection, subID types.UUID
 	if !found {
 		return false
 	}
-	_, found = mems[conn.memberUUID]
+	_, found = mems[conn.MemberUUID()]
 	return found
 }
 

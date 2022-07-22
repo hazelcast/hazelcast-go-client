@@ -74,15 +74,15 @@ func (c *Config) Validate() error {
 	if c.Name == "" {
 		c.Name = defaultName
 	}
-	err := check.NonNegativeDuration(&c.HeartbeatInterval, 5*time.Second, "invalid heartbeat interval")
+	err := check.EnsureNonNegativeDuration((*time.Duration)(&c.HeartbeatInterval), 5*time.Second, "invalid heartbeat interval")
 	if err != nil {
 		return err
 	}
-	err = check.NonNegativeDuration(&c.HeartbeatTimeout, 60*time.Second, "invalid heartbeat timeout")
+	err = check.EnsureNonNegativeDuration((*time.Duration)(&c.HeartbeatTimeout), 60*time.Second, "invalid heartbeat timeout")
 	if err != nil {
 		return err
 	}
-	err = check.NonNegativeDuration(&c.InvocationTimeout, 120*time.Second, "invalid heartbeat timeout")
+	err = check.EnsureNonNegativeDuration((*time.Duration)(&c.InvocationTimeout), 120*time.Second, "invalid heartbeat timeout")
 	if err != nil {
 		return err
 	}

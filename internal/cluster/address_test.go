@@ -17,7 +17,6 @@
 package cluster_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,11 +31,11 @@ func TestAddressParse(t *testing.T) {
 		input string
 		addr  pubcluster.Address
 	}{
-		{input: "", err: errors.New("parsing address: missing port in address")},
-		{input: "localhost", err: errors.New("parsing address: address localhost: missing port in address")},
+		{input: "", addr: "127.0.0.1:0"},
+		{input: "localhost", addr: "localhost:0"},
 		{input: "localhost:5701", addr: "localhost:5701"},
 		{input: "foo.com:2223", addr: "foo.com:2223"},
-		{input: ":4566", addr: ":4566"},
+		{input: ":4566", addr: "127.0.0.1:4566"},
 		// TODO: ipv6
 	}
 	for _, tc := range testCases {

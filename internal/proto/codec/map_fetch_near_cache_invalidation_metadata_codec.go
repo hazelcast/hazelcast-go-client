@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/types"
+	pubtypes "github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
-	// hex: 0x013D00
-	MapFetchNearCacheInvalidationMetadataCodecRequestMessageType = int32(81152)
-	// hex: 0x013D01
-	MapFetchNearCacheInvalidationMetadataCodecResponseMessageType = int32(81153)
+	MapFetchNearCacheInvalidationMetadataCodecRequestMessageType  = int32(0x013D00)
+	MapFetchNearCacheInvalidationMetadataCodecResponseMessageType = int32(0x013D01)
 
 	MapFetchNearCacheInvalidationMetadataCodecRequestUuidOffset       = proto.PartitionIDOffset + proto.IntSizeInBytes
 	MapFetchNearCacheInvalidationMetadataCodecRequestInitialFrameSize = MapFetchNearCacheInvalidationMetadataCodecRequestUuidOffset + proto.UuidSizeInBytes
@@ -32,7 +31,7 @@ const (
 
 // Fetches invalidation metadata from partitions of map.
 
-func EncodeMapFetchNearCacheInvalidationMetadataRequest(names []string, uuid types.UUID) *proto.ClientMessage {
+func EncodeMapFetchNearCacheInvalidationMetadataRequest(names []string, uuid pubtypes.UUID) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

@@ -61,22 +61,22 @@ func newReplicatedMap(p *proxy, refIDGenerator *iproxy.ReferenceIDGenerator) (*R
 
 // AddEntryListener adds a continuous entry listener to this map.
 func (m *ReplicatedMap) AddEntryListener(ctx context.Context, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(ctx, nil, nil, handler)
+	return m.addEntryListener(ctx, nil, nil, handler, "AddEntryListener")
 }
 
 // AddEntryListenerToKey adds a continuous entry listener to this map.
 func (m *ReplicatedMap) AddEntryListenerToKey(ctx context.Context, key interface{}, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(ctx, key, nil, handler)
+	return m.addEntryListener(ctx, key, nil, handler, "AddEntryListenerToKey")
 }
 
 // AddEntryListenerWithPredicate adds a continuous entry listener to this map.
 func (m *ReplicatedMap) AddEntryListenerWithPredicate(ctx context.Context, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(ctx, nil, predicate, handler)
+	return m.addEntryListener(ctx, nil, predicate, handler, "AddEntryListenerWithPredicate")
 }
 
 // AddEntryListenerToKeyWithPredicate adds a continuous entry listener to this map.
 func (m *ReplicatedMap) AddEntryListenerToKeyWithPredicate(ctx context.Context, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
-	return m.addEntryListener(ctx, key, predicate, handler)
+	return m.addEntryListener(ctx, key, predicate, handler, "AddEntryListenerToKeyWithPredicate")
 }
 
 // Clear deletes all entries one by one and fires related events
@@ -255,10 +255,10 @@ func (m *ReplicatedMap) Size(ctx context.Context) (int, error) {
 	}
 }
 
-func (m *ReplicatedMap) addEntryListener(ctx context.Context, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler) (types.UUID, error) {
+func (m *ReplicatedMap) addEntryListener(ctx context.Context, key interface{}, predicate predicate.Predicate, handler EntryNotifiedHandler, methodName string) (types.UUID, error) {
 	var err error
-	var keyData *iserialization.Data
-	var predicateData *iserialization.Data
+	var keyData iserialization.Data
+	var predicateData iserialization.Data
 	if key != nil {
 		if keyData, err = m.validateAndSerialize(key); err != nil {
 			return types.UUID{}, err
@@ -279,7 +279,7 @@ func (m *ReplicatedMap) addEntryListener(ctx context.Context, key interface{}, p
 	return subscriptionID, err
 }
 
-func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData *iserialization.Data, smart bool) *proto.ClientMessage {
+func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData iserialization.Data, smart bool) *proto.ClientMessage {
 	if keyData != nil {
 		if predicateData != nil {
 			return codec.EncodeReplicatedMapAddEntryListenerToKeyWithPredicateRequest(m.name, keyData, predicateData, smart)
@@ -293,14 +293,16 @@ func (m *ReplicatedMap) makeListenerRequest(keyData, predicateData *iserializati
 	}
 }
 
-func (m *ReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData *iserialization.Data, handler entryNotifiedHandler) {
+func (m *ReplicatedMap) makeListenerDecoder(msg *proto.ClientMessage, keyData, predicateData iserialization.Data, handler entryNotifiedHandler) {
 	if keyData != nil {
 		if predicateData != nil {
 			codec.HandleReplicatedMapAddEntryListenerToKeyWithPredicate(msg, handler)
 		} else {
 			codec.HandleReplicatedMapAddEntryListenerToKey(msg, handler)
 		}
-	} else if predicateData != nil {
+		return
+	}
+	if predicateData != nil {
 		codec.HandleReplicatedMapAddEntryListenerWithPredicate(msg, handler)
 	} else {
 		codec.HandleReplicatedMapAddEntryListener(msg, handler)

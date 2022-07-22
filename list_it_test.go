@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 )
 
 func TestList_AddListener(t *testing.T) {
@@ -113,9 +113,7 @@ func TestList_AddAt(t *testing.T) {
 }
 
 func TestList_AddAt_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		assert.Error(t, l.AddAt(context.Background(), -1, "test-negative"))
 		x := int64(math.MaxInt32 + 1)
@@ -166,9 +164,7 @@ func TestList_AddAllAt(t *testing.T) {
 }
 
 func TestList_AddAllAt_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.AddAllAt(context.Background(), -1, "negative")
 		assert.Error(t, err)
@@ -319,9 +315,7 @@ func TestList_RemoveAt(t *testing.T) {
 }
 
 func TestList_RemoveAt_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.RemoveAt(context.Background(), -1)
 		assert.Error(t, err)
@@ -392,9 +386,7 @@ func TestList_Get(t *testing.T) {
 }
 
 func TestList_Get_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.Get(context.Background(), -1)
 		assert.Error(t, err)
@@ -417,9 +409,7 @@ func TestList_Set(t *testing.T) {
 }
 
 func TestList_Set_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.Set(context.Background(), -1, "negative")
 		assert.Error(t, err)
@@ -448,9 +438,7 @@ func TestList_SubList(t *testing.T) {
 }
 
 func TestList_SubList_Error(t *testing.T) {
-	if runtime.Is32BitArch() {
-		t.Skipf("not necessary for 32bit")
-	}
+	skip.If(t, "arch ~ 32bit")
 	it.ListTester(t, func(t *testing.T, l *hz.List) {
 		_, err := l.SubList(context.Background(), -1, 3)
 		assert.Error(t, err)

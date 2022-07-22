@@ -1,5 +1,7 @@
 # Hazelcast Go Client
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/hazelcast/hazelcast-go-client.svg)](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client)
+
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
 
 Hazelcast Go client is a way to communicate to Hazelcast 4 and 5 clusters and access the cluster data.
@@ -18,40 +20,41 @@ import (
 )
 
 func main() {
-    ctx := context.TODO()
-    // create the client and connect to the cluster
-    client, err := hazelcast.StartNewClient(ctx) 
-    if err != nil {
-    	log.Fatal(err)
-    }
-    // get a map
-    people, err := client.GetMap(ctx, "people")
-    if err != nil {
-        log.Fatal(err)
-    }
-    personName := "Jane Doe"
-    // set a value in the map
-    if err = people.Set(ctx, personName, 30); err != nil {
-    	log.Fatal(err)
-    }
-    // get a value from the map
-    age, err := people.Get(ctx, personName)
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Printf("%s is %d years old.\n", personName, age)
-    // stop the client to release resources
-    client.Shutdown(ctx)
+	ctx := context.TODO()
+	// create the client and connect to the cluster on localhost
+	client, err := hazelcast.StartNewClient(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// get a map
+	people, err := client.GetMap(ctx, "people")
+	if err != nil {
+		log.Fatal(err)
+	}
+	personName := "Jane Doe"
+	// set a value in the map
+	if err = people.Set(ctx, personName, 30); err != nil {
+		log.Fatal(err)
+	}
+	// get a value from the map
+	age, err := people.Get(ctx, personName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s is %d years old.\n", personName, age)
+	// stop the client to release resources
+	client.Shutdown(ctx)
 }
 ```
 
 ## Features
 
 * Distributed, partitioned and queryable in-memory key-value store implementation, called Map.
-* Additional data structures and simple messaging constructs such as Replicated Map, Queue, List, PNCounter, Set, Topic and others.
+* Additional data structures and simple messaging constructs such as Replicated Map, MultiMap, Queue, List, PNCounter, Set, Topic and others.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
 * Go context support for all distributed data structures.
 * Hazelcast Cloud integration.
+* SQL support (only on Hazelcast 5.x).
 * External smart client discovery.
 * Hazelcast Management Center integration.
 * Ability to listen to client lifecycle, cluster state, and distributed data structure events.
@@ -61,39 +64,39 @@ func main() {
 
 Requirements:
 
-* Hazelcast Go client is compatible only with Hazelcast IMDG 4.x and above.
-* We support Go 1.15 and up.
+* Hazelcast Go client is compatible only with Hazelcast 4.x and 5.x.
+* We support two most recent releases of Go, currently 1.17 and 1.18.
 
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
-# Depend on a specific release
-$ go get github.com/hazelcast/hazelcast-go-client@v1.1.1
+# Depend on the latest release
+$ go get github.com/hazelcast/hazelcast-go-client@latest
 ```
 
 ## Quick Start
 
-Hazelcast Go client requires a working Hazelcast IMDG cluster.
-This cluster handles the storage and manipulation of the user data.
+Hazelcast Go client requires a working Hazelcast cluster.
 
-A Hazelcast IMDG cluster consists of one or more cluster members.
-These members generally run on multiple virtual or physical machines and are connected to each other via the network.
-Any data put on the cluster is partitioned to multiple members transparent to the user.
-It is therefore very easy to scale the system by adding new members as the data grows.
-Hazelcast IMDG cluster also offers resilience.
-Should any hardware or software problem causes a crash to any member, the data on that member is recovered from backups and the cluster continues to operate without any downtime.
+Check out our [Get Started](https://hazelcast.com/get-started/) page for options.
 
-The quickest way to start a single member cluster for development purposes is to use our Docker images.
+### Starting the Client with Hazelcast Cloud
 
+You only need the cluster name and Hazelcast cloud token to start the client.
+If you haven't already, you can [sign up](http://cloud.hazelcast.com/sign-up) for a free Hazelcast Cloud account.
+
+```go
+config := hazelcast.Config{}
+cc := &config.Cluster
+cc.Name = "YOUR HAZELCAST CLOUD CLUSTER NAME"
+cc.Cloud.Enabled = true
+cc.Cloud.Token = "YOUR HAZELCAST CLOUD TOKEN"
+client, err := hazelcast.StartNewClientWithConfig(ctx, config)
+// handle the error
 ```
-docker run --rm --name hazelcast -p 5701:5701 hazelcast/hazelcast:4.2
-```
-
-You can also use our ZIP or TAR [distributions](https://hazelcast.org/imdg/download/archives/#hazelcast-imdg).
-After the download, you can start the Hazelcast member using the bin/start.sh script.
 
 ### Starting the Default Client
 
-Start the client with the default Hazelcast IMDG host and port using `hazelcast.StartNewClient`: 
+Start the client with the default Hazelcast host and port using `hazelcast.StartNewClient`, when Hazelcast is running on local with the default options:
 
 ```go
 ctx := context.TODO()
@@ -103,15 +106,13 @@ client, err := hazelcast.StartNewClient(ctx)
 
 ### Starting the Client with Given Options
 
-Note that `Config` structs are not thread-safe. Complete creation of the configuration in a single goroutine. 
+Note that `Config` structs are not thread-safe. Complete creation of the configuration in a single goroutine.
 
 ```go
 // create the default configuration
 config := hazelcast.Config{}
-
 // optionally set member addresses manually
-config.Cluster.Network.SetAddresses("member1.example.com", "member2.example.com")
-
+config.Cluster.Network.SetAddresses("member1.example.com:5701", "member2.example.com:5701")
 // create and start the client with the configuration provider
 client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 // handle client start error
@@ -119,7 +120,7 @@ client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 
 ## Documentation
 
-Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client@v1.1.1).
+Hazelcast Go Client documentation is hosted at [pkg.go.dev](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client).
 
 You can view the documentation locally by using godoc:
 ```  

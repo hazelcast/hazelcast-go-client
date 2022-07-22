@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ If you are using Hazelcast and Go Client on the same computer, generally the def
 This is great for trying out the client.
 However, if you run the client on a different computer than any of the cluster members, you may need to do some simple configurations such as specifying the member addresses.
 
-The Hazelcast IMDG members and clients have their own configuration options.
+The Hazelcast members and clients have their own configuration options.
 You may need to reflect some of the member side configurations on the client side to properly connect to the cluster.
 
 In order to configure the client, you only need to create a new `hazelcast.Config{}`, which you can pass to `hazelcast.StartNewClientWithConnfig` function:
@@ -152,6 +152,8 @@ Here are all configuration items with their default values:
 
 	config.Logger.Level = logger.InfoLevel
 
+Checkout the nearcache package for the documentation about the Near Cache.
+
 Listening for Distributed Object Events
 
 You can listen to creation and destroy events for distributed objects by attaching a listener to the client.
@@ -173,6 +175,56 @@ Here is an example:
 If you don't want to receive any distributed object events, use client.RemoveDistributedObjectListener:
 
 	client.RemoveDistributedObjectListener(subscriptionID)
+
+Running SQL Queries
+
+Running SQL queries require Hazelcast 5.0 and up.
+Check out the Hazelcast SQL documentation here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview
+
+The SQL support should be enabled in Hazelcast server configuration:
+
+	<hazelcast>
+		<jet enabled="true" />
+	</hazelcast>
+
+The client supports two kinds of queries: The ones returning rows (select statements and a few others) and the rest (insert, update, etc.).
+The former kinds of queries are executed with QuerySQL method and the latter ones are executed with ExecSQL method.
+
+Use the question mark (?) for placeholders.
+
+To connect to a data source and query it as if it is a table, a mapping should be created.
+Currently, mappings for Map, Kafka and file data sources are supported.
+
+You can read the details about mappings here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview#mappings
+
+The following data types are supported when inserting/updating.
+The names in parantheses correspond to SQL types:
+
+	- string (varchar)
+	- int8 (tinyint)
+	- int16 (smallint)
+	- int32 (integer)
+	- int64 (bigint)
+	- bool (boolean)
+	- float32 (real)
+	- float64 (double)
+	- types.Decimal (decimal)
+	- time.Time not supported, use one of types.LocalDate, types.LocalTime, types.LocalDateTime or types.OffsetDateTime
+	- types.LocalDate (date)
+	- types.LocalTime (time)
+	- types.LocalDateTime (timestamp)
+	- types.OffsetDateTime (timestamp with time zone)
+	- serialization.JSON (json)
+
+Using Date/Time
+
+In order to force using a specific date/time type, create a time.Time value and cast it to the target type:
+
+	t := time.Now()
+	dateValue := types.LocalDate(t)
+	timeValue := types.LocalTime(t)
+	dateTimeValue := types.LocalDateTime(t)
+	dateTimeWithTimezoneValue := types.OffsetDateTime(t)
 
 Management Center Integration
 

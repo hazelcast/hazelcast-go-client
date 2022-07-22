@@ -19,14 +19,16 @@ package serialization_test
 import (
 	"encoding/binary"
 	"math"
+	"math/big"
 	"testing"
 	"time"
 	"unicode/utf8"
 
+	"github.com/stretchr/testify/assert"
+
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	"github.com/stretchr/testify/assert"
 )
 
 // See: https://hazelcast.atlassian.net/wiki/spaces/IMDG/pages/1650294837/Hazelcast+Serialization+Improvements
@@ -88,7 +90,96 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, target, value)
+}
 
+func TestSerializationImprovements(t *testing.T) {
+	serializationImprovementsTester(func(ss *iserialization.Service) {
+		var dec types.Decimal
+		testCases := []struct {
+			input  interface{}
+			target interface{}
+			name   string
+		}{
+			{
+				input:  types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
+				name:   "JavaLocalDate",
+				target: types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
+			},
+			{
+				input:  types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
+				name:   "JavaLocalTime",
+				target: types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
+			},
+			{
+				input:  types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
+				name:   "JavaLocalDateTime",
+				target: types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
+			},
+			{
+				input:  types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
+				name:   "JavaOffsetDateTime",
+				target: types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
+			},
+			{
+				input:  []interface{}{"foo", int64(22)},
+				name:   "JavaArrayList",
+				target: []interface{}{"foo", int64(22)},
+			},
+			{
+				input:  []interface{}{},
+				name:   "JavaArrayList-empty",
+				target: []interface{}{},
+			},
+			{
+				input:  big.NewInt(-10_000_000),
+				name:   "JavaBigInteger",
+				target: big.NewInt(-10_000_000),
+			},
+			{
+				input:  (*big.Int)(nil),
+				name:   "JavaBigInteger-nil",
+				target: new(big.Int),
+			},
+			{
+				input:  types.NewDecimal(big.NewInt(111_111_111), 222_222_222),
+				name:   "JavaBigDecimal",
+				target: types.NewDecimal(big.NewInt(111_111_111), 222_222_222),
+			},
+			{
+				input:  dec,
+				name:   "JavaBigDecimal-nil",
+				target: types.NewDecimal(new(big.Int), 0),
+			},
+		}
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				data, err := ss.ToData(tc.input)
+				if err != nil {
+					t.Fatal(err)
+				}
+				value, err := ss.ToObject(data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if tt, ok := tc.target.(time.Time); ok {
+					ii := value.(time.Time)
+					if !tt.Equal(ii) {
+						t.Fatalf("%s != %s", tt.String(), ii.String())
+					}
+					return
+				}
+				assert.Equal(t, tc.target, value)
+			})
+		}
+
+	})
+}
+
+func serializationImprovementsTester(f func(ss *iserialization.Service)) {
+	config := &serialization.Config{}
+	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
+	ss := mustSerializationService(iserialization.NewService(config))
+	f(ss)
 }
 
 func mustSerializationService(ss *iserialization.Service, err error) *iserialization.Service {

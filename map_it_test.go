@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -93,13 +95,17 @@ func TestMap_PutWithTTLAndMaxIdle(t *testing.T) {
 func TestMap_PutIfAbsent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsent(context.Background(), "key", targetValue); err != nil {
+		v, err := m.PutIfAbsent(context.Background(), "key", targetValue)
+		if err != nil {
 			t.Fatal(err)
 		}
+		it.AssertEquals(t, nil, v)
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
-		if _, err := m.PutIfAbsent(context.Background(), "key", "another-value"); err != nil {
+		v, err = m.PutIfAbsent(context.Background(), "key", "another-value")
+		if err != nil {
 			t.Fatal(err)
 		}
+		it.AssertEquals(t, "value", v)
 		it.AssertEquals(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 	})
 }
@@ -107,9 +113,11 @@ func TestMap_PutIfAbsent(t *testing.T) {
 func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsentWithTTL(context.Background(), "key", targetValue, 1*time.Second); err != nil {
+		v, err := m.PutIfAbsentWithTTL(context.Background(), "key", targetValue, 1*time.Second)
+		if err != nil {
 			t.Fatal(err)
 		}
+		assert.Equal(t, nil, v)
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(context.Background(), "key")) == nil
@@ -120,9 +128,11 @@ func TestMap_PutIfAbsentWithTTL(t *testing.T) {
 func TestMap_PutIfAbsentWithTTLAndMaxIdle(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		targetValue := "value"
-		if _, err := m.PutIfAbsentWithTTLAndMaxIdle(context.Background(), "key", targetValue, 1*time.Second, 1*time.Second); err != nil {
+		v, err := m.PutIfAbsentWithTTLAndMaxIdle(context.Background(), "key", targetValue, 1*time.Second, 1*time.Second)
+		if err != nil {
 			t.Fatal(err)
 		}
+		assert.Equal(t, nil, v)
 		assert.Equal(t, targetValue, it.MustValue(m.Get(context.Background(), "key")))
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(context.Background(), "key")) == nil
@@ -772,10 +782,17 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 			it.MustValue(m.Put(context.Background(), key, value))
 		}
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == totalCallCount
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 		atomic.StoreInt32(&callCount, 0)
 		if err := m.RemoveEntryListener(context.Background(), subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		// Clear the map to get entry added events
+		err = m.Clear(context.Background())
+		if err != nil {
 			t.Fatal(err)
 		}
 		for i := 0; i < int(totalCallCount); i++ {
@@ -789,10 +806,60 @@ func TestMap_EntryNotifiedEvent(t *testing.T) {
 	})
 }
 
+func TestMap_EntryNotifiedEventWithAddListener(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(100)
+		callCount := int32(0)
+		subscriptionID, err := m.AddListener(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(m.Put(context.Background(), key, value))
+		}
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+		atomic.StoreInt32(&callCount, 0)
+		// Remove the listener and test that entry added events are not received anymore
+		if err := m.RemoveListener(context.Background(), subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		// Clear the map to get entry added events
+		err = m.Clear(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := fmt.Sprintf("value-%d", i)
+			it.MustValue(m.Put(context.Background(), key, value))
+		}
+		cc := atomic.LoadInt32(&callCount)
+		if !assert.Equal(t, int32(0), cc) {
+			t.Fatalf("call count target: %d, current: %d", 0, cc)
+		}
+	})
+}
+
 func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
+			if event.EventType != hz.EntryAdded {
+				t.Fatalf("unexpected event type: %v", event.EventType)
+			}
 			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
@@ -805,7 +872,33 @@ func TestMap_EntryNotifiedEventToKey(t *testing.T) {
 		}
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == int32(1)
+			cc := atomic.LoadInt32(&callCount)
+			totalCallCount := int32(1)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+	})
+}
+
+func TestMap_EntryNotifiedEventToKeyWithAddListenerWithKey(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(1)
+		callCount := int32(0)
+		if _, err := m.AddListenerWithKey(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, "k1", true); err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(m.Put(context.Background(), "k1", "v1"))
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }
@@ -818,6 +911,9 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 		const totalCallCount = int32(100)
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
+			if event.EventType != hz.EntryAdded {
+				t.Fatalf("unexpected event type: %v", event.EventType)
+			}
 			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
@@ -843,6 +939,38 @@ func TestMap_EntryNotifiedEventWithPredicate(t *testing.T) {
 	})
 }
 
+func TestMap_EntryNotifiedEventWithPredicateWithAddListenerWithPredicate(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(100)
+		callCount := int32(0)
+		subID, err := m.AddListenerWithPredicate(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, predicate.Equal("A", "foo"), true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("TestMap_EntryNotifiedEventWithPredicateWithAddListenerWithPredicate subscriptionID: %s", subID)
+		for i := 0; i < int(totalCallCount); i++ {
+			key := fmt.Sprintf("key-%d", i)
+			value := &it.SamplePortable{A: "foo", B: int32(i)}
+			it.MustValue(m.Put(context.Background(), key, value))
+		}
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+	})
+}
+
 func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	cbCallback := func(config *hz.Config) {
 		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
@@ -850,6 +978,9 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
 		handler := func(event *hz.EntryNotified) {
+			if event.EventType != hz.EntryAdded {
+				t.Fatalf("unexpected event type: %v", event.EventType)
+			}
 			atomic.AddInt32(&callCount, 1)
 		}
 		listenerConfig := hz.MapEntryListenerConfig{
@@ -865,13 +996,63 @@ func TestMap_EntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
 		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
 		it.Eventually(t, func() bool {
-			return atomic.LoadInt32(&callCount) == 1
+			cc := atomic.LoadInt32(&callCount)
+			totalCallCount := int32(1)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
+		})
+	})
+}
+
+func TestMap_EntryNotifiedEventToKeyAndPredicateWithAddListenerWithPredicateAndKey(t *testing.T) {
+	cbCallback := func(config *hz.Config) {
+		config.Serialization.SetPortableFactories(it.SamplePortableFactory{})
+	}
+	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
+		const totalCallCount = int32(1)
+		callCount := int32(0)
+		_, err := m.AddListenerWithPredicateAndKey(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				if event.EventType != hz.EntryAdded {
+					t.Fatalf("unexpected event type: %v", event.EventType)
+				}
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, predicate.Equal("A", "foo"), "k1", true)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "foo", B: 10}))
+		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "bar", B: 10}))
+		it.MustValue(m.Put(context.Background(), "k2", &it.SamplePortable{A: "foo", B: 10}))
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count target: %d, current: %d", totalCallCount, cc)
+			return cc == totalCallCount
 		})
 	})
 }
 
 func TestMap_Destroy(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		if err := m.Destroy(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestMap_Destroy_WithNearCache(t *testing.T) {
+	tcx := it.MapTestContext{
+		T: t,
+		ConfigCallback: func(tcx it.MapTestContext) {
+			ncc := nearcache.Config{Name: tcx.MapName}
+			tcx.Config.AddNearCache(ncc)
+		},
+	}
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
 		if err := m.Destroy(context.Background()); err != nil {
 			t.Fatal(err)
 		}
@@ -927,6 +1108,7 @@ func TestMap_AggregateWithPredicate(t *testing.T) {
 }
 
 func TestMap_SetWithTTLAndMaxIdle(t *testing.T) {
+	skip.If(t, "hz ~ 4.2")
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"
@@ -1054,6 +1236,44 @@ func TestMap_SetTTL(t *testing.T) {
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(ctx, "key")) == nil
 		})
+	})
+}
+
+func TestMap_SetTTLAffected(t *testing.T) {
+	it.SkipIf(t, "hz < 4.2")
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		testCases := []struct {
+			key           string
+			isEffected    bool
+			errorExpected bool
+		}{
+			// happy path
+			{
+				key:        "k1",
+				isEffected: true,
+			},
+			// setTTL on non-existing key
+			{
+				key:           "k2",
+				isEffected:    false,
+				errorExpected: false,
+			},
+			// setTTL on already expired key
+			{
+				key:           "k3",
+				isEffected:    false,
+				errorExpected: false,
+			},
+		}
+		_ = it.MustValue(m.Put(ctx, "k1", "someValue"))
+		_ = it.MustValue(m.PutWithTTL(ctx, "k3", "someValue", time.Millisecond))
+		time.Sleep(time.Millisecond)
+		for _, tc := range testCases {
+			affected, err := m.SetTTLAffected(ctx, tc.key, time.Second)
+			assert.Equal(t, tc.errorExpected, err != nil)
+			assert.Equal(t, tc.isEffected, affected)
+		}
 	})
 }
 
@@ -1258,9 +1478,9 @@ func TestMap_TryRemoveWithTimeout(t *testing.T) {
 		if err := m.Lock(ctx1, "foo"); err != nil {
 			t.Fatal(err)
 		}
-		// TryPut with a different lock context returns false
+		// TryRemove with a different lock context returns false
 		ctx2 := m.NewLockContext(context.Background())
-		ok, err := m.TryPutWithTimeout(ctx2, "foo", "bar", 1*time.Second)
+		ok, err := m.TryRemoveWithTimeout(ctx2, "foo", 1*time.Second)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1272,8 +1492,8 @@ func TestMap_TryRemoveWithTimeout(t *testing.T) {
 				panic(err)
 			}
 		}()
-		// TryPut after the timeout
-		ok, err = m.TryPutWithTimeout(ctx2, "foo", "bar", 2*time.Minute)
+		// TryRemove after the timeout
+		ok, err = m.TryRemoveWithTimeout(ctx2, "foo", 2*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}

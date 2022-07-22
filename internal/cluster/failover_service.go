@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/security"
 )
 
@@ -36,12 +36,13 @@ type CandidateCluster struct {
 	AddressTranslator  AddressTranslator
 	Credentials        security.Credentials
 	ConnectionStrategy *pubcluster.ConnectionStrategyConfig
+	NetworkCfg         *pubcluster.NetworkConfig
 	ClusterName        string
 }
 
-type addrFun func(*pubcluster.Config, ilogger.Logger) (AddressProvider, AddressTranslator)
+type addrFun func(*pubcluster.Config, logger.LogAdaptor) (AddressProvider, AddressTranslator)
 
-func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun) *FailoverService {
+func NewFailoverService(logger logger.LogAdaptor, maxTries int, rootConfig pubcluster.Config, foConfigs []pubcluster.Config, addrFn addrFun) *FailoverService {
 	candidates := []CandidateCluster{}
 	configs := []pubcluster.Config{}
 	if len(foConfigs) > 0 {
@@ -56,6 +57,7 @@ func NewFailoverService(logger ilogger.Logger, maxTries int, rootConfig pubclust
 			ClusterName:        c.Name,
 			Credentials:        makeCredentials(&c.Security),
 			ConnectionStrategy: &cv.ConnectionStrategy,
+			NetworkCfg:         &cv.Network,
 		}
 		cc.AddressProvider, cc.AddressTranslator = addrFn(&c, logger)
 		candidates = append(candidates, cc)

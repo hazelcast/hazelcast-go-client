@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 		atomic.AddInt32(&dispatchCount, 1)
 		wg.Done()
 	}
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 100, handler)
 	for i := 0; i < goroutineCount; i++ {
 		go service.Publish(sampleEvent{})
@@ -67,7 +67,7 @@ func TestDispatchServiceSubscribePublish(t *testing.T) {
 }
 
 func TestDispatchServiceUnsubscribe(t *testing.T) {
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	defer service.Stop(context.Background())
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
@@ -82,7 +82,7 @@ func TestDispatchServiceUnsubscribe(t *testing.T) {
 }
 
 func TestDispatchServiceStop(t *testing.T) {
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
@@ -98,8 +98,7 @@ func TestDispatchServiceStop(t *testing.T) {
 
 func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 	// the order of events should be guaranteed when using subscribe sync
-	lg := logger.New()
-	service := event.NewDispatchService(lg)
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	wg := &sync.WaitGroup{}
 	const targetCount = 1000
 	wg.Add(targetCount)
@@ -124,25 +123,29 @@ func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 }
 
 func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
-	goroutineCount := 10000
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-go-client/issues/683")
+	goroutineCount := 10_000
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
 	}
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 100, handler)
 	go service.Stop(context.Background())
 	successfulPubCnt := int32(0)
 	for i := 0; i < goroutineCount; i++ {
 		if service.Publish(sampleEvent{}) {
-			successfulPubCnt++
+			atomic.AddInt32(&successfulPubCnt, 1)
 		}
 	}
 	it.Eventually(t, func() bool {
-		return successfulPubCnt == atomic.LoadInt32(&dispatchCount)
+		success := atomic.LoadInt32(&successfulPubCnt)
+		dispatch := atomic.LoadInt32(&dispatchCount)
+		t.Logf("pub cnt: dispatched: %d, success: %d", dispatch, success)
+		return success == dispatch
 	})
 	it.Never(t, func() bool {
-		return successfulPubCnt != atomic.LoadInt32(&dispatchCount)
+		return atomic.LoadInt32(&successfulPubCnt) != atomic.LoadInt32(&dispatchCount)
 	})
 }
 
@@ -150,7 +153,7 @@ func TestDispatchService_BlockingCallWillNotBlockUnrelatedSubscriptions(t *testi
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	defer wg.Done()
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 1, func(event event.Event) {
 		//Wait blocking until test finishes.
 		wg.Wait()
@@ -172,7 +175,7 @@ func TestDispatchService_BlockingCallWillNotBlockUnrelatedSubscriptions(t *testi
 }
 
 func TestDispatchServiceCloseRespectsContext(t *testing.T) {
-	service := event.NewDispatchService(logger.New())
+	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
 	wg.Add(1)

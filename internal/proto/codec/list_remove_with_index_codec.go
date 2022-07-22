@@ -48,7 +48,7 @@ func EncodeListRemoveWithIndexRequest(name string, index int32) *proto.ClientMes
 	return clientMessage
 }
 
-func DecodeListRemoveWithIndexResponse(clientMessage *proto.ClientMessage) *iserialization.Data {
+func DecodeListRemoveWithIndexResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

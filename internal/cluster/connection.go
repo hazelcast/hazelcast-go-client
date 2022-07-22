@@ -34,7 +34,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -60,15 +60,14 @@ type Connection struct {
 	socket                    net.Conn
 	bWriter                   *bufio.Writer
 	endpoint                  atomic.Value
-	logger                    ilogger.Logger
+	logger                    logger.LogAdaptor
 	lastRead                  atomic.Value
-	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService
 	pending                   chan invocation.Invocation
 	invocationService         *invocation.Service
 	doneCh                    chan struct{}
+	memberUUID                atomic.Value
 	connectedServerVersionStr string
-	memberUUID                types.UUID
 	connectionID              int64
 	connectedServerVersion    int32
 	status                    int32
@@ -90,26 +89,39 @@ func (c *Connection) SetEndpoint(addr pubcluster.Address) {
 	c.endpoint.Store(addr)
 }
 
-func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
-	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
-		return err
-	} else {
-		c.SetEndpoint(addr)
-		c.socket = socket
-		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
-		c.lastWrite.Store(time.Time{})
-		c.closedTime.Store(time.Time{})
-		c.lastRead.Store(time.Now())
-		if err = c.sendProtocolStarter(); err != nil {
-			// ignoring the socket close error
-			_ = c.socket.Close()
-			c.socket = nil
-			return err
-		}
-		go c.socketReadLoop()
-		go c.socketWriteLoop()
-		return nil
+func (c *Connection) MemberUUID() types.UUID {
+	v := c.memberUUID.Load()
+	if v == nil {
+		return types.UUID{}
 	}
+	return v.(types.UUID)
+}
+
+func (c *Connection) setMemberUUID(uuid types.UUID) {
+	c.memberUUID.Store(uuid)
+}
+
+func (c *Connection) start(networkCfg *pubcluster.NetworkConfig, addr pubcluster.Address) error {
+	socket, err := c.createSocket(networkCfg, addr)
+	if err != nil {
+		return err
+	}
+	c.SetEndpoint(addr)
+	c.socket = socket
+	c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
+	c.lastWrite.Store(time.Time{})
+	c.closedTime.Store(time.Time{})
+	c.lastRead.Store(time.Now())
+	if err = c.sendProtocolStarter(); err != nil {
+		// ignoring the socket close error
+		_ = c.socket.Close()
+		c.socket = nil
+		return err
+	}
+	go c.socketReadLoop()
+	go c.socketWriteLoop()
+	return nil
+
 }
 
 func (c *Connection) sendProtocolStarter() error {
@@ -117,18 +129,18 @@ func (c *Connection) sendProtocolStarter() error {
 	return err
 }
 
-func (c *Connection) createSocket(clusterCfg *pubcluster.Config, address pubcluster.Address) (net.Conn, error) {
-	conTimeout := positiveDurationOrMax(time.Duration(clusterCfg.Network.ConnectionTimeout))
+func (c *Connection) createSocket(networkCfg *pubcluster.NetworkConfig, address pubcluster.Address) (net.Conn, error) {
+	conTimeout := positiveDurationOrMax(time.Duration(networkCfg.ConnectionTimeout))
 	if socket, err := c.dialToAddressWithTimeout(address, conTimeout); err != nil {
 		return nil, err
 	} else {
-		if !c.clusterConfig.Network.SSL.Enabled {
+		if !networkCfg.SSL.Enabled {
 			return socket, err
 		}
 		c.logger.Debug(func() string {
 			return fmt.Sprintf("%d: SSL is enabled for connection", c.connectionID)
 		})
-		tlsCon := tls.Client(socket, c.clusterConfig.Network.SSL.TLSConfig())
+		tlsCon := tls.Client(socket, networkCfg.SSL.TLSConfig())
 		if err = tlsCon.Handshake(); err != nil {
 			return nil, err
 		}
@@ -142,13 +154,13 @@ func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeou
 	} else {
 		tcpConn := conn.(*net.TCPConn)
 		if err = tcpConn.SetNoDelay(false); err != nil {
-			c.logger.Warnf("error setting tcp no delay: %w", err)
+			c.logger.Warnf("error setting tcp no delay: %v", err)
 		}
 		if err = tcpConn.SetReadBuffer(socketBufferSize); err != nil {
-			c.logger.Warnf("error setting read buffer: %w", err)
+			c.logger.Warnf("error setting read buffer: %v", err)
 		}
 		if err = tcpConn.SetWriteBuffer(socketBufferSize); err != nil {
-			c.logger.Warnf("error setting write buffer: %w", err)
+			c.logger.Warnf("error setting write buffer: %v", err)
 		}
 		return tcpConn, nil
 	}

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package cluster
 
 import (
@@ -95,18 +111,17 @@ func tryConnectAddressTest(checkedAddresses []CheckedAddressHelper, inputAddress
 		return connMemberCounter, "", err
 	}
 	m := &ConnectionManager{}
-	m.clusterConfig = &pubcluster.Config{}
-	m.clusterConfig.Network.PortRange = portRange
-	resultAddr, err := m.tryConnectAddress(context.TODO(), pubcluster.NewAddress(host, int32(port)),
-		func(ctx context.Context, m *ConnectionManager, currAddr pubcluster.Address) (pubcluster.Address, error) {
-			connMemberCounter++
-			for _, checkedAddr := range checkedAddresses {
-				if currAddr == checkedAddr.address {
-					return checkedAddr.address, checkedAddr.err
-				}
+	nc := &pubcluster.NetworkConfig{PortRange: portRange}
+	mf := func(_ context.Context, _ *ConnectionManager, currAddr pubcluster.Address, _ *pubcluster.NetworkConfig) (pubcluster.Address, error) {
+		connMemberCounter++
+		for _, checkedAddr := range checkedAddresses {
+			if currAddr == checkedAddr.address {
+				return checkedAddr.address, checkedAddr.err
 			}
-			return currAddr, nil
-		})
+		}
+		return currAddr, nil
+	}
+	resultAddr, err := m.tryConnectAddress(context.TODO(), pubcluster.NewAddress(host, int32(port)), mf, nc)
 	return connMemberCounter, resultAddr, err
 }
 
@@ -144,45 +159,45 @@ func TestFilterConns(t *testing.T) {
 		},
 		{
 			description: "single member",
-			input:       []*Connection{{memberUUID: uuid1}},
+			input:       []*Connection{makeConn(uuid1)},
 			members:     map[types.UUID]struct{}{uuid1: {}},
-			target:      []*Connection{{memberUUID: uuid1}},
+			target:      []*Connection{makeConn(uuid1)},
 		},
 		{
 			description: "single non-member",
-			input:       []*Connection{{memberUUID: uuid1}},
+			input:       []*Connection{makeConn(uuid1)},
 			members:     map[types.UUID]struct{}{},
 			target:      []*Connection{},
 		},
 		{
 			description: "none members",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{},
 			target:      []*Connection{},
 		},
 		{
 			description: "first member",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid1: {}},
-			target:      []*Connection{{memberUUID: uuid1}},
+			target:      []*Connection{makeConn(uuid1)},
 		},
 		{
 			description: "last member",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid5: {}},
-			target:      []*Connection{{memberUUID: uuid5}},
+			target:      []*Connection{makeConn(uuid5)},
 		},
 		{
 			description: "mixed members",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid1: {}, uuid3: {}, uuid5: {}},
-			target:      []*Connection{{memberUUID: uuid1}, {memberUUID: uuid5}, {memberUUID: uuid3}},
+			target:      []*Connection{makeConn(uuid1), makeConn(uuid5), makeConn(uuid3)},
 		},
 		{
 			description: "all members",
-			input:       []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			input:       []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 			members:     map[types.UUID]struct{}{uuid1: {}, uuid2: {}, uuid3: {}, uuid4: {}, uuid5: {}},
-			target:      []*Connection{{memberUUID: uuid1}, {memberUUID: uuid2}, {memberUUID: uuid3}, {memberUUID: uuid4}, {memberUUID: uuid5}},
+			target:      []*Connection{makeConn(uuid1), makeConn(uuid2), makeConn(uuid3), makeConn(uuid4), makeConn(uuid5)},
 		},
 	}
 	for _, tc := range tcs {
@@ -190,10 +205,16 @@ func TestFilterConns(t *testing.T) {
 			input := make([]*Connection, len(tc.input))
 			copy(input, tc.input)
 			output := FilterConns(input, func(conn *Connection) bool {
-				_, found := tc.members[conn.memberUUID]
+				_, found := tc.members[conn.MemberUUID()]
 				return found
 			})
 			assert.Equal(t, tc.target, output)
 		})
 	}
+}
+
+func makeConn(uuid types.UUID) *Connection {
+	c := &Connection{}
+	c.memberUUID.Store(uuid)
+	return c
 }

@@ -19,6 +19,7 @@ package serialization
 import (
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 type ClassDefinitionWriter struct {
@@ -122,6 +123,46 @@ func (cdw *ClassDefinitionWriter) WriteFloat64Array(fieldName string, value []fl
 
 func (cdw *ClassDefinitionWriter) WriteStringArray(fieldName string, value []string) {
 	must(cdw.classDefinition.AddStringArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDate(fieldName string, value *types.LocalDate) {
+	must(cdw.classDefinition.AddDateField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTime(fieldName string, value *types.LocalTime) {
+	must(cdw.classDefinition.AddTimeField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestamp(fieldName string, value *types.LocalDateTime) {
+	must(cdw.classDefinition.AddTimestampField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezone(fieldName string, value *types.OffsetDateTime) {
+	must(cdw.classDefinition.AddTimestampWithTimezoneField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDateArray(fieldName string, value []types.LocalDate) {
+	must(cdw.classDefinition.AddDateArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimeArray(fieldName string, value []types.LocalTime) {
+	must(cdw.classDefinition.AddTimeArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestampArray(fieldName string, value []types.LocalDateTime) {
+	must(cdw.classDefinition.AddTimestampArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteTimestampWithTimezoneArray(fieldName string, value []types.OffsetDateTime) {
+	must(cdw.classDefinition.AddTimestampWithTimezoneArrayField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDecimal(fieldName string, d *types.Decimal) {
+	must(cdw.classDefinition.AddDecimalField(fieldName))
+}
+
+func (cdw *ClassDefinitionWriter) WriteDecimalArray(fieldName string, ds []types.Decimal) {
+	must(cdw.classDefinition.AddDecimalArrayField(fieldName))
 }
 
 func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables []serialization.Portable) {

@@ -14,61 +14,68 @@
  * limitations under the License.
  */
 
-// Package logger contains logger configuration.
 package logger
 
 import (
-	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
+// Level is the importance of a log message.
+// It is used by the builtin logger.
+// It can also be used by custom loggers.
 type Level string
 
 const (
 	// OffLevel disables logging.
 	OffLevel Level = "off"
-	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
-	// Commonly used for hooks to send errors to an error tracking service.
+	// FatalLevel is for critical errors which halt the client.
+	FatalLevel Level = "fatal"
+	// ErrorLevel is for severe errors.
 	ErrorLevel Level = "error"
-	// WarnLevel level. Non-critical entries that deserve eyes.
+	// WarnLevel is for noting problems.
+	// The client can continue running.
 	WarnLevel Level = "warn"
-	// InfoLevel level. General operational entries about what's going on inside the
-	// application.
+	// InfoLevel is for informational messages.
 	InfoLevel Level = "info"
-	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
+	// DebugLevel is for logs messages which can help with diagnosing a problem.
+	// Should not be used in production.
 	DebugLevel Level = "debug"
-	// TraceLevel level. Designates finer-grained informational events than the Debug.
+	// TraceLevel is for potentially very detailed log messages, which are usually logged when an important function is called.
+	// Should not be used in production.
 	TraceLevel Level = "trace"
 )
 
+// String converts a Level to a string.
 func (l Level) String() string {
 	return string(l)
 }
 
+// Config is the logging configuration.
+// Using a CustomLogger and specifying a Level is not allowed.
 type Config struct {
+	// CustomLogger is used to set a custom logger.
+	// The configuration in this section does not apply to the custom logger.
+	// The custom logger should handle its own log filtering.
+	CustomLogger Logger `json:"-"`
+	// Level is the log level for the builtin logger.
 	Level Level `json:",omitempty"`
 }
 
+// Clone returns a copy of the logger configuration.
 func (c Config) Clone() Config {
-	return Config{Level: c.Level}
+	return Config{Level: c.Level, CustomLogger: c.CustomLogger}
 }
 
+// Validate checks the logger configuration for problems and updates it with default values.
 func (c *Config) Validate() error {
+	if c.Level != "" && c.CustomLogger != nil {
+		return hzerrors.NewIllegalArgumentError("logger level cannot be set when a custom logger is specified", nil)
+	}
 	if c.Level == "" {
 		c.Level = InfoLevel
 	}
-	switch string(c.Level) {
-	case "off":
-		fallthrough
-	case "error":
-		fallthrough
-	case "warn":
-		fallthrough
-	case "info":
-		fallthrough
-	case "debug":
-		fallthrough
-	case "trace":
-		return nil
+	if _, err := WeightForLogLevel(c.Level); err != nil {
+		return err
 	}
-	return fmt.Errorf("invalid log level: %s", c.Level)
+	return nil
 }

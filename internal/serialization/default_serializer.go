@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -96,6 +97,20 @@ func (ByteSerializer) Read(input serialization.DataInput) interface{} {
 
 func (ByteSerializer) Write(output serialization.DataOutput, i interface{}) {
 	output.WriteByte(i.(byte))
+}
+
+type Int8Serializer struct{}
+
+func (Int8Serializer) ID() int32 {
+	return TypeByte
+}
+
+func (Int8Serializer) Read(input serialization.DataInput) interface{} {
+	return int8(input.ReadByte())
+}
+
+func (Int8Serializer) Write(output serialization.DataOutput, i interface{}) {
+	output.WriteByte(byte(i.(int8)))
 }
 
 type BoolSerializer struct{}
@@ -391,6 +406,34 @@ func (JavaDateSerializer) Write(output serialization.DataOutput, i interface{}) 
 	output.WriteInt64(t.UnixNano() / 1000)
 }
 
+type JavaBigIntegerSerializer struct{}
+
+func (JavaBigIntegerSerializer) ID() int32 {
+	return TypeJavaBigInteger
+}
+
+func (JavaBigIntegerSerializer) Read(input serialization.DataInput) interface{} {
+	return ReadBigInt(input)
+}
+
+func (JavaBigIntegerSerializer) Write(output serialization.DataOutput, i interface{}) {
+	WriteBigInt(output, i.(*big.Int))
+}
+
+type JavaDecimalSerializer struct{}
+
+func (JavaDecimalSerializer) ID() int32 {
+	return TypeJavaDecimal
+}
+
+func (JavaDecimalSerializer) Read(input serialization.DataInput) interface{} {
+	return ReadDecimal(input)
+}
+
+func (JavaDecimalSerializer) Write(output serialization.DataOutput, i interface{}) {
+	WriteDecimal(output, i.(types.Decimal))
+}
+
 type JavaClassSerializer struct{}
 
 func (JavaClassSerializer) ID() int32 {
@@ -424,6 +467,25 @@ func (JavaLinkedListSerializer) Write(output serialization.DataOutput, i interfa
 	// no-op
 }
 
+type JavaArraySerializer struct{}
+
+func (JavaArraySerializer) ID() int32 {
+	return TypeJavaArray
+}
+
+func (JavaArraySerializer) Read(input serialization.DataInput) interface{} {
+	count := int(input.ReadInt32())
+	res := make([]interface{}, count)
+	for i := 0; i < count; i++ {
+		res[i] = input.ReadObject()
+	}
+	return res
+}
+
+func (JavaArraySerializer) Write(output serialization.DataOutput, i interface{}) {
+	// no-op
+}
+
 type JavaArrayListSerializer struct{}
 
 func (JavaArrayListSerializer) ID() int32 {
@@ -439,8 +501,85 @@ func (JavaArrayListSerializer) Read(input serialization.DataInput) interface{} {
 	return res
 }
 
-func (JavaArrayListSerializer) Write(output serialization.DataOutput, i interface{}) {
-	// no-op
+func (JavaArrayListSerializer) Write(o serialization.DataOutput, i interface{}) {
+	v := i.([]interface{})
+	length := len(v)
+	o.WriteInt32(int32(length))
+	for j := 0; j < length; j++ {
+		o.WriteObject(v[j])
+	}
+}
+
+type JavaLocalDateSerializer struct{}
+
+func (JavaLocalDateSerializer) ID() int32 {
+	return TypeJavaLocalDate
+}
+
+func (JavaLocalDateSerializer) Read(input serialization.DataInput) interface{} {
+	return types.LocalDate(ReadDate(input))
+}
+
+func (JavaLocalDateSerializer) Write(output serialization.DataOutput, i interface{}) {
+	if t, ok := i.(types.LocalDate); ok {
+		WriteDate(output, time.Time(t))
+		return
+	}
+	WriteDate(output, i.(time.Time))
+}
+
+type JavaLocalTimeSerializer struct{}
+
+func (JavaLocalTimeSerializer) ID() int32 {
+	return TypeJavaLocalTime
+}
+
+func (JavaLocalTimeSerializer) Read(input serialization.DataInput) interface{} {
+	return types.LocalTime(ReadTime(input))
+}
+
+func (JavaLocalTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+	if t, ok := i.(types.LocalTime); ok {
+		WriteTime(output, time.Time(t))
+		return
+	}
+	WriteTime(output, i.(time.Time))
+}
+
+type JavaLocalDateTimeSerializer struct{}
+
+func (JavaLocalDateTimeSerializer) ID() int32 {
+	return TypeJavaLocalDateTime
+}
+
+func (JavaLocalDateTimeSerializer) Read(input serialization.DataInput) interface{} {
+	return types.LocalDateTime(ReadTimestamp(input))
+}
+
+func (JavaLocalDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+	if t, ok := i.(types.LocalDateTime); ok {
+		WriteTimestamp(output, time.Time(t))
+		return
+	}
+	WriteTimestamp(output, i.(time.Time))
+}
+
+type JavaOffsetDateTimeSerializer struct{}
+
+func (JavaOffsetDateTimeSerializer) ID() int32 {
+	return TypeJavaOffsetDateTime
+}
+
+func (JavaOffsetDateTimeSerializer) Read(input serialization.DataInput) interface{} {
+	return types.OffsetDateTime(ReadTimestampWithTimezone(input))
+}
+
+func (JavaOffsetDateTimeSerializer) Write(output serialization.DataOutput, i interface{}) {
+	if t, ok := i.(types.OffsetDateTime); ok {
+		WriteTimestampWithTimezone(output, time.Time(t))
+		return
+	}
+	WriteTimestampWithTimezone(output, i.(time.Time))
 }
 
 type GobSerializer struct{}

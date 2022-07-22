@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/process"
@@ -39,8 +38,22 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/nearcache"
 )
+
+const (
+	serviceNameMap                   = "hz:impl:mapService"
+	nearCacheDescriptorPrefix        = "nearcache"
+	nearCacheDescriptorDiscriminator = "name"
+)
+
+type NearCacheStatsGetter interface {
+	GetNearCacheStats() []proto.Pair
+}
+
+var serviceHandleClusterEventSubID = event.NextSubscriptionID()
 
 type stat struct {
 	k string
@@ -55,41 +68,36 @@ type binTextStats struct {
 type Service struct {
 	clusterConnectTime atomic.Value
 	connAddr           atomic.Value
-	logger             logger.Logger
+	logger             logger.LogAdaptor
 	mu                 *sync.RWMutex
 	invFactory         *cluster.ConnectionInvocationFactory
 	addrs              map[string]struct{}
-	invocationService  *invocation.Service
+	is                 *invocation.Service
 	doneCh             chan struct{}
 	ed                 *event.DispatchService
+	ncmsFn             func(service string) NearCacheStatsGetter
 	btStats            binTextStats
 	clientName         string
 	gauges             []gauge
 	interval           time.Duration
 }
 
-func NewService(
-	invService *invocation.Service,
-	invFactory *cluster.ConnectionInvocationFactory,
-	ed *event.DispatchService,
-	logger logger.Logger,
-	interval time.Duration,
-	clientName string) *Service {
+func NewService(is *invocation.Service, invFac *cluster.ConnectionInvocationFactory, ed *event.DispatchService, lg logger.LogAdaptor, interval time.Duration, client string) *Service {
 	s := &Service{
-		invocationService: invService,
-		invFactory:        invFactory,
-		doneCh:            make(chan struct{}),
-		interval:          interval,
-		logger:            logger,
-		addrs:             map[string]struct{}{},
-		mu:                &sync.RWMutex{},
-		clientName:        clientName,
-		ed:                ed,
-		btStats:           binTextStats{mc: NewMetricCompressor()},
+		is:         is,
+		invFactory: invFac,
+		doneCh:     make(chan struct{}),
+		interval:   interval,
+		logger:     lg,
+		addrs:      map[string]struct{}{},
+		mu:         &sync.RWMutex{},
+		clientName: client,
+		ed:         ed,
+		btStats:    binTextStats{mc: NewMetricCompressor()},
 	}
 	s.clusterConnectTime.Store(time.Now())
 	s.connAddr.Store(pubcluster.NewAddress("", 0))
-	ed.Subscribe(cluster.EventCluster, event.DefaultSubscriptionID, s.handleClusterEvent)
+	ed.Subscribe(cluster.EventCluster, serviceHandleClusterEventSubID, s.handleClusterEvent)
 	s.addGauges()
 	return s
 }
@@ -100,8 +108,11 @@ func (s *Service) Start() {
 
 func (s *Service) Stop() {
 	close(s.doneCh)
-	subID := event.MakeSubscriptionID(s.handleClusterEvent)
-	s.ed.Unsubscribe(cluster.EventCluster, subID)
+	s.ed.Unsubscribe(cluster.EventCluster, serviceHandleClusterEventSubID)
+}
+
+func (s *Service) SetNCStatsGetter(ncmsFn func(service string) NearCacheStatsGetter) {
+	s.ncmsFn = ncmsFn
 }
 
 func (s *Service) loop() {
@@ -142,7 +153,7 @@ func (s *Service) sendStats(ctx context.Context) {
 	})
 	request := codec.EncodeClientStatisticsRequest(now.Unix()*1000, statsStr, blob)
 	inv := s.invFactory.NewInvocationOnRandomTarget(request, nil, time.Now())
-	if err := s.invocationService.SendRequest(ctx, inv); err != nil {
+	if err := s.is.SendRequest(ctx, inv); err != nil {
 		s.logger.Debug(func() string {
 			return fmt.Sprintf("sending stats: %s", err.Error())
 		})
@@ -157,7 +168,7 @@ func (s *Service) sendStats(ctx context.Context) {
 func (s *Service) addBasicStats(ts time.Time) {
 	lastTS := s.clusterConnectTime.Load().(time.Time)
 	connAddr := s.connAddr.Load().(pubcluster.Address)
-	s.btStats.stats = append(s.btStats.stats, MakeBasicStats(ts, lastTS, connAddr, s.clientName)...)
+	s.btStats.stats = append(s.btStats.stats, makeBasicStats(ts, lastTS, connAddr, s.clientName)...)
 }
 
 func (s *Service) makeStats() []byte {
@@ -174,9 +185,19 @@ func (s *Service) resetStats() {
 }
 
 func (s *Service) addGauges() {
+	p, err := process.NewProcess(int32(os.Getpid()))
+	if err != nil {
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("ERROR getting process info, unable to register process gauges (os.maxFileDescriptorCount, os.openFileDescriptorCount, runtime.uptime): %s", err.Error())
+		})
+	}
+	f := func() func(service string) NearCacheStatsGetter {
+		return s.ncmsFn
+	}
 	s.gauges = []gauge{
-		newGaugeRuntime(s.logger),
-		newGaugeOS(s.logger),
+		newGaugeRuntime(s.logger, p),
+		newGaugeOS(s.logger, p),
+		newGaugeNearCache(serviceNameMap, f),
 	}
 }
 
@@ -197,7 +218,7 @@ func makeStatString(ss []stat) string {
 	return sb.String()
 }
 
-func MakeBasicStats(lastTS time.Time, connTS time.Time, addr pubcluster.Address, clientName string) []stat {
+func makeBasicStats(lastTS time.Time, connTS time.Time, addr pubcluster.Address, clientName string) []stat {
 	lastTSMS := int(lastTS.Unix() * 1000)
 	connTSMS := int(connTS.Unix() * 1000)
 	stats := []stat{
@@ -217,7 +238,8 @@ type gauge interface {
 }
 
 type runtimeGauges struct {
-	logger          logger.Logger
+	logger          logger.LogAdaptor
+	proc            *process.Process
 	availProcessors metricDescriptor
 	uptime          metricDescriptor
 	totalMem        metricDescriptor
@@ -229,7 +251,7 @@ type runtimeGauges struct {
 	committedHeap   metricDescriptor
 }
 
-func newGaugeRuntime(lg logger.Logger) runtimeGauges {
+func newGaugeRuntime(lg logger.LogAdaptor, p *process.Process) runtimeGauges {
 	return runtimeGauges{
 		logger:          lg,
 		availProcessors: makeCountMD("runtime", "availableProcessors"),
@@ -241,6 +263,7 @@ func newGaugeRuntime(lg logger.Logger) runtimeGauges {
 		freeHeap:        makeBytesMD("memory", "freeHeap"),
 		usedHeap:        makeBytesMD("memory", "usedHeap"),
 		committedHeap:   makeBytesMD("memory", "committedHeap"),
+		proc:            p,
 	}
 }
 
@@ -257,13 +280,17 @@ func (g runtimeGauges) updateNumCPU(bt *binTextStats) {
 }
 
 func (g runtimeGauges) updateUptime(bt *binTextStats) {
-	if uptime, err := host.Uptime(); err != nil {
+	if g.proc == nil {
+		// gopsutil.process is not registered, skip gauge
+		return
+	}
+	if ct, err := g.proc.CreateTime(); err != nil {
 		// could not get the uptime
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting uptime: %s", err.Error())
 		})
 	} else {
-		ms := int64(uptime) * 1000
+		ms := time.Now().UnixMilli() - ct
 		bt.mc.AddLong(g.uptime, ms)
 		bt.stats = append(bt.stats, makeTextStat(&g.uptime, ms))
 	}
@@ -290,7 +317,8 @@ func (g runtimeGauges) updateMem(bt *binTextStats) {
 }
 
 type gaugeOS struct {
-	logger        logger.Logger
+	logger        logger.LogAdaptor
+	proc          *process.Process
 	totalMem      metricDescriptor
 	freeMem       metricDescriptor
 	committedVM   metricDescriptor
@@ -302,7 +330,7 @@ type gaugeOS struct {
 	openDecrCount metricDescriptor
 }
 
-func newGaugeOS(lg logger.Logger) gaugeOS {
+func newGaugeOS(lg logger.LogAdaptor, p *process.Process) gaugeOS {
 	return gaugeOS{
 		logger:        lg,
 		totalMem:      makeBytesMD("os", "totalPhysicalMemorySize"),
@@ -314,6 +342,7 @@ func newGaugeOS(lg logger.Logger) gaugeOS {
 		loadAvg:       makePercentMD("os", "systemLoadAverage"),
 		maxDecrCount:  makeCountMD("os", "maxFileDescriptorCount"),
 		openDecrCount: makeCountMD("os", "openFileDescriptorCount"),
+		proc:          p,
 	}
 }
 
@@ -381,28 +410,69 @@ func (g gaugeOS) updateLoad(bt *binTextStats) {
 }
 
 func (g gaugeOS) updateDescr(bt *binTextStats) {
-	if proc, err := process.NewProcess(int32(os.Getpid())); err != nil {
-		g.logger.Debug(func() string {
-			return fmt.Sprintf("ERROR getting process info: %s", err.Error())
-		})
-	} else if rls, err := proc.Rlimit(); err != nil {
+	if g.proc == nil {
+		// gopsutil.process is not registered, skip gauge
+		return
+	}
+	rls, err := g.proc.Rlimit()
+	if err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting RLIMIT: %s", err.Error())
 		})
-	} else if nfd, err := proc.NumFDs(); err != nil {
+		return
+	}
+	nfd, err := g.proc.NumFDs()
+	if err != nil {
 		g.logger.Debug(func() string {
 			return fmt.Sprintf("ERROR getting open file descriptors: %s", err.Error())
 		})
-	} else {
-		for _, rl := range rls {
-			if rl.Resource == process.RLIMIT_NOFILE {
-				bt.mc.AddLong(g.maxDecrCount, int64(rl.Soft))
-				bt.stats = append(bt.stats, makeTextStat(&g.maxDecrCount, rl.Soft))
-				break
-			}
+		return
+	}
+	for _, rl := range rls {
+		if rl.Resource == process.RLIMIT_NOFILE {
+			bt.mc.AddLong(g.maxDecrCount, int64(rl.Soft))
+			bt.stats = append(bt.stats, makeTextStat(&g.maxDecrCount, rl.Soft))
+			break
 		}
-		bt.mc.AddLong(g.openDecrCount, int64(nfd))
-		bt.stats = append(bt.stats, makeTextStat(&g.openDecrCount, nfd))
+	}
+	bt.mc.AddLong(g.openDecrCount, int64(nfd))
+	bt.stats = append(bt.stats, makeTextStat(&g.openDecrCount, nfd))
+}
+
+type gaugeNearCache struct {
+	f           func() func(service string) NearCacheStatsGetter
+	serviceName string
+}
+
+func newGaugeNearCache(svc string, f func() func(service string) NearCacheStatsGetter) gaugeNearCache {
+	return gaugeNearCache{
+		serviceName: svc,
+		f:           f,
+	}
+}
+
+func (g gaugeNearCache) Update(btStats *binTextStats) {
+	ncms := g.f()
+	if ncms == nil {
+		return
+	}
+	ncm := ncms(g.serviceName)
+	if ncm == nil {
+		return
+	}
+	nameStats := ncm.GetNearCacheStats()
+	if nameStats == nil {
+		return
+	}
+	for _, p := range nameStats {
+		name := p.Key.(string)
+		st := p.Value.(nearcache.Stats)
+		for mn, f := range ncMSMetrics {
+			btStats.mc.AddLong(makeNearCacheMSMD(name, mn), f(st))
+		}
+		for mn, f := range ncCountMetrics {
+			btStats.mc.AddLong(makeNearCacheCountMD(name, mn), f(st))
+		}
 	}
 }
 
@@ -442,6 +512,43 @@ func makePercentMD(prefix, metric string) metricDescriptor {
 	}
 }
 
+func makeNearCacheMSMD(ncName, metric string) metricDescriptor {
+	return makeNearCacheMD(ncName, metric, metricUnitMS)
+}
+
+func makeNearCacheCountMD(ncName, metric string) metricDescriptor {
+	return makeNearCacheMD(ncName, metric, metricUnitCount)
+}
+
+func makeNearCacheMD(ncName, metric string, unit metricUnit) metricDescriptor {
+	return metricDescriptor{
+		Prefix:             nearCacheDescriptorPrefix,
+		Metric:             metric,
+		Discriminator:      nearCacheDescriptorDiscriminator,
+		DiscriminatorValue: ncName,
+		HasUnit:            true,
+		Unit:               unit,
+	}
+}
+
 func makeTextStat(md *metricDescriptor, value interface{}) stat {
 	return stat{k: md.String(), v: fmt.Sprintf("%v", value)}
+}
+
+var ncMSMetrics = map[string]func(s nearcache.Stats) int64{
+	"creationTime":            func(s nearcache.Stats) int64 { return s.CreationTime.UnixMilli() },
+	"lastPersistenceTime":     func(s nearcache.Stats) int64 { return s.LastPersistenceTime.UnixMilli() },
+	"lastPersistenceDuration": func(s nearcache.Stats) int64 { return s.LastPersistenceDuration.Milliseconds() },
+}
+var ncCountMetrics = map[string]func(s nearcache.Stats) int64{
+	"evictions":                   func(s nearcache.Stats) int64 { return s.Evictions },
+	"hits":                        func(s nearcache.Stats) int64 { return s.Hits },
+	"lastPersistenceKeyCount":     func(s nearcache.Stats) int64 { return s.LastPersistenceKeyCount },
+	"lastPersistenceWrittenBytes": func(s nearcache.Stats) int64 { return s.LastPersistenceWrittenBytes },
+	"misses":                      func(s nearcache.Stats) int64 { return s.Misses },
+	"ownedEntryCount":             func(s nearcache.Stats) int64 { return s.OwnedEntryCount },
+	"expirations":                 func(s nearcache.Stats) int64 { return s.Expirations },
+	"invalidations":               func(s nearcache.Stats) int64 { return s.Invalidations },
+	"invalidationRequests":        func(s nearcache.Stats) int64 { return s.InvalidationRequests },
+	"ownedEntryMemoryCost":        func(s nearcache.Stats) int64 { return s.OwnedEntryMemoryCost },
 }

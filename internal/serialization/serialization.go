@@ -18,6 +18,7 @@ package serialization
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 	"time"
 
@@ -61,30 +62,30 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
-func (s *Service) ToData(object interface{}) (r *Data, err error) {
+func (s *Service) ToData(object interface{}) (r Data, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
 		}
 	}()
-	if serData, ok := object.(*Data); ok {
+	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
 	// initial size is kept minimal (head_data_offset + long_size), since it'll grow on demand
 	dataOutput := NewPositionalObjectDataOutput(16, s, !s.SerializationConfig.LittleEndian)
 	serializer, err := s.FindSerializerFor(object)
 	if err != nil {
-		return nil, err
+		return Data{}, err
 	}
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(serializer.ID())
 	serializer.Write(dataOutput, object)
-	return &Data{dataOutput.buffer[:dataOutput.position]}, err
+	return dataOutput.buffer[:dataOutput.position], err
 }
 
 // ToObject deserializes the given Data to an object.
 // nil is returned if called with nil.
-func (s *Service) ToObject(data *Data) (r interface{}, err error) {
+func (s *Service) ToObject(data Data) (r interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = makeError(rec)
@@ -102,7 +103,7 @@ func (s *Service) ToObject(data *Data) (r interface{}, err error) {
 			return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
 		}
 	}
-	dataInput := NewObjectDataInput(data.Buffer(), DataOffset, s, !s.SerializationConfig.LittleEndian)
+	dataInput := NewObjectDataInput(data, DataOffset, s, !s.SerializationConfig.LittleEndian)
 	return serializer.Read(dataInput), nil
 }
 
@@ -127,13 +128,13 @@ func (s *Service) ReadObject(input pubserialization.DataInput) interface{} {
 }
 
 func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serializer, error) {
-	if serializer := s.LookUpDefaultSerializer(obj); serializer != nil {
+	if serializer := s.LookUpDefaultSerializer(obj); serializer != (pubserialization.Serializer)(nil) {
 		return serializer, nil
 	}
-	if serializer := s.lookUpCustomSerializer(obj); serializer != nil {
+	if serializer := s.lookUpCustomSerializer(obj); serializer != (pubserialization.Serializer)(nil) {
 		return serializer, nil
 	}
-	if serializer := s.lookUpGlobalSerializer(); serializer != nil {
+	if serializer := s.lookUpGlobalSerializer(); serializer != (pubserialization.Serializer)(nil) {
 		return serializer, nil
 	}
 	// keeping the error in the result for future behavior change
@@ -142,7 +143,7 @@ func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serialize
 
 func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Serializer {
 	serializer := s.lookupBuiltinSerializer(obj)
-	if serializer != nil {
+	if serializer != (pubserialization.Serializer)(nil) {
 		return serializer
 	}
 	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
@@ -202,10 +203,28 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 		return uuidSerializer
 	case TypeJavaDate:
 		return javaDateSerializer
+	case TypeJavaBigInteger:
+		return javaBigIntegerSerializer
+	case TypeJavaDecimal:
+		return javaDecimalSerializer
 	case TypeJSONSerialization:
 		return jsonSerializer
+	case TypeJavaArray:
+		return javaArraySerializer
 	case TypeJavaArrayList:
 		return javaArrayListSerializer
+	case TypeJavaLinkedList:
+		return javaLinkedListSerializer
+	case TypeJavaLocalDate:
+		return javaLocalDateSerializer
+	case TypeJavaLocalTime:
+		return javaLocalTimeSerializer
+	case TypeJavaLocalDateTime:
+		return javaLocalDateTimeSerializer
+	case TypeJavaOffsetDateTime:
+		return javaOffsetDateTimeSerializer
+	case TypeJavaClass:
+		return javaClassSerializer
 	case TypeGobSerialization:
 		return gobSerializer
 	}
@@ -295,6 +314,8 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return uint16Serializer
 	case int:
 		return intSerializer
+	case int8:
+		return int8Serializer
 	case int16:
 		return int16Serializer
 	case int32:
@@ -325,10 +346,24 @@ func (s *Service) lookupBuiltinSerializer(obj interface{}) pubserialization.Seri
 		return float32ArraySerializer
 	case []float64:
 		return float64ArraySerializer
+	case []interface{}:
+		return javaArrayListSerializer
 	case types.UUID:
 		return uuidSerializer
+	case types.LocalDate:
+		return javaLocalDateSerializer
+	case types.LocalTime:
+		return javaLocalTimeSerializer
+	case types.LocalDateTime:
+		return javaLocalDateTimeSerializer
+	case types.OffsetDateTime:
+		return javaOffsetDateTimeSerializer
 	case time.Time:
 		return javaDateSerializer
+	case *big.Int:
+		return javaBigIntegerSerializer
+	case types.Decimal:
+		return javaDecimalSerializer
 	case pubserialization.JSON:
 		return jsonSerializer
 	}
@@ -350,6 +385,7 @@ var nilSerializer = &NilSerializer{}
 var boolSerializer = &BoolSerializer{}
 var stringSerializer = &StringSerializer{}
 var uint8Serializer = &ByteSerializer{}
+var int8Serializer = &Int8Serializer{}
 var uint16Serializer = &UInt16Serializer{}
 var intSerializer = &IntSerializer{}
 var int16Serializer = &Int16Serializer{}
@@ -369,5 +405,14 @@ var float64ArraySerializer = &Float64ArraySerializer{}
 var uuidSerializer = &UUIDSerializer{}
 var jsonSerializer = &JSONValueSerializer{}
 var javaDateSerializer = &JavaDateSerializer{}
+var javaBigIntegerSerializer = &JavaBigIntegerSerializer{}
+var javaDecimalSerializer = &JavaDecimalSerializer{}
+var javaClassSerializer = &JavaClassSerializer{}
+var javaArraySerializer = &JavaArraySerializer{}
 var javaArrayListSerializer = &JavaArrayListSerializer{}
+var javaLinkedListSerializer = &JavaLinkedListSerializer{}
+var javaLocalDateSerializer = &JavaLocalDateSerializer{}
+var javaLocalTimeSerializer = &JavaLocalTimeSerializer{}
+var javaLocalDateTimeSerializer = &JavaLocalDateTimeSerializer{}
+var javaOffsetDateTimeSerializer = &JavaOffsetDateTimeSerializer{}
 var gobSerializer = &GobSerializer{}

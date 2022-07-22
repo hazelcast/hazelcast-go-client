@@ -75,7 +75,7 @@ func (c ConnectionStrategyConfig) Clone() ConnectionStrategyConfig {
 
 func (c *ConnectionStrategyConfig) Validate() error {
 	// we set the default to 0 in order to be able to override it in failover and cluster configs
-	if err := check.NonNegativeDuration(&c.Timeout, 0, "invalid timeout"); err != nil {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&c.Timeout), 0, "invalid timeout"); err != nil {
 		return err
 	}
 	return c.Retry.Validate()
@@ -112,10 +112,10 @@ func (c ConnectionRetryConfig) Clone() ConnectionRetryConfig {
 }
 
 func (c *ConnectionRetryConfig) Validate() error {
-	if err := check.NonNegativeDuration(&c.InitialBackoff, 1*time.Second, "invalid initial backoff"); err != nil {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&c.InitialBackoff), 1*time.Second, "invalid initial backoff"); err != nil {
 		return err
 	}
-	if err := check.NonNegativeDuration(&c.MaxBackoff, 30*time.Second, "invalid max backoff"); err != nil {
+	if err := check.EnsureNonNegativeDuration((*time.Duration)(&c.MaxBackoff), 30*time.Second, "invalid max backoff"); err != nil {
 		return err
 	}
 	if c.Multiplier == 0 {

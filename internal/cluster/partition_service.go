@@ -24,7 +24,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -33,20 +33,20 @@ import (
 
 type PartitionServiceCreationBundle struct {
 	EventDispatcher *event.DispatchService
-	Logger          ilogger.Logger
+	Logger          logger.LogAdaptor
 }
 
 func (b PartitionServiceCreationBundle) Check() {
 	if b.EventDispatcher == nil {
 		panic("EventDispatcher is nil")
 	}
-	if b.Logger == nil {
-		panic("Logger is nil")
+	if b.Logger.Logger == nil {
+		panic("LogAdaptor is nil")
 	}
 }
 
 type PartitionService struct {
-	logger          ilogger.Logger
+	logger          logger.LogAdaptor
 	eventDispatcher *event.DispatchService
 	partitionTable  partitionTable
 	partitionCount  int32
@@ -69,7 +69,7 @@ func (s *PartitionService) PartitionCount() int32 {
 	return atomic.LoadInt32(&s.partitionCount)
 }
 
-func (s *PartitionService) GetPartitionID(keyData *iserialization.Data) (int32, error) {
+func (s *PartitionService) GetPartitionID(keyData iserialization.Data) (int32, error) {
 	if count := s.PartitionCount(); count == 0 {
 		// Partition count can not be zero for the sync mode.
 		// On the sync mode, we are waiting for the first connection to be established.
@@ -118,12 +118,10 @@ func (p *partitionTable) Update(pairs []proto.Pair, version int32, connectionID 
 	}
 	newPartitions := map[int32]types.UUID{}
 	for _, pair := range pairs {
-		uuids := pair.Key().([]types.UUID)
-		ids := pair.Value().([]int32)
-		for _, uuid := range uuids {
-			for _, id := range ids {
-				newPartitions[id] = uuid
-			}
+		uuid := pair.Key.(types.UUID)
+		ids := pair.Value.([]int32)
+		for _, id := range ids {
+			newPartitions[id] = uuid
 		}
 	}
 	if reflect.DeepEqual(p.partitions, newPartitions) {

@@ -1,10 +1,9 @@
 .PHONY: benchmark build check doc test test-all test-all-race
 
 PORT ?= 5050
-TEST_FLAGS ?=
 MEMBER_COUNT ?= 3
 COVERAGE_OUT ?= coverage.out
-TEST_FLAGS := -v -count 1 -timeout 20m -tags=hazelcastinternal
+TEST_FLAGS ?= -v -count 1 -p 1 -timeout 50m -tags=hazelcastinternal,hazelcastinternaltest
 PACKAGES = $(go list ./... | grep -v org-website)
 
 build:
@@ -13,13 +12,13 @@ build:
 test: test-all
 
 test-all:
-	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) $(PACKAGES)
+	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) $(PACKAGES) ./...
 
-test-all-race:
+test-race:
 	env MEMBER_COUNT=$(MEMBER_COUNT) go test $(TEST_FLAGS) -race $(PACKAGES)
 
 test-cover:
-	bash ./coverage.sh
+	env TEST_FLAGS="$(TEST_FLAGS)" bash ./coverage.sh
 
 view-cover:
 	go tool cover -func $(COVERAGE_OUT) | grep total:

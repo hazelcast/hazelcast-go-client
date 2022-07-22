@@ -20,9 +20,8 @@ import (
 	"testing"
 	"time"
 
-	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
-
 	"github.com/hazelcast/hazelcast-go-client"
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -40,12 +39,12 @@ func (h Handler) Invoke(invocation invocation.Invocation) (groupID int64, err er
 }
 
 func TestNewService(t *testing.T) {
-	lg := logger.New()
+	lg := logger.LogAdaptor{Logger: logger.New()}
 	ed := event.NewDispatchService(lg)
 	okCh := make(chan struct{}, 1)
 	handler := Handler{okCh: okCh}
-	invService := invocation.NewService(handler, ed, lg)
 	config := hazelcast.Config{}
+	invService := invocation.NewService(handler, ed, lg)
 	invFac := cluster.NewConnectionInvocationFactory(&config.Cluster)
 	srv := stats.NewService(invService, invFac, ed, lg, 100*time.Millisecond, "hz1")
 	srv.Start()
