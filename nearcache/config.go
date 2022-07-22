@@ -45,6 +45,8 @@ type Config struct {
 	// The value 0 means math.MaxInt32
 	// The default is 0.
 	TimeToLiveSeconds int
+	// MaxIdleSeconds is the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
+	// Entries that are not read (touched) more than MaxIdleSeconds value will get removed from the Near Cache.
 	// Accepts any integer between {@code 0} and {@link Integer#MAX_VALUE}.
 	// Must be non-negative.
 	// The value 0 means math.MaxInt32

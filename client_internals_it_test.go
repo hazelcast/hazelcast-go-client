@@ -168,7 +168,7 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 }
 
 func TestClusterID(t *testing.T) {
-	t.Skipf("flaky, see: https://github.com/hazelcast/hazelcast-go-client/issues/844")
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-go-client/issues/844")
 	it.SkipIf(t, "oss")
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
@@ -234,7 +234,7 @@ func TestClientInternal_ClusterID(t *testing.T) {
 }
 
 func TestClientInternal_OrderedMembers(t *testing.T) {
-	t.Skipf("flaky test: https://github.com/hazelcast/hazelcast-go-client/issues/789")
+	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
 	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55721, 1)
 	defer tc.Shutdown()

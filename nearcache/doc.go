@@ -14,40 +14,9 @@
  * limitations under the License.
  */
 
+/*
+Package nearcache contains the configuration and data types for the Near Cache.
+
+Checkout the Map documentation for an overview of the Near Cache.
+*/
 package nearcache
-
-import "math"
-
-const (
-	timeUnset = -1
-)
-
-var EpochTimeMillis = zeroOutMs(1514764800000)
-
-func StripBaseTime(ms int64) int32 {
-	if ms == math.MaxInt64 {
-		return math.MaxInt32
-	}
-	if ms <= 0 {
-		return timeUnset
-	}
-	toSeconds := (ms - EpochTimeMillis) / 1000
-	if toSeconds >= math.MaxInt32 {
-		return math.MaxInt32
-	}
-	return int32(toSeconds)
-}
-
-func RecomputeWithBaseTime(seconds int32) int64 {
-	if int64(seconds) == timeUnset {
-		return 0
-	}
-	if seconds == math.MaxInt32 {
-		return math.MaxInt64
-	}
-	return EpochTimeMillis + int64(seconds)*1000
-}
-
-func zeroOutMs(ms int64) int64 {
-	return (ms / 1000) * 1000
-}

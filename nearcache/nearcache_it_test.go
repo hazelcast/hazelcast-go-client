@@ -25,6 +25,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -65,7 +67,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 	ctx := context.Background()
 	ncc := nearcache.Config{Name: mapName}
 	ncc.SetInvalidateOnChange(true)
-	cfg := cls.DefaultConfig()
+	cfg := cls.DefaultConfigWithNoSSL()
 	cfg.AddNearCache(ncc)
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
 	defer client.Shutdown(ctx)
@@ -368,24 +370,36 @@ func TestNearCacheGet(t *testing.T) {
 
 func TestNearCacheInvalidateOnChange(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidateOnChange
-	tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatObject, true)
-	tcx.Tester(func(tcx it.MapTestContext) {
-		m := tcx.M
-		t := tcx.T
-		ctx := context.Background()
-		const size = 118
-		populateServerMapWithString(ctx, tcx, size)
-		// populate Near Cache
-		populateNearCacheWithString(tcx, size)
-		oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
-		require.Equal(t, int64(size), oec)
-		// invalidate Near Cache from server side
-		populateServerMapWithString(ctx, tcx, size)
-		it.Eventually(t, func() bool {
-			oec := m.LocalMapStats().NearCacheStats.OwnedEntryCount
-			t.Logf("OEC: %d", oec)
-			return oec == 0
-		})
+	tcx := it.MapTestContext{T: t}
+	const port = 54001
+	clusterName := t.Name()
+	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
+	tcx.Cluster = it.StartNewClusterWithConfig(1, clsCfg, port)
+	defer tcx.Cluster.Shutdown()
+	ctx := context.Background()
+	const size = 118
+	tcx.MapName = it.NewUniqueObjectName("map")
+	populateServerMapWithString(ctx, tcx, size)
+	ncc := nearcache.Config{
+		Name: tcx.MapName,
+	}
+	ncc.SetInvalidateOnChange(true)
+	cfg := tcx.Cluster.DefaultConfigWithNoSSL()
+	cfg.AddNearCache(ncc)
+	tcx.Config = &cfg
+	tcx.Client = it.MustClient(hz.StartNewClientWithConfig(ctx, *tcx.Config))
+	defer tcx.Client.Shutdown(ctx)
+	tcx.M = it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
+	// populate Near Cache
+	populateNearCacheWithString(tcx, size)
+	oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
+	require.Equal(t, int64(size), oec)
+	// invalidate Near Cache from server side
+	populateServerMapWithString(ctx, tcx, size)
+	it.Eventually(t, func() bool {
+		oec := tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount
+		t.Logf("OEC: %d", oec)
+		return oec == 0
 	})
 }
 
@@ -585,7 +599,7 @@ func TestAfterDeleteNearCacheIsInvalidated(t *testing.T) {
 
 func TestAfterPutNearCacheIsInvalidated(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterPutAsyncNearCacheIsInvalidated
-	it.SkipIf(t, "hz > 4.1.9, hz < 4.3")
+	skip.If(t, "hz ~ 4.2")
 	testCases := []mapTestCase{
 		{
 			name: "Put",
@@ -925,7 +939,7 @@ func TestMemberLoadAllInvalidatesClientNearCache(t *testing.T) {
         	map.loadAll(true);
 		`, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, f)
+	memberInvalidatesClientNearCache(t, 51001, f)
 }
 
 func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
@@ -940,11 +954,12 @@ func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
         	map.putAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, f)
+	memberInvalidatesClientNearCache(t, 51011, f)
 }
 
 func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
 	// see: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberSetAll_invalidates_clientNearCache
+	it.SkipIf(t, "hz > 4, hz < 4.1")
 	f := func(tcx it.MapTestContext, size int32) string {
 		return fmt.Sprintf(`
 			var items = new java.util.HashMap(%[1]d);
@@ -955,10 +970,117 @@ func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
         	map.setAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, f)
+	memberInvalidatesClientNearCache(t, 51021, f)
 }
 
-func memberInvalidatesClientNearCache(t *testing.T, makeScript func(tcx it.MapTestContext, size int32) string) {
+func TestForceRepairingTaskRun(t *testing.T) {
+	// TODO: mark this test slow.
+	// this is a test for covering async init of RepairingTask.
+	clusterName := t.Name()
+	mapName := it.NewUniqueObjectName("map")
+	const port = 53001
+	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
+	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
+	const mapSize = 1000
+	// populate server side map
+	for i := 0; i < mapSize; i++ {
+		v := strconv.Itoa(i)
+		it.MapSetOnServer(cls.ClusterID, mapName, v, v)
+	}
+	// add client with Near Cache
+	ctx := context.Background()
+	cfg := cls.DefaultConfigWithNoSSL()
+	cfg.NearCacheInvalidation.SetReconciliationIntervalSeconds(30)
+	cfg.NearCacheInvalidation.SetMaxToleratedMissCount(1)
+	ncc := nearcache.Config{
+		Name: mapName,
+	}
+	ncc.SetInvalidateOnChange(true)
+	cfg.AddNearCache(ncc)
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	defer client.Shutdown(ctx)
+	ic := hz.NewClientInternal(client)
+	mgr := ic.NewNearCacheManager(1, 1)
+	defer mgr.Stop()
+	m := it.MustValue(client.GetMap(ctx, mapName)).(*hz.Map)
+	nca := hz.MakeNearCacheAdapterFromMap(m).(it.NearCacheAdapter)
+	for i := int32(0); i < mapSize; i++ {
+		if _, err := m.Get(ctx, i); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cls.Shutdown()
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		time.Sleep(2 * time.Second)
+		cls = it.StartNewClusterWithConfig(1, clsCfg, port)
+		t.Logf("starting the new cluster: %p", &cls)
+		wg.Done()
+	}()
+	defer func() {
+		t.Logf("stopping the new cluster: %p", &cls)
+		cls.Shutdown()
+	}()
+	_, err := mgr.RepairingTask().RegisterAndGetHandler(ctx, mapName, nca.NearCache())
+	if err != nil {
+		panic(err)
+	}
+	time.Sleep(2 * time.Second)
+	wg.Wait()
+	// populate server side map
+	for i := 0; i < mapSize; i++ {
+		v := strconv.Itoa(i)
+		it.MapSetOnServer(cls.ClusterID, mapName, v, v)
+	}
+	for i := int32(0); i < mapSize; i++ {
+		if _, err := m.Get(ctx, i); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Logf("waiting for the repair task do its job")
+	time.Sleep(35 * time.Second)
+	if err := m.Destroy(ctx); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRepairingTaskRun(t *testing.T) {
+	// this is a test for covering sync init of RepairingTask.
+	clusterName := t.Name()
+	mapName := it.NewUniqueObjectName("map")
+	const port = 53011
+	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
+	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
+	defer cls.Shutdown()
+	const mapSize = 1000
+	// populate server side map
+	for i := 0; i < mapSize; i++ {
+		v := strconv.Itoa(i)
+		it.MapSetOnServer(cls.ClusterID, mapName, v, v)
+	}
+	// add client with Near Cache
+	ctx := context.Background()
+	cfg := cls.DefaultConfigWithNoSSL()
+	ncc := nearcache.Config{
+		Name: mapName,
+	}
+	cfg.AddNearCache(ncc)
+	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	defer client.Shutdown(ctx)
+	ic := hz.NewClientInternal(client)
+	mgr := ic.NewNearCacheManager(1, 1)
+	defer mgr.Stop()
+	m := it.MustValue(client.GetMap(ctx, mapName)).(*hz.Map)
+	for i := int32(0); i < mapSize; i++ {
+		if _, err := m.Get(ctx, i); err != nil {
+			t.Fatal(err)
+		}
+	}
+	time.Sleep(2 * time.Second)
+}
+
+func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tcx it.MapTestContext, size int32) string) {
 	// ported from: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testMemberLoadAll_invalidates_clientNearCache
 	tcx := it.MapTestContext{
 		T:      t,
@@ -967,7 +1089,6 @@ func memberInvalidatesClientNearCache(t *testing.T, makeScript func(tcx it.MapTe
 	}
 	clusterName := t.Name()
 	tcx.MapName = it.NewUniqueObjectName("map")
-	const port = 51001
 	clsCfg := invalidationXMLConfig(clusterName, tcx.MapName, port)
 	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
 	defer cls.Shutdown()
@@ -978,10 +1099,11 @@ func memberInvalidatesClientNearCache(t *testing.T, makeScript func(tcx it.MapTe
 		InMemoryFormat: nearcache.InMemoryFormatBinary,
 	}
 	ncc.SetInvalidateOnChange(true)
-	cfg := cls.DefaultConfig()
+	cfg := cls.DefaultConfigWithNoSSL()
 	cfg.AddNearCache(ncc)
 	tcx.Config = &cfg
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, cfg))
+	defer client.Shutdown(ctx)
 	tcx.Client = client
 	m := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
 	tcx.M = m
