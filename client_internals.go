@@ -204,7 +204,3 @@ const (
 	BackupEventFlag                      = proto.BackupEventFlag
 	SizeOfFrameLengthAndFlags            = proto.SizeOfFrameLengthAndFlags
 )
-
-func (ci *ClientInternal) PartitionService() *cluster.PartitionService {
-	return ci.client.partitionService
-}

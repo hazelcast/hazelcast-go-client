@@ -147,7 +147,6 @@ func TestLiteMembersPartitionService(t *testing.T) {
 	assert.Nil(t, err)
 	_, err = tmap.Put(ctx, "key", "value")
 	assert.True(t, errors.Is(err, hzerrors.ErrNoDataMember))
-	assert.True(t, errors.Is(err, hzerrors.ErrNoDataMember))
 }
 
 func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clientHost string, port int, f func(context.Context, *hz.Map, *int64)) {

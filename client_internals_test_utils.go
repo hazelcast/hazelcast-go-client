@@ -42,6 +42,10 @@ func (ci *ClientInternal) InvocationService() *invocation.Service {
 	return ci.client.ic.InvocationService
 }
 
+func (ci *ClientInternal) PartitionService() *cluster.PartitionService {
+	return ci.client.ic.PartitionService
+}
+
 func (ci *ClientInternal) InvocationHandler() invocation.Handler {
 	return ci.client.ic.InvocationHandler
 }
