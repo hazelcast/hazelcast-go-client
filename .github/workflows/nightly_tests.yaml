@@ -1,0 +1,38 @@
+name: Go nightly build
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
+jobs:
+  test_client:
+    runs-on: ${{ matrix.os }}
+    name: Run tests of master on ${{ matrix.os }} with Go ${{ matrix.go_version }}
+    strategy:
+        matrix:
+            os: [ ubuntu-latest ]
+            go_version: [ 1.17, 1.18 ]
+        fail-fast: false
+    steps:     
+    
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+          
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go_version }}
+          
+      - name: Checkout code
+        uses: actions/checkout@v2
+          
+      - name: Test
+        env:
+          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+          HZ_VERSION: 5.1
+          ENABLE_SSL: 1
+          MEMBER_COUNT: 3
+        run: |
+          ./rc.sh start
+          go mod tidy
+          make test-cover

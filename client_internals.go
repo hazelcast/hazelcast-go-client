@@ -2,7 +2,7 @@
 // +build hazelcastinternal
 
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,31 +20,187 @@
 package hazelcast
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/event"
-	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
+	"context"
+	"fmt"
+	"time"
+
+	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+/*
+WARNING!
+The constants, types, methods and functions defined under hazelcastinternal are considered internal API.
+No backward-compatibility guarantees apply for this code.
+*/
+
+type Data = serialization.Data
+type ClientMessage = proto.ClientMessage
+type ClientMessageHandler = proto.ClientMessageHandler
+type Frame = proto.Frame
+type ForwardFrameIterator = proto.ForwardFrameIterator
+type Pair = proto.Pair
+
+var (
+	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
+	BeginFrame = NewFrameWith([]byte{}, BeginDataStructureFlag)
+	EndFrame   = NewFrameWith([]byte{}, EndDataStructureFlag)
+)
+
+func NewClientMessageForEncode() *ClientMessage {
+	return proto.NewClientMessageForEncode()
+}
+
+func NewFrame(content []byte) Frame {
+	return proto.NewFrame(content)
+}
+
+func NewFrameWith(content []byte, flags uint16) Frame {
+	return proto.NewFrameWith(content, flags)
+}
+
+func NewPair(key, value interface{}) Pair {
+	return Pair{Key: key, Value: value}
+}
+
+type InvokeOptions struct {
+	// Handler is the event handler for an invocation.
+	Handler ClientMessageHandler
+}
+
+// ClientInternal is an accessor for a Client.
 type ClientInternal struct {
 	client *Client
+	proxy  *proxy
 }
 
+// NewClientInternal creates the client internal accessor with the given client.
 func NewClientInternal(c *Client) *ClientInternal {
-	return &ClientInternal{client: c}
+	return &ClientInternal{
+		client: c,
+		proxy:  c.proxyManager.invocationProxy,
+	}
 }
 
-func (ci *ClientInternal) ConnectionManager() *cluster.ConnectionManager {
-	return ci.client.ic.ConnectionManager
+// Client returns the wrapped Client instance.
+func (ci *ClientInternal) Client() *Client {
+	return ci.client
 }
 
-func (ci *ClientInternal) DispatchService() *event.DispatchService {
-	return ci.client.ic.EventDispatcher
+// ClusterID returns the cluster ID.
+// It returns zero value of types.UUID{} if the cluster ID does not exist.
+func (ci *ClientInternal) ClusterID() types.UUID {
+	return ci.client.ic.ConnectionManager.ClusterID()
 }
 
-func (ci *ClientInternal) InvocationService() *invocation.Service {
-	return ci.client.ic.InvocationService
+// OrderedMembers returns the most recent member list of the cluster.
+func (ci *ClientInternal) OrderedMembers() []pubcluster.MemberInfo {
+	return ci.client.ic.ClusterService.OrderedMembers()
 }
 
-func (ci *ClientInternal) InvocationHandler() invocation.Handler {
-	return ci.client.ic.InvocationHandler
+// ConnectedToMember returns true if there is a connection to the given member.
+func (ci *ClientInternal) ConnectedToMember(uuid types.UUID) bool {
+	return ci.client.ic.ConnectionManager.GetConnectionForUUID(uuid) != nil
 }
+
+// EncodeData serializes the given value and returns a Data value.
+func (ci *ClientInternal) EncodeData(obj interface{}) (Data, error) {
+	return ci.proxy.convertToData(obj)
+}
+
+// DecodeData deserializes the given Data and returns a value.
+func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
+	return ci.proxy.convertToObject(data)
+}
+
+// InvokeOnRandomTarget sends the given request to one of the members.
+// If opts.Handler is given, it is used as an event listener handler.
+func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *ClientMessage, opts *InvokeOptions) (*ClientMessage, error) {
+	var handler proto.ClientMessageHandler
+	if opts != nil {
+		handler = opts.Handler
+	}
+	return ci.proxy.invokeOnRandomTarget(ctx, request, handler)
+}
+
+// InvokeOnPartition sends the given request to the member which has the given partition ID.
+func (ci *ClientInternal) InvokeOnPartition(ctx context.Context, request *ClientMessage, partitionID int32, opts *InvokeOptions) (*ClientMessage, error) {
+	return ci.proxy.invokeOnPartition(ctx, request, partitionID)
+}
+
+// InvokeOnKey sends the given request to the member which corresponds to the given key.
+func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessage, keyData Data, opts *InvokeOptions) (*ClientMessage, error) {
+	return ci.proxy.invokeOnKey(ctx, request, keyData)
+}
+
+// InvokeOnMember sends the request to the given member.
+// If opts.Handler is given, it is used as an event listener handler.
+func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMessage, uuid types.UUID, opts *InvokeOptions) (*ClientMessage, error) {
+	var handler proto.ClientMessageHandler
+	if opts != nil {
+		handler = opts.Handler
+	}
+	mem := ci.client.ic.ClusterService.GetMemberByUUID(uuid)
+	if mem == nil {
+		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf("member not found: %s", uuid.String()), nil)
+	}
+	now := time.Now()
+	return ci.proxy.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			request = request.Copy()
+		}
+		inv := ci.proxy.invocationFactory.NewMemberBoundInvocation(request, mem, now)
+		inv.SetEventHandler(handler)
+		if err := ci.proxy.sendInvocation(ctx, inv); err != nil {
+			return nil, err
+		}
+		return inv.GetWithContext(ctx)
+	})
+}
+
+const (
+	TypeFieldOffset                      = proto.TypeFieldOffset
+	MessageTypeOffset                    = proto.MessageTypeOffset
+	ByteSizeInBytes                      = proto.ByteSizeInBytes
+	BooleanSizeInBytes                   = proto.BooleanSizeInBytes
+	ShortSizeInBytes                     = proto.ShortSizeInBytes
+	CharSizeInBytes                      = proto.CharSizeInBytes
+	IntSizeInBytes                       = proto.IntSizeInBytes
+	FloatSizeInBytes                     = proto.FloatSizeInBytes
+	LongSizeInBytes                      = proto.LongSizeInBytes
+	DoubleSizeInBytes                    = proto.DoubleSizeInBytes
+	UUIDSizeInBytes                      = proto.UUIDSizeInBytes
+	UuidSizeInBytes                      = proto.UuidSizeInBytes // Deprecated
+	EntryListUUIDLongEntrySizeInBytes    = proto.EntryListUUIDLongEntrySizeInBytes
+	EntryListIntegerLongSizeInBytes      = proto.EntryListIntegerLongSizeInBytes
+	EntryListIntegerUUIDEntrySizeInBytes = proto.EntryListIntegerUUIDEntrySizeInBytes
+	LocalDateSizeInBytes                 = proto.LocalDateSizeInBytes
+	LocalTimeSizeInBytes                 = proto.LocalTimeSizeInBytes
+	LocalDateTimeSizeInBytes             = proto.LocalDateTimeSizeInBytes
+	OffsetDateTimeSizeInBytes            = proto.OffsetDateTimeSizeInBytes
+	CorrelationIDFieldOffset             = proto.CorrelationIDFieldOffset
+	CorrelationIDOffset                  = proto.CorrelationIDOffset
+	FragmentationIDOffset                = proto.FragmentationIDOffset
+	PartitionIDOffset                    = proto.PartitionIDOffset
+	RequestThreadIdOffset                = proto.RequestThreadIDOffset
+	RequestTtlOffset                     = proto.RequestTTLOffset
+	RequestIncludeValueOffset            = proto.RequestIncludeValueOffset
+	RequestListenerFlagsOffset           = proto.RequestListenerFlagsOffset
+	RequestLocalOnlyOffset               = proto.RequestLocalOnlyOffset
+	RequestReferenceIdOffset             = proto.RequestReferenceIdOffset
+	ResponseBackupAcksOffset             = proto.ResponseBackupAcksOffset
+	UnfragmentedMessage                  = proto.UnfragmentedMessage
+	DefaultFlags                         = proto.DefaultFlags
+	BeginFragmentFlag                    = proto.BeginFragmentFlag
+	EndFragmentFlag                      = proto.EndFragmentFlag
+	IsFinalFlag                          = proto.IsFinalFlag
+	BeginDataStructureFlag               = proto.BeginDataStructureFlag
+	EndDataStructureFlag                 = proto.EndDataStructureFlag
+	IsNullFlag                           = proto.IsNullFlag
+	IsEventFlag                          = proto.IsEventFlag
+	BackupEventFlag                      = proto.BackupEventFlag
+	SizeOfFrameLengthAndFlags            = proto.SizeOfFrameLengthAndFlags
+)

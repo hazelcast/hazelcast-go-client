@@ -33,7 +33,7 @@ const (
 // Inserts the specified element at the specified position in this list (optional operation). Shifts the element
 // currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
 
-func EncodeListAddWithIndexRequest(name string, index int32, value *iserialization.Data) *proto.ClientMessage {
+func EncodeListAddWithIndexRequest(name string, index int32, value iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

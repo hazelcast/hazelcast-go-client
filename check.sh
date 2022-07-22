@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License")
 # you may not use this file except in compliance with the License.
@@ -42,8 +42,13 @@ staticcheck -tags hazelcastinternal $(go list ./... | grep -v org-website) | \
 # From: https://pkg.go.dev/golang.org/x/tools@v0.1.0/go/analysis/passes/fieldalignment
 # If missing install via: go get -u golang.org/x/tools/...
 # Structs in following files should not be sorted due to: https://pkg.go.dev/sync/atomic#pkg-note-BUG
-fieldalignment -tags $(go list ./... | grep -v org-website) 2>&1 | \
+fieldalignment -tags $(go list ./... | grep -v org-website | grep -v examples) 2>&1 | \
   grep -v "internal/cluster/connection_manager.go" | \
   grep -v "internal/cluster/view_listener_service.go" | \
-  grep -v "flake_id_generator.go" \
+  grep -v "flake_id_generator.go" | \
+  grep -v "record_store.go" | \
+  grep -v "record.go" | \
+  grep -v "stats.go" | \
+  grep -v "nearcache/types.go" | \
+  grep -v "nearcache/repairing_task.go" \
   || true

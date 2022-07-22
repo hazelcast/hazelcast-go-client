@@ -33,7 +33,7 @@ const (
 
 // Returns true if this list contains the specified element.
 
-func EncodeListContainsRequest(name string, value *iserialization.Data) *proto.ClientMessage {
+func EncodeListContainsRequest(name string, value iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

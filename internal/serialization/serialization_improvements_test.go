@@ -101,24 +101,24 @@ func TestSerializationImprovements(t *testing.T) {
 			name   string
 		}{
 			{
-				input:  time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
+				input:  types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
 				name:   "JavaLocalDate",
-				target: time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
+				target: types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
 			},
 			{
-				input:  time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
+				input:  types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
 				name:   "JavaLocalTime",
-				target: time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
+				target: types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
 			},
 			{
-				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
+				input:  types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
 				name:   "JavaLocalDateTime",
-				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
+				target: types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
 			},
 			{
-				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
+				input:  types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
 				name:   "JavaOffsetDateTime",
-				target: time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
+				target: types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
 			},
 			{
 				input:  []interface{}{"foo", int64(22)},

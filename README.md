@@ -1,5 +1,7 @@
 # Hazelcast Go Client
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/hazelcast/hazelcast-go-client.svg)](https://pkg.go.dev/github.com/hazelcast/hazelcast-go-client)
+
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
 
 Hazelcast Go client is a way to communicate to Hazelcast 4 and 5 clusters and access the cluster data.
@@ -63,7 +65,7 @@ func main() {
 Requirements:
 
 * Hazelcast Go client is compatible only with Hazelcast 4.x and 5.x.
-* We support two most recent releases of Go, currently 1.16 and 1.17.
+* We support two most recent releases of Go, currently 1.17 and 1.18.
 
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell

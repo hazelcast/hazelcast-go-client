@@ -175,11 +175,22 @@ The names in parentheses correspond to SQL types:
 	- float32 (real)
 	- float64 (double)
 	- types.Decimal (decimal)
-	- time.Time (date) Detected by checking: hour == minute == second == nanoseconds = 0
-	- time.Time (time) Detected by checking: year == 0, month == day == 1
-	- time.Time (timestamp) Detected by checking: not time, timezone == time.Local
-	- time.Time (timestamp with time zone) Detected by checking: not time, timezone != time.Local
+	- time.Time not supported, use one of types.LocalDate, types.LocalTime, types.LocalDateTime or types.OffsetDateTime
+	- types.LocalDate (date)
+	- types.LocalTime (time)
+	- types.LocalDateTime (timestamp)
+	- types.OffsetDateTime (timestamp with time zone)
 	- serialization.JSON (json)
+
+Using Date/Time Types
+
+In order to force using a specific date/time type, create a time.Time value and cast it to the target type:
+
+	t := time.Now()
+	dateValue := types.LocalDate(t)
+	timeValue := types.LocalTime(t)
+	dateTimeValue := types.LocalDateTime(t)
+	dateTimeWithTimezoneValue := types.OffsetDateTime(t)
 
 Using Raw Values
 

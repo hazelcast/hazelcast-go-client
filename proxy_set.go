@@ -214,7 +214,7 @@ func (s *Set) addListener(ctx context.Context, includeValue bool, handler SetIte
 	addRequest := codec.EncodeSetAddListenerRequest(s.name, includeValue, s.smart)
 	removeRequest := codec.EncodeSetRemoveListenerRequest(s.name, subscriptionID)
 	listenerHandler := func(msg *proto.ClientMessage) {
-		codec.HandleSetAddListener(msg, func(itemData *iserialization.Data, uuid types.UUID, eventType int32) {
+		codec.HandleSetAddListener(msg, func(itemData iserialization.Data, uuid types.UUID, eventType int32) {
 			item, err := s.convertToObject(itemData)
 			if err != nil {
 				s.logger.Warnf("cannot convert data to Go value")

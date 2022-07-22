@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -23,22 +23,20 @@ import (
 	"log"
 	"reflect"
 	"runtime"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
 	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -65,6 +63,8 @@ func TestClientLifecycleEvents(t *testing.T) {
 				t.Logf("Received client connected state")
 			case hz.LifecycleStateDisconnected:
 				t.Logf("Received client disconnected state")
+			case hz.LifecycleStateChangedCluster:
+				t.Logf("Connected cluster has been changed")
 			default:
 				t.Log("Received unknown state:", event.State)
 			}
@@ -95,6 +95,148 @@ func TestClientLifecycleEvents(t *testing.T) {
 	})
 }
 
+func TestClient_AddLifecycleListener(t *testing.T) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var receivedStates []hz.LifecycleState
+		receivedStatesMu := &sync.RWMutex{}
+		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			receivedStatesMu.Lock()
+			defer receivedStatesMu.Unlock()
+			// client is already connected
+			switch event.State {
+			case hz.LifecycleStateShuttingDown:
+				t.Logf("Received shutting down state")
+			case hz.LifecycleStateShutDown:
+				t.Logf("Received shut down state")
+			default:
+				t.Log("Received unknown state:", event.State)
+			}
+			receivedStates = append(receivedStates, event.State)
+		})
+		require.Nil(t, err)
+		require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		if err = client.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		targetStates := []hz.LifecycleState{
+			hz.LifecycleStateShuttingDown,
+			hz.LifecycleStateShutDown,
+		}
+		it.Eventually(t, func() bool {
+			receivedStatesMu.RLock()
+			defer receivedStatesMu.RUnlock()
+			return reflect.DeepEqual(targetStates, receivedStates)
+		})
+	})
+}
+
+func TestClient_RemoveLifecycleListener(t *testing.T) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var lifecycleEventReceived int32
+		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			// shutting down event is published before the actual shutdown is occurred
+			// client must not be shutdown before that event was published
+			if event.State == hz.LifecycleStateShuttingDown {
+				atomic.AddInt32(&lifecycleEventReceived, 1)
+			}
+		})
+		require.Nil(t, err)
+		require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		if err = client.RemoveLifecycleListener(subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		if err = client.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		it.Eventually(t, func() bool {
+			return !client.Running() && lifecycleEventReceived == 0
+		})
+	})
+}
+
+func TestClient_AddMembershipListener(t *testing.T) {
+	var (
+		wgAdded,
+		wgRemoved sync.WaitGroup
+		memberCount int = 3
+	)
+	wgAdded.Add(1)
+	wgRemoved.Add(1)
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", 15701, memberCount)
+	defer cls.Shutdown()
+	client, err := hz.StartNewClientWithConfig(ctx, cls.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(ctx context.Context, client *hz.Client) {
+		err = client.Shutdown(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(ctx, client)
+	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		switch event.State {
+		case cluster.MembershipStateAdded:
+			t.Log("MembershipStateAdded")
+			wgAdded.Done()
+		case cluster.MembershipStateRemoved:
+			t.Log("MembershipStateRemoved")
+			wgRemoved.Done()
+		}
+	})
+	require.Nil(t, err)
+	require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	// member which is not connected by the client initially.
+	uuid := cls.MemberUUIDs[1]
+	//uuid := cls.MemberUUIDs[0]
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, uuid)
+	it.Must(err)
+	require.True(t, ok, "rc cannot terminate member")
+	wgRemoved.Wait()
+	_, err = cls.RC.StartMember(ctx, cls.ClusterID)
+	it.Must(err)
+	wgAdded.Wait()
+}
+
+func TestClient_RemoveMembershipListener(t *testing.T) {
+	var removed int32
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", 15701, 2)
+	defer cls.Shutdown()
+	cfg := cls.DefaultConfig()
+	client, err := hz.StartNewClientWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(ctx context.Context, client *hz.Client) {
+		err = client.Shutdown(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(ctx, client)
+	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		switch event.State {
+		case cluster.MembershipStateRemoved:
+			t.Log("MembershipStateRemoved")
+			atomic.AddInt32(&removed, 1)
+		}
+	})
+	require.Nil(t, err)
+	require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	err = client.RemoveMembershipListener(subscriptionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[1])
+	it.Must(err)
+	require.True(t, ok, "rc cannot terminate member")
+	client.Shutdown(ctx)
+	it.Eventually(t, func() bool {
+		return !client.Running() && removed == 0
+	})
+}
+
 func TestClientRunning(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		assert.True(t, client.Running())
@@ -105,19 +247,32 @@ func TestClientRunning(t *testing.T) {
 	})
 }
 
+func TestClient_Name(t *testing.T) {
+	clientName := "test-client-name"
+	cb := func(config *hz.Config) {
+		config.ClientName = clientName
+	}
+	it.TesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client) {
+		assert.Equal(t, clientName, client.Name())
+	})
+}
+
 func TestClientPortRangeAllAddresses(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", "0.0.0.0"}
 	}, 4, 3)
 }
 
 func TestClientPortRangeMultipleAddresses(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
 }
 
 func TestClientPortRangeSingleAddress(t *testing.T) {
+	it.MarkRacy(t)
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{fmt.Sprintf("localhost:%d", validPort), "127.0.0.1", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
@@ -196,60 +351,48 @@ func TestClientEventOrder(t *testing.T) {
 	})
 }
 
-func calculatePartitionID(ss *serialization.Service, key interface{}) (int32, error) {
-	kd, err := ss.ToData(key)
-	if err != nil {
-		return 0, err
-	}
-	return murmur.HashToIndex(kd.PartitionHash(), 271), nil
-}
-
 func TestClientEventHandlingOrder(t *testing.T) {
-	// Create custom cluster, and client from it
-	cls := it.StartNewClusterWithOptions("event-order-test-cluster", 15701, it.MemberCount())
-	defer cls.Shutdown()
-	conf := cls.DefaultConfig()
-	ctx := context.Background()
-	c := it.MustValue(hz.StartNewClientWithConfig(ctx, conf)).(*hz.Client)
-	defer c.Shutdown(ctx)
-	ss := it.MustValue(serialization.NewService(&conf.Serialization)).(*serialization.Service)
-	// Create test map
-	m := it.MustValue(c.GetMap(ctx, "TestClientEventHandlingOrder")).(*hz.Map)
-	var lc hz.MapEntryListenerConfig
-	lc.NotifyEntryAdded(true)
-	var (
-		// have 271 partitions by default
-		partitionToEvent = make([][]int, 271)
-		// wait for all events to be processed
-		wg sync.WaitGroup
-	)
-	const eventCount = 1000
-	wg.Add(eventCount)
-	handler := func(event *hz.EntryNotified) {
-		// it is okay to use conversion, since greatest key is 1000
-		key := int(event.Key.(int64))
-		pid, err := calculatePartitionID(ss, key)
-		if err != nil {
-			panic(err)
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		ctx := context.Background()
+		var lc hz.MapEntryListenerConfig
+		lc.IncludeValue = true
+		lc.NotifyEntryAdded(true)
+		lc.NotifyEntryRemoved(true)
+		const iterationCount = 5000
+		const eventCount = iterationCount * 2
+		var (
+			// event journal to keep track of order of the published events
+			journal = make([]*hz.EntryNotified, 0, eventCount)
+			// wait for all events to be processed
+			wg  sync.WaitGroup
+			mut sync.Mutex
+		)
+		wg.Add(eventCount)
+		handler := func(event *hz.EntryNotified) {
+			mut.Lock()
+			journal = append(journal, event)
+			mut.Unlock()
+			wg.Done()
 		}
-		partitionToEvent[pid] = append(partitionToEvent[pid], key)
-		wg.Done()
-	}
-	it.MustValue(m.AddEntryListener(ctx, lc, handler))
-	for i := 1; i <= eventCount; i++ {
-		it.MustValue(m.Put(ctx, i, "test"))
-	}
-	wg.Wait()
-	for _, keys := range partitionToEvent {
-		if !sort.IntsAreSorted(keys) {
-			t.Fatalf("events are not processed in order, event keys:\n%v\n", keys)
+		it.MustValue(m.AddEntryListener(ctx, lc, handler))
+		for i := 0; i < iterationCount; i++ {
+			it.Must(m.Set(ctx, "sameKey", i))
+			it.MustValue(m.Remove(ctx, "sameKey"))
 		}
-	}
+		wg.Wait()
+		assert.Equal(t, eventCount, len(journal))
+		for i := 0; i < eventCount; i += 2 {
+			assert.Equal(t, hz.EntryAdded, journal[i].EventType)
+			assert.Equal(t, hz.EntryRemoved, journal[i+1].EventType)
+			v := i / 2
+			assert.Equal(t, int64(v), journal[i].Value)
+			assert.Equal(t, int64(v), journal[i+1].OldValue)
+		}
+	})
 }
 
 func TestClientHeartbeat(t *testing.T) {
-	// Slow test.
-	t.SkipNow()
+	it.MarkSlow(t)
 	it.MapTesterWithConfig(t, func(config *hz.Config) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
@@ -344,6 +487,7 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 }
 
 func TestClusterReconnection_ShutdownCluster(t *testing.T) {
+	it.MarkRacy(t)
 	ctx := context.Background()
 	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
 	mu := &sync.Mutex{}
@@ -570,15 +714,21 @@ func TestClientFailover_OSSCluster(t *testing.T) {
 func TestClientFailover_EECluster(t *testing.T) {
 	it.SkipIf(t, "oss")
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("failover-test-cluster", 15701, it.MemberCount())
-	defer cls.Shutdown()
-	config := cls.DefaultConfig()
+	clsBase := t.Name()
+	cls1 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-1", clsBase), 15701, it.MemberCount())
+	defer cls1.Shutdown()
+	cls2 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-2", clsBase), 16701, it.MemberCount())
+	defer cls2.Shutdown()
+	config := hz.Config{}
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
 	config.Failover.Enabled = true
-	config.Failover.TryCount = 1
-	// move the main cluster config to failover config list
-	config.Failover.SetConfigs(config.Cluster)
-	// use a non-existing cluster in the main cluster config
-	config.Cluster.Name = "non-existing-failover-test-cluster"
+	cfg1 := cls1.DefaultConfig()
+	cfg1.Cluster.Name = "not-this-cluster's-name"
+	cfg1.Cluster.ConnectionStrategy.Timeout = types.Duration(10 * time.Second)
+	cfg2 := cls2.DefaultConfig()
+	config.Failover.SetConfigs(cfg1.Cluster, cfg2.Cluster)
 	c, err := hz.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		t.Fatalf("should have connected to failover cluster")
@@ -682,10 +832,11 @@ func TestClientFixConnection(t *testing.T) {
 
 func TestClientVersion(t *testing.T) {
 	// adding this test here, so there's no "unused lint warning.
-	assert.Equal(t, "1.2.0", hz.ClientVersion)
+	assert.Equal(t, "1.3.0", hz.ClientVersion)
 }
 
 func TestInvocationTimeout(t *testing.T) {
+	it.MarkRacy(t)
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
 		defer tc.Shutdown()
@@ -714,7 +865,7 @@ func TestInvocationTimeout(t *testing.T) {
 
 func TestClientStartShutdownMemoryLeak(t *testing.T) {
 	// TODO make sure there is no leak, and find an upper memory limit for this
-	t.SkipNow()
+	it.MarkFlaky(t)
 	clientTester(t, func(t *testing.T, smart bool) {
 		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
 		defer tc.Shutdown()

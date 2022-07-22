@@ -37,7 +37,7 @@ const (
 // it means that the caller thread could not acquire the lock for the key within the timeout duration,
 // thus the put operation is not successful.
 
-func EncodeMapTryPutRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
+func EncodeMapTryPutRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64, timeout int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

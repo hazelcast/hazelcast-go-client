@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package security
 
 import (
+	"sync/atomic"
+
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
@@ -27,7 +29,7 @@ const (
 
 // BaseCredentials is base implementation for Credentials interface.
 type BaseCredentials struct {
-	endpoint  string
+	endpoint  atomic.Value
 	principal string
 }
 
@@ -41,20 +43,20 @@ func (bc *BaseCredentials) ClassID() int32 {
 
 func (bc *BaseCredentials) WritePortable(writer serialization.PortableWriter) {
 	writer.WriteString("principal", bc.principal)
-	writer.WriteString("endpoint", bc.endpoint)
+	writer.WriteString("endpoint", bc.Endpoint())
 }
 
 func (bc *BaseCredentials) ReadPortable(reader serialization.PortableReader) {
-	bc.endpoint = reader.ReadString("endpoint")
+	bc.SetEndpoint(reader.ReadString("endpoint"))
 	bc.principal = reader.ReadString("principal")
 }
 
 func (bc *BaseCredentials) Endpoint() string {
-	return bc.endpoint
+	return bc.endpoint.Load().(string)
 }
 
 func (bc *BaseCredentials) SetEndpoint(endpoint string) {
-	bc.endpoint = endpoint
+	bc.endpoint.Store(endpoint)
 }
 
 func (bc *BaseCredentials) Principal() string {

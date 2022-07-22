@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 )
 
 func TestRetryWithoutRedoOperation(t *testing.T) {
+	it.MarkRacy(t)
 	// The connection should be retried on IOError
 	retryResult(t, false, true)
 }

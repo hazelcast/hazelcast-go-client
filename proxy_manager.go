@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ type proxyManager struct {
 	invocationProxy *proxy
 	serviceBundle   creationBundle
 	refIDGenerator  *iproxy.ReferenceIDGenerator
+	ncmDestroyFn    func(service, object string)
 }
 
 func newProxyManager(bundle creationBundle) *proxyManager {
@@ -42,8 +43,9 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 		proxies:        map[string]interface{}{},
 		serviceBundle:  bundle,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
+		ncmDestroyFn:   bundle.NCMDestroyFn,
 	}
-	p, err := newProxy(context.Background(), pm.serviceBundle, "", "", pm.refIDGenerator, func() bool { return false }, false)
+	p, err := newProxy(context.Background(), pm.serviceBundle, "", "", pm.refIDGenerator, func(ctx context.Context) bool { return false }, false)
 	if err != nil {
 		// It actually never panics since the proxy is local.
 		panic(err)
@@ -165,12 +167,19 @@ func (m *proxyManager) removeDistributedObjectEventListener(ctx context.Context,
 	return m.serviceBundle.ListenerBinder.Remove(ctx, subscriptionID)
 }
 
-func (m *proxyManager) remove(serviceName string, objectName string) bool {
+func (m *proxyManager) remove(ctx context.Context, serviceName string, objectName string) bool {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if _, ok := m.proxies[name]; !ok {
+	p, ok := m.proxies[name]
+	if !ok {
 		return false
+	}
+	// run the local destroy method of Map
+	if serviceName == ServiceNameMap {
+		mp := p.(*Map)
+		mp.destroyLocally(ctx)
+		m.ncmDestroyFn(serviceName, objectName)
 	}
 	delete(m.proxies, name)
 	return true
@@ -195,8 +204,8 @@ func (m *proxyManager) proxyFor(
 		// someone has already created the proxy
 		return wrapper, nil
 	}
-	p, err := newProxy(ctx, m.serviceBundle, serviceName, objectName, m.refIDGenerator, func() bool {
-		return m.remove(serviceName, objectName)
+	p, err := newProxy(ctx, m.serviceBundle, serviceName, objectName, m.refIDGenerator, func(ctx context.Context) bool {
+		return m.remove(ctx, serviceName, objectName)
 	}, true)
 	if err != nil {
 		return nil, err

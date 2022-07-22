@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,9 @@ package driver_test
 
 import (
 	"context"
-	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"math/big"
-	"net/url"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -41,9 +38,10 @@ import (
 )
 
 const (
-	factoryID                 = 100
-	recordClassID             = 1
-	recordWithDateTimeClassID = 2
+	factoryID                  = 100
+	recordClassID              = 1
+	recordWithDateTimeClassID  = 2
+	recordWithDateTimeClassID2 = 3
 )
 
 type Record struct {
@@ -119,6 +117,49 @@ func (r RecordWithDateTime) ClassID() int32 {
 }
 
 func (r RecordWithDateTime) WritePortable(wr serialization.PortableWriter) {
+	wr.WriteDate("datevalue", (*types.LocalDate)(r.DateValue))
+	wr.WriteTime("timevalue", (*types.LocalTime)(r.TimeValue))
+	wr.WriteTimestamp("timestampvalue", (*types.LocalDateTime)(r.TimestampValue))
+	wr.WriteTimestampWithTimezone("timestampwithtimezonevalue", (*types.OffsetDateTime)(r.TimestampWithTimezoneValue))
+
+}
+
+func (r *RecordWithDateTime) ReadPortable(rd serialization.PortableReader) {
+	r.DateValue = (*time.Time)(rd.ReadDate("datevalue"))
+	r.TimeValue = (*time.Time)(rd.ReadTime("timevalue"))
+	r.TimestampValue = (*time.Time)(rd.ReadTimestamp("timestampvalue"))
+	r.TimestampWithTimezoneValue = (*time.Time)(rd.ReadTimestampWithTimezone("timestampwithtimezonevalue"))
+}
+
+type RecordWithDateTime2 struct {
+	DateValue                  *types.LocalDate
+	TimeValue                  *types.LocalTime
+	TimestampValue             *types.LocalDateTime
+	TimestampWithTimezoneValue *types.OffsetDateTime
+}
+
+func NewRecordWithDateTime2(t *time.Time) *RecordWithDateTime2 {
+	dv := types.LocalDate(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local))
+	tv := types.LocalTime(time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local))
+	tsv := types.LocalDateTime(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local))
+	tt := types.OffsetDateTime(*t)
+	return &RecordWithDateTime2{
+		DateValue:                  &dv,
+		TimeValue:                  &tv,
+		TimestampValue:             &tsv,
+		TimestampWithTimezoneValue: &tt,
+	}
+}
+
+func (r RecordWithDateTime2) FactoryID() int32 {
+	return factoryID
+}
+
+func (r RecordWithDateTime2) ClassID() int32 {
+	return recordWithDateTimeClassID2
+}
+
+func (r RecordWithDateTime2) WritePortable(wr serialization.PortableWriter) {
 	wr.WriteDate("datevalue", r.DateValue)
 	wr.WriteTime("timevalue", r.TimeValue)
 	wr.WriteTimestamp("timestampvalue", r.TimestampValue)
@@ -126,7 +167,7 @@ func (r RecordWithDateTime) WritePortable(wr serialization.PortableWriter) {
 
 }
 
-func (r *RecordWithDateTime) ReadPortable(rd serialization.PortableReader) {
+func (r *RecordWithDateTime2) ReadPortable(rd serialization.PortableReader) {
 	r.DateValue = rd.ReadDate("datevalue")
 	r.TimeValue = rd.ReadTime("timevalue")
 	r.TimestampValue = rd.ReadTimestamp("timestampvalue")
@@ -141,6 +182,8 @@ func (f recordFactory) Create(classID int32) serialization.Portable {
 		return &Record{}
 	case recordWithDateTimeClassID:
 		return &RecordWithDateTime{}
+	case recordWithDateTimeClassID2:
+		return &RecordWithDateTime2{}
 	}
 	panic(fmt.Sprintf("unknown class ID: %d", classID))
 }
@@ -203,22 +246,26 @@ func TestSQLQuery(t *testing.T) {
 		{
 			keyFmt: "int", valueFmt: "date",
 			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(2021, 12, 21, 0, 0, 0, 0, time.Local) },
+			valueFn: func(i int) interface{} { return types.LocalDate(time.Date(2021, 12, 21, 0, 0, 0, 0, time.Local)) },
 		},
 		{
 			keyFmt: "int", valueFmt: "time",
 			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(0, 1, 1, 14, 15, 16, 200, time.Local) },
+			valueFn: func(i int) interface{} { return types.LocalTime(time.Date(0, 1, 1, 14, 15, 16, 200, time.Local)) },
 		},
 		{
 			keyFmt: "int", valueFmt: "timestamp",
-			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(2021, 12, 23, 14, 15, 16, 200, time.Local) },
+			keyFn: func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} {
+				return types.LocalDateTime(time.Date(2021, 12, 23, 14, 15, 16, 200, time.Local))
+			},
 		},
 		{
 			keyFmt: "int", valueFmt: "timestamp with time zone",
-			keyFn:   func(i int) interface{} { return int32(i) },
-			valueFn: func(i int) interface{} { return time.Date(2021, 12, 23, 14, 15, 16, 200, time.FixedZone("", -6000)) },
+			keyFn: func(i int) interface{} { return int32(i) },
+			valueFn: func(i int) interface{} {
+				return types.OffsetDateTime(time.Date(2021, 12, 23, 14, 15, 16, 200, time.FixedZone("", -6000)))
+			},
 		},
 	}
 	for _, tc := range testCases {
@@ -241,7 +288,7 @@ func TestSQLScanJSON(t *testing.T) {
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		testJSON := serialization.JSON(`{"test":"value"}`)
 		ctx := context.Background()
-		db := mustDB(sql.Open("hazelcast", makeDSN(config)))
+		db := driver.Open(*config)
 		defer db.Close()
 		ms := createMappingStr(mapName, "bigint", "json")
 		it.Must(createMapping(t, db, ms))
@@ -371,22 +418,22 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 				'keyFormat' = 'bigint',
 				'valueFormat' = 'portable',
 				'valuePortableFactoryId' = '100',
-				'valuePortableClassId' = '2'
+				'valuePortableClassId' = '3'
 			)
 		`, mapName)
 		t.Logf("Query: %s", q)
 		it.MustValue(db.Exec(q))
 		dt := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("A/B", -5*60*60))
-		rec := NewRecordWithDateTime(&dt)
+		rec := NewRecordWithDateTime2(&dt)
 		_, err := db.Exec(fmt.Sprintf(`INSERT INTO "%s" (__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue) VALUES(?, ?, ?, ?, ?)`, mapName),
 			1, *rec.DateValue, *rec.TimeValue, *rec.TimestampValue, *rec.TimestampWithTimezoneValue)
 		if err != nil {
 			t.Fatal(err)
 		}
-		targetDate := time.Date(2021, 12, 22, 0, 0, 0, 0, time.Local)
-		targetTime := time.Date(0, 1, 1, 23, 40, 12, 3400, time.Local)
-		targetTimestamp := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.Local)
-		targetTimestampWithTimezone := time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", -5*60*60))
+		targetDate := types.LocalDate(time.Date(2021, 12, 22, 0, 0, 0, 0, time.Local))
+		targetTime := types.LocalTime(time.Date(0, 1, 1, 23, 40, 12, 3400, time.Local))
+		targetTimestamp := types.LocalDateTime(time.Date(2021, 12, 22, 23, 40, 12, 3400, time.Local))
+		targetTimestampWithTimezone := types.OffsetDateTime(time.Date(2021, 12, 22, 23, 40, 12, 3400, time.FixedZone("", -5*60*60)))
 		var k int64
 		// select the value itself
 		row := db.QueryRow(fmt.Sprintf(`SELECT __key, this from "%s"`, mapName))
@@ -396,7 +443,7 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 			t.Fatal(err)
 		}
 		vs = append(vs, v)
-		targetThis := []interface{}{&RecordWithDateTime{
+		targetThis := []interface{}{&RecordWithDateTime2{
 			DateValue:                  &targetDate,
 			TimeValue:                  &targetTime,
 			TimestampValue:             &targetTimestamp,
@@ -409,21 +456,24 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 							__key, datevalue, timevalue, timestampvalue, timestampwithtimezonevalue
 						FROM "%s" LIMIT 1
 				`, mapName))
-		var vDate, vTime, vTimestamp, vTimestampWithTimezone time.Time
+		var vDate types.LocalDate
+		var vTime types.LocalTime
+		var vTimestamp types.LocalDateTime
+		var vTimestampWithTimezone types.OffsetDateTime
 		if err := row.Scan(&k, &vDate, &vTime, &vTimestamp, &vTimestampWithTimezone); err != nil {
 			t.Fatal(err)
 		}
-		if !targetDate.Equal(vDate) {
-			t.Fatalf("%s != %s", targetDate, vDate)
+		if !(time.Time)(targetDate).Equal((time.Time)(vDate)) {
+			t.Fatalf("%v != %v", targetDate, vDate)
 		}
-		if !targetTime.Equal(vTime) {
-			t.Fatalf("%s != %s", targetTime, vTime)
+		if !(time.Time)(targetTime).Equal((time.Time)(vTime)) {
+			t.Fatalf("%v != %v", targetTime, vTime)
 		}
-		if !targetTimestamp.Equal(vTimestamp) {
-			t.Fatalf("%s != %s", targetTimestamp, vTimestamp)
+		if !(time.Time)(targetTimestamp).Equal((time.Time)(vTimestamp)) {
+			t.Fatalf("%v != %v", targetTimestamp, vTimestamp)
 		}
-		if !targetTimestampWithTimezone.Equal(vTimestampWithTimezone) {
-			t.Fatalf("%s != %s", targetTimestampWithTimezone, vTimestamp)
+		if !(time.Time)(targetTimestampWithTimezone).Equal((time.Time)(vTimestampWithTimezone)) {
+			t.Fatalf("%v != %v", targetTimestampWithTimezone, vTimestamp)
 		}
 	})
 }
@@ -530,22 +580,9 @@ func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, ke
 		if err != nil {
 			t.Fatal(err)
 		}
-		dsn := makeDSN(config)
-		sc := &serialization.Config{}
+		sc := &config.Serialization
 		sc.SetGlobalSerializer(&it.PanicingGlobalSerializer{})
-		if err := driver.SetSerializationConfig(sc); err != nil {
-			t.Fatal(err)
-		}
-		defer driver.SetSerializationConfig(nil)
-		if it.SSLEnabled() {
-			sslc := &cluster.SSLConfig{Enabled: true}
-			sslc.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
-			if err := driver.SetSSLConfig(sslc); err != nil {
-				t.Fatal(err)
-			}
-			defer driver.SetSSLConfig(nil)
-		}
-		db := mustDB(sql.Open("hazelcast", dsn))
+		db := driver.Open(*config)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -613,23 +650,6 @@ func populateMap(m *hz.Map, count int, keyFn, valueFn func(i int) interface{}) (
 		return nil, err
 	}
 	return entries, nil
-}
-
-func makeDSN(config *hz.Config) string {
-	ll := logger.InfoLevel
-	if it.TraceLoggingEnabled() {
-		ll = logger.TraceLevel
-	}
-	q := url.Values{}
-	q.Add("cluster.name", config.Cluster.Name)
-	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
-	q.Add("log", string(ll))
-	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
-}
-
-func mustDB(db *sql.DB, err error) *sql.DB {
-	it.Must(err)
-	return db
 }
 
 func mustRows(rows *sql.Rows, err error) *sql.Rows {

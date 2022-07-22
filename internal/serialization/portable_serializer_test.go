@@ -207,12 +207,12 @@ func TestPortableSerializer_NilPortable(t *testing.T) {
 }
 
 type fake struct {
-	date                     time.Time
-	time                     time.Time
-	timestamp                time.Time
-	timestampWithTimeZone    time.Time
+	date                     types.LocalDate
+	time                     types.LocalTime
+	timestamp                types.LocalDateTime
+	timestampWithTimeZone    types.OffsetDateTime
 	portable                 serialization.Portable
-	nilDate                  *time.Time
+	nilDate                  *types.LocalDate
 	dec                      types.Decimal
 	utf                      string
 	utfArr                   []string
@@ -225,10 +225,10 @@ type fake struct {
 	i32Arr                   []int32
 	boolArr                  []bool
 	portableArr              []serialization.Portable
-	dateArr                  []time.Time
-	timeArr                  []time.Time
-	timestampArr             []time.Time
-	timestampWithTimeZoneArr []time.Time
+	dateArr                  []types.LocalDate
+	timeArr                  []types.LocalTime
+	timestampArr             []types.LocalDateTime
+	timestampWithTimeZoneArr []types.OffsetDateTime
 	decArr                   []types.Decimal
 	i64                      int64
 	f64                      float64
@@ -353,15 +353,15 @@ func TestPortableSerializer2(t *testing.T) {
 	expectedRet := &fake{
 		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf, portable: portable,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
-		date:                     time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
-		time:                     time.Date(0, 1, 1, 12, 23, 45, 500, time.Local),
-		timestamp:                time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local),
-		timestampWithTimeZone:    time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)),
+		date:                     types.LocalDate(time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local)),
+		time:                     types.LocalTime(time.Date(0, 1, 1, 12, 23, 45, 500, time.Local)),
+		timestamp:                types.LocalDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local)),
+		timestampWithTimeZone:    types.OffsetDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000))),
 		dec:                      types.NewDecimal(big.NewInt(123_456_789), 100),
-		dateArr:                  []time.Time{time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local), time.Date(2022, 10, 16, 0, 0, 0, 0, time.Local)},
-		timeArr:                  []time.Time{time.Date(0, 1, 1, 12, 23, 45, 500, time.Local), time.Date(0, 1, 1, 18, 3, 15, 1500, time.Local)},
-		timestampArr:             []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local), time.Date(2022, 11, 5, 14, 13, 41, 200, time.Local)},
-		timestampWithTimeZoneArr: []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)), time.Date(2021, 2, 7, 18, 21, 5, 5500, time.FixedZone("", -2000))},
+		dateArr:                  []types.LocalDate{types.LocalDate(time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local)), types.LocalDate(time.Date(2022, 10, 16, 0, 0, 0, 0, time.Local))},
+		timeArr:                  []types.LocalTime{types.LocalTime(time.Date(0, 1, 1, 12, 23, 45, 500, time.Local)), types.LocalTime(time.Date(0, 1, 1, 18, 3, 15, 1500, time.Local))},
+		timestampArr:             []types.LocalDateTime{types.LocalDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local)), types.LocalDateTime(time.Date(2022, 11, 5, 14, 13, 41, 200, time.Local))},
+		timestampWithTimeZoneArr: []types.OffsetDateTime{types.OffsetDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000))), types.OffsetDateTime(time.Date(2021, 2, 7, 18, 21, 5, 5500, time.FixedZone("", -2000)))},
 		decArr:                   []types.Decimal{types.NewDecimal(big.NewInt(123_456_789), 100), types.NewDecimal(big.NewInt(-123_456_789_123), 100_000)},
 	}
 	data, err := service.ToData(expectedRet)
@@ -428,15 +428,15 @@ func TestPortableSerializer4(t *testing.T) {
 	expectedRet := &fake{
 		byt: byt, boo: boo, ui16: ui16, i16: i16, i32: i32, i64: i64, f32: f32, f64: f64, utf: utf,
 		bytArr: bytArr, boolArr: boolArr, ui16Arr: ui16Arr, i16Arr: i16Arr, i32Arr: i32Arr, i64Arr: i64Arr, f32Arr: f32Arr, f64Arr: f64Arr, utfArr: utfArr, portableArr: portableArr,
-		date:                     time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local),
-		time:                     time.Date(0, 1, 1, 12, 23, 45, 500, time.Local),
-		timestamp:                time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local),
-		timestampWithTimeZone:    time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)),
+		date:                     types.LocalDate(time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local)),
+		time:                     types.LocalTime(time.Date(0, 1, 1, 12, 23, 45, 500, time.Local)),
+		timestamp:                types.LocalDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local)),
+		timestampWithTimeZone:    types.OffsetDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000))),
 		dec:                      types.NewDecimal(big.NewInt(123_456_789), 100),
-		dateArr:                  []time.Time{time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local), time.Date(2022, 10, 16, 0, 0, 0, 0, time.Local)},
-		timeArr:                  []time.Time{time.Date(0, 1, 1, 12, 23, 45, 500, time.Local), time.Date(0, 1, 1, 18, 3, 15, 1500, time.Local)},
-		timestampArr:             []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local), time.Date(2022, 11, 5, 14, 13, 41, 200, time.Local)},
-		timestampWithTimeZoneArr: []time.Time{time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000)), time.Date(2021, 2, 7, 18, 21, 5, 5500, time.FixedZone("", -2000))},
+		dateArr:                  []types.LocalDate{types.LocalDate(time.Date(2021, 12, 6, 0, 0, 0, 0, time.Local)), types.LocalDate(time.Date(2022, 10, 16, 0, 0, 0, 0, time.Local))},
+		timeArr:                  []types.LocalTime{types.LocalTime(time.Date(0, 1, 1, 12, 23, 45, 500, time.Local)), types.LocalTime(time.Date(0, 1, 1, 18, 3, 15, 1500, time.Local))},
+		timestampArr:             []types.LocalDateTime{types.LocalDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.Local)), types.LocalDateTime(time.Date(2022, 11, 5, 14, 13, 41, 200, time.Local))},
+		timestampWithTimeZoneArr: []types.OffsetDateTime{types.OffsetDateTime(time.Date(2021, 12, 6, 12, 23, 45, 500, time.FixedZone("", -12000))), types.OffsetDateTime(time.Date(2021, 2, 7, 18, 21, 5, 5500, time.FixedZone("", -2000)))},
 		decArr:                   []types.Decimal{types.NewDecimal(big.NewInt(123_456_789), 100), types.NewDecimal(big.NewInt(-123_456_789_123), 100_000)},
 	}
 	data, err := service.ToData(expectedRet)
