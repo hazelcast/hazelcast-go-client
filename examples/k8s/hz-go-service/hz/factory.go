@@ -12,12 +12,12 @@ const localTest = false
 
 // ClientInfo contains info about client
 type ClientInfo struct {
-	ClientName    string `json:"clientName"`
-	ClientRunning bool   `json:"clientRunning"`
-	MapSize       int    `json:"mapSize"`
+	ClientName    string
+	ClientRunning bool
+	MapSize       int
 }
 
-// NewHzClient Return hazelcast client instance with default config.
+// NewHzClient returns Hazelcast client instance with default config.
 func NewHzClient(ctx context.Context) (*hazelcast.Client, error) {
 	config := hazelcast.Config{
 		ClientName: "hz-go-service-client",
@@ -28,7 +28,6 @@ func NewHzClient(ctx context.Context) (*hazelcast.Client, error) {
 	} else {
 		cc.Network.SetAddresses(fmt.Sprintf("%s:%s", "hazelcast.default.svc", "5701"))
 	}
-	cc.Discovery.UsePublicIP = false
 	cc.Unisocket = true
 	config.Logger.Level = logger.InfoLevel
 	client, err := NewHzClientWithConfig(ctx, config)

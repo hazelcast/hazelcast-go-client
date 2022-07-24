@@ -5,5 +5,5 @@ kubectl delete -f k8s/hazelcast.yaml
 kubectl delete -f k8s/deployment.yaml
 
 # remove platform operator
-kubectl delete -f https://repository.hazelcast.com/operator/bundle-5.0.yaml
+kubectl delete -f https://repository.hazelcast.com/operator/bundle-latest.yaml
 
