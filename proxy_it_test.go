@@ -28,7 +28,6 @@ import (
 )
 
 func TestRetryWithoutRedoOperation(t *testing.T) {
-	it.MarkRacy(t)
 	// The connection should be retried on IOError
 	retryResult(t, false, true)
 }
