@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 	"os"
 	"reflect"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -341,6 +342,16 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	return config
 }
 
+func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
+	config := hz.Config{}
+	config.Cluster.Name = c.ClusterID
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", c.Port))
+	if TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	return config
+}
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -352,6 +363,16 @@ func xmlConfig(clusterName string, port int) string {
                <port>%d</port>
             </network>
 			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<map name="test-map-smart">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<map name="test-map-unisocket">
 				<map-store enabled="true">
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
@@ -402,15 +423,59 @@ func xmlSSLConfig(clusterName string, port int) string {
 			`, clusterName, port)
 }
 
+func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+			<cluster-name>%s</cluster-name>
+			<network>
+				<port>%d</port>
+				<ssl enabled="true">
+					<factory-class-name>
+						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
+					</factory-class-name>
+					<properties>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="trustStore">com/hazelcast/nio/ssl-mutual-auth/server1_knows_client1/server1.truststore
+						</property>
+						<property name="trustStorePassword">password</property>
+						<property name="trustManagerAlgorithm">SunX509</property>
+						<property name="javax.net.ssl.mutualAuthentication">REQUIRED</property>
+						<property name="keyManagerAlgorithm">SunX509</property>
+						<property name="protocol">TLSv1.2</property>
+					</properties>
+				</ssl>
+			</network>
+			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
+		</hazelcast>
+			`, clusterName, port)
+}
+
 func getLoggerLevel() logger.Level {
 	if TraceLoggingEnabled() {
 		return logger.TraceLevel
 	}
-	return logger.WarnLevel
+	return logger.InfoLevel
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {
-	config.Logger.Level = getLoggerLevel()
+	lv := getLoggerLevel()
+	if lv == logger.TraceLevel {
+		config.Logger.Level = lv
+	}
 	client, err := hz.StartNewClientWithConfig(context.Background(), *config)
 	if err != nil {
 		panic(err)
@@ -421,7 +486,7 @@ func getDefaultClient(config *hz.Config) *hz.Client {
 // Eventually asserts that given condition will be met in 2 minutes,
 // checking target function every 200 milliseconds.
 func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
-	if !assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs) {
+	if !assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs...) {
 		t.FailNow()
 	}
 }
@@ -457,4 +522,23 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 	case <-timer.C:
 		t.FailNow()
 	}
+}
+
+func EqualStringContent(b1, b2 []byte) bool {
+	s1 := sortedString(b1)
+	s2 := sortedString(b2)
+	return s1 == s2
+}
+
+func sortedString(b []byte) string {
+	bc := make([]byte, len(b))
+	copy(bc, b)
+	sort.Slice(bc, func(i, j int) bool {
+		return bc[i] < bc[j]
+	})
+	s := strings.ReplaceAll(string(bc), " ", "")
+	s = strings.ReplaceAll(s, "\t", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
 }

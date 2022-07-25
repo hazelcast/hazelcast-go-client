@@ -68,7 +68,7 @@ func DecodeMapAddEntryListenerResponse(clientMessage *proto.ClientMessage) types
 	return FixSizedTypesCodec.DecodeUUID(initialFrame.Content, MapAddEntryListenerResponseResponseOffset)
 }
 
-func HandleMapAddEntryListener(clientMessage *proto.ClientMessage, handleEntryEvent func(key *iserialization.Data, value *iserialization.Data, oldValue *iserialization.Data, mergingValue *iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
+func HandleMapAddEntryListener(clientMessage *proto.ClientMessage, handleEntryEvent func(key iserialization.Data, value iserialization.Data, oldValue iserialization.Data, mergingValue iserialization.Data, eventType int32, uuid types.UUID, numberOfAffectedEntries int32)) {
 	messageType := clientMessage.Type()
 	frameIterator := clientMessage.FrameIterator()
 	if messageType == MapAddEntryListenerCodecEventEntryMessageType {

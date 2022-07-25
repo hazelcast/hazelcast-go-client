@@ -34,7 +34,7 @@ const (
 
 // Removes the mapping for a key from this map if existing value equal to the this value
 
-func EncodeMapRemoveIfSameRequest(name string, key *iserialization.Data, value *iserialization.Data, threadId int64) *proto.ClientMessage {
+func EncodeMapRemoveIfSameRequest(name string, key iserialization.Data, value iserialization.Data, threadId int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

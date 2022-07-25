@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,14 @@
 package internal
 
 const (
-	// ClientType is used in the Management
-	ClientType         = "GOO"
 	AggregateFactoryID = -29
-	// ClientVersion should be manually set
-	ClientVersion = "1.2.0"
+	// CurrentClientVersion should be manually set
+	CurrentClientVersion = "1.4.0"
 )
+
+// ClientType is used in the Management Center
+var ClientType = "GOO"
+
+// ClientVersion is the effective client version.
+// It is sent to the member during authentication.
+var ClientVersion = CurrentClientVersion

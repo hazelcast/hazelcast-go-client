@@ -33,7 +33,7 @@ const (
 
 // Returns true if this set contains the specified element.
 
-func EncodeSetContainsRequest(name string, value *serialization.Data) *proto.ClientMessage {
+func EncodeSetContainsRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

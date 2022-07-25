@@ -32,3 +32,6 @@ vet.txt
 test.pid
 coverage.html
 coverage.out
+
+# Others
+cmd/

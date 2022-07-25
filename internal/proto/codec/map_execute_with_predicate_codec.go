@@ -32,7 +32,7 @@ const (
 // Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
 // Returns the results mapped by each key in the map.
 
-func EncodeMapExecuteWithPredicateRequest(name string, entryProcessor *iserialization.Data, predicate *iserialization.Data) *proto.ClientMessage {
+func EncodeMapExecuteWithPredicateRequest(name string, entryProcessor iserialization.Data, predicate iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

@@ -35,7 +35,7 @@ const (
 // Returns true if this set contained the element (or equivalently, if this set changed as a result of the call).
 // (This set will not contain the element once the call returns.)
 
-func EncodeSetRemoveRequest(name string, value *serialization.Data) *proto.ClientMessage {
+func EncodeSetRemoveRequest(name string, value serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

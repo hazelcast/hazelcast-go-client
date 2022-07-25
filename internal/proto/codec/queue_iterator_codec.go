@@ -46,7 +46,7 @@ func EncodeQueueIteratorRequest(name string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeQueueIteratorResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeQueueIteratorResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

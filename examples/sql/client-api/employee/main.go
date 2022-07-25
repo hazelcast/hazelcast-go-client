@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client"
-	_ "github.com/hazelcast/hazelcast-go-client/sql/driver"
+	"github.com/hazelcast/hazelcast-go-client/sql"
 )
 
 var names = []string{"Gorkem", "Ezgi", "Joe", "Jane", "Mike", "Mandy", "Tom", "Tina"}
@@ -52,19 +52,19 @@ func createMapping(client *hazelcast.Client, mapName string) error {
             'valueFormat' = 'json-flat'
         )
 `, mapName)
-	_, err := client.ExecSQL(context.Background(), q)
+	result, err := client.SQL().Execute(context.Background(), q)
 	if err != nil {
-		return fmt.Errorf("error creating mapping: %w", err)
+		return fmt.Errorf("creating mapping: %w", err)
 	}
-	return nil
+	return result.Close()
 }
 
 // populateMap creates entries in the given map.
 // It uses SINK INTO instead of INSERT INTO in order to update already existing entries.
-func populateMap(client *hazelcast.Client, mapName string, employess []Employee) error {
+func populateMap(client *hazelcast.Client, mapName string, employees []Employee) error {
 	q := fmt.Sprintf(`SINK INTO "%s"(__key, age, name) VALUES (?, ?, ?)`, mapName)
-	for i, e := range employess {
-		if _, err := client.ExecSQL(context.Background(), q, i, e.Age, e.Name); err != nil {
+	for i, e := range employees {
+		if _, err := client.SQL().Execute(context.Background(), q, i, e.Age, e.Name); err != nil {
 			return fmt.Errorf("populating map: %w", err)
 		}
 	}
@@ -73,18 +73,43 @@ func populateMap(client *hazelcast.Client, mapName string, employess []Employee)
 
 // queryMap returns employees with the given minimum age.
 func queryMap(client *hazelcast.Client, mapName string, minAge int) ([]Employee, error) {
-	q := fmt.Sprintf(`SELECT name, age FROM "%s" WHERE age >= ?`, mapName)
-	rows, err := client.QuerySQL(context.Background(), q, minAge)
+	stmt := sql.NewStatement(fmt.Sprintf(`SELECT name, CAST(age AS smallint) FROM "%s" WHERE age >= ?`, mapName))
+	stmt.AddParameter(minAge)
+	result, err := client.SQL().ExecuteStatement(context.Background(), stmt)
 	if err != nil {
-		return nil, fmt.Errorf("error querying: %w", err)
+		return nil, fmt.Errorf("querying: %w", err)
 	}
-	defer rows.Close()
+	defer result.Close()
+	iter, err := result.Iterator()
+	if err != nil {
+		return nil, fmt.Errorf("acquaring iterator: %w", err)
+	}
 	var emps []Employee
-	for rows.Next() {
+	for iter.HasNext() {
 		e := Employee{}
-		if err := rows.Scan(&e.Name, &e.Age); err != nil {
-			return nil, fmt.Errorf("error scanning: %w", err)
+		row, err := iter.Next()
+		if err != nil {
+			return nil, fmt.Errorf("iterating rows: %w", err)
 		}
+		name, err := row.Get(0)
+		if err != nil {
+			return nil, fmt.Errorf("accessing row field: %w", err)
+		}
+		e.Name = name.(string)
+		age, err := row.Get(1)
+		if err != nil {
+			return nil, fmt.Errorf("accessing row field: %w", err)
+		}
+		// we can check for column type
+		c, err := row.Metadata().GetColumn(1)
+		if err != nil {
+			return nil, fmt.Errorf("accessing metadata: %w", err)
+		}
+		if c.Type() != sql.ColumnTypeSmallInt {
+			return nil, fmt.Errorf("unexpected column type: %d", c.Type())
+		}
+		// we already check that it is int16
+		e.Age = age.(int16)
 		emps = append(emps, e)
 	}
 	return emps, nil

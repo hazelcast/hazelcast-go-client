@@ -47,7 +47,7 @@ func EncodeMapKeySetRequest(name string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeMapKeySetResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeMapKeySetResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

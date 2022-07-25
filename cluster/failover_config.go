@@ -112,6 +112,15 @@ func (c *FailoverConfig) Validate(root Config) error {
 				i, hzerrors.ErrIllegalArgument)
 		}
 	}
+	// root SSL configuration is not respected if failover is enabled.
+	// check that root SSL configuration is not enabled if one of the failover config has SSL disabled.
+	if root.Network.SSL.Enabled {
+		for _, cfg := range c.Configs {
+			if !cfg.Network.SSL.Enabled {
+				return fmt.Errorf("root SSL configuration cannot be enabled if SSL is disabled for any of the failover clusters, use failover configurations instead: %w", hzerrors.ErrInvalidConfiguration)
+			}
+		}
+	}
 	return nil
 }
 

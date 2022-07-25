@@ -36,6 +36,7 @@ type CandidateCluster struct {
 	AddressTranslator  AddressTranslator
 	Credentials        security.Credentials
 	ConnectionStrategy *pubcluster.ConnectionStrategyConfig
+	NetworkCfg         *pubcluster.NetworkConfig
 	ClusterName        string
 }
 
@@ -56,6 +57,7 @@ func NewFailoverService(logger logger.LogAdaptor, maxTries int, rootConfig pubcl
 			ClusterName:        c.Name,
 			Credentials:        makeCredentials(&c.Security),
 			ConnectionStrategy: &cv.ConnectionStrategy,
+			NetworkCfg:         &cv.Network,
 		}
 		cc.AddressProvider, cc.AddressTranslator = addrFn(&c, logger)
 		candidates = append(candidates, cc)

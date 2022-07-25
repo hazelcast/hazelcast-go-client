@@ -34,7 +34,7 @@ const (
 // Returns true if this set contains all of the elements of the specified collection. If the specified collection is
 // also a set, this method returns true if it is a subset of this set.
 
-func EncodeSetContainsAllRequest(name string, items []*serialization.Data) *proto.ClientMessage {
+func EncodeSetContainsAllRequest(name string, items []serialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

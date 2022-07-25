@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -83,11 +83,15 @@ func NewClientError(msg string, wrapped, err error) *ClientError {
 }
 
 func (e ClientError) Error() string {
+	msg := ""
+	if e.Message != "" {
+		msg = fmt.Sprintf("%s: ", e.Message)
+	}
 	if e.WrappedErr != nil {
-		return fmt.Sprintf("%s: %s", e.Message, e.WrappedErr.Error())
+		return fmt.Sprintf("%s%s", msg, e.WrappedErr.Error())
 	}
 	if e.Err != nil {
-		return fmt.Sprintf("%s: %s", e.Message, e.Err.Error())
+		return fmt.Sprintf("%s%s", msg, e.Err.Error())
 	}
 	return e.Message
 }
@@ -142,6 +146,14 @@ func NewInstanceNotActiveError(msg string) *ClientError {
 
 func NewIllegalStateError(msg string, err error) *ClientError {
 	return NewClientError(msg, err, hzerrors.ErrIllegalState)
+}
+
+func NewSQLError(msg string, err error) *ClientError {
+	return NewClientError(msg, err, hzerrors.ErrSQL)
+}
+
+func NewInvalidConfigurationError(msg string, err error) *ClientError {
+	return NewClientError(msg, err, hzerrors.ErrInvalidConfiguration)
 }
 
 func IsRetryable(err error) bool {

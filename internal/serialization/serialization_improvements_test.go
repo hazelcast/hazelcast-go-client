@@ -89,7 +89,7 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, types.LocalDateTime(target), value)
+	assert.Equal(t, target, value)
 }
 
 func TestSerializationImprovements(t *testing.T) {
@@ -100,26 +100,6 @@ func TestSerializationImprovements(t *testing.T) {
 			target interface{}
 			name   string
 		}{
-			{
-				input:  time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local),
-				name:   "JavaLocalDate from types.LocalDate",
-				target: types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
-			},
-			{
-				input:  time.Date(0, 1, 1, 1, 2, 3, 50, time.Local),
-				name:   "JavaLocalTime from types.LocalTime",
-				target: types.LocalTime(time.Date(0, 1, 1, 1, 2, 3, 50, time.Local)),
-			},
-			{
-				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local),
-				name:   "JavaLocalDateTime from types.LocalDateTime",
-				target: types.LocalDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.Local)),
-			},
-			{
-				input:  time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60)),
-				name:   "JavaOffsetDateTime from types.OffsetDateTime",
-				target: types.OffsetDateTime(time.Date(2021, 2, 10, 1, 2, 3, 4, time.FixedZone("", -3*60*60))),
-			},
 			{
 				input:  types.LocalDate(time.Date(2021, 2, 10, 0, 0, 0, 0, time.Local)),
 				name:   "JavaLocalDate",

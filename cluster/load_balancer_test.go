@@ -20,8 +20,9 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hazelcast/hazelcast-go-client/cluster"
 )
 
 func TestRoundRobinLoadBalancer_OneOf(t *testing.T) {

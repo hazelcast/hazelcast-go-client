@@ -32,7 +32,7 @@ const (
 // Adds an interceptor for this map. Added interceptor will intercept operations
 // and execute user defined methods and will cancel operations if user defined method throw exception.
 
-func EncodeMapAddInterceptorRequest(name string, interceptor *iserialization.Data) *proto.ClientMessage {
+func EncodeMapAddInterceptorRequest(name string, interceptor iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

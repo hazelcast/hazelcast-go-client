@@ -34,7 +34,7 @@ const (
 // set, and vice-versa. This method is always executed by a distributed query, so it may throw a
 // QueryResultSizeExceededException if query result size limit is configured.
 
-func EncodeMapKeySetWithPredicateRequest(name string, predicate *iserialization.Data) *proto.ClientMessage {
+func EncodeMapKeySetWithPredicateRequest(name string, predicate iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
@@ -49,7 +49,7 @@ func EncodeMapKeySetWithPredicateRequest(name string, predicate *iserialization.
 	return clientMessage
 }
 
-func DecodeMapKeySetWithPredicateResponse(clientMessage *proto.ClientMessage) []*iserialization.Data {
+func DecodeMapKeySetWithPredicateResponse(clientMessage *proto.ClientMessage) []iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ If you are using Hazelcast and Go Client on the same computer, generally the def
 This is great for trying out the client.
 However, if you run the client on a different computer than any of the cluster members, you may need to do some simple configurations such as specifying the member addresses.
 
-The Hazelcast IMDG members and clients have their own configuration options.
+The Hazelcast members and clients have their own configuration options.
 You may need to reflect some of the member side configurations on the client side to properly connect to the cluster.
 
 In order to configure the client, you only need to create a new `hazelcast.Config{}`, which you can pass to `hazelcast.StartNewClientWithConnfig` function:
@@ -152,6 +152,8 @@ Here are all configuration items with their default values:
 
 	config.Logger.Level = logger.InfoLevel
 
+Checkout the nearcache package for the documentation about the Near Cache.
+
 Listening for Distributed Object Events
 
 You can listen to creation and destroy events for distributed objects by attaching a listener to the client.
@@ -207,19 +209,14 @@ The names in parantheses correspond to SQL types:
 	- float32 (real)
 	- float64 (double)
 	- types.Decimal (decimal)
+	- time.Time not supported, use one of types.LocalDate, types.LocalTime, types.LocalDateTime or types.OffsetDateTime
 	- types.LocalDate (date)
 	- types.LocalTime (time)
 	- types.LocalDateTime (timestamp)
 	- types.OffsetDateTime (timestamp with time zone)
-	- time.Time (date) Detected by checking: hour == minute == second == nanoseconds = 0
-	- time.Time (time) Detected by checking: year == 0, month == day == 1
-	- time.Time (timestamp) Detected by checking: not time, timezone == time.Local
-	- time.Time (timestamp with time zone) Detected by checking: not time, timezone != time.Local
 	- serialization.JSON (json)
 
 Using Date/Time
-
-time.Time values are automatically serialized to the correct type.
 
 In order to force using a specific date/time type, create a time.Time value and cast it to the target type:
 

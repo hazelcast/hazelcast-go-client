@@ -34,7 +34,7 @@ const (
 // Removes all of this collection's elements that are also contained in the specified collection (optional operation).
 // After this call returns, this collection will contain no elements in common with the specified collection.
 
-func EncodeQueueCompareAndRemoveAllRequest(name string, dataList []*iserialization.Data) *proto.ClientMessage {
+func EncodeQueueCompareAndRemoveAllRequest(name string, dataList []iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

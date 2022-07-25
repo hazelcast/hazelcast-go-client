@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package cluster
 
 import (
@@ -18,16 +34,20 @@ type HeartbeatService struct {
 	invService *invocation.Service
 	doneCh     chan struct{}
 	logger     logger.LogAdaptor
+	interval   time.Duration
+	timeout    time.Duration
 	state      int32
 }
 
-func NewHeartbeatService(cm *ConnectionManager, f *ConnectionInvocationFactory, invService *invocation.Service, logger logger.LogAdaptor) *HeartbeatService {
+func NewHeartbeatService(cm *ConnectionManager, f *ConnectionInvocationFactory, invService *invocation.Service, logger logger.LogAdaptor, interval, timeout time.Duration) *HeartbeatService {
 	return &HeartbeatService{
 		cm:         cm,
 		invFactory: f,
 		invService: invService,
 		logger:     logger,
 		doneCh:     make(chan struct{}),
+		interval:   interval,
+		timeout:    timeout,
 		state:      ready,
 	}
 }
@@ -43,17 +63,15 @@ func (hs *HeartbeatService) Stop() {
 }
 
 func (hs *HeartbeatService) checkConnections() {
-	ticker := time.NewTicker(time.Duration(hs.cm.clusterConfig.HeartbeatInterval))
+	ticker := time.NewTicker(hs.interval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-hs.doneCh:
 			return
 		case <-ticker.C:
-			timeout := time.Duration(hs.cm.clusterConfig.HeartbeatTimeout)
-			interval := time.Duration(hs.cm.clusterConfig.HeartbeatInterval)
 			for _, conn := range hs.cm.ActiveConnections() {
-				hs.sendHeartbeat(conn, timeout, interval)
+				hs.sendHeartbeat(conn, hs.timeout, hs.interval)
 			}
 		}
 	}
