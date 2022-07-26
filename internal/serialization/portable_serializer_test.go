@@ -529,3 +529,126 @@ func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
 		t.Error("nested portable version is wrong")
 	}
 }
+
+const (
+	factoryID1 = 1
+	factoryID2 = 2
+)
+
+type MyPortable1 struct {
+	stringField string
+}
+
+func (MyPortable1) FactoryID() (factoryID int32) {
+	return factoryID1
+}
+
+func (MyPortable1) ClassID() (classID int32) {
+	return 1
+}
+
+func (p MyPortable1) WritePortable(writer serialization.PortableWriter) {
+	writer.WriteString("stringField", p.stringField)
+}
+
+func (p *MyPortable1) ReadPortable(reader serialization.PortableReader) {
+	p.stringField = reader.ReadString("stringField")
+}
+
+type MyPortable2 struct {
+	intField int32
+}
+
+func (MyPortable2) FactoryID() (factoryID int32) {
+	return factoryID2
+}
+
+func (MyPortable2) ClassID() (classID int32) {
+	return 1
+}
+
+func (p MyPortable2) WritePortable(writer serialization.PortableWriter) {
+	writer.WriteInt32("intField", p.intField)
+}
+
+func (p *MyPortable2) ReadPortable(reader serialization.PortableReader) {
+	p.intField = reader.ReadInt32("intField")
+}
+
+type MyPortableFactory1 struct {
+}
+
+func (MyPortableFactory1) Create(classID int32) (instance serialization.Portable) {
+	if classID == 1 {
+		return &MyPortable1{}
+	}
+	return
+}
+
+func (MyPortableFactory1) FactoryID() int32 {
+	return factoryID1
+}
+
+type MyPortableFactory2 struct {
+}
+
+func (MyPortableFactory2) Create(classID int32) (instance serialization.Portable) {
+	if classID == 1 {
+		return &MyPortable2{}
+	}
+	return
+}
+
+func (*MyPortableFactory2) FactoryID() int32 {
+	return factoryID2
+}
+
+func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
+	config := &serialization.Config{}
+	config.PortableVersion = 3
+	myPortable1Def := serialization.NewClassDefinition(factoryID1, 1, config.PortableVersion)
+	err := myPortable1Def.AddStringField("stringField")
+	if err != nil {
+		t.Fatal(err)
+	}
+	myPortable2Def := serialization.NewClassDefinition(factoryID2, 1, config.PortableVersion)
+	err = myPortable2Def.AddStringField("intField")
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.SetClassDefinitions(myPortable1Def, myPortable2Def)
+	config.SetPortableFactories(&MyPortableFactory1{}, &MyPortableFactory2{})
+	service, _ := NewService(config)
+	// serialize MyPortable1
+	object := &MyPortable1{stringField: "test"}
+	data, _ := service.ToData(object)
+	toObject, _ := service.ToObject(data)
+	if !reflect.DeepEqual(object, toObject) {
+		t.Fatalf("got %v want %v", toObject, object)
+	}
+	// serialize MyPortable2
+	object2 := &MyPortable2{intField: 1}
+	data2, _ := service.ToData(object2)
+	toObject2, _ := service.ToObject(data2)
+	if !reflect.DeepEqual(object2, toObject2) {
+		t.Fatalf("got %v want %v", toObject2, object2)
+	}
+}
+
+func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			assert.True(t, errors.Is(err.(error), hzerrors.ErrHazelcastSerialization))
+		}
+	}()
+	commonFactoryID := int32(1)
+	commonClassID := int32(1)
+	config := &serialization.Config{}
+	config.PortableVersion = 3
+	p1 := serialization.NewClassDefinition(commonFactoryID, commonClassID, config.PortableVersion)
+	_ = p1.AddStringField("stringField")
+	p2 := serialization.NewClassDefinition(commonFactoryID, commonClassID, config.PortableVersion)
+	_ = p1.AddStringField("intField")
+	config.SetClassDefinitions(p1, p2)
+	NewService(config)
+}
