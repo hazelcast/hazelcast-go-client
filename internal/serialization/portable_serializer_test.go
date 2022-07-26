@@ -602,6 +602,8 @@ func (*MyPortableFactory2) FactoryID() int32 {
 	return factoryID2
 }
 
+// ported from:
+// com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassIdInDifferentFactories
 func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	config := &serialization.Config{}
 	myPortable1Def := serialization.NewClassDefinitionDefault(factoryID1, 1)
@@ -637,6 +639,8 @@ func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	}
 }
 
+// ported from:
+// com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassId_andSameFactoryId
 func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
