@@ -28,7 +28,7 @@ spec:
       containers:
         - name: hz-go-service
           image: nevzatseferoglu/hz-go-service:v1.0
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
           livenessProbe: # prevents deadlock
