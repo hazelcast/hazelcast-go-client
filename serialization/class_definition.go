@@ -37,6 +37,14 @@ func NewClassDefinition(factoryID int32, classID int32, version int32) *ClassDef
 	}
 }
 
+func NewClassDefinitionDefault(factoryID int32, classID int32) *ClassDefinition {
+	return &ClassDefinition{
+		FactoryID: factoryID,
+		ClassID:   classID,
+		Fields:    make(map[string]FieldDefinition),
+	}
+}
+
 func (cd *ClassDefinition) AddField(definition FieldDefinition) error {
 	if _, ok := cd.Fields[definition.Name]; ok {
 		return ihzerrors.NewIllegalArgumentError("duplicate field definition", nil)

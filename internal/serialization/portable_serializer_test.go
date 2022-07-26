@@ -604,35 +604,34 @@ func (*MyPortableFactory2) FactoryID() int32 {
 
 func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	config := &serialization.Config{}
-	config.PortableVersion = 3
-	myPortable1Def := serialization.NewClassDefinition(factoryID1, 1, config.PortableVersion)
+	myPortable1Def := serialization.NewClassDefinitionDefault(factoryID1, 1)
+	// register string which is located in MyPortable1
 	err := myPortable1Def.AddStringField("stringField")
-	if err != nil {
-		t.Fatal(err)
-	}
-	myPortable2Def := serialization.NewClassDefinition(factoryID2, 1, config.PortableVersion)
-	err = myPortable2Def.AddStringField("intField")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	myPortable2Def := serialization.NewClassDefinitionDefault(factoryID2, 1)
+	// register string which is located in MyPortable2
+	err = myPortable2Def.AddInt32Field("intField")
+	require.NoError(t, err)
+	// set config with class definitions
 	config.SetClassDefinitions(myPortable1Def, myPortable2Def)
+	// set config with portable factories
 	config.SetPortableFactories(&MyPortableFactory1{}, &MyPortableFactory2{})
 	service, err := NewService(config)
 	// serialize MyPortable1
 	object := &MyPortable1{stringField: "test"}
 	data, err := service.ToData(object)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	toObject, err := service.ToObject(data)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	if !reflect.DeepEqual(object, toObject) {
 		t.Fatalf("got %v want %v", toObject, object)
 	}
 	// serialize MyPortable2
 	object2 := &MyPortable2{intField: 1}
 	data2, err := service.ToData(object2)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	toObject2, err := service.ToObject(data2)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	if !reflect.DeepEqual(object2, toObject2) {
 		t.Fatalf("got %v want %v", toObject2, object2)
 	}
@@ -641,19 +640,19 @@ func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
-			assert.True(t, errors.Is(err.(error), hzerrors.ErrHazelcastSerialization))
+			require.True(t, errors.Is(err.(error), hzerrors.ErrHazelcastSerialization))
 		}
 	}()
 	commonFactoryID := int32(1)
 	commonClassID := int32(1)
 	config := &serialization.Config{}
-	config.PortableVersion = 3
-	p1 := serialization.NewClassDefinition(commonFactoryID, commonClassID, config.PortableVersion)
+	p1 := serialization.NewClassDefinitionDefault(commonFactoryID, commonClassID)
 	err := p1.AddStringField("stringField")
-	require.Nil(t, err)
-	p2 := serialization.NewClassDefinition(commonFactoryID, commonClassID, config.PortableVersion)
-	err = p1.AddStringField("intField")
-	require.Nil(t, err)
+	require.NoError(t, err)
+	p2 := serialization.NewClassDefinitionDefault(commonFactoryID, commonClassID)
+	err = p1.AddInt32Field("intField")
+	require.NoError(t, err)
 	config.SetClassDefinitions(p1, p2)
-	NewService(config)
+	_, err = NewService(config)
+	require.NoError(t, err)
 }
