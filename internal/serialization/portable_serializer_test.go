@@ -25,9 +25,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -576,8 +576,7 @@ func (p *MyPortable2) ReadPortable(reader serialization.PortableReader) {
 	p.intField = reader.ReadInt32("intField")
 }
 
-type MyPortableFactory1 struct {
-}
+type MyPortableFactory1 struct{}
 
 func (MyPortableFactory1) Create(classID int32) (instance serialization.Portable) {
 	if classID == 1 {
@@ -590,8 +589,7 @@ func (MyPortableFactory1) FactoryID() int32 {
 	return factoryID1
 }
 
-type MyPortableFactory2 struct {
-}
+type MyPortableFactory2 struct{}
 
 func (MyPortableFactory2) Create(classID int32) (instance serialization.Portable) {
 	if classID == 1 {
@@ -605,7 +603,6 @@ func (*MyPortableFactory2) FactoryID() int32 {
 }
 
 func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
-	it.MarkFlaky(t, "does not pass")
 	config := &serialization.Config{}
 	config.PortableVersion = 3
 	myPortable1Def := serialization.NewClassDefinition(factoryID1, 1, config.PortableVersion)
@@ -620,18 +617,22 @@ func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	}
 	config.SetClassDefinitions(myPortable1Def, myPortable2Def)
 	config.SetPortableFactories(&MyPortableFactory1{}, &MyPortableFactory2{})
-	service, _ := NewService(config)
+	service, err := NewService(config)
 	// serialize MyPortable1
 	object := &MyPortable1{stringField: "test"}
-	data, _ := service.ToData(object)
-	toObject, _ := service.ToObject(data)
+	data, err := service.ToData(object)
+	require.Nil(t, err)
+	toObject, err := service.ToObject(data)
+	require.Nil(t, err)
 	if !reflect.DeepEqual(object, toObject) {
 		t.Fatalf("got %v want %v", toObject, object)
 	}
 	// serialize MyPortable2
 	object2 := &MyPortable2{intField: 1}
-	data2, _ := service.ToData(object2)
-	toObject2, _ := service.ToObject(data2)
+	data2, err := service.ToData(object2)
+	require.Nil(t, err)
+	toObject2, err := service.ToObject(data2)
+	require.Nil(t, err)
 	if !reflect.DeepEqual(object2, toObject2) {
 		t.Fatalf("got %v want %v", toObject2, object2)
 	}
@@ -648,9 +649,11 @@ func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
 	config := &serialization.Config{}
 	config.PortableVersion = 3
 	p1 := serialization.NewClassDefinition(commonFactoryID, commonClassID, config.PortableVersion)
-	_ = p1.AddStringField("stringField")
+	err := p1.AddStringField("stringField")
+	require.Nil(t, err)
 	p2 := serialization.NewClassDefinition(commonFactoryID, commonClassID, config.PortableVersion)
-	_ = p1.AddStringField("intField")
+	err = p1.AddStringField("intField")
+	require.Nil(t, err)
 	config.SetClassDefinitions(p1, p2)
 	NewService(config)
 }
