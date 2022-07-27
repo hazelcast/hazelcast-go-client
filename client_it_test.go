@@ -160,7 +160,7 @@ func TestClient_AddMembershipListener(t *testing.T) {
 	wgAdded.Add(1)
 	wgRemoved.Add(1)
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", it.NextPort(), memberCount)
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), memberCount)
 	defer cls.Shutdown()
 	client, err := hz.StartNewClientWithConfig(ctx, cls.DefaultConfig())
 	if err != nil {
@@ -199,7 +199,7 @@ func TestClient_AddMembershipListener(t *testing.T) {
 func TestClient_RemoveMembershipListener(t *testing.T) {
 	var removed int32
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("client-subscribed-add-membership-listener", it.NextPort(), 2)
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 2)
 	defer cls.Shutdown()
 	cfg := cls.DefaultConfig()
 	client, err := hz.StartNewClientWithConfig(ctx, cfg)
