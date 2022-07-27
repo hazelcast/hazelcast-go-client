@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -201,8 +201,7 @@ func TestPNCounter_Add1000Sub1000(t *testing.T) {
 }
 
 func TestPNCounter_Reset_And_Continue(t *testing.T) {
-	const port = 30701
-	cls := it.StartNewClusterWithOptions("test-pncounter", port, 3)
+	cls := it.StartNewClusterWithOptions("test-pncounter", it.NextPort(), 3)
 	defer cls.Shutdown()
 	config := cls.DefaultConfig()
 	ctx := context.Background()

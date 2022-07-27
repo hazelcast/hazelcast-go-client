@@ -78,7 +78,7 @@ func TestNotReceivedInvocation(t *testing.T) {
 	// This test skips sending an invocation to the member in order to simulate lost connection.
 	// After 5 seconds, a GroupLost event is published to simulate the disconnection.
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("not-received-invocation", 55741, 1)
+		tc := it.StartNewClusterWithOptions("not-received-invocation", it.NextPort(), 1)
 		defer tc.Shutdown()
 		ctx := context.Background()
 		config := tc.DefaultConfig()
@@ -172,8 +172,8 @@ func TestClusterID(t *testing.T) {
 	it.SkipIf(t, "oss")
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
-		cls1 := it.StartNewClusterWithOptions("clusterId-test-cluster1", 15701, it.MemberCount())
-		cls2 := it.StartNewClusterWithOptions("clusterId-test-cluster2", 16701, it.MemberCount())
+		cls1 := it.StartNewClusterWithOptions("clusterId-test-cluster1", it.NextPort(), it.MemberCount())
+		cls2 := it.StartNewClusterWithOptions("clusterId-test-cluster2", it.NextPort(), it.MemberCount())
 		defer func() {
 			cls2.Shutdown()
 			cls1.Shutdown()
@@ -223,7 +223,7 @@ func TestClusterID(t *testing.T) {
 }
 
 func TestClientInternal_ClusterID(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-cluster-id", 55711, 1)
+	tc := it.StartNewClusterWithOptions("ci-cluster-id", it.NextPort(), 1)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -236,7 +236,7 @@ func TestClientInternal_ClusterID(t *testing.T) {
 func TestClientInternal_OrderedMembers(t *testing.T) {
 	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
-	tc := it.StartNewClusterWithOptions("ci-orderedmembers", 55721, 1)
+	tc := it.StartNewClusterWithOptions("ci-orderedmembers", it.NextPort(), 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -270,7 +270,7 @@ func TestClientInternal_OrderedMembers(t *testing.T) {
 }
 
 func TestClientInternal_ConnectedToMember(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-connected-to-member", 55731, 2)
+	tc := it.StartNewClusterWithOptions("ci-connected-to-member", it.NextPort(), 2)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -402,7 +402,7 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 }
 
 func clientInternalTester(t *testing.T, clusterName string, f func(t *testing.T, ci *hz.ClientInternal)) {
-	tc := it.StartNewClusterWithOptions(clusterName, 55751, 1)
+	tc := it.StartNewClusterWithOptions(clusterName, it.NextPort(), 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))

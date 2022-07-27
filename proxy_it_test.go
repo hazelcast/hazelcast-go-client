@@ -45,7 +45,7 @@ func TestProxy_Destroy(t *testing.T) {
 }
 
 func retryResult(t *testing.T, redo bool, target bool) {
-	cluster := it.StartNewClusterWithOptions("TestProxy_Destroy", 15701, 1)
+	cluster := it.StartNewClusterWithOptions("TestProxy_Destroy", it.NextPort(), 1)
 	config := cluster.DefaultConfig()
 	config.Cluster.RedoOperation = redo
 	ctx := context.Background()
@@ -63,7 +63,7 @@ func retryResult(t *testing.T, redo bool, target bool) {
 		}
 	}(okCh)
 	time.Sleep(1 * time.Second)
-	cluster = it.StartNewClusterWithOptions("TestProxy_Destroy", 15701, 1)
+	cluster = it.StartNewClusterWithOptions("TestProxy_Destroy", it.NextPort(), 1)
 	defer cluster.Shutdown()
 	ok := <-okCh
 	assert.Equal(t, target, ok)

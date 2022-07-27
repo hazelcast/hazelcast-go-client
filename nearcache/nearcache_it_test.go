@@ -53,7 +53,7 @@ func TestSmokeNearCachePopulation(t *testing.T) {
 	const memberCount = 3
 	clusterName := t.Name()
 	mapName := it.NewUniqueObjectName("map")
-	const port = 52001
+	port := it.NextPort()
 	clsCfg := smokeXMLConfig(clusterName, port)
 	cls := it.StartNewClusterWithConfig(memberCount, clsCfg, port)
 	defer cls.Shutdown()
@@ -371,7 +371,7 @@ func TestNearCacheGet(t *testing.T) {
 func TestNearCacheInvalidateOnChange(t *testing.T) {
 	// port of: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testNearCacheInvalidateOnChange
 	tcx := it.MapTestContext{T: t}
-	const port = 54001
+	port := it.NextPort()
 	clusterName := t.Name()
 	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
 	tcx.Cluster = it.StartNewClusterWithConfig(1, clsCfg, port)
@@ -939,7 +939,7 @@ func TestMemberLoadAllInvalidatesClientNearCache(t *testing.T) {
         	map.loadAll(true);
 		`, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, 51001, f)
+	memberInvalidatesClientNearCache(t, it.NextPort(), f)
 }
 
 func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
@@ -954,7 +954,7 @@ func TestMemberPutAllInvalidatesClientNearCache(t *testing.T) {
         	map.putAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, 51011, f)
+	memberInvalidatesClientNearCache(t, it.NextPort(), f)
 }
 
 func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
@@ -970,7 +970,7 @@ func TestMemberSetAllInvalidatesClientNearCache(t *testing.T) {
         	map.setAll(items);
 		`, size, tcx.MapName)
 	}
-	memberInvalidatesClientNearCache(t, 51021, f)
+	memberInvalidatesClientNearCache(t, it.NextPort(), f)
 }
 
 func TestForceRepairingTaskRun(t *testing.T) {
@@ -978,7 +978,7 @@ func TestForceRepairingTaskRun(t *testing.T) {
 	// this is a test for covering async init of RepairingTask.
 	clusterName := t.Name()
 	mapName := it.NewUniqueObjectName("map")
-	const port = 53001
+	port := it.NextPort()
 	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
 	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
 	const mapSize = 1000
@@ -1049,7 +1049,7 @@ func TestRepairingTaskRun(t *testing.T) {
 	// this is a test for covering sync init of RepairingTask.
 	clusterName := t.Name()
 	mapName := it.NewUniqueObjectName("map")
-	const port = 53011
+	port := it.NextPort()
 	clsCfg := invalidationXMLConfig(clusterName, "non-existent", port)
 	cls := it.StartNewClusterWithConfig(1, clsCfg, port)
 	defer cls.Shutdown()

@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -52,7 +53,6 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultPort = 7701
 const DefaultClusterName = "integration-test"
 
 var rc *RemoteControllerClient
@@ -272,11 +272,12 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 			panic("remote controller not accesible")
 		}
 	}
+	port := NextPort()
 	if launchDefaultCluster && defaultTestCluster == nil {
 		if SSLEnabled() {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
+			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
 		} else {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
+			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, port), port)
 		}
 	}
 	return rc
@@ -290,7 +291,7 @@ type TestCluster struct {
 }
 
 func StartNewCluster(memberCount int) *TestCluster {
-	return StartNewClusterWithOptions(DefaultClusterName, DefaultPort, memberCount)
+	return StartNewClusterWithOptions(DefaultClusterName, NextPort(), memberCount)
 }
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
@@ -541,4 +542,15 @@ func sortedString(b []byte) string {
 	s = strings.ReplaceAll(s, "\n", "")
 	s = strings.ReplaceAll(s, "\r", "")
 	return s
+}
+
+var nextPort int32 = 20000
+
+func NextPort() int {
+	step := int32(MemberCount())
+	// let step be minimum 10, just a safe value.
+	if step < 10 {
+		step = 10
+	}
+	return int(atomic.AddInt32(&nextPort, step))
 }
