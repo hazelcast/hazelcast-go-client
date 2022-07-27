@@ -582,7 +582,7 @@ func (MyPortableFactory1) Create(classID int32) (instance serialization.Portable
 	if classID == 1 {
 		return &MyPortable1{}
 	}
-	return
+	return nil
 }
 
 func (MyPortableFactory1) FactoryID() int32 {
@@ -595,22 +595,21 @@ func (MyPortableFactory2) Create(classID int32) (instance serialization.Portable
 	if classID == 1 {
 		return &MyPortable2{}
 	}
-	return
+	return nil
 }
 
 func (*MyPortableFactory2) FactoryID() int32 {
 	return factoryID2
 }
 
-// ported from:
-// com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassIdInDifferentFactories
+// ported from: com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassIdInDifferentFactories
 func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	config := &serialization.Config{}
-	myPortable1Def := serialization.NewClassDefinitionDefault(factoryID1, 1)
+	myPortable1Def := serialization.NewClassDefinition(factoryID1, 1, 0)
 	// register string which is located in MyPortable1
 	err := myPortable1Def.AddStringField("stringField")
 	require.NoError(t, err)
-	myPortable2Def := serialization.NewClassDefinitionDefault(factoryID2, 1)
+	myPortable2Def := serialization.NewClassDefinition(factoryID2, 1, 0)
 	// register string which is located in MyPortable2
 	err = myPortable2Def.AddInt32Field("intField")
 	require.NoError(t, err)
@@ -619,6 +618,7 @@ func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	// set config with portable factories
 	config.SetPortableFactories(&MyPortableFactory1{}, &MyPortableFactory2{})
 	service, err := NewService(config)
+	require.NoError(t, err)
 	// serialize MyPortable1
 	object := &MyPortable1{stringField: "test"}
 	data, err := service.ToData(object)
@@ -639,8 +639,7 @@ func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	}
 }
 
-// ported from:
-// com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassId_andSameFactoryId
+// ported from: com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassId_andSameFactoryId
 func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -650,10 +649,10 @@ func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
 	commonFactoryID := int32(1)
 	commonClassID := int32(1)
 	config := &serialization.Config{}
-	p1 := serialization.NewClassDefinitionDefault(commonFactoryID, commonClassID)
+	p1 := serialization.NewClassDefinition(commonFactoryID, commonClassID, 0)
 	err := p1.AddStringField("stringField")
 	require.NoError(t, err)
-	p2 := serialization.NewClassDefinitionDefault(commonFactoryID, commonClassID)
+	p2 := serialization.NewClassDefinition(commonFactoryID, commonClassID, 0)
 	err = p1.AddInt32Field("intField")
 	require.NoError(t, err)
 	config.SetClassDefinitions(p1, p2)

@@ -85,7 +85,7 @@ func ExampleConfig_SetPortableFactories() {
 	config := hazelcast.NewConfig()
 	config.Serialization.PortableVersion = 1
 	config.Serialization.SetPortableFactories(&MyPortableFactory{})
-	// version must be equivalent with PortableVersion
+	// version must be equivalent to PortableVersion
 	employeeCD := serialization.NewClassDefinition(factoryID, employeeClassID, 1)
 	employeeCD.AddStringField("name")
 	employeeCD.AddInt32Field("age")
