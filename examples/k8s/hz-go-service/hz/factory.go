@@ -3,12 +3,13 @@ package hz
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
-const localTest = false
+const withoutK8s = "HZ_GO_SERVICE_WITHOUT_K8S"
 
 // ClientInfo contains info about client
 type ClientInfo struct {
@@ -23,7 +24,8 @@ func NewHzClient(ctx context.Context) (*hazelcast.Client, error) {
 		ClientName: "hz-go-service-client",
 	}
 	cc := &config.Cluster
-	if localTest {
+	_, locally := os.LookupEnv(withoutK8s)
+	if locally {
 		cc.Network.SetAddresses(fmt.Sprintf("%s:%s", "localhost", "5701"))
 	} else {
 		cc.Network.SetAddresses(fmt.Sprintf("%s:%s", "hazelcast-sample.default.svc", "5701"))

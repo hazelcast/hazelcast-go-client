@@ -9,7 +9,7 @@
 ## Start deployment
 Before the start, it is highly recommended using minikube on Docker Desktop. The guide supposes that Docker Desktop is ready and running properly. You can run it on other container and virtual machine environment, but it is not tested.
 1. Open a new terminal session and type specified command one by one.
-2. `minikube start --driver`
+2. `minikube start --driver=docker`
 3. `minikube docker-env`
 4. `eval $(minikube -p minikube docker-env)`
 5. Open a new terminal session
