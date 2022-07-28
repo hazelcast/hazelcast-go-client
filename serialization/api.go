@@ -24,7 +24,7 @@ import (
 
 // IdentifiedDataSerializableFactory is used to create IdentifiedDataSerializable instances during deserialization.
 type IdentifiedDataSerializableFactory interface {
-	// Create ceates an IdentifiedDataSerializable instance using given type ID.
+	// Create creates an IdentifiedDataSerializable instance using given type ID.
 	Create(id int32) IdentifiedDataSerializable
 	// FactoryID returns the factory ID.
 	FactoryID() int32
