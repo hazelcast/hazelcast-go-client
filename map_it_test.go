@@ -41,7 +41,6 @@ import (
 )
 
 func TestMap(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		name string
 		f    func(t *testing.T)
@@ -120,7 +119,11 @@ func TestMap(t *testing.T) {
 		{name: "MapSetGetLargePayload", f: mapMapSetGetLargePayload},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.name, tc.f)
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.f(t)
+		})
 	}
 }
 

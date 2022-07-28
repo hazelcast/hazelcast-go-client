@@ -56,7 +56,7 @@ const (
 
 const DefaultClusterName = "integration-test"
 
-var rc *RemoteControllerClient
+var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
 var defaultTestCluster *TestCluster
 var idGen = proxy.ReferenceIDGenerator{}
@@ -232,7 +232,7 @@ func SSLEnabled() bool {
 func HzVersion() string {
 	version := os.Getenv(EnvHzVersion)
 	if version == "" {
-		version = "4.2"
+		version = "5.1"
 	}
 	return version
 }
@@ -248,8 +248,8 @@ func MemberCount() int {
 	return 1
 }
 
-func CreateDefaultRemoteController() *RemoteControllerClient {
-	return CreateRemoteController("localhost:9701")
+func CreateDefaultRemoteController() *RemoteControllerClientWrapper {
+	return newRemoteControllerClientWrapper(CreateRemoteController("localhost:9701"))
 }
 
 func CreateRemoteController(addr string) *RemoteControllerClient {
@@ -262,7 +262,7 @@ func CreateRemoteController(addr string) *RemoteControllerClient {
 	return rc
 }
 
-func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
+func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWrapper {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
@@ -276,19 +276,12 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 	port := NextPort()
 	if launchDefaultCluster && defaultTestCluster == nil {
 		if SSLEnabled() {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
+			defaultTestCluster = rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
 		} else {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, port), port)
+			defaultTestCluster = rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
 		}
 	}
 	return rc
-}
-
-type TestCluster struct {
-	RC          *RemoteControllerClient
-	ClusterID   string
-	MemberUUIDs []string
-	Port        int
 }
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
@@ -297,27 +290,82 @@ func StartNewClusterWithOptions(clusterName string, port, memberCount int) *Test
 	if SSLEnabled() {
 		config = xmlSSLConfig(clusterName, port)
 	}
-	return startNewCluster(rc, memberCount, config, port)
+	return rc.startNewCluster(memberCount, config, port)
 }
 
 func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
 	ensureRemoteController(false)
-	return startNewCluster(rc, memberCount, config, port)
+	return rc.startNewCluster(memberCount, config, port)
 }
 
-func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
+type RemoteControllerClientWrapper struct {
+	mu *sync.Mutex
+	rc *RemoteControllerClient
+}
+
+func newRemoteControllerClientWrapper(rc *RemoteControllerClient) *RemoteControllerClientWrapper {
+	return &RemoteControllerClientWrapper{
+		mu: &sync.Mutex{},
+		rc: rc,
+	}
+}
+
+func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *TestCluster {
+	cluster := MustValue(rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
-		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)
+		member := MustValue(rcw.StartMember(context.Background(), cluster.ID)).(*Member)
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
-		RC:          rc,
+		RC:          rcw,
 		ClusterID:   cluster.ID,
 		MemberUUIDs: memberUUIDs,
 		Port:        port,
 	}
+}
+
+func (rcw *RemoteControllerClientWrapper) StartMember(ctx context.Context, clusterID string) (*Member, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.StartMember(ctx, clusterID)
+}
+
+func (rcw *RemoteControllerClientWrapper) Ping(ctx context.Context) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.Ping(ctx)
+}
+
+func (rcw *RemoteControllerClientWrapper) CreateClusterKeepClusterName(ctx context.Context, hzVersion string, xmlconfig string) (*Cluster, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.CreateClusterKeepClusterName(ctx, hzVersion, xmlconfig)
+}
+
+func (rcw *RemoteControllerClientWrapper) ShutdownMember(ctx context.Context, clusterID string, memberID string) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.ShutdownMember(ctx, clusterID, memberID)
+}
+
+func (rcw *RemoteControllerClientWrapper) TerminateMember(ctx context.Context, clusterID string, memberID string) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.TerminateMember(ctx, clusterID, memberID)
+}
+
+func (rcw *RemoteControllerClientWrapper) ExecuteOnController(ctx context.Context, clusterID string, script string, lang Lang) (*Response, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.ExecuteOnController(ctx, clusterID, script, lang)
+}
+
+type TestCluster struct {
+	RC          *RemoteControllerClientWrapper
+	ClusterID   string
+	MemberUUIDs []string
+	Port        int
 }
 
 func (c TestCluster) Shutdown() {
