@@ -29,25 +29,10 @@ import (
 
 func TestRetryWithoutRedoOperation(t *testing.T) {
 	// The connection should be retried on IOError
-	retryResult(t, false, true)
-}
-
-func TestProxy_Destroy(t *testing.T) {
-	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		if err := m.Destroy(context.Background()); err != nil {
-			t.Fatal(err)
-		}
-		// the next call should do nothing and return no error
-		if err := m.Destroy(context.Background()); err != nil {
-			t.Fatal(err)
-		}
-	})
-}
-
-func retryResult(t *testing.T, redo bool, target bool) {
-	cluster := it.StartNewClusterWithOptions("TestProxy_Destroy", it.NextPort(), 1)
+	port := it.NextPort()
+	cluster := it.StartNewClusterWithOptions(t.Name(), port, 1)
 	config := cluster.DefaultConfig()
-	config.Cluster.RedoOperation = redo
+	config.Cluster.RedoOperation = false
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
 	m := it.MustValue(client.GetMap(ctx, "redo-test")).(*hz.Map)
@@ -63,8 +48,20 @@ func retryResult(t *testing.T, redo bool, target bool) {
 		}
 	}(okCh)
 	time.Sleep(1 * time.Second)
-	cluster = it.StartNewClusterWithOptions("TestProxy_Destroy", it.NextPort(), 1)
+	cluster = it.StartNewClusterWithOptions(t.Name(), port, 1)
 	defer cluster.Shutdown()
 	ok := <-okCh
-	assert.Equal(t, target, ok)
+	assert.Equal(t, true, ok)
+}
+
+func TestProxy_Destroy(t *testing.T) {
+	it.MapTester(t, func(t *testing.T, m *hz.Map) {
+		if err := m.Destroy(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		// the next call should do nothing and return no error
+		if err := m.Destroy(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	})
 }

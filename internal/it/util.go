@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net"
 	"os"
 	"reflect"
 	"runtime/debug"
@@ -161,7 +162,7 @@ func (f SamplePortableFactory) FactoryID() int32 {
 	return SamplePortableFactoryID
 }
 
-// Must panics if err is not nil
+// Must panics if err is not nil.
 func Must(err error) {
 	if err != nil {
 		panic(err)
@@ -288,10 +289,6 @@ type TestCluster struct {
 	ClusterID   string
 	MemberUUIDs []string
 	Port        int
-}
-
-func StartNewCluster(memberCount int) *TestCluster {
-	return StartNewClusterWithOptions(DefaultClusterName, NextPort(), memberCount)
 }
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
@@ -544,13 +541,37 @@ func sortedString(b []byte) string {
 	return s
 }
 
-var nextPort int32 = 20000
+var nextPort int32 = 10000
 
 func NextPort() int {
-	step := int32(MemberCount())
-	// let step be minimum 10, just a safe value.
-	if step < 10 {
-		step = 10
+	// let minimum step be 10, just a round, safe value.
+	// note that some tests may not use the MemberCount() function for the cluster size.
+	const maxStep = 10
+	step := MemberCount()
+	if step < maxStep {
+		step = maxStep
 	}
-	return int(atomic.AddInt32(&nextPort, step))
+nextblock:
+	for {
+		start := int(atomic.AddInt32(&nextPort, int32(step))) - step
+		// check that all ports in the range are open
+		for port := start; port < start+step; port++ {
+			if !isPortOpen(port) {
+				// ignoring the error from fmt.Fprintf, not useful in this case.
+				_, _ = fmt.Fprintf(os.Stderr, "it.NextPort: %d is not open, skipping the block: [%d:%d]\n", port, start, start+step)
+				continue nextblock
+			}
+		}
+		return start
+	}
+}
+
+func isPortOpen(port int) bool {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 10*time.Millisecond)
+	if err != nil {
+		return true
+	}
+	// ignoring the error from conn.Close, since there's nothing useful to do with it.
+	_ = conn.Close()
+	return false
 }

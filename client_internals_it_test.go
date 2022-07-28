@@ -46,31 +46,31 @@ import (
 
 func TestListenersAfterClientDisconnected(t *testing.T) {
 	t.Run("MemberHostname_ClientIP_AddEntryListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501, addEntryListener)
+		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", addEntryListener)
 	})
 	t.Run("MemberHostname_ClientIP_AddListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", 46501, addListener)
+		testListenersAfterClientDisconnected(t, "localhost", "127.0.0.1", addListener)
 	})
 
 	t.Run("MemberHostname_ClientHostname_AddEntryListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501, addEntryListener)
+		testListenersAfterClientDisconnected(t, "localhost", "localhost", addEntryListener)
 	})
 	t.Run("MemberHostname_ClientHostname_AddListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "localhost", "localhost", 47501, addListener)
+		testListenersAfterClientDisconnected(t, "localhost", "localhost", addListener)
 	})
 
 	t.Run("MemberIP_ClientIP", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501, addEntryListener)
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", addEntryListener)
 	})
 	t.Run("MemberIP_ClientIP_AddListener_AddEntryListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", 48501, addListener)
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "127.0.0.1", addListener)
 	})
 
 	t.Run("MemberIP_ClientHostname_AddEntryListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501, addEntryListener)
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", addEntryListener)
 	})
 	t.Run("MemberIP_ClientHostname_AddListener", func(t *testing.T) {
-		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", 49501, addListener)
+		testListenersAfterClientDisconnected(t, "127.0.0.1", "localhost", addListener)
 	})
 }
 
@@ -78,7 +78,7 @@ func TestNotReceivedInvocation(t *testing.T) {
 	// This test skips sending an invocation to the member in order to simulate lost connection.
 	// After 5 seconds, a GroupLost event is published to simulate the disconnection.
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("not-received-invocation", it.NextPort(), 1)
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 		defer tc.Shutdown()
 		ctx := context.Background()
 		config := tc.DefaultConfig()
@@ -126,9 +126,10 @@ func addListener(ctx context.Context, m *hz.Map, counter *int64) {
 	}, false))
 }
 
-func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clientHost string, port int, f func(context.Context, *hz.Map, *int64)) {
+func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clientHost string, f func(context.Context, *hz.Map, *int64)) {
 	const heartBeatSec = 6
 	// launch the cluster
+	port := it.NextPort()
 	memberConfig := listenersAfterClientDisconnectedXMLConfig(t.Name(), memberHost, port, heartBeatSec)
 	if it.SSLEnabled() {
 		memberConfig = listenersAfterClientDisconnectedXMLSSLConfig(t.Name(), memberHost, port, heartBeatSec)
@@ -172,8 +173,10 @@ func TestClusterID(t *testing.T) {
 	it.SkipIf(t, "oss")
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
-		cls1 := it.StartNewClusterWithOptions("clusterId-test-cluster1", it.NextPort(), it.MemberCount())
-		cls2 := it.StartNewClusterWithOptions("clusterId-test-cluster2", it.NextPort(), it.MemberCount())
+		cluster1Name := fmt.Sprintf("%s-1", t.Name())
+		cluster2Name := fmt.Sprintf("%s-2", t.Name())
+		cls1 := it.StartNewClusterWithOptions(cluster1Name, it.NextPort(), it.MemberCount())
+		cls2 := it.StartNewClusterWithOptions(cluster2Name, it.NextPort(), it.MemberCount())
 		defer func() {
 			cls2.Shutdown()
 			cls1.Shutdown()
@@ -223,7 +226,7 @@ func TestClusterID(t *testing.T) {
 }
 
 func TestClientInternal_ClusterID(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-cluster-id", it.NextPort(), 1)
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -236,7 +239,7 @@ func TestClientInternal_ClusterID(t *testing.T) {
 func TestClientInternal_OrderedMembers(t *testing.T) {
 	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
-	tc := it.StartNewClusterWithOptions("ci-orderedmembers", it.NextPort(), 1)
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -270,7 +273,7 @@ func TestClientInternal_OrderedMembers(t *testing.T) {
 }
 
 func TestClientInternal_ConnectedToMember(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("ci-connected-to-member", it.NextPort(), 2)
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 2)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
 	defer client.Shutdown(ctx)
@@ -282,7 +285,7 @@ func TestClientInternal_ConnectedToMember(t *testing.T) {
 }
 
 func TestClientInternal_InvokeOnRandomTarget(t *testing.T) {
-	clientInternalTester(t, "ci-invoke-random", func(t *testing.T, ci *hz.ClientInternal) {
+	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		ctx := context.Background()
 		t.Run("without handler", func(t *testing.T) {
 			req := EncodeMCGetMemberConfigRequest()
@@ -320,7 +323,7 @@ func TestClientInternal_InvokeOnRandomTarget(t *testing.T) {
 }
 
 func TestClientInternal_InvokeOnPartition(t *testing.T) {
-	clientInternalTester(t, "ci-invoke-partition", func(t *testing.T, ci *hz.ClientInternal) {
+	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		req := EncodeMCGetMemberConfigRequest()
 		resp, err := ci.InvokeOnPartition(context.Background(), req, 1, nil)
 		if err != nil {
@@ -332,7 +335,7 @@ func TestClientInternal_InvokeOnPartition(t *testing.T) {
 }
 
 func TestClientInternal_InvokeOnKey(t *testing.T) {
-	clientInternalTester(t, "ci-invoke-key", func(t *testing.T, ci *hz.ClientInternal) {
+	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		keyData, err := ci.EncodeData("foo")
 		if err != nil {
 			t.Fatal(err)
@@ -348,7 +351,7 @@ func TestClientInternal_InvokeOnKey(t *testing.T) {
 }
 
 func TestClientInternal_InvokeOnMember(t *testing.T) {
-	clientInternalTester(t, "ci-invoke-member", func(t *testing.T, ci *hz.ClientInternal) {
+	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		ctx := context.Background()
 		t.Run("invalid member", func(t *testing.T) {
 			_, err := ci.InvokeOnMember(ctx, nil, types.UUID{}, nil)
@@ -370,7 +373,7 @@ func TestClientInternal_InvokeOnMember(t *testing.T) {
 }
 
 func TestClientInternal_EncodeData(t *testing.T) {
-	clientInternalTester(t, "ci-encode-data", func(t *testing.T, ci *hz.ClientInternal) {
+	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		data, err := ci.EncodeData("foo")
 		if err != nil {
 			t.Fatal(err)
@@ -401,8 +404,8 @@ func (h *riggedInvocationHandler) Invoke(inv invocation.Invocation) (int64, erro
 	return h.Handler.Invoke(inv)
 }
 
-func clientInternalTester(t *testing.T, clusterName string, f func(t *testing.T, ci *hz.ClientInternal)) {
-	tc := it.StartNewClusterWithOptions(clusterName, it.NextPort(), 1)
+func clientInternalTester(t *testing.T, f func(t *testing.T, ci *hz.ClientInternal)) {
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 	defer tc.Shutdown()
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))

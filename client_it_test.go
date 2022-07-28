@@ -36,6 +36,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -482,7 +483,8 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 
 func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", it.NextPort(), it.MemberCount())
+	port := it.NextPort()
+	cls := it.StartNewClusterWithOptions(t.Name(), port, it.MemberCount())
 	mu := &sync.Mutex{}
 	events := []hz.LifecycleState{}
 	config := cls.DefaultConfig()
@@ -515,11 +517,10 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	}
 	cls.Shutdown()
 	it.WaitEventually(t, &disconnectedWg)
-	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", it.NextPort(), it.MemberCount())
+	cls = it.StartNewClusterWithOptions(t.Name(), port, it.MemberCount())
 	it.WaitEventually(t, &reconnectedWg)
 	cls.Shutdown()
 	c.Shutdown(ctx)
-
 	target := []hz.LifecycleState{
 		hz.LifecycleStateStarting,
 		hz.LifecycleStateConnected,
@@ -541,7 +542,7 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", it.NextPort(), it.MemberCount())
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 	config := cls.DefaultConfig()
 	config.Cluster.ConnectionStrategy.ReconnectMode = cluster.ReconnectModeOff
 	c, err := hz.StartNewClientWithConfig(ctx, config)
@@ -688,9 +689,9 @@ func TestClient_GetProxyInstance(t *testing.T) {
 }
 
 func TestClientFailover_OSSCluster(t *testing.T) {
-	it.SkipIf(t, "enterprise")
+	skip.IfNot(t, "oss")
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("failover-test-cluster", it.NextPort(), it.MemberCount())
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 	defer cls.Shutdown()
 	config := cls.DefaultConfig()
 	config.Failover.Enabled = true
@@ -705,7 +706,7 @@ func TestClientFailover_OSSCluster(t *testing.T) {
 }
 
 func TestClientFailover_EECluster(t *testing.T) {
-	it.SkipIf(t, "oss")
+	skip.IfNot(t, "enterprise")
 	ctx := context.Background()
 	clsBase := t.Name()
 	cls1 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-1", clsBase), it.NextPort(), it.MemberCount())
@@ -732,10 +733,12 @@ func TestClientFailover_EECluster(t *testing.T) {
 }
 
 func TestClientFailover_EECluster_Reconnection(t *testing.T) {
-	it.SkipIf(t, "oss")
+	skip.IfNot(t, "enterprise")
 	ctx := context.Background()
-	cls1 := it.StartNewClusterWithOptions("failover-test-cluster1", it.NextPort(), it.MemberCount())
-	cls2 := it.StartNewClusterWithOptions("failover-test-cluster2", it.NextPort(), it.MemberCount())
+	cls1Name := fmt.Sprintf("%s-1", t.Name())
+	cls2Name := fmt.Sprintf("%s-2", t.Name())
+	cls1 := it.StartNewClusterWithOptions(cls1Name, it.NextPort(), it.MemberCount())
+	cls2 := it.StartNewClusterWithOptions(cls2Name, it.NextPort(), it.MemberCount())
 	defer cls2.Shutdown()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -768,19 +771,18 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	}
 }
 
-func highlight(t *testing.T, format string, args ...interface{}) {
-	log.Printf("\n===\n%s\n===", fmt.Sprintf(format, args...))
-}
-
 func TestClientFixConnection(t *testing.T) {
 	// This test removes the member that corresponds to the connections which receives membership state changes.
 	// Once that connection is closed, another connection should be randomly selected to receive membership state changes.
 	// A new member is added to confirm that is the case.
 	const memberCount = 3
+	highlight := func(format string, args ...interface{}) {
+		t.Logf("\n===\n%s\n===", fmt.Sprintf(format, args...))
+	}
 	addedCount := int64(0)
 	ctx := context.Background()
 	clusterName := t.Name()
-	log.Println("Cluster name:", clusterName)
+	t.Log("Cluster name:", clusterName)
 	port := it.NextPort()
 	cls := it.StartNewClusterWithOptions(clusterName, port, memberCount)
 	defer cls.Shutdown()
@@ -788,7 +790,7 @@ func TestClientFixConnection(t *testing.T) {
 	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port+1))
 	config.Cluster.Name = clusterName
 	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
-		highlight(t, "%s member: %s", event.State.String(), event.Member.UUID)
+		highlight("%s member: %s", event.State.String(), event.Member.UUID)
 		if event.State == cluster.MembershipStateAdded {
 			atomic.AddInt64(&addedCount, 1)
 		}
@@ -803,7 +805,7 @@ func TestClientFixConnection(t *testing.T) {
 	defer client.Shutdown(ctx)
 	// terminate the member that corresponds to the connection which receives cluster membership updates
 	mUUID := cls.MemberUUIDs[1]
-	highlight(t, "Terminated member: %s", mUUID)
+	highlight("Terminated member: %s", mUUID)
 	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, mUUID)
 	if err != nil {
 		t.Fatal(err)
@@ -815,7 +817,7 @@ func TestClientFixConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	highlight(t, "Started member: %s", m.UUID)
+	highlight("Started member: %s", m.UUID)
 	it.Eventually(t, func() bool {
 		return int64(memberCount+1) == atomic.LoadInt64(&addedCount)
 	})
@@ -829,7 +831,7 @@ func TestClientVersion(t *testing.T) {
 
 func TestInvocationTimeout(t *testing.T) {
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("invocation-timeout", it.NextPort(), 1)
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		if it.TraceLoggingEnabled() {
@@ -858,7 +860,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 	// TODO make sure there is no leak, and find an upper memory limit for this
 	it.MarkFlaky(t)
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", it.NextPort(), it.MemberCount())
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		if it.TraceLoggingEnabled() {
@@ -892,7 +894,7 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 
 func TestClientInvocationAfterShutdown(t *testing.T) {
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("invocation-after-shutdown", it.NextPort(), it.MemberCount())
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		if it.TraceLoggingEnabled() {
@@ -914,7 +916,7 @@ func TestClientInvocationAfterShutdown(t *testing.T) {
 
 func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 	clientTester(t, func(t *testing.T, smart bool) {
-		cn := fmt.Sprintf("invocation-after-shutdown-2-%t", smart)
+		cn := fmt.Sprintf("%s-%t", t.Name(), smart)
 		tc := it.StartNewClusterWithOptions(cn, it.NextPort(), it.MemberCount())
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
@@ -960,7 +962,7 @@ func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 }
 
 func TestClientStartShutdownWithNilContext(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("nil-context-cluster", it.NextPort(), 1)
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 	defer tc.Shutdown()
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, tc.DefaultConfig()))
 	it.Must(client.Shutdown(nil))

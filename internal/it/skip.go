@@ -33,6 +33,7 @@ func SkipIf(t *testing.T, conditions string) {
 // MarkSlow marks a test "slow", so it is run only when slow test mode is enabled.
 // Note that if "all" mode is enabled, the test runs disregard of whether slow test mode is enabled or disabled.
 func MarkSlow(t *testing.T) {
+	t.Logf("Note: %s is a slow test, it will run only when enabled.", t.Name())
 	skip.If(t, "!slow, !all")
 }
 

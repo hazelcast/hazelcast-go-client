@@ -201,7 +201,7 @@ func TestPNCounter_Add1000Sub1000(t *testing.T) {
 }
 
 func TestPNCounter_Reset_And_Continue(t *testing.T) {
-	cls := it.StartNewClusterWithOptions("test-pncounter", it.NextPort(), 3)
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 3)
 	defer cls.Shutdown()
 	config := cls.DefaultConfig()
 	ctx := context.Background()

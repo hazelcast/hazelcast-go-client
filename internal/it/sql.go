@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ func SQLTester(t *testing.T, f func(t *testing.T, client *hz.Client, config *hz.
 }
 
 func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), f func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string)) {
-	port := 60001
+	port := NextPort()
 	memberConfig := sqlXMLConfig(t.Name(), "localhost", port)
 	if SSLEnabled() {
 		memberConfig = sqlXMLSSLConfig(t.Name(), "localhost", port)
