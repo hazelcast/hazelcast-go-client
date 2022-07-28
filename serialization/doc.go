@@ -66,7 +66,7 @@ We will use the following type for all examples in this section:
 	}
 
 	func (e Employee) String() string {
-		return fmt.Sprintf("Employe: %s", e.Surname)
+		return fmt.Sprintf("Employee: %s", e.Surname)
 	}
 
 	// Common serialization methods
