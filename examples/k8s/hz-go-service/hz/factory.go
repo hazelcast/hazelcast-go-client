@@ -26,19 +26,11 @@ func NewHzClient(ctx context.Context) (*hazelcast.Client, error) {
 	if localTest {
 		cc.Network.SetAddresses(fmt.Sprintf("%s:%s", "localhost", "5701"))
 	} else {
-		cc.Network.SetAddresses(fmt.Sprintf("%s:%s", "hazelcast.default.svc", "5701"))
+		cc.Network.SetAddresses(fmt.Sprintf("%s:%s", "hazelcast-sample.default.svc", "5701"))
 	}
+	// Unisocket network configuration is not a mandatory setting.
 	cc.Unisocket = true
 	config.Logger.Level = logger.InfoLevel
-	client, err := NewHzClientWithConfig(ctx, config)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
-
-// NewHzClientWithConfig Return new hazelcast client instance with given config.
-func NewHzClientWithConfig(ctx context.Context, config hazelcast.Config) (*hazelcast.Client, error) {
 	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		return nil, err

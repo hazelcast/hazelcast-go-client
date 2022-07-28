@@ -6,6 +6,3 @@ spec:
   clusterSize: 3
   repository: 'docker.io/hazelcast/hazelcast'
   version: '5.1.2-slim'
-  exposeExternally:
-    type: Unisocket
-    discoveryService: NodePort

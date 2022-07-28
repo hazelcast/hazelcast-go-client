@@ -27,10 +27,13 @@ spec:
     spec:
       containers:
         - name: hz-go-service
-          image: nevzatseferoglu/hz-go-service:v1.0
+          image: example/hz-go-service
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: 200m
           livenessProbe: # prevents deadlock
             httpGet:
               path: /health

@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/gorilla/mux v1.8.0
-	github.com/hazelcast/hazelcast-go-client v1.2.0
+	github.com/hazelcast/hazelcast-go-client v1.3.0
 )
 
 require (

@@ -167,14 +167,13 @@ func mapEntryHandler(rw http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		_, err = rw.Write(rsp)
-		if err != nil {
+		if _, err = rw.Write(rsp); err != nil {
 			http.Error(rw, fmt.Sprintf("Response cannot be written properly"), http.StatusInternalServerError)
 			return
 		}
 	case "POST":
 		rw.WriteHeader(http.StatusCreated)
-		if !isContentTypeJson(r) {
+		if !isContentTypeHeaderJSON(r) {
 			http.Error(rw, "Invalid content type is given in header", http.StatusBadRequest)
 			return
 		}
@@ -187,8 +186,7 @@ func mapEntryHandler(rw http.ResponseWriter, r *http.Request) {
 			Value interface{} `json:"value"`
 		}
 		var reqBody RequestBody
-		err = json.Unmarshal(body, &reqBody)
-		if err != nil {
+		if err = json.Unmarshal(body, &reqBody); err != nil {
 			http.Error(rw, "Invalid request body", http.StatusBadRequest)
 			return
 		}
@@ -198,8 +196,7 @@ func mapEntryHandler(rw http.ResponseWriter, r *http.Request) {
 			http.Error(rw, "Hazelcast cannot return a map", http.StatusInternalServerError)
 			return
 		}
-		_, err = pmap.Put(ctx, key, reqBody.Value)
-		if err != nil {
+		if _, err = pmap.Put(ctx, key, reqBody.Value); err != nil {
 			http.Error(rw, fmt.Sprintf("Hazelcast cannot put %v value to map", reqBody.Value), http.StatusInternalServerError)
 			return
 		}
@@ -220,8 +217,8 @@ func mapEntryHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// isContentTypeJson determine whether content-type of the request header is in json type.
-func isContentTypeJson(r *http.Request) bool {
+// isContentTypeHeaderJSON determine whether content-type of the request header is in json type.
+func isContentTypeHeaderJSON(r *http.Request) bool {
 	contentType := r.Header.Get("Content-type")
 	if contentType == "" {
 		return false
@@ -232,14 +229,13 @@ func isContentTypeJson(r *http.Request) bool {
 	return true
 }
 
-// healthHandler handlers for k8s pod health.
-func healthHandler(rw http.ResponseWriter, _ *http.Request) {
+// rootHandler handles the root path
+func rootHandler(rw http.ResponseWriter, _ *http.Request) {
 	rw.WriteHeader(http.StatusOK)
-}
-
-// readinessHandler handlers for k8s pod readiness.
-func readinessHandler(rw http.ResponseWriter, _ *http.Request) {
-	rw.WriteHeader(http.StatusOK)
+	if _, err := rw.Write([]byte("Go service is alive!")); err != nil {
+		http.Error(rw, fmt.Sprintf("Response cannot be written properly"), http.StatusInternalServerError)
+		return
+	}
 }
 
 // newDefaultServiceConfig returns new config.
@@ -260,6 +256,9 @@ func newInMemoryHzMap(ctx context.Context, c *hazelcast.Client) (*InMemoryHzStor
 		{Key: "key3", Value: "value3"},
 	}
 	newMap, err := c.GetMap(ctx, sampleMap)
+	if err != nil {
+		return nil, err
+	}
 	err = newMap.PutAll(ctx, entries...)
 	if err != nil {
 		return nil, err
@@ -281,9 +280,14 @@ func newServer(router *mux.Router, config *ServiceConfig) *http.Server {
 func newRouter() *mux.Router {
 	// creates a server
 	router := mux.NewRouter()
-	// health checks for kubernetes
-	router.HandleFunc("/health", healthHandler)
-	router.HandleFunc("/readiness", readinessHandler)
+	// root handler
+	router.HandleFunc("/", rootHandler)
+	// health and readiness check for k8s
+	okHandler := func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+	}
+	router.HandleFunc("/health", okHandler)
+	router.HandleFunc("/readiness", okHandler)
 	// service configuration handler
 	router.HandleFunc(fmt.Sprintf("/%s", endpoints[0]), getConfigHandler)
 	// hazelcast map handlers
