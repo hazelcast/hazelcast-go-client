@@ -21,11 +21,19 @@ import (
 	"fmt"
 	"testing"
 
-	"go.uber.org/goleak"
-
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
+
+var sqlTestCluster = NewSingletonTestCluster("sql", func() *TestCluster {
+	const clusterName = "sql-integration-test"
+	port := NextPort()
+	memberConfig := sqlXMLConfig(clusterName, "localhost", port)
+	if SSLEnabled() {
+		memberConfig = sqlXMLSSLConfig(clusterName, "localhost", port)
+	}
+	return StartNewClusterWithConfig(MemberCount(), memberConfig, port)
+})
 
 func SQLTester(t *testing.T, f func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string)) {
 	cfn := func(c *hz.Config) {
@@ -35,18 +43,8 @@ func SQLTester(t *testing.T, f func(t *testing.T, client *hz.Client, config *hz.
 }
 
 func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), f func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string)) {
-	port := NextPort()
-	memberConfig := sqlXMLConfig(t.Name(), "localhost", port)
-	if SSLEnabled() {
-		memberConfig = sqlXMLSSLConfig(t.Name(), "localhost", port)
-	}
-	tc := StartNewClusterWithConfig(MemberCount(), memberConfig, port)
-	defer tc.Shutdown()
+	tc := sqlTestCluster.Launch(t)
 	runner := func(t *testing.T, smart bool) {
-		if LeakCheckEnabled() {
-			t.Logf("enabled leak check")
-			defer goleak.VerifyNone(t)
-		}
 		config := tc.DefaultConfig()
 		if configFn != nil {
 			configFn(&config)

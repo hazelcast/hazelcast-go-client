@@ -34,11 +34,11 @@ func TestFlakeIDGenerator(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "NewID", f: flakeIDGeneratorNewIDTest},
+		{name: "BatchConcurrentCalls", f: flakeIDBatchConcurrentCallsTest},
+		{name: "BatchNextID", f: flakeIDGeneratorBatchNextIDTest},
 		{name: "ExpiredBatch", f: flakeIDGeneratorExpiredBatchTest},
 		{name: "IDGeneratorUsedBatch", f: flakeIDGeneratorUsedBatchTest},
-		{name: "BatchNextID", f: flakeIDGeneratorBatchNextIDTest},
-		{name: "BatchConcurrentCalls", f: flakeIDBatchConcurrentCallsTest},
+		{name: "NewID", f: flakeIDGeneratorNewIDTest},
 	}
 	for _, tc := range testCases {
 		tc := tc

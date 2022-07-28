@@ -58,7 +58,14 @@ const DefaultClusterName = "integration-test"
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
-var defaultTestCluster *TestCluster
+var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
+	port := NextPort()
+	if SSLEnabled() {
+		return rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
+	} else {
+		return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
+	}
+})
 var idGen = proxy.ReferenceIDGenerator{}
 
 func init() {
@@ -76,7 +83,8 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		config := defaultTestCluster.DefaultConfig()
+		cls := defaultTestCluster.Launch(t)
+		config := cls.DefaultConfig()
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
@@ -273,14 +281,6 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWr
 			panic("remote controller not accesible")
 		}
 	}
-	port := NextPort()
-	if launchDefaultCluster && defaultTestCluster == nil {
-		if SSLEnabled() {
-			defaultTestCluster = rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
-		} else {
-			defaultTestCluster = rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
-		}
-	}
 	return rc
 }
 
@@ -369,6 +369,7 @@ type TestCluster struct {
 }
 
 func (c TestCluster) Shutdown() {
+	// TODO: add Terminate method.
 	for _, memberUUID := range c.MemberUUIDs {
 		c.RC.ShutdownMember(context.Background(), c.ClusterID, memberUUID)
 	}
@@ -622,4 +623,33 @@ func isPortOpen(port int) bool {
 	// ignoring the error from conn.Close, since there's nothing useful to do with it.
 	_ = conn.Close()
 	return false
+}
+
+type SingletonTestCluster struct {
+	mu       *sync.Mutex
+	cls      *TestCluster
+	launcher func() *TestCluster
+	name     string
+}
+
+func NewSingletonTestCluster(name string, launcher func() *TestCluster) *SingletonTestCluster {
+	return &SingletonTestCluster{
+		name:     name,
+		mu:       &sync.Mutex{},
+		launcher: launcher,
+	}
+}
+
+type testLogger interface {
+	Logf(format string, args ...interface{})
+}
+
+func (c *SingletonTestCluster) Launch(t testLogger) *TestCluster {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cls != nil {
+		return c.cls
+	}
+	t.Logf("Launching the auto-shutdown test cluster: %s", c.name)
+	return c.launcher()
 }
