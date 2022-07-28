@@ -651,5 +651,6 @@ func (c *SingletonTestCluster) Launch(t testLogger) *TestCluster {
 		return c.cls
 	}
 	t.Logf("Launching the auto-shutdown test cluster: %s", c.name)
-	return c.launcher()
+	c.cls = c.launcher()
+	return c.cls
 }
