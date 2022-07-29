@@ -62,9 +62,8 @@ var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster 
 	port := NextPort()
 	if SSLEnabled() {
 		return rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
-	} else {
-		return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
 	}
+	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
 })
 var idGen = proxy.ReferenceIDGenerator{}
 
