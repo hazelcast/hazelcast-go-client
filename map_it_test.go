@@ -41,9 +41,12 @@ import (
 )
 
 func TestMap(t *testing.T) {
+	// note that, some are the tests may become flaky when parallelized, especially TTL variants.
+	// it is possible to change those tests to account for parallelization, but I've opted to disable parallelization for them --YT.
 	testCases := []struct {
-		name string
-		f    func(t *testing.T)
+		name       string
+		f          func(t *testing.T)
+		noParallel bool
 	}{
 		{name: "AddIndexValidationError", f: mapAddIndexValidationError},
 		{name: "AddIndexWithConfig", f: mapAddIndexWithConfig},
@@ -82,8 +85,8 @@ func TestMap(t *testing.T) {
 		{name: "GetValues", f: mapGetValues},
 		{name: "GetValuesWithPredicate", f: mapGetValuesWithPredicate},
 		{name: "IsEmptySize", f: mapIsEmptySize},
-		{name: "LoadAllReplacing", f: mapLoadAllReplacing},
-		{name: "LoadAllWithoutReplacing", f: mapLoadAllWithoutReplacing},
+		{name: "LoadAllReplacing", f: mapLoadAllReplacing, noParallel: true},
+		{name: "LoadAllWithoutReplacing", f: mapLoadAllWithoutReplacing, noParallel: true},
 		{name: "Lock", f: mapLock},
 		{name: "LockWithLease", f: mapLockWithLease},
 		{name: "MapSetGet1000", f: mapMapSetGet1000},
@@ -91,15 +94,15 @@ func TestMap(t *testing.T) {
 		{name: "Put", f: mapPut},
 		{name: "PutAll", f: mapPutAll},
 		{name: "PutIfAbsent", f: mapPutIfAbsent},
-		{name: "PutIfAbsentWithTTL", f: mapPutIfAbsentWithTTL},
-		{name: "PutIfAbsentWithTTLAndMaxIdle", f: mapPutIfAbsentWithTTLAndMaxIdle},
+		{name: "PutIfAbsentWithTTL", f: mapPutIfAbsentWithTTL, noParallel: true},
+		{name: "PutIfAbsentWithTTLAndMaxIdle", f: mapPutIfAbsentWithTTLAndMaxIdle, noParallel: true},
 		{name: "PutTransient", f: mapPutTransient},
-		{name: "PutTransientWithMaxIdle", f: mapPutTransientWithMaxIdle},
-		{name: "PutTransientWithTTL", f: mapPutTransientWithTTL},
-		{name: "PutTransientWithTTLAndMaxIdle", f: mapPutTransientWithTTLAndMaxIdle},
-		{name: "PutWithMaxIdle", f: mapPutWithMaxIdle},
-		{name: "PutWithTTL", f: mapPutWithTTL},
-		{name: "PutWithTTLAndMaxIdle", f: mapPutWithTTLAndMaxIdle},
+		{name: "PutTransientWithMaxIdle", f: mapPutTransientWithMaxIdle, noParallel: true},
+		{name: "PutTransientWithTTL", f: mapPutTransientWithTTL, noParallel: true},
+		{name: "PutTransientWithTTLAndMaxIdle", f: mapPutTransientWithTTLAndMaxIdle, noParallel: true},
+		{name: "PutWithMaxIdle", f: mapPutWithMaxIdle, noParallel: true},
+		{name: "PutWithTTL", f: mapPutWithTTL, noParallel: true},
+		{name: "PutWithTTLAndMaxIdle", f: mapPutWithTTLAndMaxIdle, noParallel: true},
 		{name: "Remove", f: mapRemove},
 		{name: "RemoveAll", f: mapRemoveAll},
 		{name: "RemoveIfSame", f: mapRemoveIfSame},
@@ -107,8 +110,8 @@ func TestMap(t *testing.T) {
 		{name: "Set", f: mapSet},
 		{name: "SetTTL", f: mapSetTTL},
 		{name: "SetTTLAffected", f: mapSetTTLAffected},
-		{name: "SetWithTTL", f: mapSetWithTTL},
-		{name: "SetWithTTLAndMaxIdle", f: mapSetWithTTLAndMaxIdle},
+		{name: "SetWithTTL", f: mapSetWithTTL, noParallel: true},
+		{name: "SetWithTTLAndMaxIdle", f: mapSetWithTTLAndMaxIdle, noParallel: true},
 		{name: "TryLock", f: mapTryLock},
 		{name: "TryLockWithLease", f: mapTryLockWithLease},
 		{name: "TryLockWithLeaseAndTimeout", f: mapTryLockWithLeaseAndTimeout},
@@ -121,7 +124,9 @@ func TestMap(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+			if !tc.noParallel {
+				t.Parallel()
+			}
 			tc.f(t)
 		})
 	}
@@ -636,6 +641,7 @@ func mapFlush(t *testing.T) {
 }
 
 func mapLoadAllWithoutReplacing(t *testing.T) {
+	// NOTE: do not parallize this test, it uses a static map name.
 	makeMapName := func(_ ...string) string {
 		// the map name for this test should be static.
 		return "test-map"
@@ -658,6 +664,7 @@ func mapLoadAllWithoutReplacing(t *testing.T) {
 }
 
 func mapLoadAllReplacing(t *testing.T) {
+	// NOTE: do not parallize this test, it uses a static map name.
 	makeMapName := func(_ ...string) string {
 		// the map name for this test should be static.
 		return "test-map"

@@ -840,6 +840,7 @@ func TestAfterExecuteOnKeysKeysAreInvalidatedFromNearCache(t *testing.T) {
 
 func TestAfterLoadAllWithDefinedKeysNearCacheIsInvalidated(t *testing.T) {
 	// see: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterLoadAllWithDefinedKeysNearCacheIsInvalidated
+	// NOTE: do not parallize this test, it uses a static map name.
 	testCases := []struct {
 		name string
 		f    func(ctx context.Context, tcx it.MapTestContext, keys []interface{}) error
