@@ -1,5 +1,5 @@
 # Running Hazelcast Go Client on Kubernetes Example
-- This example shows how to run a sample proxy service which uses Hazelcast Go Client connected to the Hazelcast members in the same network and expose itself outside through k8s ingress.
+- This example shows how to run a sample proxy service which uses Hazelcast Go Client connected to the Hazelcast members in the same network and exposes itself to the outside through k8s ingress.
 
 ## Table of Contents
 1. [Requirements](#requirements)
@@ -16,7 +16,7 @@
 
 <a name="deployment"></a>
 ## Deployment  
-The guide supposes that Docker Engine is ready and running properly. You can run it on other container and virtual machine environment, but it is not tested.
+The guide assumes that Docker Engine is ready and running properly. You can run it on other container and virtual machine environments, but it is not tested.
 1. Open a new terminal session.
 2. `minikube start --driver=docker`
 3. `minikube docker-env`
