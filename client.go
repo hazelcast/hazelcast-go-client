@@ -116,10 +116,9 @@ func newClient(config Config) (*Client, error) {
 	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
-	// introduce shutdown handlers to be executed in internal shutdown
-	c.ic.ShutdownHandlers = make(map[client.ShutdownHandlerType]func(ctx context.Context))
-	c.ic.ShutdownHandlers.AddShutdownHandler(client.ProxyShutdownHandler, c.destroyProxies)
-	c.ic.ShutdownHandlers.AddShutdownHandler(client.NearCacheShutdownHandler, c.stopNearCacheManagers)
+	c.ic.ShutdownHandlers = make([]func(ctx context.Context), 0)
+	c.ic.AddShutdownHandler(c.destroyProxies)
+	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
 	return c, nil
 }
 

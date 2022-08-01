@@ -88,32 +88,9 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-type ShutdownHandlerType int
-
-type ShutdownHandler map[ShutdownHandlerType]func(ctx context.Context)
-
-const (
-	ProxyShutdownHandler ShutdownHandlerType = iota
-	NearCacheShutdownHandler
-)
-
-func (shutdownHandler *ShutdownHandler) AddShutdownHandler(handlerID ShutdownHandlerType, handler func(ctx context.Context)) {
-	// this is supposed to be called during client initialization, so there's no risk of races.
-	if _, ok := (*shutdownHandler)[handlerID]; ok {
-		panic(fmt.Errorf("handlerID: %d was already added to shutdown handler before", handlerID))
-	}
-	(*shutdownHandler)[handlerID] = handler
-}
-
-func (shutdownHandler *ShutdownHandler) executeShutdownHandlers(ctx context.Context) {
-	for _, f := range *shutdownHandler {
-		f(ctx)
-	}
-}
-
 type Client struct {
 	InvocationHandler    invocation.Handler
-	ShutdownHandlers     ShutdownHandler
+	ShutdownHandlers     []func(ctx context.Context)
 	Logger               ilogger.LogAdaptor
 	ConnectionManager    *icluster.ConnectionManager
 	ViewListenerService  *icluster.ViewListenerService
@@ -128,6 +105,18 @@ type Client struct {
 	ClusterService       *icluster.Service
 	name                 string
 	state                int32
+}
+
+func (c *Client) AddShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.ShutdownHandlers = append(c.ShutdownHandlers, handler)
+}
+
+func (c *Client) ExecuteShutdownHandlers(ctx context.Context) {
+	// Warning: method is not safe for the concurrent calls.
+	for _, f := range c.ShutdownHandlers {
+		f(ctx)
+	}
 }
 
 func New(config *Config) (*Client, error) {
@@ -196,7 +185,7 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		ctx = context.Background()
 	}
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
-	c.ShutdownHandlers.executeShutdownHandlers(ctx)
+	c.ExecuteShutdownHandlers(ctx)
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
 	c.ConnectionManager.Stop()

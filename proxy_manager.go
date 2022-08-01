@@ -24,7 +24,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
-	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -239,12 +238,6 @@ type proxyDestroyer interface {
 
 func (m *proxyManager) destroyProxies(ctx context.Context) {
 	for key, p := range m.proxies {
-		if p == nil {
-			m.serviceBundle.Logger.Log(logger.WeightError, func() string {
-				return fmt.Sprintf("proxy %s key cannot be destroyed, given proxy argument is nil", key)
-			})
-			continue
-		}
 		ds := p.(proxyDestroyer)
 		if err := ds.Destroy(ctx); err != nil {
 			m.serviceBundle.Logger.Errorf("proxy %s key cannot be destroyed: %w", key, err)
