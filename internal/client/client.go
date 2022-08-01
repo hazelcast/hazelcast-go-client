@@ -109,9 +109,9 @@ type Client struct {
 	state                int32
 }
 
-func (c *Client) AddShutdownHandler(handler func(ctx context.Context)) {
+func (c *Client) AddShutdownHandler(handler ...func(ctx context.Context)) {
 	// this is supposed to be called during client initialization, so there's no risk of races.
-	c.shutdownHandlers = append(c.shutdownHandlers, handler)
+	c.shutdownHandlers = append(c.shutdownHandlers, handler...)
 }
 
 func (c *Client) executeShutdownHandlers(ctx context.Context) {
