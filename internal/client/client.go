@@ -90,7 +90,6 @@ func (c *Config) Validate() error {
 
 type Client struct {
 	InvocationHandler    invocation.Handler
-	ShutdownHandlers     []func(ctx context.Context)
 	Logger               ilogger.LogAdaptor
 	ConnectionManager    *icluster.ConnectionManager
 	ViewListenerService  *icluster.ViewListenerService
@@ -104,6 +103,7 @@ type Client struct {
 	PartitionService     *icluster.PartitionService
 	ClusterService       *icluster.Service
 	name                 string
+	ShutdownHandlers     []func(ctx context.Context)
 	state                int32
 }
 
