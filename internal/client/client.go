@@ -114,13 +114,6 @@ func (c *Client) AddShutdownHandler(handler ...func(ctx context.Context)) {
 	c.shutdownHandlers = append(c.shutdownHandlers, handler...)
 }
 
-func (c *Client) executeShutdownHandlers(ctx context.Context) {
-	// Warning: method is not safe for the concurrent calls.
-	for _, f := range c.shutdownHandlers {
-		f(ctx)
-	}
-}
-
 func New(config *Config) (*Client, error) {
 	id := atomic.AddInt32(&nextId, 1)
 	name := config.Name
@@ -187,7 +180,10 @@ func (c *Client) Shutdown(ctx context.Context) error {
 		ctx = context.Background()
 	}
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
-	c.executeShutdownHandlers(ctx)
+	// execute registered shutdown handlers
+	for _, f := range c.shutdownHandlers {
+		f(ctx)
+	}
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
 	c.ConnectionManager.Stop()
