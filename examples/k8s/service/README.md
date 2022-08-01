@@ -17,21 +17,23 @@
 <a name="deployment"></a>
 ## Deployment  
 The guide assumes that Docker Engine is ready and running properly. You can run it on other container and virtual machine environments, but it is not tested.
-1. Open a new terminal session.
-2. `minikube start --driver=docker`
-3. `minikube docker-env`
-4. `eval $(minikube -p minikube docker-env)`
-5. Open another new terminal session.
+1. Open a new terminal session and type the following commands one by one in a row to observe the service. 
+2. `git clone https://github.com/hazelcast/hazelcast-go-client.git`
+3. `cd hazelcast-go-client/examples/k8s/service`
+4. `minikube start --driver=docker`
+5. `minikube docker-env`
+6. `eval $(minikube -p minikube docker-env)`
+7. Open another new terminal session.
    1. `minikube addons enable ingress`
    2. `sudo minikube tunnel`
-6. Go back to previous session and continue on with `docker build -t example/hz-go-service .`
-7. Add `127.0.0.1 hz-go-service.info` at the bottom of the `/etc/hosts` file.
-8. `chmod +x start-deployment.sh`
-9. Then, `./start-deployments.sh`
-10. After that point, status of all k8s resources can be examined through: `kubectl get all`
-11. `kubectl logs pod/hazelcast-sample-0`: checks whether Hazelcast members are up and running.
-12. As a last step, lets ensure that the service is up and running by the help of ingress ip resolution:
-13. `curl hz-go-service.info`
+8. Go back to previous session and continue on with `docker build -t example/hz-go-service .`
+9. Add `127.0.0.1 hz-go-service.info` at the bottom of the `/etc/hosts` file.
+10. `chmod +x start-deployment.sh`
+11. Then, `./start-deployments.sh`
+12. After that point, status of all k8s resources can be examined through: `kubectl get all`
+13. `kubectl logs pod/hazelcast-sample-0`: checks whether Hazelcast members are up and running.
+14. As a last step, lets ensure that the service is up and running by the help of ingress ip resolution:
+15. `curl hz-go-service.info`
 
 <a name="examples"></a>
 ## Examples

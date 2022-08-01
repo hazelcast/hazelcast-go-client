@@ -12,11 +12,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-var (
-	// RootEndpoints defines the valid root path of the service.
-	RootEndpoints = [...]string{"config", "map"}
-)
-
 // ConfigHandler handles the request to config endpoint, returns properties of service and client.
 func (s *Service) ConfigHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Add("Content-Type", "application/json")

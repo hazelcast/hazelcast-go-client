@@ -33,15 +33,12 @@ func NewRouter(service *util.Service) *mux.Router {
 	}
 	router.HandleFunc("/health", okHandler)
 	router.HandleFunc("/readiness", okHandler)
-	router.HandleFunc(fmt.Sprintf("/%s", util.RootEndpoints[0]), service.ConfigHandler).Methods(http.MethodGet)
-	router.HandleFunc(fmt.Sprintf("/%s", util.RootEndpoints[1]), service.MapGetHandler).Methods(http.MethodGet)
-	router.HandleFunc(fmt.Sprintf("/%s", util.RootEndpoints[1]), service.MapPutHandler).Methods(http.MethodPost)
+	router.HandleFunc("/config", service.ConfigHandler).Methods(http.MethodGet)
+	router.HandleFunc("/map", service.MapGetHandler).Methods(http.MethodGet)
+	router.HandleFunc("/map", service.MapPutHandler).Methods(http.MethodPost)
 	return router
 }
 
-// toDo
-// change the name of the k8s resources
-// rewrite readme according to comments and final source
 func main() {
 	ctx := context.Background()
 	service, err := util.NewDefaultService(ctx)
@@ -50,7 +47,6 @@ func main() {
 	}
 	server := NewHttpServer(NewRouter(service), service.ServiceConfig)
 	log.Println("Server is up and listening...")
-	//go log.Fatal(server.ListenAndServe())
 	go func() {
 		log.Fatal(server.ListenAndServe())
 	}()
