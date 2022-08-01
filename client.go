@@ -116,7 +116,6 @@ func newClient(config Config) (*Client, error) {
 	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
-	c.ic.ShutdownHandlers = make([]func(ctx context.Context), 0)
 	c.ic.AddShutdownHandler(c.destroyProxies)
 	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
 	return c, nil
