@@ -15,23 +15,24 @@
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
 <a name="deployment"></a>
-## Deployment  
+## Deployment
 The guide assumes that Docker Engine is ready and running properly. You can run it on other container and virtual machine environments, but it is not tested.
-1. Open a new terminal session and type the following commands one by one in a row to observe the service. 
+1. Open a new terminal session and type the following commands one by one in a row to observe the service.
 2. `git clone https://github.com/hazelcast/hazelcast-go-client.git`
 3. `cd hazelcast-go-client/examples/k8s/service`
 4. `minikube start --driver=docker`
 5. `minikube docker-env`
 6. `eval $(minikube -p minikube docker-env)`
 7. Open another new terminal session.
-   1. `minikube addons enable ingress`
-   2. `sudo minikube tunnel`
+    1. `minikube addons enable ingress`
+    2. `sudo minikube tunnel`
 8. Go back to previous session and continue on with `docker build -t example/hz-go-service .`
 9. Add `127.0.0.1 hz-go-service.info` at the bottom of the `/etc/hosts` file.
-10. `chmod +x start-deployment.sh`
+10. `chmod +x start-deployments.sh`
 11. Then, `./start-deployments.sh`
 12. After that point, status of all k8s resources can be examined through: `kubectl get all`
 13. `kubectl logs pod/hazelcast-sample-0`: checks whether Hazelcast members are up and running.
+    - **If you cannot see the logs or getting not RUNNING state for the k8s resources through kubectl, just wait for a few seconds and reapply the command.**
 14. As a last step, lets ensure that the service is up and running by the help of ingress ip resolution:
 15. `curl hz-go-service.info`
 
@@ -76,14 +77,16 @@ The guide assumes that Docker Engine is ready and running properly. You can run 
 
 <a name="deletion-of-kubernetes-resources"></a>
 ## Deletion of Kubernetes Resources
-- `./delete-deployments.sh`
-- Turn of running Minikube tunnel.
+1. `chmod +x delete-deployments.sh`
+2. `./delete-deployments.sh`
+3. Turn of running Minikube tunnel.
 
 <a name="running-service-locally"></a>
 ## Running Service Locally <a name="running-service-locally"></a>
 1. Open a new terminal session.
-2. `export HZ_GO_SERVICE_WITHOUT_K8S=true`
+2. `export HZ_GO_SERVICE_WITHOUT_K8S=1`
 3. Open another new terminal session.
-   1. `hz` CLI tool is need. For detailed information, [here](https://hazelcast.com/blog/hazelcast-command-line-is-released/). 
-   2. Then, `hz start`: Starts a new Hazelcast cluster in local through CLI.
-4. Go back to previous session and check out `Operations`.
+    1. `hz` CLI tool is need. For detailed information, [here](https://hazelcast.com/blog/hazelcast-command-line-is-released/).
+    2. Then, `hz start`: Starts a new Hazelcast cluster in local through CLI.
+4. Go back to the previous terminal session and check out `Examples` section in README.md.
+5. Don't forget to replace `hz-go-service.info` with `localhost:8080` before applying requests.
