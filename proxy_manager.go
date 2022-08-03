@@ -178,8 +178,9 @@ func (m *proxyManager) removeDistributedObjectEventListener(ctx context.Context,
 }
 
 func (m *proxyManager) remove(ctx context.Context, serviceName string, objectName string) bool {
-	// assumes that m.mu mutex is already locked by the caller side
 	name := makeProxyName(serviceName, objectName)
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	p, ok := m.proxies[name]
 	if !ok {
 		return false
@@ -246,9 +247,7 @@ type proxyDestroyer interface {
 }
 
 func (m *proxyManager) destroyProxies(ctx context.Context) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for key, p := range m.proxies {
+	for key, p := range m.Proxies() {
 		ds := p.(proxyDestroyer)
 		if err := ds.Destroy(ctx); err != nil {
 			m.serviceBundle.Logger.Errorf("proxy %s key cannot be destroyed: %w", key, err)
