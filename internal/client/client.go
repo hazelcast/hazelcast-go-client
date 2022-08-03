@@ -88,11 +88,11 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-type ShutdownHandler func(ctx context.Context)
+type shutdownHandler func(context.Context)
 
 type Client struct {
-	Logger               ilogger.LogAdaptor
 	InvocationHandler    invocation.Handler
+	Logger               ilogger.LogAdaptor
 	ConnectionManager    *icluster.ConnectionManager
 	ViewListenerService  *icluster.ViewListenerService
 	InvocationService    *invocation.Service
@@ -105,8 +105,13 @@ type Client struct {
 	PartitionService     *icluster.PartitionService
 	ClusterService       *icluster.Service
 	name                 string
-	shutdownHandlers     []ShutdownHandler
+	shutdownHandlers     []shutdownHandler
 	state                int32
+}
+
+func (c *Client) AddShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.shutdownHandlers = append(c.shutdownHandlers, handler)
 }
 
 func New(config *Config) (*Client, error) {
@@ -133,11 +138,6 @@ func New(config *Config) (*Client, error) {
 	}
 	c.createComponents(config)
 	return c, nil
-}
-
-func (c *Client) AddShutdownHandler(f ShutdownHandler) {
-	// this is supposed to be called during client initialization, so there's no risk of races.
-	c.shutdownHandlers = append(c.shutdownHandlers, f)
 }
 
 // Name returns client's name.
@@ -186,8 +186,9 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if c.StatsService != nil {
 		c.StatsService.Stop()
 	}
-	for _, h := range c.shutdownHandlers {
-		h(ctx)
+	// execute registered shutdown handlers
+	for _, f := range c.shutdownHandlers {
+		f(ctx)
 	}
 	atomic.StoreInt32(&c.state, Stopped)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShutDown))
