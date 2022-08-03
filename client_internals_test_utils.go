@@ -54,8 +54,8 @@ func (ci *ClientInternal) SerializationService() *serialization.Service {
 	return ci.client.ic.SerializationService
 }
 
-func (ci *ClientInternal) ProxyManagerProxies() map[string]interface{} {
-	return ci.client.proxyManager.proxies
+func (ci *ClientInternal) Proxies() map[string]interface{} {
+	return ci.client.proxyManager.Proxies()
 }
 
 func (ci *ClientInternal) NewNearCacheManager(reconInterval, maxMiss int) *inearcache.Manager {

@@ -54,6 +54,16 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 	return pm
 }
 
+func (m *proxyManager) Proxies() map[string]interface{} {
+	cp := make(map[string]interface{}, len(m.proxies))
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for k, p := range m.proxies {
+		cp[k] = p
+	}
+	return cp
+}
+
 func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
 	p, err := m.proxyFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
 		return newMap(p), nil
@@ -168,9 +178,8 @@ func (m *proxyManager) removeDistributedObjectEventListener(ctx context.Context,
 }
 
 func (m *proxyManager) remove(ctx context.Context, serviceName string, objectName string) bool {
+	// assumes that m.mu mutex is already locked by the caller side
 	name := makeProxyName(serviceName, objectName)
-	m.mu.Lock()
-	defer m.mu.Unlock()
 	p, ok := m.proxies[name]
 	if !ok {
 		return false
@@ -237,6 +246,8 @@ type proxyDestroyer interface {
 }
 
 func (m *proxyManager) destroyProxies(ctx context.Context) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for key, p := range m.proxies {
 		ds := p.(proxyDestroyer)
 		if err := ds.Destroy(ctx); err != nil {
