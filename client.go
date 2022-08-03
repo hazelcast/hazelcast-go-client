@@ -116,6 +116,8 @@ func newClient(config Config) (*Client, error) {
 	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
+	c.ic.AddShutdownHandler(c.destroyProxies)
+	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
 	return c, nil
 }
 
@@ -419,7 +421,6 @@ func (c *Client) createComponents(config *Config) {
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
-	c.ic.AddShutdownHandler(c.stopNearCacheManagers)
 }
 
 func (c *Client) getNearCacheManager(service string) *inearcache.Manager {
@@ -450,4 +451,8 @@ func (c *Client) stopNearCacheManagers(ctx context.Context) {
 		m.Stop()
 	}
 	c.nearCacheMgrsMu.RUnlock()
+}
+
+func (c *Client) destroyProxies(ctx context.Context) {
+	c.proxyManager.destroyProxies(ctx)
 }

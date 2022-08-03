@@ -54,6 +54,16 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 	return pm
 }
 
+func (m *proxyManager) Proxies() map[string]interface{} {
+	cp := make(map[string]interface{}, len(m.proxies))
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for k, p := range m.proxies {
+		cp[k] = p
+	}
+	return cp
+}
+
 func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
 	p, err := m.proxyFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
 		return newMap(p), nil
@@ -230,4 +240,17 @@ func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorCo
 
 func makeProxyName(serviceName string, objectName string) string {
 	return fmt.Sprintf("%s%s", serviceName, objectName)
+}
+
+type proxyDestroyer interface {
+	Destroy(ctx context.Context) error
+}
+
+func (m *proxyManager) destroyProxies(ctx context.Context) {
+	for key, p := range m.Proxies() {
+		ds := p.(proxyDestroyer)
+		if err := ds.Destroy(ctx); err != nil {
+			m.serviceBundle.Logger.Errorf("proxy %s key cannot be destroyed: %w", key, err)
+		}
+	}
 }
