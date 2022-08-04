@@ -51,17 +51,18 @@ func TestClientInternal(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "InternalListenersAfterClientDisconnected", f: clientInternalListenersAfterClientDisconnectedTest},
-		{name: "NotReceivedInvocation", f: clientInternalNotReceivedInvocationTest},
 		{name: "ClusterID", f: clientInternalClusterIDTest},
 		{name: "ClusterID_2", f: clientInternalClusterID_2Test},
-		{name: "OrderedMembers", f: clientInternalOrderedMembersTest},
 		{name: "ConnectedToMember", f: clientInternalConnectedToMemberTest},
-		{name: "InvokeOnRandomTarget", f: clientInternalInvokeOnRandomTargetTest},
-		{name: "InvokeOnPartition", f: clientInternalInvokeOnPartitionTest},
-		{name: "InternalInvokeOnKey", f: clientInternalInvokeOnKeyTest},
-		{name: "InvokeOnMember", f: clientInternalInvokeOnMemberTest},
 		{name: "EncodeData", f: clientInternalEncodeDataTest},
+		{name: "InternalInvokeOnKey", f: clientInternalInvokeOnKeyTest},
+		{name: "InternalListenersAfterClientDisconnected", f: clientInternalListenersAfterClientDisconnectedTest},
+		{name: "InvokeOnMember", f: clientInternalInvokeOnMemberTest},
+		{name: "InvokeOnPartition", f: clientInternalInvokeOnPartitionTest},
+		{name: "InvokeOnRandomTarget", f: clientInternalInvokeOnRandomTargetTest},
+		{name: "NotReceivedInvocation", f: clientInternalNotReceivedInvocationTest},
+		{name: "OrderedMembers", f: clientInternalOrderedMembersTest},
+		{name: "ProxyManagerShutdown", f: proxyManagerShutdownTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -420,7 +421,7 @@ func clientInternalEncodeDataTest(t *testing.T) {
 	})
 }
 
-func TestProxyManagerShutdown(t *testing.T) {
+func proxyManagerShutdownTest(t *testing.T) {
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
 		tc := it.StartNewClusterWithOptions("proxy-manager-graceful-shutdown", 5701, 1)
