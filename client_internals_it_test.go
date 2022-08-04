@@ -387,9 +387,9 @@ func TestClientInternal_EncodeData(t *testing.T) {
 func TestProxyManagerShutdown(t *testing.T) {
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
-		tc := it.StartNewClusterWithOptions("proxy-manager-graceful-shutdown", 5701, 1)
+		tc := it.StartNewClusterWithOptions("proxy-manager-graceful-shutdown", 35701, 1)
 		defer tc.Shutdown()
-		config := tc.DefaultConfigWithNoSSL()
+		config := tc.DefaultConfig()
 		config.Cluster.Unisocket = !smart
 		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
 		defer client.Shutdown(ctx)
