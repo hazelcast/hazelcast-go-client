@@ -121,6 +121,13 @@ func TestMap(t *testing.T) {
 		{name: "TryRemove", f: mapTryRemove},
 		{name: "TryRemoveWithTimeout", f: mapTryRemoveWithTimeout},
 	}
+	// run no-parallel test first
+	sort.Slice(testCases, func(i, j int) bool {
+		if testCases[i].noParallel && !testCases[j].noParallel {
+			return true
+		}
+		return false
+	})
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {

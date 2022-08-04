@@ -45,6 +45,7 @@ import (
 // Tests that require the hazelcastinternal tag.
 
 func TestClientInternal(t *testing.T) {
+	// TODO: make these tests parallized
 	testCases := []struct {
 		name string
 		f    func(t *testing.T)
@@ -107,7 +108,6 @@ func clientInternalListenersAfterClientDisconnectedTest(t *testing.T) {
 }
 
 func clientInternalNotReceivedInvocationTest(t *testing.T) {
-	t.Parallel()
 	// This test skips sending an invocation to the member in order to simulate lost connection.
 	// After 5 seconds, a GroupLost event is published to simulate the disconnection.
 	clientTester(t, func(t *testing.T, smart bool) {
@@ -202,7 +202,6 @@ func testListenersAfterClientDisconnected(t *testing.T, memberHost string, clien
 }
 
 func clientInternalClusterIDTest(t *testing.T) {
-	t.Parallel()
 	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-go-client/issues/844")
 	it.SkipIf(t, "oss")
 	clientTester(t, func(t *testing.T, smart bool) {
@@ -260,7 +259,6 @@ func clientInternalClusterIDTest(t *testing.T) {
 }
 
 func clientInternalClusterID_2Test(t *testing.T) {
-	t.Parallel()
 	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -272,7 +270,6 @@ func clientInternalClusterID_2Test(t *testing.T) {
 }
 
 func clientInternalOrderedMembersTest(t *testing.T) {
-	t.Parallel()
 	it.MarkFlaky(t, "https://github.com/hazelcast/hazelcast-go-client/issues/789")
 	// start a 1 member cluster
 	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
@@ -309,7 +306,6 @@ func clientInternalOrderedMembersTest(t *testing.T) {
 }
 
 func clientInternalConnectedToMemberTest(t *testing.T) {
-	t.Parallel()
 	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 2)
 	ctx := context.Background()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, tc.DefaultConfig()))
@@ -322,7 +318,6 @@ func clientInternalConnectedToMemberTest(t *testing.T) {
 }
 
 func clientInternalInvokeOnRandomTargetTest(t *testing.T) {
-	t.Parallel()
 	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		ctx := context.Background()
 		t.Run("without handler", func(t *testing.T) {
@@ -361,7 +356,6 @@ func clientInternalInvokeOnRandomTargetTest(t *testing.T) {
 }
 
 func clientInternalInvokeOnPartitionTest(t *testing.T) {
-	t.Parallel()
 	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		req := EncodeMCGetMemberConfigRequest()
 		resp, err := ci.InvokeOnPartition(context.Background(), req, 1, nil)
@@ -374,7 +368,6 @@ func clientInternalInvokeOnPartitionTest(t *testing.T) {
 }
 
 func clientInternalInvokeOnKeyTest(t *testing.T) {
-	t.Parallel()
 	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		keyData, err := ci.EncodeData("foo")
 		if err != nil {
@@ -391,7 +384,6 @@ func clientInternalInvokeOnKeyTest(t *testing.T) {
 }
 
 func clientInternalInvokeOnMemberTest(t *testing.T) {
-	t.Parallel()
 	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		ctx := context.Background()
 		t.Run("invalid member", func(t *testing.T) {
@@ -414,7 +406,6 @@ func clientInternalInvokeOnMemberTest(t *testing.T) {
 }
 
 func clientInternalEncodeDataTest(t *testing.T) {
-	t.Parallel()
 	clientInternalTester(t, func(t *testing.T, ci *hz.ClientInternal) {
 		data, err := ci.EncodeData("foo")
 		if err != nil {
