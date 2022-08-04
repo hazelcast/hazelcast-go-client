@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -416,6 +417,36 @@ func clientInternalEncodeDataTest(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Equal(t, "foo", v)
+	})
+}
+
+func TestProxyManagerShutdown(t *testing.T) {
+	clientTester(t, func(t *testing.T, smart bool) {
+		ctx := context.Background()
+		tc := it.StartNewClusterWithOptions("proxy-manager-graceful-shutdown", 5701, 1)
+		defer tc.Shutdown()
+		config := tc.DefaultConfigWithNoSSL()
+		config.Cluster.Unisocket = !smart
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+		defer client.Shutdown(ctx)
+		m := it.MustValue(client.GetMap(ctx, it.NewUniqueObjectName("map"))).(*hz.Map)
+		q := it.MustValue(client.GetQueue(ctx, it.NewUniqueObjectName("queue"))).(*hz.Queue)
+		value := "dummy-value"
+		key := "dummy-key"
+		if _, err := m.Put(ctx, key, value); err != nil {
+			t.Fatal(err)
+		}
+		if err := q.Put(ctx, value); err != nil {
+			t.Fatal(err)
+		}
+		ci := hz.NewClientInternal(client)
+		proxies := ci.Proxies()
+		require.EqualValues(t, 2, len(proxies))
+		if err := client.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
+		proxies = ci.Proxies()
+		require.EqualValues(t, 0, len(proxies))
 	})
 }
 

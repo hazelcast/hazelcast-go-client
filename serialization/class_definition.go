@@ -28,6 +28,8 @@ type ClassDefinition struct {
 	Version   int32
 }
 
+// NewClassDefinition creates a new class definition for Portable.
+// For non-versioned portables, version must be sent as zero which is default version in serialization service.
 func NewClassDefinition(factoryID int32, classID int32, version int32) *ClassDefinition {
 	return &ClassDefinition{
 		FactoryID: factoryID,
