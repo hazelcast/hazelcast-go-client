@@ -424,7 +424,7 @@ func clientInternalEncodeDataTest(t *testing.T) {
 func proxyManagerShutdownTest(t *testing.T) {
 	clientTester(t, func(t *testing.T, smart bool) {
 		ctx := context.Background()
-		tc := it.StartNewClusterWithOptions(t.Name(), 35701, 1)
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		config.Cluster.Unisocket = !smart
