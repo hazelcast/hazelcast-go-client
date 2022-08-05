@@ -123,10 +123,7 @@ func TestMap(t *testing.T) {
 	}
 	// run no-parallel test first
 	sort.Slice(testCases, func(i, j int) bool {
-		if testCases[i].noParallel && !testCases[j].noParallel {
-			return true
-		}
-		return false
+		return testCases[i].noParallel && !testCases[j].noParallel
 	})
 	for _, tc := range testCases {
 		tc := tc
