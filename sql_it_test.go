@@ -45,6 +45,35 @@ const (
 	recordWithDateTimeClassID2 = 3
 )
 
+func TestSQL(t *testing.T) {
+	testCases := []struct {
+		name string
+		f    func(t *testing.T)
+	}{
+		{name: "ConcurrentQueries", f: sqlConcurrentQueriesTest},
+		{name: "Query", f: sqlQueryTest},
+		{name: "QueryWithCursorBufferSize", f: sqlQueryWithCursorBufferSizeTest},
+		{name: "ResultForRowAndNonRowResults", f: sqlResultForRowAndNonRowResultsTest},
+		{name: "ResultIteratorRequestedMoreThanOnce", f: sqlResultIteratorRequestedMoreThanOnceTest},
+		{name: "RowFindByColumnName", f: sqlRowFindByColumnNameTest},
+		{name: "ServiceExecute", f: sqlServiceExecuteTest},
+		{name: "ServiceExecuteMismatchExpectedResultType", f: sqlServiceExecuteMismatchExpectedResultTypeTest},
+		{name: "ServiceExecuteMismatchedParams", f: sqlServiceExecuteMismatchedParamsTest},
+		{name: "ServiceExecuteProvidedSuggestion", f: sqlServiceExecuteProvidedSuggestionTest},
+		{name: "ServiceExecuteStatementMismatchedParams", f: sqlServiceExecuteStatementMismatchedParamsTest},
+		{name: "StatementWithQueryTimeout", f: sqlStatementWithQueryTimeoutTest},
+		{name: "WithPortableData", f: sqlWithPortableDataTest},
+		{name: "WithPortableDateTime", f: sqlWithPortableDateTimeTest},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.f(t)
+		})
+	}
+}
+
 type Record struct {
 	DecimalValue  *types.Decimal
 	VarcharValue  string
@@ -94,18 +123,6 @@ type RecordWithDateTime struct {
 	TimeValue                  *time.Time
 	TimestampValue             *time.Time
 	TimestampWithTimezoneValue *time.Time
-}
-
-func NewRecordWithDateTime(t *time.Time) *RecordWithDateTime {
-	dv := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-	tv := time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	tsv := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	return &RecordWithDateTime{
-		DateValue:                  &dv,
-		TimeValue:                  &tv,
-		TimestampValue:             &tsv,
-		TimestampWithTimezoneValue: t,
-	}
 }
 
 func (r RecordWithDateTime) FactoryID() int32 {
@@ -192,7 +209,7 @@ func (f recordFactory) FactoryID() int32 {
 	return factoryID
 }
 
-func TestSQLQuery(t *testing.T) {
+func sqlQueryTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	testCases := []struct {
 		keyFn, valueFn   func(i int) interface{}
@@ -269,14 +286,16 @@ func TestSQLQuery(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
+		tc := tc
 		name := fmt.Sprintf("%s/%s", tc.keyFmt, tc.valueFmt)
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			testSQLQuery(t, tc.keyFmt, tc.valueFmt, tc.keyFn, tc.valueFn, sql.NewStatement(""))
 		})
 	}
 }
 
-func TestSQLWithPortableData(t *testing.T) {
+func sqlWithPortableDataTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
@@ -362,7 +381,7 @@ func TestSQLWithPortableData(t *testing.T) {
 	})
 }
 
-func TestSQLWithPortableDateTime(t *testing.T) {
+func sqlWithPortableDateTimeTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetPortableFactories(&recordFactory{})
@@ -447,7 +466,7 @@ func TestSQLWithPortableDateTime(t *testing.T) {
 	})
 }
 
-func TestSQLQueryWithCursorBufferSize(t *testing.T) {
+func sqlQueryWithCursorBufferSizeTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	fn := func(i int) interface{} { return int32(i) }
 	stmt := sql.NewStatement("")
@@ -455,7 +474,7 @@ func TestSQLQueryWithCursorBufferSize(t *testing.T) {
 	testSQLQuery(t, "int", "int", fn, fn, stmt)
 }
 
-func TestSQLStatementWithQueryTimeout(t *testing.T) {
+func sqlStatementWithQueryTimeoutTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	stmt := sql.NewStatement("select v from table(generate_stream(1))")
 	stmt.SetQueryTimeout(3 * time.Second)
@@ -476,7 +495,7 @@ func TestSQLStatementWithQueryTimeout(t *testing.T) {
 	})
 }
 
-func TestConcurrentQueries(t *testing.T) {
+func sqlConcurrentQueriesTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		q := fmt.Sprintf(`
@@ -511,7 +530,7 @@ func TestConcurrentQueries(t *testing.T) {
 	})
 }
 
-func TestSQLService_Execute(t *testing.T) {
+func sqlServiceExecuteTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		ctx := context.Background()
@@ -548,7 +567,7 @@ func TestSQLService_Execute(t *testing.T) {
 	})
 }
 
-func TestSQLService_ExecuteMismatchedParams(t *testing.T) {
+func sqlServiceExecuteMismatchedParamsTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		ctx := context.Background()
@@ -573,7 +592,7 @@ func TestSQLService_ExecuteMismatchedParams(t *testing.T) {
 	})
 }
 
-func TestSQLService_ExecuteStatementMismatchedParams(t *testing.T) {
+func sqlServiceExecuteStatementMismatchedParamsTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		ctx := context.Background()
@@ -598,7 +617,7 @@ func TestSQLService_ExecuteStatementMismatchedParams(t *testing.T) {
 	})
 }
 
-func TestSQLService_ExecuteProvidedSuggestion(t *testing.T) {
+func sqlServiceExecuteProvidedSuggestionTest(t *testing.T) {
 	// todo this is a flaky test possibly due to member behaviour, will be refactored.
 	it.MarkFlaky(t)
 	skip.If(t, "hz < 5.0")
@@ -625,7 +644,7 @@ func TestSQLService_ExecuteProvidedSuggestion(t *testing.T) {
 	})
 }
 
-func TestSQLService_ExecuteMismatchExpectedResultType(t *testing.T) {
+func sqlServiceExecuteMismatchExpectedResultTypeTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		ctx := context.Background()
@@ -698,7 +717,7 @@ func TestSQLService_ExecuteMismatchExpectedResultType(t *testing.T) {
 	})
 }
 
-func TestSQLResult_IteratorRequestedMoreThanOnce(t *testing.T) {
+func sqlResultIteratorRequestedMoreThanOnceTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		q := fmt.Sprintf(`
@@ -721,7 +740,7 @@ func TestSQLResult_IteratorRequestedMoreThanOnce(t *testing.T) {
 	})
 }
 
-func TestSQLResult_ForRowAndNonRowResults(t *testing.T) {
+func sqlResultForRowAndNonRowResultsTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		q := fmt.Sprintf(`
@@ -771,7 +790,7 @@ func TestSQLResult_ForRowAndNonRowResults(t *testing.T) {
 	})
 }
 
-func TestSQLRow_FindByColumnName(t *testing.T) {
+func sqlRowFindByColumnNameTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
 		q := fmt.Sprintf(`
