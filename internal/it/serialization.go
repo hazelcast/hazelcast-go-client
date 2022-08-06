@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import (
 func SerializationTester(t *testing.T, f func(t *testing.T, config hazelcast.Config, clusterID, mapName string)) {
 	ensureRemoteController(true)
 	mapName := NewUniqueObjectName("map")
-	f(t, defaultTestCluster.DefaultConfig(), defaultTestCluster.ClusterID, mapName)
+	cls := defaultTestCluster.Launch(t)
+	config := cls.DefaultConfig()
+	f(t, config, cls.ClusterID, mapName)
 }
 
 func inMemoryFormatConfig(clusterName, mapName, inMemoryFormat string, port int32) string {

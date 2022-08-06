@@ -35,7 +35,36 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-func TestDefaultConfig(t *testing.T) {
+func TestConfig(t *testing.T) {
+	testCases := []struct {
+		name string
+		f    func(t *testing.T)
+	}{
+		{name: "DefaultConfig", f: configDefaultConfigTest},
+		{name: "SetLabels", f: configSetLabelsTest},
+		{name: "Clone", f: configCloneTest},
+		{name: "NewConfigSetAddress", f: configNewConfigSetAddressTest},
+		{name: "NewConfigValidate", f: configNewConfigValidateTest},
+		{name: "UnMarshalDefaultJSONConfig", f: configUnMarshalDefaultJSONConfigTest},
+		{name: "UnmarshalJSONConfig", f: configUnmarshalJSONConfigTest},
+		{name: "MarshalDefaultConfig", f: configMarshalDefaultConfigTest},
+		{name: "MarshalWithNearCacheConfig", f: configMarshalWithNearCacheConfigTest},
+		{name: "ValidateFlakeIDGeneratorConfig", f: configValidateFlakeIDGeneratorConfigTest},
+		{name: "AddFlakeIDGenerator", f: configAddFlakeIDGeneratorTest},
+		{name: "AddExistingFlakeIDGenerator", f: configAddExistingFlakeIDGeneratorTest},
+		{name: "AddNearCache", f: configAddNearCacheTest},
+		{name: "ValidateNearCacheFails", f: configValidateNearCacheFailsTest},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.f(t)
+		})
+	}
+}
+
+func configDefaultConfigTest(t *testing.T) {
 	config := hazelcast.Config{}
 	if err := config.Validate(); err != nil {
 		t.Fatal(err)
@@ -43,7 +72,7 @@ func TestDefaultConfig(t *testing.T) {
 	checkDefault(t, &config)
 }
 
-func TestConfig_SetLabels(t *testing.T) {
+func configSetLabelsTest(t *testing.T) {
 	for _, tc := range []struct {
 		info           string
 		expectedLength int
@@ -68,7 +97,7 @@ func TestConfig_SetLabels(t *testing.T) {
 	}
 }
 
-func TestConfig_Clone(t *testing.T) {
+func configCloneTest(t *testing.T) {
 	cfg := hazelcast.Config{
 		FlakeIDGenerators: map[string]hazelcast.FlakeIDGeneratorConfig{
 			"test-flakeID-key-1": {
@@ -93,7 +122,7 @@ func TestConfig_Clone(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(newCfg.ClientName, cfg.ClientName))
 }
 
-func TestNewConfig_SetAddress(t *testing.T) {
+func configNewConfigSetAddressTest(t *testing.T) {
 	config := hazelcast.NewConfig()
 	config.Cluster.Network.SetAddresses("192.168.1.2")
 	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
@@ -175,7 +204,7 @@ var validateAddressScenarios = []newConfigValidateScenario{
 	},
 }
 
-func TestNewConfig_Validate(t *testing.T) {
+func configNewConfigValidateTest(t *testing.T) {
 	for _, scenario := range validateAddressScenarios {
 		config := hazelcast.NewConfig()
 		config.Cluster.Network.SetAddresses(scenario.inputAddr)
@@ -194,7 +223,7 @@ func TestNewConfig_Validate(t *testing.T) {
 	}
 }
 
-func TestUnMarshalDefaultJSONConfig(t *testing.T) {
+func configUnMarshalDefaultJSONConfigTest(t *testing.T) {
 	var config hazelcast.Config
 	if err := json.Unmarshal([]byte("{}"), &config); err != nil {
 		t.Fatal(err)
@@ -205,7 +234,7 @@ func TestUnMarshalDefaultJSONConfig(t *testing.T) {
 	checkDefault(t, &config)
 }
 
-func TestUnmarshalJSONConfig(t *testing.T) {
+func configUnmarshalJSONConfigTest(t *testing.T) {
 	var config hazelcast.Config
 	text := `
 {
@@ -278,7 +307,7 @@ func TestUnmarshalJSONConfig(t *testing.T) {
 	assert.Equal(t, ncc, ncc2)
 }
 
-func TestMarshalDefaultConfig(t *testing.T) {
+func configMarshalDefaultConfigTest(t *testing.T) {
 	config := hazelcast.Config{}
 	b, err := json.Marshal(&config)
 	if err != nil {
@@ -292,7 +321,7 @@ func TestMarshalDefaultConfig(t *testing.T) {
 	}
 }
 
-func TestMarshalWithNearCacheConfig(t *testing.T) {
+func configMarshalWithNearCacheConfigTest(t *testing.T) {
 	config := hazelcast.Config{}
 	ncc := nearcache.Config{Name: "foo"}
 	config.AddNearCache(ncc)
@@ -322,7 +351,7 @@ func TestMarshalWithNearCacheConfig(t *testing.T) {
 
 }
 
-func TestValidateFlakeIDGeneratorConfig(t *testing.T) {
+func configValidateFlakeIDGeneratorConfigTest(t *testing.T) {
 	testCases := []struct {
 		expectErr                error
 		name                     string
@@ -398,7 +427,7 @@ func TestValidateFlakeIDGeneratorConfig(t *testing.T) {
 	}
 }
 
-func TestConfig_AddFlakeIDGenerator(t *testing.T) {
+func configAddFlakeIDGeneratorTest(t *testing.T) {
 	testCases := []struct {
 		expectErr      error
 		prefetchExpiry types.Duration
@@ -453,14 +482,14 @@ func TestConfig_AddFlakeIDGenerator(t *testing.T) {
 	}
 }
 
-func TestConfig_AddExistingFlakeIDGenerator(t *testing.T) {
+func configAddExistingFlakeIDGeneratorTest(t *testing.T) {
 	config := hazelcast.Config{}
 	assert.NoError(t, config.AddFlakeIDGenerator("foo", 1, 1))
 	err := config.AddFlakeIDGenerator("foo", 2, 2)
 	assert.True(t, errors.Is(err, hzerrors.ErrIllegalArgument))
 }
 
-func TestConfig_AddNearCache(t *testing.T) {
+func configAddNearCacheTest(t *testing.T) {
 	config := hazelcast.Config{}
 	ncc := nearcache.Config{Name: "foo"}
 	config.AddNearCache(ncc)
@@ -471,7 +500,7 @@ func TestConfig_AddNearCache(t *testing.T) {
 	assert.Equal(t, ncc, ncc2)
 }
 
-func TestConfig_Validate_NearCache_Fails(t *testing.T) {
+func configValidateNearCacheFailsTest(t *testing.T) {
 	config := hazelcast.Config{}
 	ncc := nearcache.Config{Name: "foo"}
 	ncc.TimeToLiveSeconds = -1

@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net"
 	"os"
 	"reflect"
 	"runtime/debug"
@@ -29,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -52,12 +54,17 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultPort = 7701
 const DefaultClusterName = "integration-test"
 
-var rc *RemoteControllerClient
+var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
-var defaultTestCluster *TestCluster
+var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
+	port := NextPort()
+	if SSLEnabled() {
+		return rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
+	}
+	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
+})
 var idGen = proxy.ReferenceIDGenerator{}
 
 func init() {
@@ -75,7 +82,8 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		config := defaultTestCluster.DefaultConfig()
+		cls := defaultTestCluster.Launch(t)
+		config := cls.DefaultConfig()
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
@@ -161,7 +169,7 @@ func (f SamplePortableFactory) FactoryID() int32 {
 	return SamplePortableFactoryID
 }
 
-// Must panics if err is not nil
+// Must panics if err is not nil.
 func Must(err error) {
 	if err != nil {
 		panic(err)
@@ -231,7 +239,7 @@ func SSLEnabled() bool {
 func HzVersion() string {
 	version := os.Getenv(EnvHzVersion)
 	if version == "" {
-		version = "4.2"
+		version = "5.1"
 	}
 	return version
 }
@@ -247,8 +255,8 @@ func MemberCount() int {
 	return 1
 }
 
-func CreateDefaultRemoteController() *RemoteControllerClient {
-	return CreateRemoteController("localhost:9701")
+func CreateDefaultRemoteController() *RemoteControllerClientWrapper {
+	return newRemoteControllerClientWrapper(CreateRemoteController("localhost:9701"))
 }
 
 func CreateRemoteController(addr string) *RemoteControllerClient {
@@ -261,7 +269,7 @@ func CreateRemoteController(addr string) *RemoteControllerClient {
 	return rc
 }
 
-func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
+func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWrapper {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
@@ -272,25 +280,7 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 			panic("remote controller not accesible")
 		}
 	}
-	if launchDefaultCluster && defaultTestCluster == nil {
-		if SSLEnabled() {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
-		} else {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
-		}
-	}
 	return rc
-}
-
-type TestCluster struct {
-	RC          *RemoteControllerClient
-	ClusterID   string
-	MemberUUIDs []string
-	Port        int
-}
-
-func StartNewCluster(memberCount int) *TestCluster {
-	return StartNewClusterWithOptions(DefaultClusterName, DefaultPort, memberCount)
 }
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
@@ -299,30 +289,86 @@ func StartNewClusterWithOptions(clusterName string, port, memberCount int) *Test
 	if SSLEnabled() {
 		config = xmlSSLConfig(clusterName, port)
 	}
-	return startNewCluster(rc, memberCount, config, port)
+	return rc.startNewCluster(memberCount, config, port)
 }
 
 func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
 	ensureRemoteController(false)
-	return startNewCluster(rc, memberCount, config, port)
+	return rc.startNewCluster(memberCount, config, port)
 }
 
-func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
+type RemoteControllerClientWrapper struct {
+	mu *sync.Mutex
+	rc *RemoteControllerClient
+}
+
+func newRemoteControllerClientWrapper(rc *RemoteControllerClient) *RemoteControllerClientWrapper {
+	return &RemoteControllerClientWrapper{
+		mu: &sync.Mutex{},
+		rc: rc,
+	}
+}
+
+func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *TestCluster {
+	cluster := MustValue(rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
-		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)
+		member := MustValue(rcw.StartMember(context.Background(), cluster.ID)).(*Member)
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
-		RC:          rc,
+		RC:          rcw,
 		ClusterID:   cluster.ID,
 		MemberUUIDs: memberUUIDs,
 		Port:        port,
 	}
 }
 
+func (rcw *RemoteControllerClientWrapper) StartMember(ctx context.Context, clusterID string) (*Member, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.StartMember(ctx, clusterID)
+}
+
+func (rcw *RemoteControllerClientWrapper) Ping(ctx context.Context) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.Ping(ctx)
+}
+
+func (rcw *RemoteControllerClientWrapper) CreateClusterKeepClusterName(ctx context.Context, hzVersion string, xmlconfig string) (*Cluster, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.CreateClusterKeepClusterName(ctx, hzVersion, xmlconfig)
+}
+
+func (rcw *RemoteControllerClientWrapper) ShutdownMember(ctx context.Context, clusterID string, memberID string) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.ShutdownMember(ctx, clusterID, memberID)
+}
+
+func (rcw *RemoteControllerClientWrapper) TerminateMember(ctx context.Context, clusterID string, memberID string) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.TerminateMember(ctx, clusterID, memberID)
+}
+
+func (rcw *RemoteControllerClientWrapper) ExecuteOnController(ctx context.Context, clusterID string, script string, lang Lang) (*Response, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.ExecuteOnController(ctx, clusterID, script, lang)
+}
+
+type TestCluster struct {
+	RC          *RemoteControllerClientWrapper
+	ClusterID   string
+	MemberUUIDs []string
+	Port        int
+}
+
 func (c TestCluster) Shutdown() {
+	// TODO: add Terminate method.
 	for _, memberUUID := range c.MemberUUIDs {
 		c.RC.ShutdownMember(context.Background(), c.ClusterID, memberUUID)
 	}
@@ -540,4 +586,69 @@ func sortedString(b []byte) string {
 	s = strings.ReplaceAll(s, "\n", "")
 	s = strings.ReplaceAll(s, "\r", "")
 	return s
+}
+
+var nextPort int32 = 10000
+
+func NextPort() int {
+	// let minimum step be 10, just a round, safe value.
+	// note that some tests may not use the MemberCount() function for the cluster size.
+	const maxStep = 10
+	step := MemberCount()
+	if step < maxStep {
+		step = maxStep
+	}
+nextblock:
+	for {
+		start := int(atomic.AddInt32(&nextPort, int32(step))) - step
+		// check that all ports in the range are open
+		for port := start; port < start+step; port++ {
+			if !isPortOpen(port) {
+				// ignoring the error from fmt.Fprintf, not useful in this case.
+				_, _ = fmt.Fprintf(os.Stderr, "it.NextPort: %d is not open, skipping the block: [%d:%d]\n", port, start, start+step)
+				continue nextblock
+			}
+		}
+		return start
+	}
+}
+
+func isPortOpen(port int) bool {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 10*time.Millisecond)
+	if err != nil {
+		return true
+	}
+	// ignoring the error from conn.Close, since there's nothing useful to do with it.
+	_ = conn.Close()
+	return false
+}
+
+type SingletonTestCluster struct {
+	mu       *sync.Mutex
+	cls      *TestCluster
+	launcher func() *TestCluster
+	name     string
+}
+
+func NewSingletonTestCluster(name string, launcher func() *TestCluster) *SingletonTestCluster {
+	return &SingletonTestCluster{
+		name:     name,
+		mu:       &sync.Mutex{},
+		launcher: launcher,
+	}
+}
+
+type testLogger interface {
+	Logf(format string, args ...interface{})
+}
+
+func (c *SingletonTestCluster) Launch(t testLogger) *TestCluster {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cls != nil {
+		return c.cls
+	}
+	t.Logf("Launching the auto-shutdown test cluster: %s", c.name)
+	c.cls = c.launcher()
+	return c.cls
 }
