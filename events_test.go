@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,9 @@ func TestLifecycleState_String(t *testing.T) {
 		{state: hazelcast.LifecycleStateChangedCluster + 1, expectedString: "UNKNOWN"},
 	}
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.expectedString, func(t *testing.T) {
+			t.Parallel()
 			got := tc.state.String()
 			if tc.state.String() != tc.expectedString {
 				t.Fatalf("got %v want %v", got, tc.expectedString)
@@ -62,7 +64,9 @@ func Test_EventName(t *testing.T) {
 		{event: &hazelcast.DistributedObjectNotified{}, expectedString: "distributedobjectnotified"},
 	}
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.expectedString, func(t *testing.T) {
+			t.Parallel()
 			e, _ := tc.event.(event.Event)
 			assert.Equal(t, tc.expectedString, e.EventName())
 		})

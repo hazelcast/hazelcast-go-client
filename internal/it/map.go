@@ -60,7 +60,7 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 			tcx.MapName = tcx.NameMaker(tcx.Properties()...)
 		}
 		if tcx.Cluster == nil {
-			tcx.Cluster = defaultTestCluster
+			tcx.Cluster = defaultTestCluster.Launch(tcx.T)
 		}
 		if tcx.Config == nil {
 			cfg := tcx.Cluster.DefaultConfig()

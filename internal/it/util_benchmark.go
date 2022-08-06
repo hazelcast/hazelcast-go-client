@@ -38,7 +38,8 @@ func Benchmarker(b *testing.B, f func(b *testing.B, config *hz.Config)) {
 func BenchmarkerWithConfigBuilder(b *testing.B, configCallback func(*hz.Config), f func(b *testing.B, config *hz.Config)) {
 	ensureRemoteController(true)
 	runner := func(b *testing.B, smart bool) {
-		config := defaultTestCluster.DefaultConfig()
+		cls := defaultTestCluster.Launch(b)
+		config := cls.DefaultConfig()
 		if configCallback != nil {
 			configCallback(&config)
 		}
@@ -84,7 +85,7 @@ func MapBenchmarkerWithConfigAndName(b *testing.B, makeMapName func() string, cb
 		b.Logf("Warmups: %d", warmups)
 	}
 	runner := func(b *testing.B, smart bool) {
-		client, m = getMap(makeMapName(), cbCallback, smart)
+		client, m = getMap(b, makeMapName(), cbCallback, smart)
 		defer func() {
 			ctx := context.Background()
 			m.EvictAll(ctx)
@@ -99,7 +100,7 @@ func MapBenchmarkerWithConfigAndName(b *testing.B, makeMapName func() string, cb
 		f(b, m)
 	}
 	warmJvmUp := func() {
-		client, m := getMap(makeMapName(), cbCallback, true)
+		client, m := getMap(b, makeMapName(), cbCallback, true)
 		for i := 0; i < warmups; i++ {
 			f(b, m)
 		}
@@ -132,8 +133,9 @@ func warmupCount() int {
 	return 3
 }
 
-func getMap(mapName string, configCallback func(*hz.Config), smart bool) (*hz.Client, *hz.Map) {
-	config := defaultTestCluster.DefaultConfig()
+func getMap(b *testing.B, mapName string, configCallback func(*hz.Config), smart bool) (*hz.Client, *hz.Map) {
+	cls := defaultTestCluster.Launch(b)
+	config := cls.DefaultConfig()
 	if configCallback != nil {
 		configCallback(&config)
 	}
