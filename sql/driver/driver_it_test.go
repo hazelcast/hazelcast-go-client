@@ -96,18 +96,6 @@ type RecordWithDateTime struct {
 	TimestampWithTimezoneValue *time.Time
 }
 
-func NewRecordWithDateTime(t *time.Time) *RecordWithDateTime {
-	dv := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-	tv := time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	tsv := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	return &RecordWithDateTime{
-		DateValue:                  &dv,
-		TimeValue:                  &tv,
-		TimestampValue:             &tsv,
-		TimestampWithTimezoneValue: t,
-	}
-}
-
 func (r RecordWithDateTime) FactoryID() int32 {
 	return factoryID
 }
@@ -573,8 +561,8 @@ func TestConcurrentQueries(t *testing.T) {
 	})
 }
 
-func TestClusterShutdownWithContextCancel(t *testing.T) {
-	tc := it.StartNewClusterWithConfig(1, it.SqlXMLConfig(t.Name(), "localhost", 60001), 60001)
+func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
+	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", 60001), 60001)
 	defer tc.Shutdown()
 	db := driver.Open(tc.DefaultConfig())
 	defer db.Close()

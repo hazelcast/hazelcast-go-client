@@ -28,7 +28,7 @@ import (
 var sqlTestCluster = NewSingletonTestCluster("sql", func() *TestCluster {
 	const clusterName = "sql-integration-test"
 	port := NextPort()
-	memberConfig := sqlXMLConfig(clusterName, "localhost", port)
+	memberConfig := SQLXMLConfig(clusterName, "localhost", port)
 	if SSLEnabled() {
 		memberConfig = sqlXMLSSLConfig(clusterName, "localhost", port)
 	}
@@ -79,7 +79,7 @@ func SQLTesterWithConfigBuilder(t *testing.T, configFn func(config *hz.Config), 
 	}
 }
 
-func SqlXMLConfig(clusterName, publicAddr string, port int) string {
+func SQLXMLConfig(clusterName, publicAddr string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

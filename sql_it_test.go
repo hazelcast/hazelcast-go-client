@@ -476,23 +476,40 @@ func sqlQueryWithCursorBufferSizeTest(t *testing.T) {
 
 func sqlStatementWithQueryTimeoutTest(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
-	stmt := sql.NewStatement("select v from table(generate_stream(1))")
-	stmt.SetQueryTimeout(3 * time.Second)
-	it.Must(stmt.SetCursorBufferSize(2))
-	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, _ *hz.Map, _ string) {
-		sqlService := client.SQL()
-		result := it.MustValue(sqlService.ExecuteStatement(context.Background(), stmt)).(sql.Result)
-		defer result.Close()
-		iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
-		for iter.HasNext() {
-			_, err := iter.Next()
-			if err != nil {
-				var sqlError *sql.Error
-				assert.True(t, errors.As(err, &sqlError))
-				break
-			}
-		}
-	})
+	tcs := []struct {
+		name  string
+		query string
+	}{
+		{
+			name:  "streaming query with incoming data/pages",
+			query: "select v from table(generate_stream(1))",
+		},
+		{
+			name:  "streaming query with no data, waiting for data/pages",
+			query: "select v from table(generate_stream(0))",
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			stmt := sql.NewStatement("select v from table(generate_stream(1))")
+			stmt.SetQueryTimeout(3 * time.Second)
+			it.Must(stmt.SetCursorBufferSize(2))
+			it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, _ *hz.Map, _ string) {
+				sqlService := client.SQL()
+				result := it.MustValue(sqlService.ExecuteStatement(context.Background(), stmt)).(sql.Result)
+				defer result.Close()
+				iter := it.MustValue(result.Iterator()).(sql.RowsIterator)
+				for iter.HasNext() {
+					_, err := iter.Next()
+					if err != nil {
+						var sqlError *sql.Error
+						assert.True(t, errors.As(err, &sqlError))
+						break
+					}
+				}
+			})
+		})
+	}
 }
 
 func sqlConcurrentQueriesTest(t *testing.T) {
