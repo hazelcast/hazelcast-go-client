@@ -50,6 +50,7 @@ func TestConfig(t *testing.T) {
 		{name: "MarshalDefaultConfig", f: configMarshalDefaultConfigTest},
 		{name: "MarshalWithNearCacheConfig", f: configMarshalWithNearCacheConfigTest},
 		{name: "ValidateFlakeIDGeneratorConfig", f: configValidateFlakeIDGeneratorConfigTest},
+		{name: "CloneFlakeIDGeneratorConfig", f: configCloneFlakeIDGeneratorConfigTest},
 		{name: "AddFlakeIDGenerator", f: configAddFlakeIDGeneratorTest},
 		{name: "AddExistingFlakeIDGenerator", f: configAddExistingFlakeIDGeneratorTest},
 		{name: "AddNearCache", f: configAddNearCacheTest},
@@ -425,6 +426,20 @@ func configValidateFlakeIDGeneratorConfigTest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func configCloneFlakeIDGeneratorConfigTest(t *testing.T) {
+	cfg := hazelcast.FlakeIDGeneratorConfig{
+		PrefetchCount:  50_000,
+		PrefetchExpiry: types.Duration(time.Minute * 2),
+	}
+	err := cfg.Validate()
+	if err != nil {
+		return
+	}
+	newCfg := cfg.Clone()
+	assert.True(t, reflect.DeepEqual(newCfg.PrefetchCount, cfg.PrefetchCount))
+	assert.True(t, reflect.DeepEqual(newCfg.PrefetchExpiry, cfg.PrefetchExpiry))
 }
 
 func configAddFlakeIDGeneratorTest(t *testing.T) {
