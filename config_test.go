@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -433,13 +434,9 @@ func configCloneFlakeIDGeneratorConfigTest(t *testing.T) {
 		PrefetchCount:  50_000,
 		PrefetchExpiry: types.Duration(time.Minute * 2),
 	}
-	err := cfg.Validate()
-	if err != nil {
-		return
-	}
+	require.NoError(t, cfg.Validate())
 	newCfg := cfg.Clone()
-	assert.True(t, reflect.DeepEqual(newCfg.PrefetchCount, cfg.PrefetchCount))
-	assert.True(t, reflect.DeepEqual(newCfg.PrefetchExpiry, cfg.PrefetchExpiry))
+	require.Equal(t, cfg, newCfg)
 }
 
 func configAddFlakeIDGeneratorTest(t *testing.T) {
