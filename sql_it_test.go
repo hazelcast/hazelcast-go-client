@@ -491,7 +491,7 @@ func sqlStatementWithQueryTimeoutTest(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			stmt := sql.NewStatement("select v from table(generate_stream(1))")
+			stmt := sql.NewStatement(tc.query)
 			stmt.SetQueryTimeout(3 * time.Second)
 			it.Must(stmt.SetCursorBufferSize(2))
 			it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, _ *hz.Map, _ string) {
