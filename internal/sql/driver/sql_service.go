@@ -117,9 +117,9 @@ func (s *SQLService) fetch(ctx context.Context, qid itypes.QueryID, conn *cluste
 	return page, nil
 }
 
-func (s *SQLService) closeQuery(qid itypes.QueryID, conn *cluster.Connection) error {
+func (s *SQLService) closeQuery(ctx context.Context, qid itypes.QueryID, conn *cluster.Connection) error {
 	req := codec.EncodeSqlCloseRequest(qid)
-	if _, err := s.invokeOnConnection(context.Background(), req, conn); err != nil {
+	if _, err := s.invokeOnConnection(ctx, req, conn); err != nil {
 		return fmt.Errorf("closing query: %w", err)
 	}
 	return nil
