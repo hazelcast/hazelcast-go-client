@@ -96,18 +96,6 @@ type RecordWithDateTime struct {
 	TimestampWithTimezoneValue *time.Time
 }
 
-func NewRecordWithDateTime(t *time.Time) *RecordWithDateTime {
-	dv := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-	tv := time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	tsv := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	return &RecordWithDateTime{
-		DateValue:                  &dv,
-		TimeValue:                  &tv,
-		TimestampValue:             &tsv,
-		TimestampWithTimezoneValue: t,
-	}
-}
-
 func (r RecordWithDateTime) FactoryID() int32 {
 	return factoryID
 }
@@ -571,6 +559,33 @@ func TestConcurrentQueries(t *testing.T) {
 		}
 		wg.Wait()
 	})
+}
+
+func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
+	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", 60001), 60001)
+	defer tc.Shutdown()
+	db := driver.Open(tc.DefaultConfig())
+	defer db.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	finish := make(chan bool)
+	go func() {
+		for rows.Next() {
+			// shutdown cluster after first page
+			tc.Shutdown()
+		}
+		close(finish)
+	}()
+	select {
+	case <-finish:
+	case <-time.After(3 * time.Second):
+		t.Fatal("driver did not respect the context timeout")
+	}
 }
 
 func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {
