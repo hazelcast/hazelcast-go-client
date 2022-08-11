@@ -62,13 +62,13 @@ func (e EntryEventType) String() string {
 	case EntryExpired:
 		return "EXPIRED"
 	case EntryAllEvicted:
-		return "ALL_EVICTED"
+		return "EVICT_ALL"
 	case EntryAllCleared:
-		return "ALL_CLEARED"
+		return "CLEAR_ALL"
 	case EntryMerged:
 		return "MERGED"
 	case EntryInvalidated:
-		return "INVALIDATED"
+		return "INVALIDATION"
 	case EntryLoaded:
 		return "LOADED"
 	default:
