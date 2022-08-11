@@ -17,6 +17,7 @@
 package hazelcast
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -48,6 +49,33 @@ const (
 	EntryLoaded EntryEventType = 1 << 9
 )
 
+func (e EntryEventType) String() string {
+	switch e {
+	case EntryAdded:
+		return "ADDED"
+	case EntryRemoved:
+		return "REMOVED"
+	case EntryUpdated:
+		return "UPDATED"
+	case EntryEvicted:
+		return "EVICTED"
+	case EntryExpired:
+		return "EXPIRED"
+	case EntryAllEvicted:
+		return "ALL_EVICTED"
+	case EntryAllCleared:
+		return "ALL_CLEARED"
+	case EntryMerged:
+		return "MERGED"
+	case EntryInvalidated:
+		return "INVALIDATED"
+	case EntryLoaded:
+		return "LOADED"
+	default:
+		return "UNKNOWN"
+	}
+}
+
 // EntryNotifiedHandler is called when an entry event happens.
 type EntryNotifiedHandler func(event *EntryNotified)
 
@@ -77,6 +105,11 @@ type EntryNotified struct {
 
 func (e *EntryNotified) EventName() string {
 	return eventEntryNotified
+}
+
+func (e *EntryNotified) String() string {
+	return fmt.Sprintf("EntryEvent{entryEventType=%s, member=%s, name=%s, key=%v, oldValue=%v, value=%v, mergingValue=%v}",
+		e.EventType, e.Member.Address.String(), e.MapName, e.Key, e.OldValue, e.Value, e.MergingValue)
 }
 
 func newEntryNotifiedEvent(
