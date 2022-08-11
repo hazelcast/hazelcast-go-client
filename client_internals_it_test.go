@@ -52,6 +52,7 @@ func TestClientInternal(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "ClusterConnectionConfigRetryTime", f: clientClusterConnectionConfigRetryTimeTest},
 		{name: "ClusterID", f: clientInternalClusterIDTest},
 		{name: "ClusterID_2", f: clientInternalClusterID_2Test},
 		{name: "ConnectedToMember", f: clientInternalConnectedToMemberTest},
@@ -63,7 +64,6 @@ func TestClientInternal(t *testing.T) {
 		{name: "InvokeOnRandomTarget", f: clientInternalInvokeOnRandomTargetTest},
 		{name: "NotReceivedInvocation", f: clientInternalNotReceivedInvocationTest},
 		{name: "OrderedMembers", f: clientInternalOrderedMembersTest},
-		{name: "ClusterConnectionConfigRetryTime", f: clientClusterConnectionConfigRetryTimeTest},
 		{name: "ProxyManagerShutdown", f: proxyManagerShutdownTest},
 	}
 	for _, tc := range testCases {
@@ -427,26 +427,26 @@ func clientClusterConnectionConfigRetryTimeTest(t *testing.T) {
 	// TODO: Adapt this test for t.Parallel()
 	//t.Parallel()
 	ctx := context.Background()
-	const ASSERTION_SECONDS = 30
+	const AssertionSeconds = 30
 	port := it.NextPort()
-	cls := it.StartNewClusterWithOptions("dev", port, 1)
+	cls := it.StartNewClusterWithOptions(t.Name(), port, 1)
 	defer cls.Shutdown()
 	config := cls.DefaultConfig()
-	config.Cluster.ConnectionStrategy.Retry.InitialBackoff = math.MaxInt32
-	config.Cluster.ConnectionStrategy.Retry.MaxBackoff = math.MaxInt32
+	config.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(math.MaxInt32 * time.Millisecond)
+	config.Cluster.ConnectionStrategy.Retry.MaxBackoff = types.Duration(math.MaxInt32 * time.Millisecond)
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
 	ci := hz.NewClientInternal(client)
-	ret, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[0])
+	_, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[0])
 	require.NoError(t, err)
-	require.True(t, ret)
 	cm := ci.ConnectionManager()
-	require.True(t, len(cm.ActiveConnections()) == 0)
-	time.Sleep(ASSERTION_SECONDS * time.Second)
-	cls = it.StartNewClusterWithOptions("dev", port, 1)
-	for i := 0; i < ASSERTION_SECONDS; i++ {
-		assert.True(t, len(cm.ActiveConnections()) == 0)
-		time.Sleep(time.Second * 1)
-	}
+	it.Eventually(t, func() bool {
+		return len(cm.ActiveConnections()) == 0
+	})
+	time.Sleep(AssertionSeconds * time.Second)
+	cls = it.StartNewClusterWithOptions(t.Name(), port, 1)
+	require.Never(t, func() bool {
+		return len(cm.ActiveConnections()) != 0
+	}, AssertionSeconds*time.Second, time.Second)
 }
 
 func proxyManagerShutdownTest(t *testing.T) {
