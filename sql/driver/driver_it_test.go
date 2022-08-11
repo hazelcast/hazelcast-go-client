@@ -19,6 +19,7 @@ package driver_test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -565,7 +566,9 @@ func TestClusterShutdownDuringQuery(t *testing.T) {
 		t.Log(v)
 	}
 	err = rows.Err()
-	require.Contains(t, err.Error(), "context canceled")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("expected context canceled error")
+	}
 }
 
 func TestConcurrentQueries(t *testing.T) {
