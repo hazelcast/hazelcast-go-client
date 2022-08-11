@@ -11,8 +11,8 @@ import (
 
 func TestClientMessageReader(t *testing.T) {
 	testCases := []struct {
-		name string
 		f    func(t *testing.T)
+		name string
 	}{
 		{name: "readSingleFrame", f: readSingleFrame},
 		{name: "readMultiFrameMessage", f: readMultiFrameMessage},
