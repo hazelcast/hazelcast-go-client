@@ -21,7 +21,6 @@ func TestClientMessageReader(t *testing.T) {
 		{name: "readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall", f: readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall},
 	}
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			tc.f(t)
 		})
@@ -30,7 +29,8 @@ func TestClientMessageReader(t *testing.T) {
 
 func readSingleFrame(t *testing.T) {
 	frame := createFrameWithRandomBytes(t, 42)
-	message := proto.NewClientMessage(frame)
+	message := proto.NewClientMessageForEncode()
+	message.AddFrame(frame)
 	buffer := writeToBuffer(t, message)
 	reader := newClientMessageReader()
 	reader.Append(buffer.Bytes())
@@ -52,7 +52,7 @@ func readMultiFrameMessage(t *testing.T) {
 	message.AddFrame(frame3)
 	buffer := writeToBuffer(t, message)
 	reader := newClientMessageReader()
-	reader.Append((*buffer).Bytes())
+	reader.Append(buffer.Bytes())
 	require.NotNil(t, reader.Read())
 	iterator := reader.clientMessage.FrameIterator()
 	require.True(t, iterator.HasNext())
@@ -69,7 +69,8 @@ func readMultiFrameMessage(t *testing.T) {
 
 func readFramesInMultipleCallsToRead(t *testing.T) {
 	frame := createFrameWithRandomBytes(t, 1000)
-	message := proto.NewClientMessage(frame)
+	message := proto.NewClientMessageForEncode()
+	message.AddFrame(frame)
 	buffer := writeToBuffer(t, message)
 	// split message two part and send sequentially
 	part1 := buffer.Next(750)
@@ -81,14 +82,13 @@ func readFramesInMultipleCallsToRead(t *testing.T) {
 	// should not finish reading
 	require.Nil(t, reader.Read())
 	reader.Append(part2buffer.Bytes())
-	// all the message has been read
+	// should read remaining bytes and finish reading
 	require.NotNil(t, reader.Read())
 	iterator := reader.clientMessage.FrameIterator()
 	require.True(t, iterator.HasNext())
 	frameRead := iterator.Next()
 	require.Equal(t, frame.Content, frameRead.Content)
 	assert.False(t, iterator.HasNext())
-
 }
 
 func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
@@ -97,7 +97,7 @@ func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
 	buffer := writeToBuffer(t, message)
 	reader := newClientMessageReader()
 	// should not be able to read with just 4 bytes of data
-	reader.Append((buffer.Bytes())[:4])
+	reader.Append(buffer.Bytes()[:4])
 	require.Nil(t, reader.Read())
 	// should be able to read when the rest of the data comes
 	reader.Append(buffer.Bytes()[4:buffer.Len()])
@@ -138,8 +138,7 @@ func readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall(t *testing.T) {
 
 func createFrameWithRandomBytes(t *testing.T, bytes int) proto.Frame {
 	content := make([]byte, bytes)
-	n, err := rand.Read(content)
-	require.Equal(t, n, bytes)
+	_, err := rand.Read(content)
 	require.NoError(t, err)
 	return proto.NewFrame(content)
 }
