@@ -435,6 +435,10 @@ func clientClusterConnectionConfigRetryTimeTest(t *testing.T) {
 	config.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(math.MaxInt32 * time.Millisecond)
 	config.Cluster.ConnectionStrategy.Retry.MaxBackoff = types.Duration(math.MaxInt32 * time.Millisecond)
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	defer func() {
+		ctx, _ := context.WithTimeout(ctx, time.Second*3)
+		client.Shutdown(ctx)
+	}()
 	ci := hz.NewClientInternal(client)
 	_, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[0])
 	require.NoError(t, err)
