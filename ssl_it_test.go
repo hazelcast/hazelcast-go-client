@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/stretchr/testify/require"
+
+	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 )
 
@@ -17,33 +18,126 @@ const (
 	REQUIRED MutualAuthenticationStatus = "REQUIRED"
 )
 
-func Test_MutualAuthenticationRequired(t *testing.T) {
-	it.MarkFlaky(t, "pkcs12 fails while decrypting")
+func TestMutualAuthentication(t *testing.T) {
+	testCases := []struct {
+		name          string
+		muStatus      MutualAuthenticationStatus
+		ca, cert, key string
+		wantErr       bool
+	}{
+		{
+			name:     "testMA_RequiredClientAndServerAuthenticated",
+			muStatus: REQUIRED,
+			ca:       "cluster/testdata/server1-cert.pem",
+			cert:     "cluster/testdata/client1-cert.pem",
+			key:      "cluster/testdata/client1-key.pem",
+			wantErr:  false,
+		},
+		{
+			name:     "testMA_RequiredServerNotAuthenticated",
+			muStatus: REQUIRED,
+			ca:       "cluster/testdata/server2-cert.pem",
+			cert:     "cluster/testdata/client1-cert.pem",
+			key:      "cluster/testdata/client1-key.pem",
+			wantErr:  true,
+		},
+		{
+			name:     "testMA_RequiredClientNotAuthenticated",
+			muStatus: REQUIRED,
+			ca:       "cluster/testdata/server1-cert.pem",
+			cert:     "cluster/testdata/client2-cert.pem",
+			key:      "cluster/testdata/client2-key.pem",
+			wantErr:  true,
+		},
+		{
+			name:     "testMA_RequiredClientAndServerNotAuthenticated",
+			muStatus: REQUIRED,
+			ca:       "cluster/testdata/server2-cert.pem",
+			cert:     "cluster/testdata/client2-cert.pem",
+			key:      "cluster/testdata/client2-key.pem",
+			wantErr:  true,
+		},
+		{
+			name:     "testMA_OptionalClientAndServerAuthenticated",
+			muStatus: OPTIONAL,
+			ca:       "cluster/testdata/server1-cert.pem",
+			cert:     "cluster/testdata/client1-cert.pem",
+			key:      "cluster/testdata/client1-key.pem",
+			wantErr:  false,
+		},
+		{
+			name:     "testMA_OptionalServerNotAuthenticated",
+			muStatus: OPTIONAL,
+			ca:       "cluster/testdata/server2-cert.pem",
+			cert:     "cluster/testdata/client1-cert.pem",
+			key:      "cluster/testdata/client1-key.pem",
+			wantErr:  true,
+		},
+		{
+			name:     "testMA_OptionalClientNotAuthenticated",
+			muStatus: OPTIONAL,
+			ca:       "cluster/testdata/server1-cert.pem",
+			cert:     "cluster/testdata/client2-cert.pem",
+			key:      "cluster/testdata/client2-key.pem",
+			wantErr:  true,
+		},
+		{
+			name:     "testMA_OptionalClientAndServerNotAuthenticated",
+			muStatus: OPTIONAL,
+			ca:       "cluster/testdata/server2-cert.pem",
+			cert:     "cluster/testdata/client2-cert.pem",
+			key:      "cluster/testdata/client2-key.pem",
+			wantErr:  true,
+		},
+		{
+			name:     "testMA_RequiredWithNoCertFile",
+			muStatus: REQUIRED,
+			ca:       "cluster/testdata/server1-cert.pem",
+			cert:     "",
+			key:      "",
+			wantErr:  true,
+		},
+		{
+			name:     "testMA_RequiredWithNoCertFile",
+			muStatus: OPTIONAL,
+			ca:       "cluster/testdata/server1-cert.pem",
+			cert:     "",
+			key:      "",
+			wantErr:  false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.wantErr {
+				require.Error(t, sslTestUtil(t, tc.ca, tc.cert, tc.key))
+			} else {
+				require.NoError(t, sslTestUtil(t, tc.ca, tc.cert, tc.key))
+			}
+		})
+	}
+}
+
+func sslTestUtil(t *testing.T, ca, cert, key string) error {
 	ctx := context.Background()
 	port := it.NextPort()
 	clsConfig := xmlSSLMutualAuthenticationConfig(t.Name(), port, REQUIRED)
 	tc := it.StartNewClusterWithConfig(1, clsConfig, port)
 	defer tc.Shutdown()
 	clientCfg := tc.DefaultConfig()
-	clientCfg.Cluster.Network.SSL = cluster.SSLConfig{Enabled: true}
-	sslConfig := &clientCfg.Cluster.Network.SSL
-	tls := sslConfig.TLSConfig()
-	tls.InsecureSkipVerify = true
-	sslConfig.SetTLSConfig(tls)
-	if err := sslConfig.SetCAPath("cluster/testdata/OpenSSL/rootCA.crt"); err != nil {
-		t.Error(err)
+	if err := clientCfg.Cluster.Network.SSL.SetCAPath(ca); err != nil {
+		return err
 	}
-	if err := sslConfig.AddClientCertAndEncryptedKeyPath("cluster/testdata/OpenSSL/client/client.crt",
-		"cluster/testdata/OpenSSL/client/client.key", "hazelcast"); err != nil {
-		t.Fatal(err)
+	if err := clientCfg.Cluster.Network.SSL.AddClientCertAndKeyPath(cert, key); err != nil {
+		return err
 	}
-	client, err := hz.StartNewClientWithConfig(ctx, clientCfg)
+	client, err := hazelcast.StartNewClientWithConfig(ctx, clientCfg)
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 	if err = client.Shutdown(ctx); err != nil {
-		t.Error(err)
+		return err
 	}
+	return nil
 }
 
 func xmlSSLMutualAuthenticationConfig(clusterName string, port int, mu MutualAuthenticationStatus) string {
@@ -60,10 +154,11 @@ func xmlSSLMutualAuthenticationConfig(clusterName string, port int, mu MutualAut
 						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
 					</factory-class-name>
 					<properties>
-						<property name="keyStore">cluster/testdata/OpenSSL/server.keystore</property>
-						<property name="keyStorePassword">hazelcast</property>
-						<property name="keyStore">cluster/testdata/OpenSSL/server.truststore</property>
-						<property name="trustStorePassword">hazelcast</property>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="trustStore">com/hazelcast/nio/ssl-mutual-auth/server1_knows_client1/server1.truststore
+						</property>
+						<property name="trustStorePassword">password</property>
 						<property name="trustManagerAlgorithm">SunX509</property>
 						<property name="javax.net.ssl.mutualAuthentication">%s</property>
 						<property name="keyManagerAlgorithm">SunX509</property>

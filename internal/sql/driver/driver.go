@@ -55,7 +55,7 @@ const (
 	optSSLCAPath                  = "ssl.ca.path"
 	optSSLCertPath                = "ssl.cert.path"
 	optSSLKeyPath                 = "ssl.key.path"
-	optSSLKeyPassword             = "ssl.key.password"
+	optSSLKeyPassword             = "ssl.key.password.txt"
 )
 
 var (

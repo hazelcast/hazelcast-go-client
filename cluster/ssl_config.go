@@ -93,7 +93,7 @@ func (c *SSLConfig) AddClientCertAndKeyPath(clientCertPath string, clientPrivate
 	return nil
 }
 
-// AddClientCertAndEncryptedKeyPath decrypts the keyfile with the given password and
+// AddClientCertAndEncryptedKeyPath decrypts the keyfile with the given password.txt and
 // adds client certificate path and the decrypted client private key to tls config.
 // The files in the given paths must contain PEM encoded data.
 // The key file should have a DEK-info header otherwise an error will be returned.

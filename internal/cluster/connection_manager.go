@@ -588,7 +588,7 @@ func (m *ConnectionManager) encodeAuthenticationRequest() *proto.ClientMessage {
 	if creds, ok := credentials.(*security.UsernamePasswordCredentials); ok {
 		return m.createAuthenticationRequest(clusterName, creds)
 	}
-	panic("only username password credentials are supported")
+	panic("only username password.txt credentials are supported")
 }
 
 func (m *ConnectionManager) createAuthenticationRequest(clusterName string, creds *security.UsernamePasswordCredentials) *proto.ClientMessage {

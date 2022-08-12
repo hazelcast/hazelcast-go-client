@@ -43,11 +43,11 @@ Use hazelcast as the driver name.
 The DSN may be blank. In that case, the default configuration is used.
 Otherwise, the DSN must start with the scheme (hz://) and have the following optional parts:
 
-	- Username and password for the cluster, separated by a column: dave:s3cr3t
+	- Username and password.txt for the cluster, separated by a column: dave:s3cr3t
 	- Hazelcast member addresses, separated by commas: server1:port1,server2:port2
 	- Options as key=value pairs, separated by ampersand (&). Both the key and value must be URL encoded: cluster.name=dev&ssl=true
 
-Username/password part is separated from the address by the at sign (@).
+Username/password.txt part is separated from the address by the at sign (@).
 There should be a question mark (?) between the address(es) and options.
 Here is a full DSN:
 
@@ -65,7 +65,7 @@ The following are the available options:
 	- ssl.ca.path: The path to the PEM file for the certificate authority. Implies ssl=true. Example: ssl.ca.path=/etc/ssl/ca.pem
 	- ssl.cert.path: The path to the TLS certificate. Implies ssl=true. Example: ssl.cert.path=/etc/ssl/cert.pem
 	- ssl.key.path: The path to the certificate key. Implies ssl=true. Example: ssl.key.path=/etc/ssl/key.pem
-	- ssl.key.password: The optional certificate password. Example: ssl.key.password=m0us3
+	- ssl.key.password.txt: The optional certificate password.txt. Example: ssl.key.password.txt=m0us3
 
 Some items in the client configuration cannot be set in the DSN, such as serialization factories and SSL configuration.
 You can use the following functions to set those configuration items globally:

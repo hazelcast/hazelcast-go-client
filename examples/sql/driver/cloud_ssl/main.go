@@ -44,7 +44,7 @@ func makeDSN() string {
 	vs.Set("ssl.ca.path", caPath)
 	vs.Set("ssl.cert.path", certPath)
 	vs.Set("ssl.key.path", keyPath)
-	vs.Set("ssl.key.password", keyPassword)
+	vs.Set("ssl.key.password.txt", keyPassword)
 	return fmt.Sprintf("hz://?%s", vs.Encode())
 }
 

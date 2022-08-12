@@ -1099,7 +1099,7 @@ func listenersAfterClientDisconnectedXMLSSLConfig(clusterName, publicAddr string
 					</factory-class-name>
 					<properties>
 						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
-						<property name="keyStorePassword">password</property>
+						<property name="keyStorePassword">password.txt</property>
 						<property name="keyManagerAlgorithm">SunX509</property>
 						<property name="protocol">TLSv1.2</property>
 					</properties>
