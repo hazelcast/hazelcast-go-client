@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -50,6 +51,7 @@ func TestConfig(t *testing.T) {
 		{name: "MarshalDefaultConfig", f: configMarshalDefaultConfigTest},
 		{name: "MarshalWithNearCacheConfig", f: configMarshalWithNearCacheConfigTest},
 		{name: "ValidateFlakeIDGeneratorConfig", f: configValidateFlakeIDGeneratorConfigTest},
+		{name: "CloneFlakeIDGeneratorConfig", f: configCloneFlakeIDGeneratorConfigTest},
 		{name: "AddFlakeIDGenerator", f: configAddFlakeIDGeneratorTest},
 		{name: "AddExistingFlakeIDGenerator", f: configAddExistingFlakeIDGeneratorTest},
 		{name: "AddNearCache", f: configAddNearCacheTest},
@@ -425,6 +427,16 @@ func configValidateFlakeIDGeneratorConfigTest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func configCloneFlakeIDGeneratorConfigTest(t *testing.T) {
+	cfg := hazelcast.FlakeIDGeneratorConfig{
+		PrefetchCount:  50_000,
+		PrefetchExpiry: types.Duration(time.Minute * 2),
+	}
+	require.NoError(t, cfg.Validate())
+	newCfg := cfg.Clone()
+	require.Equal(t, cfg, newCfg)
 }
 
 func configAddFlakeIDGeneratorTest(t *testing.T) {

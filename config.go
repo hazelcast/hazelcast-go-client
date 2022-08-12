@@ -119,10 +119,7 @@ func (c *Config) Clone() Config {
 	c.ensureMembershipListeners()
 	newLabels := make([]string, len(c.Labels))
 	copy(newLabels, c.Labels)
-	newFlakeIDConfigs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGenerators))
-	for k, v := range c.FlakeIDGenerators {
-		newFlakeIDConfigs[k] = v
-	}
+	newFlakeIDConfigs := c.copyFlakeIDGeneratorConfig()
 	nccs := c.copyNearCacheConfig()
 	newNCs := make([]nearcache.Config, 0, len(c.NearCaches))
 	newNCs = append(newNCs, c.NearCaches...)
@@ -255,6 +252,15 @@ func (c Config) copyNearCacheConfig() map[string]nearcache.Config {
 	return configs
 }
 
+func (c Config) copyFlakeIDGeneratorConfig() map[string]FlakeIDGeneratorConfig {
+	c.ensureFlakeIDGenerators()
+	configs := make(map[string]FlakeIDGeneratorConfig, len(c.FlakeIDGenerators))
+	for k, v := range c.FlakeIDGenerators {
+		configs[k] = v.Clone()
+	}
+	return configs
+}
+
 type configForMarshal Config
 
 // StatsConfig contains configuration for Management Center.
@@ -303,6 +309,14 @@ func (f *FlakeIDGeneratorConfig) Validate() error {
 		return err
 	}
 	return nil
+}
+
+// Clone returns a copy of the FlakeIDGeneratorConfig struct
+func (f *FlakeIDGeneratorConfig) Clone() FlakeIDGeneratorConfig {
+	return FlakeIDGeneratorConfig{
+		PrefetchCount:  f.PrefetchCount,
+		PrefetchExpiry: f.PrefetchExpiry,
+	}
 }
 
 // NearCacheInvalidationConfig contains invalidation configuration for all Near Caches.
