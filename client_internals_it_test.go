@@ -37,6 +37,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -640,6 +641,7 @@ func TestMutualAuthentication(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			skip.IfNot(t, "oss")
 			if tc.wantErr {
 				require.Error(t, sslTestUtil(t, tc.muStatus, tc.ca, tc.cert, tc.key))
 			} else {

@@ -34,6 +34,8 @@ jobs:
           ENABLE_SSL: 1
           MEMBER_COUNT: 3
         run: |
+          sudo cp testdata/OpenSSL/rootCA.crt /usr/local/share/ca-certificates/rootCA.crt
+          sudo update-ca-certificates
           ./rc.sh start
           go mod tidy
           make test-cover
