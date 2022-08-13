@@ -3,7 +3,6 @@ package cluster
 import (
 	"bytes"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"math/rand"
 	"testing"
@@ -88,7 +87,7 @@ func readFramesInMultipleCallsToRead(t *testing.T) {
 	require.True(t, iterator.HasNext())
 	frameRead := iterator.Next()
 	require.Equal(t, frame.Content, frameRead.Content)
-	assert.False(t, iterator.HasNext())
+	require.False(t, iterator.HasNext())
 }
 
 func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
