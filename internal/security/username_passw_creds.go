@@ -21,7 +21,7 @@ import (
 )
 
 // UsernamePasswordCredentials is a simple implementation of Credentials
-// using username and password.txt as security attributes.
+// using username and password as security attributes.
 type UsernamePasswordCredentials struct {
 	*BaseCredentials
 	username string
@@ -30,7 +30,7 @@ type UsernamePasswordCredentials struct {
 
 // NewUsernamePasswordCredentials returns UsernamePassWordCredentials with the given parameters.
 func NewUsernamePasswordCredentials(username string, password string) *UsernamePasswordCredentials {
-	//TODO :: Should we check if password.txt is empty?
+	//TODO :: Should we check if password is empty?
 	return &UsernamePasswordCredentials{
 		username: username,
 		password: []byte(password),
@@ -41,7 +41,7 @@ func NewUsernamePasswordCredentials(username string, password string) *UsernameP
 
 }
 
-// Password returns credentials password.txt.
+// Password returns credentials password.
 func (upc *UsernamePasswordCredentials) Password() string {
 	return string(upc.password)
 }

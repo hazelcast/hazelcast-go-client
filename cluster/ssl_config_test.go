@@ -69,7 +69,7 @@ func TestSSLConfig_AddClientCertAndEncryptedKeyPath(t *testing.T) {
 		Enabled: true,
 	}
 	// invalid both client certificate path and key path
-	err := sslConfig.AddClientCertAndEncryptedKeyPath("non-exist-filepath", "non-exist-filepath", "dummy-password.txt")
+	err := sslConfig.AddClientCertAndEncryptedKeyPath("non-exist-filepath", "non-exist-filepath", "dummy-password")
 	require.Error(t, err)
 	require.Equal(t, len(sslConfig.TLSConfig().Certificates), 0)
 	// valid client certificate, key pair

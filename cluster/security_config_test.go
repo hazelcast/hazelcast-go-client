@@ -27,7 +27,7 @@ import (
 func TestSecurityConfig_CloneAndValidate(t *testing.T) {
 	cfg := cluster.CredentialsConfig{
 		Username: "username",
-		Password: "password.txt",
+		Password: "password",
 	}
 	newCfg := cfg.Clone()
 	if !reflect.DeepEqual(newCfg, cfg) {
