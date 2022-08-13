@@ -58,13 +58,13 @@ func TestSSLConfig_AddClientCertAndKeyPath(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, len(sslConfig.TLSConfig().Certificates), 0)
 	// valid client certificate, key pair
-	err = sslConfig.AddClientCertAndKeyPath("testdata/OpenSSL/client/client.crt", "testdata/OpenSSL/client/client.key")
+	err = sslConfig.AddClientCertAndKeyPath("../testdata/OpenSSL/client/client.crt", "../testdata/OpenSSL/client/client.key")
 	require.NoError(t, err)
 	require.Equal(t, len(sslConfig.TLSConfig().Certificates), 1)
 }
 
 func TestSSLConfig_AddClientCertAndEncryptedKeyPath(t *testing.T) {
-	it.MarkFlaky(t, "pkcs12 fails while decrypting")
+	it.MarkFlaky(t, "PKCS12 fails while decrypting")
 	sslConfig := cluster.SSLConfig{
 		Enabled: true,
 	}
