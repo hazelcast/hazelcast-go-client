@@ -13,7 +13,7 @@ func TestClientMessageReader(t *testing.T) {
 		f    func(t *testing.T)
 		name string
 	}{
-		{name: "readSingleFrame", f: readSingleFrame},
+		{name: "readSingleFrameMessage", f: readSingleFrameMessage},
 		{name: "readMultiFrameMessage", f: readMultiFrameMessage},
 		{name: "readFramesInMultipleCallsToRead", f: readFramesInMultipleCallsToRead},
 		{name: "readWhenTheFrameLengthAndFlagsNotReceivedAtFirst", f: readWhenTheFrameLengthAndFlagsNotReceivedAtFirst},
@@ -26,7 +26,8 @@ func TestClientMessageReader(t *testing.T) {
 	}
 }
 
-func readSingleFrame(t *testing.T) {
+func readSingleFrameMessage(t *testing.T) {
+	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadSingleFrameMessage
 	frame := createFrameWithRandomBytes(t, 42)
 	message := proto.NewClientMessageForEncode()
 	message.AddFrame(frame)
@@ -42,6 +43,7 @@ func readSingleFrame(t *testing.T) {
 }
 
 func readMultiFrameMessage(t *testing.T) {
+	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadMultiFrameMessage
 	frame1 := createFrameWithRandomBytes(t, 10)
 	frame2 := createFrameWithRandomBytes(t, 20)
 	frame3 := createFrameWithRandomBytes(t, 30)
@@ -67,6 +69,7 @@ func readMultiFrameMessage(t *testing.T) {
 }
 
 func readFramesInMultipleCallsToRead(t *testing.T) {
+	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadFramesInMultipleCallsToReadFrom
 	frame := createFrameWithRandomBytes(t, 1000)
 	message := proto.NewClientMessageForEncode()
 	message.AddFrame(frame)
@@ -91,6 +94,7 @@ func readFramesInMultipleCallsToRead(t *testing.T) {
 }
 
 func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
+	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testRead_whenTheFrameLengthAndFlagsNotReceivedAtFirst
 	frame := createFrameWithRandomBytes(t, 100)
 	message := proto.NewClientMessage(frame)
 	buffer := writeToBuffer(t, message)
@@ -109,6 +113,7 @@ func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
 }
 
 func readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall(t *testing.T) {
+	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadFramesInMultipleCallsToReadFrom_whenLastPieceIsSmall
 	frame := createFrameWithRandomBytes(t, 1000)
 	message := proto.NewClientMessage(frame)
 	buffer := writeToBuffer(t, message)
@@ -136,6 +141,7 @@ func readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall(t *testing.T) {
 }
 
 func createFrameWithRandomBytes(t *testing.T, bytes int) proto.Frame {
+	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#createFrameWithRandomBytes
 	content := make([]byte, bytes)
 	_, err := rand.Read(content)
 	require.NoError(t, err)
@@ -143,6 +149,7 @@ func createFrameWithRandomBytes(t *testing.T, bytes int) proto.Frame {
 }
 
 func writeToBuffer(t *testing.T, message *proto.ClientMessage) *bytes.Buffer {
+	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#writeToBuffer
 	buffer := bytes.NewBuffer(make([]byte, 0, message.TotalLength()))
 	err := message.Write(buffer)
 	require.NoError(t, err)
