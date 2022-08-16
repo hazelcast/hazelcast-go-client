@@ -13,14 +13,16 @@ func TestClientMessageReader(t *testing.T) {
 		f    func(t *testing.T)
 		name string
 	}{
-		{name: "readSingleFrameMessage", f: readSingleFrameMessage},
-		{name: "readMultiFrameMessage", f: readMultiFrameMessage},
 		{name: "readFramesInMultipleCallsToRead", f: readFramesInMultipleCallsToRead},
-		{name: "readWhenTheFrameLengthAndFlagsNotReceivedAtFirst", f: readWhenTheFrameLengthAndFlagsNotReceivedAtFirst},
 		{name: "readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall", f: readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall},
+		{name: "readMultiFrameMessage", f: readMultiFrameMessage},
+		{name: "readSingleFrameMessage", f: readSingleFrameMessage},
+		{name: "readWhenTheFrameLengthAndFlagsNotReceivedAtFirst", f: readWhenTheFrameLengthAndFlagsNotReceivedAtFirst},
 	}
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			tc.f(t)
 		})
 	}
@@ -29,17 +31,16 @@ func TestClientMessageReader(t *testing.T) {
 func readSingleFrameMessage(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadSingleFrameMessage
 	frame := createFrameWithRandomBytes(t, 42)
-	message := proto.NewClientMessageForEncode()
-	message.AddFrame(frame)
-	buffer := writeToBuffer(t, message)
-	reader := newClientMessageReader()
-	reader.Append(buffer.Bytes())
-	require.NotNil(t, reader.Read())
-	iterator := proto.NewForwardFrameIterator(reader.clientMessage.Frames)
-	require.True(t, iterator.HasNext())
-	frameRead := iterator.Next()
-	require.Equal(t, frame.Content, frameRead.Content)
-	require.False(t, iterator.HasNext())
+	msg := proto.NewClientMessageForEncode()
+	msg.AddFrame(frame)
+	buf := writeToBuffer(t, msg)
+	r := newClientMessageReader()
+	r.Append(buf.Bytes())
+	require.NotNil(t, r.Read())
+	iter := proto.NewForwardFrameIterator(r.clientMessage.Frames)
+	require.True(t, iter.HasNext())
+	require.Equal(t, frame.Content, iter.Next().Content)
+	require.False(t, iter.HasNext())
 }
 
 func readMultiFrameMessage(t *testing.T) {
@@ -47,97 +48,91 @@ func readMultiFrameMessage(t *testing.T) {
 	frame1 := createFrameWithRandomBytes(t, 10)
 	frame2 := createFrameWithRandomBytes(t, 20)
 	frame3 := createFrameWithRandomBytes(t, 30)
-	message := proto.NewClientMessageForEncode()
-	message.AddFrame(frame1)
-	message.AddFrame(frame2)
-	message.AddFrame(frame3)
-	buffer := writeToBuffer(t, message)
-	reader := newClientMessageReader()
-	reader.Append(buffer.Bytes())
-	require.NotNil(t, reader.Read())
-	iterator := reader.clientMessage.FrameIterator()
-	require.True(t, iterator.HasNext())
-	frameRead := iterator.Next()
-	require.Equal(t, frame1.Content, frameRead.Content)
-	require.True(t, iterator.HasNext())
-	frameRead = iterator.Next()
-	require.Equal(t, frame2.Content, frameRead.Content)
-	require.True(t, iterator.HasNext())
-	frameRead = iterator.Next()
-	require.Equal(t, frame3.Content, frameRead.Content)
-	require.False(t, iterator.HasNext())
+	msg := proto.NewClientMessageForEncode()
+	msg.AddFrame(frame1)
+	msg.AddFrame(frame2)
+	msg.AddFrame(frame3)
+	buf := writeToBuffer(t, msg)
+	r := newClientMessageReader()
+	r.Append(buf.Bytes())
+	require.NotNil(t, r.Read())
+	iter := r.clientMessage.FrameIterator()
+	require.True(t, iter.HasNext())
+	require.Equal(t, frame1.Content, iter.Next().Content)
+	require.True(t, iter.HasNext())
+	require.Equal(t, frame2.Content, iter.Next().Content)
+	require.True(t, iter.HasNext())
+	require.Equal(t, frame3.Content, iter.Next().Content)
+	require.False(t, iter.HasNext())
 }
 
 func readFramesInMultipleCallsToRead(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadFramesInMultipleCallsToReadFrom
 	frame := createFrameWithRandomBytes(t, 1000)
-	message := proto.NewClientMessageForEncode()
-	message.AddFrame(frame)
-	buffer := writeToBuffer(t, message)
+	msg := proto.NewClientMessageForEncode()
+	msg.AddFrame(frame)
+	buf := writeToBuffer(t, msg)
 	// split message two part and send sequentially
-	part1 := buffer.Next(750)
-	part2 := buffer.Bytes()
-	part1buffer := bytes.NewBuffer(part1)
-	part2buffer := bytes.NewBuffer(part2)
-	reader := newClientMessageReader()
-	reader.Append(part1buffer.Bytes())
+	part1 := buf.Next(750)
+	part2 := buf.Bytes()
+	part1buf := bytes.NewBuffer(part1)
+	part2buf := bytes.NewBuffer(part2)
+	r := newClientMessageReader()
+	r.Append(part1buf.Bytes())
 	// should not finish reading
-	require.Nil(t, reader.Read())
-	reader.Append(part2buffer.Bytes())
+	require.Nil(t, r.Read())
+	r.Append(part2buf.Bytes())
 	// should read remaining bytes and finish reading
-	require.NotNil(t, reader.Read())
-	iterator := reader.clientMessage.FrameIterator()
-	require.True(t, iterator.HasNext())
-	frameRead := iterator.Next()
-	require.Equal(t, frame.Content, frameRead.Content)
-	require.False(t, iterator.HasNext())
+	require.NotNil(t, r.Read())
+	iter := r.clientMessage.FrameIterator()
+	require.True(t, iter.HasNext())
+	require.Equal(t, frame.Content, iter.Next().Content)
+	require.False(t, iter.HasNext())
 }
 
 func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testRead_whenTheFrameLengthAndFlagsNotReceivedAtFirst
 	frame := createFrameWithRandomBytes(t, 100)
-	message := proto.NewClientMessage(frame)
-	buffer := writeToBuffer(t, message)
-	reader := newClientMessageReader()
+	msg := proto.NewClientMessage(frame)
+	buf := writeToBuffer(t, msg)
+	r := newClientMessageReader()
 	// should not be able to read with just 4 bytes of data
-	reader.Append(buffer.Bytes()[:4])
-	require.Nil(t, reader.Read())
+	r.Append(buf.Bytes()[:4])
+	require.Nil(t, r.Read())
 	// should be able to read when the rest of the data comes
-	reader.Append(buffer.Bytes()[4:buffer.Len()])
-	require.NotNil(t, reader.Read())
-	iterator := reader.clientMessage.FrameIterator()
-	require.True(t, iterator.HasNext())
-	frameRead := iterator.Next()
-	require.Equal(t, frame.Content, frameRead.Content)
-	require.False(t, iterator.HasNext())
+	r.Append(buf.Bytes()[4:buf.Len()])
+	require.NotNil(t, r.Read())
+	iter := r.clientMessage.FrameIterator()
+	require.True(t, iter.HasNext())
+	require.Equal(t, frame.Content, iter.Next().Content)
+	require.False(t, iter.HasNext())
 }
 
 func readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadFramesInMultipleCallsToReadFrom_whenLastPieceIsSmall
 	frame := createFrameWithRandomBytes(t, 1000)
-	message := proto.NewClientMessage(frame)
-	buffer := writeToBuffer(t, message)
+	msg := proto.NewClientMessage(frame)
+	buf := writeToBuffer(t, msg)
 	// Message Length = 1000 + 6 bytes
 	// part1 = 750, part2 = 252, part3 = 4 bytes
-	part1 := buffer.Next(750)
-	part2 := buffer.Next(252)
-	part3 := buffer.Bytes()
-	part1Buffer := bytes.NewBuffer(part1)
-	part2Buffer := bytes.NewBuffer(part2)
-	part3Buffer := bytes.NewBuffer(part3)
-	// create a reader and send message part by part
-	reader := newClientMessageReader()
-	reader.Append(part1Buffer.Bytes())
-	require.Nil(t, reader.Read())
-	reader.Append(part2Buffer.Bytes())
-	require.Nil(t, reader.Read())
+	part1 := buf.Next(750)
+	part2 := buf.Next(252)
+	part3 := buf.Bytes()
+	part1Buf := bytes.NewBuffer(part1)
+	part2Buf := bytes.NewBuffer(part2)
+	part3Buf := bytes.NewBuffer(part3)
+	// create a r and send message part by part
+	r := newClientMessageReader()
+	r.Append(part1Buf.Bytes())
+	require.Nil(t, r.Read())
+	r.Append(part2Buf.Bytes())
+	require.Nil(t, r.Read())
 	// it should only be able to read after part 3
-	reader.Append(part3Buffer.Bytes())
-	require.NotNil(t, reader.Read())
-	iterator := reader.clientMessage.FrameIterator()
-	frameRead := iterator.Next()
-	require.Equal(t, frame.Content, frameRead.Content)
-	require.False(t, iterator.HasNext())
+	r.Append(part3Buf.Bytes())
+	require.NotNil(t, r.Read())
+	iter := r.clientMessage.FrameIterator()
+	require.Equal(t, frame.Content, iter.Next().Content)
+	require.False(t, iter.HasNext())
 }
 
 func createFrameWithRandomBytes(t *testing.T, bytes int) proto.Frame {
@@ -148,10 +143,10 @@ func createFrameWithRandomBytes(t *testing.T, bytes int) proto.Frame {
 	return proto.NewFrame(content)
 }
 
-func writeToBuffer(t *testing.T, message *proto.ClientMessage) *bytes.Buffer {
+func writeToBuffer(t *testing.T, msg *proto.ClientMessage) *bytes.Buffer {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#writeToBuffer
-	buffer := bytes.NewBuffer(make([]byte, 0, message.TotalLength()))
-	err := message.Write(buffer)
+	buf := bytes.NewBuffer(make([]byte, 0, msg.TotalLength()))
+	err := msg.Write(buf)
 	require.NoError(t, err)
-	return buffer
+	return buf
 }
