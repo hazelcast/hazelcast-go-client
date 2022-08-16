@@ -13,11 +13,11 @@ func TestClientMessageReader(t *testing.T) {
 		f    func(t *testing.T)
 		name string
 	}{
-		{name: "readFramesInMultipleCallsToRead", f: readFramesInMultipleCallsToRead},
-		{name: "readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall", f: readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall},
-		{name: "readMultiFrameMessage", f: readMultiFrameMessage},
-		{name: "readSingleFrameMessage", f: readSingleFrameMessage},
-		{name: "readWhenTheFrameLengthAndFlagsNotReceivedAtFirst", f: readWhenTheFrameLengthAndFlagsNotReceivedAtFirst},
+		{name: "readFramesInMultipleCallsToRead", f: readFramesInMultipleCallsToReadTest},
+		{name: "readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall", f: readFramesInMultipleCallsToReadFromWhenLastPieceIsSmallTest},
+		{name: "readMultiFrameMessage", f: readMultiFrameMessageTest},
+		{name: "readSingleFrameMessage", f: readSingleFrameMessageTest},
+		{name: "readWhenTheFrameLengthAndFlagsNotReceivedAtFirst", f: readWhenTheFrameLengthAndFlagsNotReceivedAtFirstTest},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -28,7 +28,7 @@ func TestClientMessageReader(t *testing.T) {
 	}
 }
 
-func readSingleFrameMessage(t *testing.T) {
+func readSingleFrameMessageTest(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadSingleFrameMessage
 	frame := createFrameWithRandomBytes(t, 42)
 	msg := proto.NewClientMessageForEncode()
@@ -43,7 +43,7 @@ func readSingleFrameMessage(t *testing.T) {
 	require.False(t, iter.HasNext())
 }
 
-func readMultiFrameMessage(t *testing.T) {
+func readMultiFrameMessageTest(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadMultiFrameMessage
 	frame1 := createFrameWithRandomBytes(t, 10)
 	frame2 := createFrameWithRandomBytes(t, 20)
@@ -66,7 +66,7 @@ func readMultiFrameMessage(t *testing.T) {
 	require.False(t, iter.HasNext())
 }
 
-func readFramesInMultipleCallsToRead(t *testing.T) {
+func readFramesInMultipleCallsToReadTest(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadFramesInMultipleCallsToReadFrom
 	frame := createFrameWithRandomBytes(t, 1000)
 	msg := proto.NewClientMessageForEncode()
@@ -90,7 +90,7 @@ func readFramesInMultipleCallsToRead(t *testing.T) {
 	require.False(t, iter.HasNext())
 }
 
-func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
+func readWhenTheFrameLengthAndFlagsNotReceivedAtFirstTest(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testRead_whenTheFrameLengthAndFlagsNotReceivedAtFirst
 	frame := createFrameWithRandomBytes(t, 100)
 	msg := proto.NewClientMessage(frame)
@@ -108,7 +108,7 @@ func readWhenTheFrameLengthAndFlagsNotReceivedAtFirst(t *testing.T) {
 	require.False(t, iter.HasNext())
 }
 
-func readFramesInMultipleCallsToReadFromWhenLastPieceIsSmall(t *testing.T) {
+func readFramesInMultipleCallsToReadFromWhenLastPieceIsSmallTest(t *testing.T) {
 	// ported from: com.hazelcast.client.impl.protocol.util.ClientMessageReaderTest#testReadFramesInMultipleCallsToReadFrom_whenLastPieceIsSmall
 	frame := createFrameWithRandomBytes(t, 1000)
 	msg := proto.NewClientMessage(frame)
