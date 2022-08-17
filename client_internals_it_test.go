@@ -447,8 +447,8 @@ func clientClusterConnectionConfigRetryTimeTest(t *testing.T) {
 	require.Never(t, func() bool {
 		return len(cm.ActiveConnections()) != 0
 	}, AssertionSeconds*time.Second, time.Second)
-	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
-	defer cancel()
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
 	client.Shutdown(ctx)
 }
 
