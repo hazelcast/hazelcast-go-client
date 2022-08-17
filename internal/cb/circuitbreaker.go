@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	logger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"sync/atomic"
 	"time"
 )
@@ -39,6 +40,10 @@ type CircuitBreaker struct {
 	StateChangeHandler  EventHandler
 	MaxRetries          int
 	ResetTimeout        time.Duration
+	Timeout             time.Duration
+	TimeoutText         string
+	Logger              logger.LogAdaptor
+	MaxBackoff          time.Duration
 	MaxFailureCount     int32
 	CurrentFailureCount int32
 	State               int32
@@ -58,7 +63,11 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 	return &CircuitBreaker{
 		MaxRetries:         opts.MaxRetries,
 		MaxFailureCount:    opts.MaxFailureCount,
+		MaxBackoff:         opts.MaxBackoff,
 		ResetTimeout:       opts.ResetTimeout,
+		Timeout:            opts.Timeout,
+		TimeoutText:        opts.TimeoutText,
+		Logger:             opts.Logger,
 		Deadline:           MakeDeadline(opts.Timeout),
 		RetryPolicyFunc:    retryPolicyFunc,
 		StateChangeHandler: opts.StateChangeHandler,
@@ -106,6 +115,9 @@ loop:
 		default:
 			if time.Now().After(cb.Deadline) {
 				err = ErrDeadlineExceeded
+				cb.Logger.Debug(func() string {
+					return fmt.Sprintf("Unable to get live cluster connection, cluster connect timeout (%s ms) is reached. Attempt %d.", cb.TimeoutText, attempt)
+				})
 				break loop
 			}
 			result, err = tryHandler(ctx, attempt)
@@ -117,7 +129,12 @@ loop:
 				break loop
 			}
 			if attempt < cb.MaxRetries {
-				time.Sleep(cb.RetryPolicyFunc(attempt))
+				sleepTime := cb.RetryPolicyFunc(attempt)
+				cb.Logger.Debug(func() string {
+					return fmt.Sprintf("Unable to get live cluster connection, retry in %.2fs, attempt: %d, cluster connect timeout: %s, max backoff: %s", sleepTime.Seconds(), attempt+1, cb.TimeoutText, cb.MaxBackoff.String())
+				})
+				time.Sleep(sleepTime)
+
 			}
 		}
 	}

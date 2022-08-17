@@ -428,8 +428,10 @@ func (m *ConnectionManager) tryConnectCluster(ctx context.Context) (pubcluster.A
 func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, cluster *CandidateCluster) (pubcluster.Address, error) {
 	cs := cluster.ConnectionStrategy
 	cbr := cb.NewCircuitBreaker(
+		cb.Logger(m.logger),
 		cb.MaxRetries(math.MaxInt32),
 		cb.Timeout(time.Duration(cs.Timeout)),
+		cb.MaxBackoff(time.Duration(cs.Retry.MaxBackoff)),
 		cb.MaxFailureCount(3),
 		cb.RetryPolicy(makeRetryPolicy(m.randGen, &cs.Retry)),
 	)
@@ -438,11 +440,7 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 			return nil, cb.WrapNonRetryableError(fmt.Errorf("client is shut down"))
 		}
 		addr, err := m.connectCluster(ctx, cluster)
-		if err != nil {
-			m.logger.Debug(func() string {
-				return fmt.Sprintf("cluster.ConnectionManager: error connecting to cluster, attempt %d: %s", attempt+1, err.Error())
-			})
-		}
+
 		return addr, err
 	})
 	if err != nil {

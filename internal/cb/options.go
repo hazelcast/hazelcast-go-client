@@ -18,6 +18,8 @@ package cb
 
 import (
 	"errors"
+	"fmt"
+	logger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"math"
 	"time"
 )
@@ -30,7 +32,11 @@ type CircuitBreakerOptions struct {
 	MaxRetries         int
 	ResetTimeout       time.Duration
 	Timeout            time.Duration
+	TimeoutText        string
+	SleepDuration      time.Duration
+	MaxBackoff         time.Duration
 	MaxFailureCount    int32
+	Logger             logger.LogAdaptor
 }
 
 func NewCircuitBreakerOptions(fs ...CircuitBreakerOptionFunc) (*CircuitBreakerOptions, error) {
@@ -47,16 +53,36 @@ type CircuitBreakerOptionFunc func(opts *CircuitBreakerOptions) error
 
 func DefaultCircuitBreakerOptions() *CircuitBreakerOptions {
 	return &CircuitBreakerOptions{
+		SleepDuration:   time.Second * 1,
 		MaxRetries:      0,
 		MaxFailureCount: 0,
 		ResetTimeout:    0,
-		Timeout:         time.Duration(MaxDuration),
+		MaxBackoff:      0,
+		Timeout:         0,
 		RetryPolicyFunc: func(tries int) time.Duration {
 			return 0
 		},
 	}
 }
 
+func Logger(logger logger.LogAdaptor) CircuitBreakerOptionFunc {
+	return func(opts *CircuitBreakerOptions) error {
+		if logger.Logger == nil {
+			return errors.New("LogAdaptor must have a value")
+		}
+		opts.Logger = logger
+		return nil
+	}
+}
+func MaxBackoff(backoff time.Duration) CircuitBreakerOptionFunc {
+	return func(opts *CircuitBreakerOptions) error {
+		if backoff < 0 {
+			return errors.New("MaxBackoff must be non-negative")
+		}
+		opts.MaxBackoff = backoff
+		return nil
+	}
+}
 func MaxRetries(retries int) CircuitBreakerOptionFunc {
 	return func(opts *CircuitBreakerOptions) error {
 		if retries < 0 {
@@ -90,6 +116,11 @@ func ResetTimeout(timeout time.Duration) CircuitBreakerOptionFunc {
 func Timeout(timeout time.Duration) CircuitBreakerOptionFunc {
 	return func(opts *CircuitBreakerOptions) error {
 		opts.Timeout = timeout
+		if timeout.Nanoseconds() == MaxDuration {
+			opts.TimeoutText = "INFINITE"
+		} else {
+			opts.TimeoutText = fmt.Sprintf("%.2fs", timeout.Seconds())
+		}
 		return nil
 	}
 }
