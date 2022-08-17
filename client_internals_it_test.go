@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -30,6 +31,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
@@ -50,6 +52,7 @@ func TestClientInternal(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "ClusterConnectionConfigRetryTime", f: clientClusterConnectionConfigRetryTimeTest},
 		{name: "ClusterID", f: clientInternalClusterIDTest},
 		{name: "ClusterID_2", f: clientInternalClusterID_2Test},
 		{name: "ConnectedToMember", f: clientInternalConnectedToMemberTest},
@@ -417,6 +420,35 @@ func clientInternalEncodeDataTest(t *testing.T) {
 		}
 		assert.Equal(t, "foo", v)
 	})
+}
+
+func clientClusterConnectionConfigRetryTimeTest(t *testing.T) {
+	// TODO: Adapt this test for t.Parallel()
+	//t.Parallel()
+	ctx := context.Background()
+	const AssertionSeconds = 30
+	port := it.NextPort()
+	cls := it.StartNewClusterWithOptions(t.Name(), port, 1)
+	defer cls.Shutdown()
+	config := cls.DefaultConfig()
+	config.Cluster.ConnectionStrategy.Retry.InitialBackoff = types.Duration(math.MaxInt32 * time.Millisecond)
+	config.Cluster.ConnectionStrategy.Retry.MaxBackoff = types.Duration(math.MaxInt32 * time.Millisecond)
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	ci := hz.NewClientInternal(client)
+	_, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[0])
+	require.NoError(t, err)
+	cm := ci.ConnectionManager()
+	it.Eventually(t, func() bool {
+		return len(cm.ActiveConnections()) == 0
+	})
+	time.Sleep(AssertionSeconds * time.Second)
+	cls = it.StartNewClusterWithOptions(t.Name(), port, 1)
+	require.Never(t, func() bool {
+		return len(cm.ActiveConnections()) != 0
+	}, AssertionSeconds*time.Second, time.Second)
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	client.Shutdown(ctx)
 }
 
 type invokeFilter func(inv invocation.Invocation) (ok bool)
