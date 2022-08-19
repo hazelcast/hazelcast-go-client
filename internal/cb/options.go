@@ -28,11 +28,11 @@ const MaxDuration int64 = 1<<63 - 1
 type CircuitBreakerOptions struct {
 	RetryPolicyFunc    RetryPolicyFunc
 	StateChangeHandler EventHandler
+	TimeoutText        string
 	MaxRetries         int
 	ResetTimeout       time.Duration
 	Timeout            time.Duration
 	MaxFailureCount    int32
-	TimeoutText        string
 }
 
 func NewCircuitBreakerOptions(fs ...CircuitBreakerOptionFunc) (*CircuitBreakerOptions, error) {

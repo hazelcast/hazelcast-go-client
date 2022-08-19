@@ -35,9 +35,9 @@ type RetryPolicyFunc func(currentTry int) time.Duration
 
 type CircuitBreaker struct {
 	Deadline            time.Time
-	TimeoutText         string
 	RetryPolicyFunc     RetryPolicyFunc
 	StateChangeHandler  EventHandler
+	TimeoutText         string
 	MaxRetries          int
 	ResetTimeout        time.Duration
 	SleepDuration       time.Duration
