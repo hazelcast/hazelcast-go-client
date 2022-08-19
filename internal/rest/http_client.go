@@ -64,10 +64,12 @@ func (c *HTTPClient) Get(ctx context.Context, url string, headers ...HTTPHeader)
 	}
 	i, err := c.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if resp, err := c.httpClient.Do(req); err != nil {
+			c.cb.SleepDuration = c.cb.RetryPolicyFunc(attempt)
 			return nil, err
 		} else if resp.StatusCode < 300 {
 			return resp, nil
 		} else if resp.StatusCode >= 500 {
+			c.cb.SleepDuration = c.cb.RetryPolicyFunc(attempt)
 			return nil, NewErrorFromResponse(resp)
 		} else {
 			return nil, cb.WrapNonRetryableError(NewErrorFromResponse(resp))

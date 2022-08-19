@@ -18,6 +18,7 @@ package cb
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"time"
 )
@@ -31,6 +32,7 @@ type CircuitBreakerOptions struct {
 	ResetTimeout       time.Duration
 	Timeout            time.Duration
 	MaxFailureCount    int32
+	TimeoutText        string
 }
 
 func NewCircuitBreakerOptions(fs ...CircuitBreakerOptionFunc) (*CircuitBreakerOptions, error) {
@@ -90,6 +92,11 @@ func ResetTimeout(timeout time.Duration) CircuitBreakerOptionFunc {
 func Timeout(timeout time.Duration) CircuitBreakerOptionFunc {
 	return func(opts *CircuitBreakerOptions) error {
 		opts.Timeout = timeout
+		if timeout.Nanoseconds() == MaxDuration {
+			opts.TimeoutText = "INFINITE"
+		} else {
+			opts.TimeoutText = fmt.Sprintf("%.2fs", timeout.Seconds())
+		}
 		return nil
 	}
 }

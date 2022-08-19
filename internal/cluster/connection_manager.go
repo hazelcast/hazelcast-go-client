@@ -439,8 +439,9 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 		}
 		addr, err := m.connectCluster(ctx, cluster)
 		if err != nil {
+			cbr.SleepDuration = cbr.RetryPolicyFunc(attempt)
 			m.logger.Debug(func() string {
-				return fmt.Sprintf("cluster.ConnectionManager: error connecting to cluster, attempt %d: %s", attempt+1, err.Error())
+				return fmt.Sprintf("cluster.ConnectionManager: Unable to get live cluster connection, retry in %.2f, attempt: %d, cluster connect timeout: %s, max backoff: %s", cbr.SleepDuration.Seconds(), attempt+1, cbr.TimeoutText, cs.Retry.MaxBackoff.String())
 			})
 		}
 		return addr, err

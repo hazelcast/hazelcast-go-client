@@ -35,10 +35,12 @@ type RetryPolicyFunc func(currentTry int) time.Duration
 
 type CircuitBreaker struct {
 	Deadline            time.Time
+	TimeoutText         string
 	RetryPolicyFunc     RetryPolicyFunc
 	StateChangeHandler  EventHandler
 	MaxRetries          int
 	ResetTimeout        time.Duration
+	SleepDuration       time.Duration
 	MaxFailureCount     int32
 	CurrentFailureCount int32
 	State               int32
@@ -59,6 +61,7 @@ func NewCircuitBreaker(fs ...CircuitBreakerOptionFunc) *CircuitBreaker {
 		MaxRetries:         opts.MaxRetries,
 		MaxFailureCount:    opts.MaxFailureCount,
 		ResetTimeout:       opts.ResetTimeout,
+		TimeoutText:        opts.TimeoutText,
 		Deadline:           MakeDeadline(opts.Timeout),
 		RetryPolicyFunc:    retryPolicyFunc,
 		StateChangeHandler: opts.StateChangeHandler,
@@ -117,7 +120,7 @@ loop:
 				break loop
 			}
 			if attempt < cb.MaxRetries {
-				time.Sleep(cb.RetryPolicyFunc(attempt))
+				time.Sleep(cb.SleepDuration)
 			}
 		}
 	}
