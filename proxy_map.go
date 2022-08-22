@@ -1158,6 +1158,9 @@ func (m *Map) Remove(ctx context.Context, key interface{}) (interface{}, error) 
 
 // RemoveAll deletes all entries matching the given predicate.
 func (m *Map) RemoveAll(ctx context.Context, predicate predicate.Predicate) error {
+	if m.hasNearCache {
+		return m.ncm.Clear(ctx, m)
+	}
 	if predicateData, err := m.validateAndSerialize(predicate); err != nil {
 		return err
 	} else {
