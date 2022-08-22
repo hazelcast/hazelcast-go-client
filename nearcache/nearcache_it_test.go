@@ -325,9 +325,9 @@ func TestMapRemoveAll_WithNearCache(t *testing.T) {
 		const size = int32(100)
 		populateMap(tcx, size)
 		populateNearCache(tcx, size)
-		err := m.RemoveAll(context.Background(), predicate.True())
+		err := m.RemoveAll(context.Background(), predicate.Less("__key", int32(50)))
 		require.NoError(t, err)
-		require.Equal(t, int64(0), m.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		require.Equal(t, int64(50), m.LocalMapStats().NearCacheStats.OwnedEntryCount)
 	})
 }
 

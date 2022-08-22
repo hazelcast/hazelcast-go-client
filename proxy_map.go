@@ -748,6 +748,16 @@ func (m *Map) removeFromRemote(ctx context.Context, key interface{}) (interface{
 	return m.convertToObject(codec.DecodeMapRemoveResponse(response))
 }
 
+func (m *Map) removeAllFromRemote(ctx context.Context, predicate predicate.Predicate) error {
+	if predicateData, err := m.validateAndSerialize(predicate); err != nil {
+		return err
+	} else {
+		request := codec.EncodeMapRemoveAllRequest(m.name, predicateData)
+		_, err := m.invokeOnRandomTarget(ctx, request, nil)
+		return err
+	}
+}
+
 func (m *Map) replaceFromRemote(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
 	if err != nil {
@@ -1159,15 +1169,9 @@ func (m *Map) Remove(ctx context.Context, key interface{}) (interface{}, error) 
 // RemoveAll deletes all entries matching the given predicate.
 func (m *Map) RemoveAll(ctx context.Context, predicate predicate.Predicate) error {
 	if m.hasNearCache {
-		return m.ncm.Clear(ctx, m)
+		return m.ncm.RemoveAll(ctx, m, predicate)
 	}
-	if predicateData, err := m.validateAndSerialize(predicate); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapRemoveAllRequest(m.name, predicateData)
-		_, err := m.invokeOnRandomTarget(ctx, request, nil)
-		return err
-	}
+	return m.removeAllFromRemote(ctx, predicate)
 }
 
 // RemoveEntryListener removes the specified entry listener.
