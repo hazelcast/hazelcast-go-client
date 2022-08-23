@@ -22,6 +22,7 @@ package nearcache_test
 import (
 	"context"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"math/rand"
 	"os"
 	"strconv"
@@ -313,6 +314,20 @@ func TestMapRemove_WithNearCache(t *testing.T) {
 		stats := m.LocalMapStats().NearCacheStats
 		assert.Equal(t, int64(0), stats.OwnedEntryCount)
 		assert.Equal(t, int64(size), stats.Misses)
+	})
+}
+
+func TestMapRemoveAll_WithNearCache(t *testing.T) {
+	tcx := newNearCacheMapTestContext(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		m := tcx.M
+		const size = int32(100)
+		populateMap(tcx, size)
+		populateNearCache(tcx, size)
+		err := m.RemoveAll(context.Background(), predicate.True())
+		require.NoError(t, err)
+		require.Equal(t, int64(0), m.LocalMapStats().NearCacheStats.OwnedEntryCount)
 	})
 }
 
