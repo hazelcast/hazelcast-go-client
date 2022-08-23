@@ -703,7 +703,6 @@ func (m *Map) putTransientWithTTLAndMaxIdleFromRemote(ctx context.Context, key i
 	request := codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
 	_, err = m.invokeOnKey(ctx, request, keyData)
 	return err
-
 }
 
 func (m *Map) putIfAbsentWithTTLFromRemote(ctx context.Context, key interface{}, value interface{}, ttl int64) (interface{}, error) {
@@ -746,6 +745,16 @@ func (m *Map) removeFromRemote(ctx context.Context, key interface{}) (interface{
 		return nil, err
 	}
 	return m.convertToObject(codec.DecodeMapRemoveResponse(response))
+}
+
+func (m *Map) removeAllFromRemote(ctx context.Context, predicate predicate.Predicate) error {
+	predicateData, err := m.validateAndSerialize(predicate)
+	if err != nil {
+		return err
+	}
+	request := codec.EncodeMapRemoveAllRequest(m.name, predicateData)
+	_, err = m.invokeOnRandomTarget(ctx, request, nil)
+	return err
 }
 
 func (m *Map) replaceFromRemote(ctx context.Context, key interface{}, value interface{}) (interface{}, error) {
@@ -1158,13 +1167,10 @@ func (m *Map) Remove(ctx context.Context, key interface{}) (interface{}, error) 
 
 // RemoveAll deletes all entries matching the given predicate.
 func (m *Map) RemoveAll(ctx context.Context, predicate predicate.Predicate) error {
-	if predicateData, err := m.validateAndSerialize(predicate); err != nil {
-		return err
-	} else {
-		request := codec.EncodeMapRemoveAllRequest(m.name, predicateData)
-		_, err := m.invokeOnRandomTarget(ctx, request, nil)
-		return err
+	if m.hasNearCache {
+		return m.ncm.RemoveAll(ctx, m, predicate)
 	}
+	return m.removeAllFromRemote(ctx, predicate)
 }
 
 // RemoveEntryListener removes the specified entry listener.
