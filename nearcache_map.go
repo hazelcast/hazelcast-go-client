@@ -362,15 +362,8 @@ func (ncm *nearCacheMap) Remove(ctx context.Context, m *Map, key interface{}) (i
 }
 
 func (ncm *nearCacheMap) RemoveAll(ctx context.Context, m *Map, predicate predicate.Predicate) (err error) {
-	keys, err := m.GetKeySetWithPredicate(ctx, predicate)
-	if err != nil {
-		return err
-	}
 	defer func() {
-		for _, key := range keys {
-			key, err = ncm.toNearCacheKey(key)
-			ncm.nc.Invalidate(key)
-		}
+		ncm.nc.Clear()
 	}()
 	return m.removeAllFromRemote(ctx, predicate)
 }
