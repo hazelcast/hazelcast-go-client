@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"sync/atomic"
 	"time"
 
@@ -358,6 +359,13 @@ func (ncm *nearCacheMap) Remove(ctx context.Context, m *Map, key interface{}) (i
 	}
 	defer ncm.nc.Invalidate(key)
 	return m.removeFromRemote(ctx, key)
+}
+
+func (ncm *nearCacheMap) RemoveAll(ctx context.Context, m *Map, predicate predicate.Predicate) (err error) {
+	defer func() {
+		ncm.nc.Clear()
+	}()
+	return m.removeAllFromRemote(ctx, predicate)
 }
 
 func (ncm *nearCacheMap) RemoveIfSame(ctx context.Context, m *Map, key interface{}, value interface{}) (bool, error) {
