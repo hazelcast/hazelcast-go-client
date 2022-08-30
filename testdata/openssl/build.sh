@@ -33,7 +33,7 @@ EOF
 # certificate configuration for client and server
 cat > cert.conf <<EOF
 authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:NO
+basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 
