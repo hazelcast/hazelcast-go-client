@@ -34,7 +34,7 @@ func TestSSLConfig_SetCAPath(t *testing.T) {
 		hasError bool
 	}{
 		{info: "invalid certificate authority", caPath: "non-exist-filepath", hasError: true},
-		{info: "valid certificate authority", caPath: "../internal/cluster/testdata/openssl/rootCA.crt", hasError: false},
+		{info: "valid certificate authority", caPath: "../testdata/openssl/server/server.crt", hasError: false},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.info, func(t *testing.T) {
