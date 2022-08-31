@@ -161,6 +161,17 @@ func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMes
 	})
 }
 
+// GetPartitionID returns the partition ID for the given Data value.
+// The returned error may be ignored.
+func (ci *ClientInternal) GetPartitionID(data Data) (int32, error) {
+	return ci.client.ic.PartitionService.GetPartitionID(data)
+}
+
+// PartitionCount returns the partition count.
+func (ci *ClientInternal) PartitionCount() int32 {
+	return ci.client.ic.PartitionService.PartitionCount()
+}
+
 const (
 	TypeFieldOffset                      = proto.TypeFieldOffset
 	MessageTypeOffset                    = proto.MessageTypeOffset
