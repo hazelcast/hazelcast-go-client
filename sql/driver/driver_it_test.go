@@ -31,6 +31,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -529,12 +530,12 @@ func TestContextCancelAfterFirstPage(t *testing.T) {
 }
 
 func TestClusterShutdownDuringQuery(t *testing.T) {
-	it.SkipIf(t, "hz < 5.0")
+	skip.If(t, "hz < 5.0")
 	ctx := context.Background()
 	port := it.NextPort()
 	cls := it.StartNewClusterWithConfig(it.MemberCount(), it.SQLXMLConfig(t.Name(), "localhost", port), port)
 	defer cls.Shutdown()
-	config := cls.DefaultConfig()
+	config := cls.DefaultConfigWithNoSSL()
 	c, err := hz.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		t.Fatal(err)
