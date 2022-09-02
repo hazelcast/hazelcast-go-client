@@ -19,6 +19,7 @@ package driver_test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -30,6 +31,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -525,6 +527,48 @@ func TestContextCancelAfterFirstPage(t *testing.T) {
 			t.Fatalf("the passed time should take less than 2000 milliseconds, but it is: %d", took)
 		}
 	})
+}
+
+func TestClusterShutdownDuringQuery(t *testing.T) {
+	skip.If(t, "hz < 5.0")
+	ctx := context.Background()
+	port := it.NextPort()
+	cls := it.StartNewClusterWithConfig(it.MemberCount(), it.SQLXMLConfig(t.Name(), "localhost", port), port)
+	defer cls.Shutdown()
+	config := cls.DefaultConfigWithNoSSL()
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Shutdown(ctx)
+	db := driver.Open(config)
+	defer db.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+		if v == "2" {
+			cls.Shutdown()
+			go func() {
+				// check if it respects context cancel
+				<-time.After(2 * time.Second)
+				cancel()
+			}()
+		}
+		t.Log(v)
+	}
+	err = rows.Err()
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("expected context canceled error")
+	}
 }
 
 func TestConcurrentQueries(t *testing.T) {
