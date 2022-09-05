@@ -111,15 +111,15 @@ func mutualAuthenticationTests(t *testing.T) {
 			key:      "testdata/openssl/client/client.key",
 			wantErr:  true,
 		},
-		//{
-		//	// ported from, com.hazelcast.client.nio.ssl.ClientAuthenticationTest#whenOptional_andWrongClientAuthenticated
-		//	name:     "whenOptional_andWrongClientAuthenticated",
-		//	muStatus: MutualAuthenticationStatusOptional,
-		//	ca:       "testdata/openssl/server/server.crt",
-		//	cert:     "testdata/unknown-client-cert.pem",
-		//	key:      "testdata/unknown-client-key.pem",
-		//	wantErr:  true,
-		//},
+		{
+			// ported from, com.hazelcast.client.nio.ssl.ClientAuthenticationTest#whenOptional_andWrongClientAuthenticated
+			name:     "whenOptional_andWrongClientAuthenticated",
+			muStatus: MutualAuthenticationStatusOptional,
+			ca:       "testdata/openssl/server/server.crt",
+			cert:     "testdata/unknown-client-cert.pem",
+			key:      "testdata/unknown-client-key.pem",
+			wantErr:  true,
+		},
 		{
 			// both server and client are not known by the root certificate authority
 			name:     "whenOptional_BothClientAndServerUnknownByRootCA",
@@ -171,9 +171,9 @@ func mutualAuthenticationTests(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			if tc.wantErr {
-				require.Error(t, sslTestUtil(t.Name()+"_cluster", tc.muStatus, tc.ca, tc.cert, tc.key))
+				require.Error(t, sslTestUtil(t.Name(), tc.muStatus, tc.ca, tc.cert, tc.key))
 			} else {
-				require.NoError(t, sslTestUtil(t.Name()+"_cluster", tc.muStatus, tc.ca, tc.cert, tc.key))
+				require.NoError(t, sslTestUtil(t.Name(), tc.muStatus, tc.ca, tc.cert, tc.key))
 			}
 		})
 	}
