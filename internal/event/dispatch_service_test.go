@@ -130,6 +130,7 @@ func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
 	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 100, handler)
 	stopped := make(chan struct{})
+	defer close(stopped)
 	go func() {
 		stopped <- struct{}{}
 		service.Stop(context.Background())
