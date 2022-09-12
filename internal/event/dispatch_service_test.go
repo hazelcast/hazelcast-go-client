@@ -123,28 +123,18 @@ func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 }
 
 func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
+	goroutineCount := 10_000
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
 		atomic.AddInt32(&dispatchCount, 1)
 	}
 	service := event.NewDispatchService(logger.LogAdaptor{Logger: logger.New()})
 	service.Subscribe("sample.event", 100, handler)
-	stopped := make(chan struct{})
-	defer close(stopped)
-	go func() {
-		stopped <- struct{}{}
-		service.Stop(context.Background())
-	}()
+	go service.Stop(context.Background())
 	successfulPubCnt := int32(0)
-end:
-	for {
-		select {
-		case <-stopped:
-			break end
-		default:
-			if service.Publish(sampleEvent{}) {
-				atomic.AddInt32(&successfulPubCnt, 1)
-			}
+	for i := 0; i < goroutineCount; i++ {
+		if service.Publish(sampleEvent{}) {
+			atomic.AddInt32(&successfulPubCnt, 1)
 		}
 	}
 	it.Eventually(t, func() bool {
