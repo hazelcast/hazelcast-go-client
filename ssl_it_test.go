@@ -27,6 +27,7 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 )
 
 func TestSecureSocketLayer(t *testing.T) {
@@ -169,6 +170,7 @@ func mutualAuthenticationTests(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			skip.If(t, "!enterprise")
 			t.Parallel()
 			if tc.wantErr {
 				require.Error(t, sslTestUtil(t.Name(), tc.muStatus, tc.ca, tc.cert, tc.key))
