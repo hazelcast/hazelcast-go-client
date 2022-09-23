@@ -1047,12 +1047,13 @@ func clientStartShutdownWithNilContextTest(t *testing.T) {
 func clusterConnectionToMultipleAddrs(t *testing.T) {
 	ctx := context.Background()
 	t.Parallel()
-	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 2)
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 	defer tc.Shutdown()
 	mem, err := tc.RC.StartMember(ctx, tc.ClusterID)
 	if err != nil {
 		t.Fatal(err)
 	}
+	tc.MemberUUIDs = append(tc.MemberUUIDs, mem.UUID)
 	config := tc.DefaultConfig()
 	testCases := []struct {
 		name      string

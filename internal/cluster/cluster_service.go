@@ -154,28 +154,31 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 }
 
 type AddrSet struct {
-	addrs map[string]pubcluster.Address
+	addrs       map[string]struct{}
+	orderedAddr []pubcluster.Address
 }
 
-func NewAddrSet() AddrSet {
-	return AddrSet{addrs: map[string]pubcluster.Address{}}
+func NewAddrSet() *AddrSet {
+	return &AddrSet{addrs: map[string]struct{}{}}
 }
 
-func (a AddrSet) AddAddr(addr pubcluster.Address) {
-	a.addrs[addr.String()] = addr
+func (a *AddrSet) AddAddr(addr pubcluster.Address) {
+	if _, ok := a.addrs[addr.String()]; ok {
+		return
+	}
+	a.addrs[addr.String()] = struct{}{}
+	a.orderedAddr = append(a.orderedAddr, addr)
 }
 
-func (a AddrSet) AddAddrs(addrs []pubcluster.Address) {
+func (a *AddrSet) AddAddrs(addrs []pubcluster.Address) {
 	for _, addr := range addrs {
 		a.AddAddr(addr)
 	}
 }
 
-func (a AddrSet) Addrs() []pubcluster.Address {
-	addrs := make([]pubcluster.Address, 0, len(a.addrs))
-	for _, addr := range a.addrs {
-		addrs = append(addrs, addr)
-	}
+func (a *AddrSet) Addrs() []pubcluster.Address {
+	addrs := make([]pubcluster.Address, len(a.orderedAddr))
+	copy(addrs, a.orderedAddr)
 	return addrs
 }
 
