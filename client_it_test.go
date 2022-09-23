@@ -52,6 +52,7 @@ func TestClient(t *testing.T) {
 		{name: "ClusterReconnectionReconnectModeOff", f: clientClusterReconnectionReconnectModeOffTest},
 		{name: "ClusterReconnectionShutdownCluster", f: clientClusterReconnectionShutdownClusterTest},
 		{name: "ClusterShutdownThenCheckOperationsNotHanging", f: clientClusterShutdownThenCheckOperationsNotHangingTest},
+		{name: "clusterConnectionToMultipleAddrs", f: clusterConnectionToMultipleAddrs},
 		{name: "EventHandlingOrder", f: clientEventHandlingOrderTest},
 		{name: "EventOrder", f: clientEventOrderTest},
 		{name: "FailoverEECluster", f: clientFailoverEEClusterTest},
@@ -1041,6 +1042,61 @@ func clientStartShutdownWithNilContextTest(t *testing.T) {
 	defer tc.Shutdown()
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, tc.DefaultConfig()))
 	it.Must(client.Shutdown(nil))
+}
+
+func clusterConnectionToMultipleAddrs(t *testing.T) {
+	ctx := context.Background()
+	t.Parallel()
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 2)
+	defer tc.Shutdown()
+	mem, err := tc.RC.StartMember(ctx, tc.ClusterID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config := tc.DefaultConfig()
+	testCases := []struct {
+		name      string
+		addresses []string
+		expectErr bool
+	}{
+		{
+			name: "two valid seed addresses",
+			addresses: []string{
+				fmt.Sprintf("localhost:%d", tc.Port),
+				fmt.Sprintf("localhost:%d", mem.Port),
+			},
+		},
+		{
+			name: "first addr valid, second is invalid",
+			addresses: []string{
+				fmt.Sprintf("localhost:%d", tc.Port),
+				"non-existent.com:1234",
+			},
+		},
+		{
+			name: "all addresses are invalid",
+			addresses: []string{
+				"non-existent.com:123",
+				"non-existent.com:1234",
+			},
+			expectErr: true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			defer cancel()
+			configCopy := config
+			configCopy.Cluster.Network.SetAddresses(tc.addresses...)
+			client, err := hz.StartNewClientWithConfig(ctx, configCopy)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			it.Must(client.Shutdown(nil))
+		})
+	}
 }
 
 func clientTester(t *testing.T, f func(*testing.T, bool)) {
