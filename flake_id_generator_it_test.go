@@ -59,6 +59,7 @@ func flakeIDGeneratorNewIDTest(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer f.Destroy(ctx)
 		ids := map[int64]struct{}{}
 		for i := 0; i < idCount; i++ {
 			if id, err := f.NewID(ctx); err != nil {
@@ -87,7 +88,6 @@ func flakeIDGeneratorExpiredBatchTest(t *testing.T) {
 		}
 		return hz.FlakeIDBatch(batch2), nil
 	})
-
 	id1, err := f.NewID(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), id1)
@@ -115,7 +115,6 @@ func flakeIDGeneratorUsedBatchTest(t *testing.T) {
 		}
 		return hz.FlakeIDBatch(batch2), nil
 	})
-
 	id1, err := f.NewID(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), id1)
@@ -216,20 +215,20 @@ func flakeIDGeneratorServiceNameTest(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		ctx := context.Background()
 		name := it.NewUniqueObjectName(t.Name())
-		_, err := client.GetFlakeIDGenerator(ctx, name)
+		g, err := client.GetFlakeIDGenerator(ctx, name)
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer g.Destroy(ctx)
 		objs, err := client.GetDistributedObjectsInfo(ctx)
 		require.NoError(t, err)
-		// remove non flake ID generator proxies
-		var fobjs []string
-		for _, obj := range objs[:] {
-			if obj.ServiceName == hz.ServiceNameFlakeIDGenerator {
-				fobjs = append(fobjs, obj.Name)
+		var ok bool
+		for _, obj := range objs {
+			if obj.ServiceName == hz.ServiceNameFlakeIDGenerator && obj.Name == name {
+				ok = true
+				break
 			}
 		}
-		assert.Equal(t, 1, len(fobjs))
-		assert.Equal(t, name, fobjs[0])
+		assert.True(t, ok)
 	})
 }
