@@ -215,11 +215,11 @@ func flakeIDGeneratorServiceNameTest(t *testing.T) {
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		ctx := context.Background()
 		name := it.NewUniqueObjectName(t.Name())
-		g, err := client.GetFlakeIDGenerator(ctx, name)
+		f, err := client.GetFlakeIDGenerator(ctx, name)
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer g.Destroy(ctx)
+		defer f.Destroy(ctx)
 		objs, err := client.GetDistributedObjectsInfo(ctx)
 		require.NoError(t, err)
 		var ok bool
