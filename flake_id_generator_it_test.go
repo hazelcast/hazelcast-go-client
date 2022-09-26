@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -34,11 +35,12 @@ func TestFlakeIDGenerator(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "BatchConcurrentCalls", f: flakeIDBatchConcurrentCallsTest},
+		{name: "BatchConcurrentCalls", f: flakeIDGeneratorBatchConcurrentCallsTest},
 		{name: "BatchNextID", f: flakeIDGeneratorBatchNextIDTest},
 		{name: "ExpiredBatch", f: flakeIDGeneratorExpiredBatchTest},
 		{name: "IDGeneratorUsedBatch", f: flakeIDGeneratorUsedBatchTest},
 		{name: "NewID", f: flakeIDGeneratorNewIDTest},
+		{name: "ServiceName", f: flakeIDGeneratorServiceNameTest},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -175,7 +177,7 @@ func flakeIDGeneratorBatchNextIDTest(t *testing.T) {
 	}
 }
 
-func flakeIDBatchConcurrentCallsTest(t *testing.T) {
+func flakeIDGeneratorBatchConcurrentCallsTest(t *testing.T) {
 	var (
 		base         int64 = 0
 		increment    int64 = 1
@@ -208,4 +210,26 @@ func flakeIDBatchConcurrentCallsTest(t *testing.T) {
 	}
 	assert.Equal(t, int(size), len(lookup))
 	assert.Equal(t, hz.InvalidFlakeID, batch.NextID())
+}
+
+func flakeIDGeneratorServiceNameTest(t *testing.T) {
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		ctx := context.Background()
+		name := it.NewUniqueObjectName(t.Name())
+		_, err := client.GetFlakeIDGenerator(ctx, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		objs, err := client.GetDistributedObjectsInfo(ctx)
+		require.NoError(t, err)
+		// remove non flake ID generator proxies
+		var fobjs []string
+		for _, obj := range objs[:] {
+			if obj.ServiceName == hz.ServiceNameFlakeIDGenerator {
+				fobjs = append(fobjs, obj.Name)
+			}
+		}
+		assert.Equal(t, 1, len(fobjs))
+		assert.Equal(t, name, fobjs[0])
+	})
 }
