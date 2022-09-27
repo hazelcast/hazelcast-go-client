@@ -68,13 +68,9 @@ func NewDispatchService(logger ilogger.LogAdaptor) *DispatchService {
 
 // Stop the DispatchService and make sure that all the successful Publish events are handled before close
 func (s *DispatchService) Stop(ctx context.Context) error {
-	s.subscriptionsMu.Lock()
-	if s.state == stopped {
-		s.subscriptionsMu.Unlock()
+	if !atomic.CompareAndSwapInt32(&s.state, ready, stopped) {
 		return nil
 	}
-	s.state = stopped
-	s.subscriptionsMu.Unlock()
 
 	doneCh := make(chan struct{})
 	go func() {
@@ -149,19 +145,20 @@ func (s *DispatchService) Unsubscribe(eventName string, subscriptionID int64) {
 // If this method returns true, it is guaranteed that the dispatch service close wait for all events to be handled.
 // Returns false if Dispatch Service is already closed.
 func (s *DispatchService) Publish(event Event) bool {
-	s.subscriptionsMu.RLock()
-	defer s.subscriptionsMu.RUnlock()
-
-	if s.state == stopped {
+	if atomic.LoadInt32(&s.state) == stopped {
 		return false
 	}
 
+	s.subscriptionsMu.RLock()
+	defer s.subscriptionsMu.RUnlock()
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
 	if subs, ok := s.subscriptions[event.EventName()]; ok {
 		for _, sub := range subs {
-			sub.Publish(event)
+			if okp := sub.Publish(event); !okp {
+				return false
+			}
 		}
 	}
 	return true
