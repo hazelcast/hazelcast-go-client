@@ -135,7 +135,7 @@ func (m *proxyManager) getPNCounter(ctx context.Context, name string) (*PNCounte
 }
 
 func (m *proxyManager) getFlakeIDGenerator(ctx context.Context, name string) (*FlakeIDGenerator, error) {
-	p, err := m.proxyFor(ctx, ServiceNamePNCounter, name, func(p *proxy) (interface{}, error) {
+	p, err := m.proxyFor(ctx, ServiceNameFlakeIDGenerator, name, func(p *proxy) (interface{}, error) {
 		return newFlakeIdGenerator(p, m.getFlakeIDGeneratorConfig(name), flakeIDBatchFromMemberFn), nil
 	})
 	if err != nil {
