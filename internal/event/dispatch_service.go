@@ -154,9 +154,9 @@ func (s *DispatchService) Publish(event Event) bool {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
-	if subs, ok := s.subscriptions[event.EventName()]; ok {
+	if subs, found := s.subscriptions[event.EventName()]; found {
 		for _, sub := range subs {
-			if okp := sub.Publish(event); !okp {
+			if ok := sub.Publish(event); !ok {
 				return false
 			}
 		}
