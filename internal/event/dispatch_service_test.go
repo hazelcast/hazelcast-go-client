@@ -18,7 +18,6 @@ package event_test
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -123,15 +122,7 @@ func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 	assert.Equal(t, target, values)
 }
 
-func TestPublishedAllHandledBeforeClos(t *testing.T) {
-	for i := 0; i < 500; i++ {
-		i := i
-		t.Run(fmt.Sprint(i), TestDispatchServiceAllPublishedAreHandledBeforeClose)
-	}
-}
-
 func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
-	t.Parallel()
 	goroutineCount := 10_000
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {
