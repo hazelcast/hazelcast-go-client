@@ -52,7 +52,7 @@ func TestClient(t *testing.T) {
 		{name: "ClusterReconnectionReconnectModeOff", f: clientClusterReconnectionReconnectModeOffTest},
 		{name: "ClusterReconnectionShutdownCluster", f: clientClusterReconnectionShutdownClusterTest},
 		{name: "ClusterShutdownThenCheckOperationsNotHanging", f: clientClusterShutdownThenCheckOperationsNotHangingTest},
-		{name: "clusterConnectionToMultipleAddrs", f: clusterConnectionToMultipleAddrs},
+		{name: "ClusterConnectionToMultipleAddrs", f: clusterConnectionToMultipleAddrsTest},
 		{name: "EventHandlingOrder", f: clientEventHandlingOrderTest},
 		{name: "EventOrder", f: clientEventOrderTest},
 		{name: "FailoverEECluster", f: clientFailoverEEClusterTest},
@@ -1044,7 +1044,7 @@ func clientStartShutdownWithNilContextTest(t *testing.T) {
 	it.Must(client.Shutdown(nil))
 }
 
-func clusterConnectionToMultipleAddrs(t *testing.T) {
+func clusterConnectionToMultipleAddrsTest(t *testing.T) {
 	ctx := context.Background()
 	t.Parallel()
 	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
@@ -1071,14 +1071,14 @@ func clusterConnectionToMultipleAddrs(t *testing.T) {
 			name: "first addr valid, second is invalid",
 			addresses: []string{
 				fmt.Sprintf("localhost:%d", tc.Port),
-				"non-existent.com:1234",
+				"non-existent.non-existent:1234",
 			},
 		},
 		{
 			name: "all addresses are invalid",
 			addresses: []string{
-				"non-existent.com:123",
-				"non-existent.com:1234",
+				"non-existent.non-existent:123",
+				"non-existent.non-existent:1234",
 			},
 			expectErr: true,
 		},

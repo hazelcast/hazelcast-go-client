@@ -177,9 +177,7 @@ func (a *AddrSet) AddAddrs(addrs []pubcluster.Address) {
 }
 
 func (a *AddrSet) Addrs() []pubcluster.Address {
-	addrs := make([]pubcluster.Address, len(a.orderedAddr))
-	copy(addrs, a.orderedAddr)
-	return addrs
+	return a.orderedAddr
 }
 
 type membersMap struct {
