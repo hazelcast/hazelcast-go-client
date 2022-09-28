@@ -161,6 +161,7 @@ func uniqueAddrs(ap AddressProvider) ([]pubcluster.Address, error) {
 			continue
 		}
 		uniqueAddrs = append(uniqueAddrs, a)
+		uniqueSet[a] = struct{}{}
 	}
 	return uniqueAddrs, nil
 }
