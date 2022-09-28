@@ -103,13 +103,7 @@ func (s *Service) SQLMember() *pubcluster.MemberInfo {
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
 	s.membersMap.reset()
-	addrSet := NewAddrSet()
-	addrs, err := clusterCtx.AddressProvider.Addresses()
-	if err != nil {
-		return nil, err
-	}
-	addrSet.AddAddrs(addrs)
-	return addrSet.Addrs(), nil
+	return uniqueAddrs(clusterCtx.AddressProvider)
 }
 
 func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo) (pubcluster.Address, error) {
@@ -153,31 +147,22 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 	return err
 }
 
-type AddrSet struct {
-	addrs       map[string]struct{}
-	orderedAddr []pubcluster.Address
-}
-
-func NewAddrSet() *AddrSet {
-	return &AddrSet{addrs: map[string]struct{}{}}
-}
-
-func (a *AddrSet) AddAddr(addr pubcluster.Address) {
-	if _, ok := a.addrs[addr.String()]; ok {
-		return
+// uniqueAddrs return unique addresses while preserving initial order
+func uniqueAddrs(ap AddressProvider) ([]pubcluster.Address, error) {
+	addrs, err := ap.Addresses()
+	if err != nil {
+		return nil, err
 	}
-	a.addrs[addr.String()] = struct{}{}
-	a.orderedAddr = append(a.orderedAddr, addr)
-}
-
-func (a *AddrSet) AddAddrs(addrs []pubcluster.Address) {
-	for _, addr := range addrs {
-		a.AddAddr(addr)
+	l := len(addrs)
+	uniqueSet := make(map[pubcluster.Address]struct{}, l)
+	uniqueAddrs := make([]pubcluster.Address, 0, l)
+	for _, a := range addrs {
+		if _, ok := uniqueSet[a]; ok {
+			continue
+		}
+		uniqueAddrs = append(uniqueAddrs, a)
 	}
-}
-
-func (a *AddrSet) Addrs() []pubcluster.Address {
-	return a.orderedAddr
+	return uniqueAddrs, nil
 }
 
 type membersMap struct {
