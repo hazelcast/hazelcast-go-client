@@ -103,7 +103,7 @@ func (s *Service) SQLMember() *pubcluster.MemberInfo {
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
 	s.membersMap.reset()
-	return uniqueAddrs(clusterCtx.AddressProvider)
+	return UniqueAddrs(clusterCtx.AddressProvider)
 }
 
 func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo) (pubcluster.Address, error) {
@@ -147,8 +147,8 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 	return err
 }
 
-// uniqueAddrs return unique addresses while preserving initial order
-func uniqueAddrs(ap AddressProvider) ([]pubcluster.Address, error) {
+// UniqueAddrs return unique addresses while preserving initial order
+func UniqueAddrs(ap AddressProvider) ([]pubcluster.Address, error) {
 	addrs, err := ap.Addresses()
 	if err != nil {
 		return nil, err

@@ -17,9 +17,11 @@
 package cluster_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -98,6 +100,57 @@ func TestLargerGroupVersion(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.Equal(t, tc.TargetMajorMinor, v)
+		})
+	}
+}
+
+type mockAddrProvider struct {
+	addrs []pubcluster.Address
+	err   error
+}
+
+func (m mockAddrProvider) Addresses() ([]pubcluster.Address, error) {
+	return m.addrs, m.err
+}
+
+func TestUniqueAddrs(t *testing.T) {
+	tcs := []struct {
+		name      string
+		addresses []pubcluster.Address
+		expected  []pubcluster.Address
+		returnErr bool
+	}{
+		{
+			name:     "no addr provided, expect nil slice",
+			expected: []pubcluster.Address{},
+		},
+		{
+			name:      "all addresses are unique, return the input as is",
+			addresses: []pubcluster.Address{"test", "address", "123"},
+			expected:  []pubcluster.Address{"test", "address", "123"},
+		},
+		{
+			name:      "input has duplicate addrs, eliminate duplicates",
+			addresses: []pubcluster.Address{"test", "test", "address", "address", "123"},
+			expected:  []pubcluster.Address{"test", "address", "123"},
+		},
+		{
+			name:      "return error if address provider returns an error",
+			returnErr: true,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			var mockErr error
+			if tc.returnErr {
+				mockErr = errors.New("test error")
+			}
+			ap := mockAddrProvider{addrs: tc.addresses, err: mockErr}
+			addrs, err := cluster.UniqueAddrs(ap)
+			if tc.returnErr {
+				require.Error(t, err)
+			}
+			require.Equal(t, tc.expected, addrs)
 		})
 	}
 }
