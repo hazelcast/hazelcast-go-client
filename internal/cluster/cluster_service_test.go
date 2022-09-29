@@ -105,8 +105,8 @@ func TestLargerGroupVersion(t *testing.T) {
 }
 
 type mockAddrProvider struct {
-	addrs []pubcluster.Address
 	err   error
+	addrs []pubcluster.Address
 }
 
 func (m mockAddrProvider) Addresses() ([]pubcluster.Address, error) {
