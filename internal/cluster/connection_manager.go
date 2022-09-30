@@ -462,8 +462,8 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 	var initialAddr pubcluster.Address
 	for _, addr := range seedAddrs {
 		initialAddr, err = m.tryConnectAddress(ctx, addr, connectMember, cluster.NetworkCfg)
-		if err != nil {
-			continue
+		if err == nil {
+			break
 		}
 	}
 	if initialAddr == "" {
@@ -890,17 +890,11 @@ func nonRetryableConnectionErr(err error) bool {
 }
 
 func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address, networkCfg *pubcluster.NetworkConfig) (pubcluster.Address, error) {
-	var initialAddr pubcluster.Address
-	var err error
-	if _, err = m.ensureConnection(ctx, addr, networkCfg); err != nil {
+	if _, err := m.ensureConnection(ctx, addr, networkCfg); err != nil {
 		m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-	} else if initialAddr == "" {
-		initialAddr = addr
-	}
-	if initialAddr == "" {
 		return "", fmt.Errorf("cannot connect to address in the cluster: %w", err)
 	}
-	return initialAddr, nil
+	return addr, nil
 }
 
 func EnumerateAddresses(host string, portRange pubcluster.PortRange) []pubcluster.Address {
