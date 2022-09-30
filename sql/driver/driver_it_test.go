@@ -606,7 +606,7 @@ func TestConcurrentQueries(t *testing.T) {
 }
 
 func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
-	const timeout = 1 * time.Second
+	const timeout = 5 * time.Second
 	port := it.NextPort()
 	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", port), port)
 	defer tc.Shutdown()
