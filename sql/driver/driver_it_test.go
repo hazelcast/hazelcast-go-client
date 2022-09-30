@@ -629,7 +629,7 @@ func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
 	}()
 	select {
 	case <-finish:
-	case <-time.After(timeout):
+	case <-time.After(timeout + 1*time.Second):
 		t.Fatal("driver did not respect the context timeout")
 	}
 }
