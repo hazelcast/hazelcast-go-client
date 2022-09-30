@@ -606,11 +606,15 @@ func TestConcurrentQueries(t *testing.T) {
 }
 
 func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
-	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", 60001), 60001)
+	const timeout = 1 * time.Second
+	port := it.NextPort()
+	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", port), port)
 	defer tc.Shutdown()
 	db := driver.Open(tc.DefaultConfigWithNoSSL())
+	// make sure the client connects to the cluster
+	db.Ping()
 	defer db.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
 	if err != nil {
@@ -627,7 +631,7 @@ func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
 	}()
 	select {
 	case <-finish:
-	case <-time.After(3 * time.Second):
+	case <-time.After(timeout + 1*time.Second):
 		t.Fatal("driver did not respect the context timeout")
 	}
 }
