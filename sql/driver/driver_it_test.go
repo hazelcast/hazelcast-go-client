@@ -606,11 +606,12 @@ func TestConcurrentQueries(t *testing.T) {
 }
 
 func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
-	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", 60001), 60001)
+	port := it.NextPort()
+	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", port), port)
 	defer tc.Shutdown()
 	db := driver.Open(tc.DefaultConfigWithNoSSL())
 	defer db.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
 	if err != nil {
