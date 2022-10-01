@@ -11,10 +11,10 @@ jobs:
     strategy:
         matrix:
             os: [ ubuntu-latest ]
-            go_version: [ 1.17, 1.18 ]
+            go_version: [ 1.17, 1.18, 1.19 ]
         fail-fast: false
-    steps:     
-    
+    steps:
+
       - name: Setup Java
         uses: actions/setup-java@v1
         with:
