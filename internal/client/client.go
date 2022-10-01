@@ -88,25 +88,36 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-type ShutdownHandler func(ctx context.Context)
+type shutdownHandler func(context.Context)
 
 type Client struct {
-	Logger               ilogger.LogAdaptor
-	InvocationHandler    invocation.Handler
-	ConnectionManager    *icluster.ConnectionManager
-	ViewListenerService  *icluster.ViewListenerService
-	InvocationService    *invocation.Service
-	InvocationFactory    *icluster.ConnectionInvocationFactory
-	SerializationService *serialization.Service
-	EventDispatcher      *event.DispatchService
-	StatsService         *stats.Service
-	heartbeatService     *icluster.HeartbeatService
-	clusterConfig        *cluster.Config
-	PartitionService     *icluster.PartitionService
-	ClusterService       *icluster.Service
-	name                 string
-	shutdownHandlers     []ShutdownHandler
-	state                int32
+	InvocationHandler      invocation.Handler
+	Logger                 ilogger.LogAdaptor
+	ConnectionManager      *icluster.ConnectionManager
+	ViewListenerService    *icluster.ViewListenerService
+	InvocationService      *invocation.Service
+	InvocationFactory      *icluster.ConnectionInvocationFactory
+	SerializationService   *serialization.Service
+	EventDispatcher        *event.DispatchService
+	StatsService           *stats.Service
+	heartbeatService       *icluster.HeartbeatService
+	clusterConfig          *cluster.Config
+	PartitionService       *icluster.PartitionService
+	ClusterService         *icluster.Service
+	name                   string
+	beforeShutdownHandlers []shutdownHandler
+	afterShutdownHandlers  []shutdownHandler
+	state                  int32
+}
+
+func (c *Client) AddBeforeShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.beforeShutdownHandlers = append(c.beforeShutdownHandlers, handler)
+}
+
+func (c *Client) AddAfterShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.afterShutdownHandlers = append(c.afterShutdownHandlers, handler)
 }
 
 func New(config *Config) (*Client, error) {
@@ -133,11 +144,6 @@ func New(config *Config) (*Client, error) {
 	}
 	c.createComponents(config)
 	return c, nil
-}
-
-func (c *Client) AddShutdownHandler(f ShutdownHandler) {
-	// this is supposed to be called during client initialization, so there's no risk of races.
-	c.shutdownHandlers = append(c.shutdownHandlers, f)
 }
 
 // Name returns client's name.
@@ -179,6 +185,10 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	// execute registered shutdown handlers
+	for _, f := range c.beforeShutdownHandlers {
+		f(ctx)
+	}
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
@@ -186,8 +196,9 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if c.StatsService != nil {
 		c.StatsService.Stop()
 	}
-	for _, h := range c.shutdownHandlers {
-		h(ctx)
+	// execute registered shutdown handlers
+	for _, f := range c.afterShutdownHandlers {
+		f(ctx)
 	}
 	atomic.StoreInt32(&c.state, Stopped)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShutDown))

@@ -19,7 +19,7 @@ package internal
 const (
 	AggregateFactoryID = -29
 	// CurrentClientVersion should be manually set
-	CurrentClientVersion = "1.4.0"
+	CurrentClientVersion = "1.3.1"
 )
 
 // ClientType is used in the Management Center
