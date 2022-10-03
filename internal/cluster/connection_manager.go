@@ -564,7 +564,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		m.clusterIDMu.Unlock()
 		if oldConn, ok := m.connMap.GetOrAddConnection(conn, *address); !ok {
 			// there is already a connection to this member
-			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.MemberUUID())
+			m.logger.Infof("duplicate connection to the same member with UUID: %s", conn.MemberUUID())
 			conn.close(nil)
 			return oldConn, nil
 		}
