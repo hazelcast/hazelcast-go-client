@@ -606,6 +606,7 @@ func TestConcurrentQueries(t *testing.T) {
 }
 
 func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
+	skip.If(t, "hz < 5")
 	const timeout = 5 * time.Second
 	port := it.NextPort()
 	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", port), port)
