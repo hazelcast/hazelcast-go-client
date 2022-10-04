@@ -220,15 +220,15 @@ func flakeIDGeneratorServiceNameTest(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer f.Destroy(ctx)
-		objs, err := client.GetDistributedObjectsInfo(ctx)
-		require.NoError(t, err)
-		var ok bool
-		for _, obj := range objs {
-			if obj.ServiceName == hz.ServiceNameFlakeIDGenerator && obj.Name == name {
-				ok = true
-				break
+		it.Eventually(t, func() bool {
+			objs, err := client.GetDistributedObjectsInfo(ctx)
+			require.NoError(t, err)
+			for _, obj := range objs {
+				if obj.ServiceName == hz.ServiceNameFlakeIDGenerator && obj.Name == name {
+					return true
+				}
 			}
-		}
-		assert.True(t, ok)
+			return false
+		})
 	})
 }
