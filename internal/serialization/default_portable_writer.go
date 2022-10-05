@@ -246,11 +246,13 @@ func (pw *DefaultPortableWriter) WriteDecimal(fieldName string, d *types.Decimal
 func (pw *DefaultPortableWriter) WriteDecimalArray(fieldName string, ds []types.Decimal) {
 	pw.setPosition(fieldName, int32(serialization.TypeDecimalArray))
 	arrLen := len(ds)
-	if arrLen == 0 {
-		pw.output.WriteInt32(nilArrayLength)
-		return
+	if ds == nil {
+		arrLen = nilArrayLength
 	}
 	pw.output.WriteInt32(int32(arrLen))
+	if arrLen < 1 {
+		return
+	}
 	offset := pw.output.Position()
 	pw.output.WriteZeroBytes(arrLen * Int32SizeInBytes)
 	for i, v := range ds {
@@ -301,11 +303,13 @@ func (pw *DefaultPortableWriter) writeNullableField(fieldName string, fieldType 
 
 func (pw *DefaultPortableWriter) writeArrayOfTime(ts []time.Time, f func(o serialization.DataOutput, t time.Time)) {
 	arrLen := len(ts)
-	if arrLen == 0 {
-		pw.output.WriteInt32(nilArrayLength)
-		return
+	if ts == nil {
+		arrLen = nilArrayLength
 	}
 	pw.output.WriteInt32(int32(arrLen))
+	if arrLen < 1 {
+		return
+	}
 	offset := pw.output.Position()
 	pw.output.WriteZeroBytes(arrLen * Int32SizeInBytes)
 	for i, t := range ts {

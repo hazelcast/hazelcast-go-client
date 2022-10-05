@@ -472,8 +472,9 @@ func (pr *DefaultPortableReader) readArrayOfTime(f func(input serialization.Data
 	}
 	ts = make([]time.Time, l)
 	offset := pr.input.Position()
+	objInput := pr.input.(*ObjectDataInput)
 	for i := int32(0); i < l; i++ {
-		pos := pr.input.(*ObjectDataInput).ReadInt32AtPosition(offset + i*Int32SizeInBytes)
+		pos := objInput.ReadInt32AtPosition(offset + i*Int32SizeInBytes)
 		pr.input.SetPosition(pos)
 		ts[i] = f(pr.input)
 	}
