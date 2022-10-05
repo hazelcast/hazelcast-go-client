@@ -855,28 +855,6 @@ func WriteDecimal(o serialization.DataOutput, d types.Decimal) {
 	o.WriteInt32(int32(d.Scale()))
 }
 
-func WriteDecimalArray(o serialization.DataOutput, ds []types.Decimal) {
-	if len(ds) == 0 {
-		o.WriteInt32(nilArrayLength)
-		return
-	}
-	o.WriteInt32(int32(len(ds)))
-	for _, d := range ds {
-		WriteDecimal(o, d)
-	}
-}
-
-func writeArrayOfTime(o serialization.DataOutput, ts []time.Time, f func(o serialization.DataOutput, t time.Time)) {
-	if len(ts) == 0 {
-		o.WriteInt32(nilArrayLength)
-		return
-	}
-	o.WriteInt32(int32(len(ts)))
-	for _, t := range ts {
-		f(o, t)
-	}
-}
-
 func ReadDate(i serialization.DataInput) time.Time {
 	y, m, d := readDate(i)
 	return time.Date(y, m, d, 0, 0, 0, 0, time.Local)
@@ -914,19 +892,6 @@ func ReadDecimal(i serialization.DataInput) types.Decimal {
 	return types.NewDecimal(v, int(scale))
 }
 
-func ReadDecimalArray(i serialization.DataInput) []types.Decimal {
-	var ds []types.Decimal
-	l := i.ReadInt32()
-	if l == nilArrayLength {
-		return ds
-	}
-	ds = make([]types.Decimal, l)
-	for j := 0; j < int(l); j++ {
-		ds[j] = ReadDecimal(i)
-	}
-	return ds
-}
-
 func readDate(i serialization.DataInput) (y int, m time.Month, d int) {
 	y = int(i.ReadInt32())
 	m = time.Month(i.ReadByte())
@@ -940,17 +905,4 @@ func readTime(i serialization.DataInput) (h, m, s, nanos int) {
 	s = int(i.ReadByte())
 	nanos = int(i.ReadInt32())
 	return
-}
-
-func readArrayOfTime(i serialization.DataInput, f func(i serialization.DataInput) time.Time) []time.Time {
-	var ts []time.Time
-	l := i.ReadInt32()
-	if l == nilArrayLength {
-		return ts
-	}
-	ts = make([]time.Time, l)
-	for j := 0; j < int(l); j++ {
-		ts[j] = f(i)
-	}
-	return ts
 }
