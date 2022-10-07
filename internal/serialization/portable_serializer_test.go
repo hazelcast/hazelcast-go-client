@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -528,5 +529,133 @@ func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
 	if !reflect.DeepEqual(deserializedParent, p) {
 		t.Error("nested portable version is wrong")
 	}
+}
 
+const (
+	factoryID1 = 1
+	factoryID2 = 2
+)
+
+type MyPortable1 struct {
+	stringField string
+}
+
+func (MyPortable1) FactoryID() (factoryID int32) {
+	return factoryID1
+}
+
+func (MyPortable1) ClassID() (classID int32) {
+	return 1
+}
+
+func (p MyPortable1) WritePortable(writer serialization.PortableWriter) {
+	writer.WriteString("stringField", p.stringField)
+}
+
+func (p *MyPortable1) ReadPortable(reader serialization.PortableReader) {
+	p.stringField = reader.ReadString("stringField")
+}
+
+type MyPortable2 struct {
+	intField int32
+}
+
+func (MyPortable2) FactoryID() (factoryID int32) {
+	return factoryID2
+}
+
+func (MyPortable2) ClassID() (classID int32) {
+	return 1
+}
+
+func (p MyPortable2) WritePortable(writer serialization.PortableWriter) {
+	writer.WriteInt32("intField", p.intField)
+}
+
+func (p *MyPortable2) ReadPortable(reader serialization.PortableReader) {
+	p.intField = reader.ReadInt32("intField")
+}
+
+type MyPortableFactory1 struct{}
+
+func (MyPortableFactory1) Create(classID int32) (instance serialization.Portable) {
+	if classID == 1 {
+		return &MyPortable1{}
+	}
+	return nil
+}
+
+func (MyPortableFactory1) FactoryID() int32 {
+	return factoryID1
+}
+
+type MyPortableFactory2 struct{}
+
+func (MyPortableFactory2) Create(classID int32) (instance serialization.Portable) {
+	if classID == 1 {
+		return &MyPortable2{}
+	}
+	return nil
+}
+
+func (*MyPortableFactory2) FactoryID() int32 {
+	return factoryID2
+}
+
+// ported from: com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassIdInDifferentFactories
+func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
+	config := &serialization.Config{}
+	myPortable1Def := serialization.NewClassDefinition(factoryID1, 1, 0)
+	// register string which is located in MyPortable1
+	err := myPortable1Def.AddStringField("stringField")
+	require.NoError(t, err)
+	myPortable2Def := serialization.NewClassDefinition(factoryID2, 1, 0)
+	// register string which is located in MyPortable2
+	err = myPortable2Def.AddInt32Field("intField")
+	require.NoError(t, err)
+	// set config with class definitions
+	config.SetClassDefinitions(myPortable1Def, myPortable2Def)
+	// set config with portable factories
+	config.SetPortableFactories(&MyPortableFactory1{}, &MyPortableFactory2{})
+	service, err := NewService(config)
+	require.NoError(t, err)
+	// serialize MyPortable1
+	object := &MyPortable1{stringField: "test"}
+	data, err := service.ToData(object)
+	require.NoError(t, err)
+	toObject, err := service.ToObject(data)
+	require.NoError(t, err)
+	if !reflect.DeepEqual(object, toObject) {
+		t.Fatalf("got %v want %v", toObject, object)
+	}
+	// serialize MyPortable2
+	object2 := &MyPortable2{intField: 1}
+	data2, err := service.ToData(object2)
+	require.NoError(t, err)
+	toObject2, err := service.ToObject(data2)
+	require.NoError(t, err)
+	if !reflect.DeepEqual(object2, toObject2) {
+		t.Fatalf("got %v want %v", toObject2, object2)
+	}
+}
+
+// ported from: com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassId_andSameFactoryId
+func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			require.True(t, errors.Is(err.(error), hzerrors.ErrHazelcastSerialization))
+		}
+	}()
+	commonFactoryID := int32(1)
+	commonClassID := int32(1)
+	config := &serialization.Config{}
+	p1 := serialization.NewClassDefinition(commonFactoryID, commonClassID, 0)
+	err := p1.AddStringField("stringField")
+	require.NoError(t, err)
+	p2 := serialization.NewClassDefinition(commonFactoryID, commonClassID, 0)
+	err = p1.AddInt32Field("intField")
+	require.NoError(t, err)
+	config.SetClassDefinitions(p1, p2)
+	_, err = NewService(config)
+	require.NoError(t, err)
 }

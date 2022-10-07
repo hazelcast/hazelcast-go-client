@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -43,12 +43,12 @@ The following table is the conversion of types for Java server side, which canno
 
 Types of time.Time are converted to Java using the table below:
 
-	Go                                                   Java
-	============                                         =========
-	time.Time with year == 0                             java.time.LocalTime
-	time.Time with hours, minutes, secs, nanosecs == 0   java.time.localDate
-	time.Time with location == time.Local                java.time.LocalDateTime
-    time.Time, otherwise                                 java.time.OffsetDateTime
+		Go                                                   Java
+		============                                         =========
+		time.Time with year == 0                             java.time.LocalTime
+		time.Time with hours, minutes, secs, nanosecs == 0   java.time.localDate
+		time.Time with location == time.Local                java.time.LocalDateTime
+	    time.Time, otherwise                                 java.time.OffsetDateTime
 
 Slices of the types above are serialized as arrays in the Hazelcast server side and the Hazelcast Java client.
 Reference types are not supported for builtin types, e.g., *int64.
@@ -66,7 +66,7 @@ We will use the following type for all examples in this section:
 	}
 
 	func (e Employee) String() string {
-		return fmt.Sprintf("Employe: %s", e.Surname)
+		return fmt.Sprintf("Employee: %s", e.Surname)
 	}
 
 	// Common serialization methods
@@ -79,8 +79,7 @@ We will use the following type for all examples in this section:
 		return employeeClassID
 	}
 
-
-Identified Data Serialization
+# Identified Data Serialization
 
 Hazelcast recommends implementing the Identified Data serialization for faster serialization of values.
 See https://docs.hazelcast.com/imdg/latest/serialization/implementing-dataserializable.html#identifieddataserializable for details.
@@ -124,8 +123,7 @@ In order to use the factory, you have to register it:
 	config := hazelcast.Config{}
 	config.Serialization.SetIdentifiedDataSerializableFactories(&IdentifiedFactory{})
 
-
-Portable Serialization
+# Portable Serialization
 
 Hazelcast offers portable serialization as an alternative to the existing serialization methods.
 Portable serialization has the following advantages: Supports multiple versions of the same object type,
@@ -178,7 +176,7 @@ In order to use the factory, you have to register it:
 	config := hazelcast.Config{}
 	config.Serialization.SetPortableFactories(&PortableFactory{})
 
-JSON Serialization
+# JSON Serialization
 
 Hazelcast has first class support for JSON.
 You can put/get JSON values and use them in queries.
@@ -210,7 +208,7 @@ Just make sure the retrieved value is of type serialization.JSON.
 	otherEmployee := &Employee{}
 	err = json.Unmarshal(jsonValue, &otherEmployee)
 
-Custom Serialization
+# Custom Serialization
 
 Hazelcast lets you plug a custom serializer to be used for serialization of values.
 See https://docs.hazelcast.com/imdg/latest/serialization/custom-serialization.html for details.
@@ -242,8 +240,7 @@ You should register the serializer in the configuration with the corresponding t
 	config := hazelcast.Config{}
 	config.Serialization.SetCustomSerializer(reflect.TypeOf(&Employee{}), &EmployeeCustomSerializer{})
 
-
-Global Serializer
+# Global Serializer
 
 If a serializer cannot be found for a value, the global serializer is used.
 Values serialized by the global serializer are treated as blobs by Hazelcast, so using them for querying is not possible.
@@ -276,7 +273,5 @@ And setting it in the serialization configuration:
 
 	config := hazelcast.Config{}
 	config.Serialization.SetGlobalSerializer(&MyGlobalSerializer{})
-
-
 */
 package serialization

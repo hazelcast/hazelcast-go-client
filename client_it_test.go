@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -29,20 +29,63 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/proxy"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-var idGen = proxy.ReferenceIDGenerator{}
+func TestClient(t *testing.T) {
+	testCases := []struct {
+		name string
+		f    func(t *testing.T)
+	}{
+		{name: "AddDistributedObjectListener", f: clientAddDistributedObjectListenerTest},
+		{name: "AddLifecycleListener", f: clientAddLifecycleListenerTest},
+		{name: "AddMembershipListener", f: clientAddMembershipListenerTest},
+		{name: "ClusterReconnectionReconnectModeOff", f: clientClusterReconnectionReconnectModeOffTest},
+		{name: "ClusterReconnectionShutdownCluster", f: clientClusterReconnectionShutdownClusterTest},
+		{name: "ClusterShutdownThenCheckOperationsNotHanging", f: clientClusterShutdownThenCheckOperationsNotHangingTest},
+		{name: "ClusterConnectionToMultipleAddrs", f: clusterConnectionToMultipleAddrsTest},
+		{name: "EventHandlingOrder", f: clientEventHandlingOrderTest},
+		{name: "EventOrder", f: clientEventOrderTest},
+		{name: "FailoverEECluster", f: clientFailoverEEClusterTest},
+		{name: "FailoverEEClusterReconnection", f: clientFailoverEEClusterReconnectionTest},
+		{name: "FailoverOSSCluster", f: clientFailoverOSSClusterTest},
+		{name: "FixConnection", f: clientFixConnectionTest},
+		{name: "GetDistributedObjects", f: clientGetDistributedObjectsTest},
+		{name: "GetProxyInstance", f: clientGetProxyInstanceTest},
+		{name: "Heartbeat", f: clientHeartbeatTest},
+		{name: "InvocationAfterShutdown", f: clientInvocationAfterShutdownTest},
+		{name: "InvocationTimeout", f: clientInvocationTimeoutTest},
+		{name: "LifecycleEvents", f: clientLifecycleEventsTest},
+		{name: "MemberEvents", f: clientMemberEventsTest},
+		{name: "Name", f: clientNameTest},
+		{name: "PortRangeAllAddresses", f: clientPortRangeAllAddressesTest},
+		{name: "PortRangeMultipleAddresses", f: clientPortRangeMultipleAddressesTest},
+		{name: "PortRangeSingleAddress", f: clientPortRangeSingleAddressTest},
+		{name: "RemoveLifecycleListener", f: clientRemoveLifecycleListenerTest},
+		{name: "RemoveMembershipListener", f: clientRemoveMembershipListenerTest},
+		{name: "Running", f: clientRunningTest},
+		{name: "Shutdown", f: clientShutdownTest},
+		{name: "ShutdownRace", f: clientShutdownRaceTest},
+		{name: "StartShutdownMemoryLeak", f: clientStartShutdownMemoryLeakTest},
+		{name: "StartShutdownWithNilContext", f: clientStartShutdownWithNilContextTest},
+		{name: "Version", f: clientVersionTest},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, tc.f)
+	}
+}
 
-func TestClientLifecycleEvents(t *testing.T) {
+func clientLifecycleEventsTest(t *testing.T) {
+	t.Parallel()
 	receivedStates := []hz.LifecycleState{}
 	receivedStatesMu := &sync.RWMutex{}
 	configCallback := func(config *hz.Config) {
@@ -62,6 +105,8 @@ func TestClientLifecycleEvents(t *testing.T) {
 				t.Logf("Received client connected state")
 			case hz.LifecycleStateDisconnected:
 				t.Logf("Received client disconnected state")
+			case hz.LifecycleStateChangedCluster:
+				t.Logf("Connected cluster has been changed")
 			default:
 				t.Log("Received unknown state:", event.State)
 			}
@@ -92,7 +137,154 @@ func TestClientLifecycleEvents(t *testing.T) {
 	})
 }
 
-func TestClientRunning(t *testing.T) {
+func clientAddLifecycleListenerTest(t *testing.T) {
+	t.Parallel()
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var receivedStates []hz.LifecycleState
+		receivedStatesMu := &sync.RWMutex{}
+		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			receivedStatesMu.Lock()
+			defer receivedStatesMu.Unlock()
+			// client is already connected
+			switch event.State {
+			case hz.LifecycleStateShuttingDown:
+				t.Logf("Received shutting down state")
+			case hz.LifecycleStateShutDown:
+				t.Logf("Received shut down state")
+			default:
+				t.Log("Received unknown state:", event.State)
+			}
+			receivedStates = append(receivedStates, event.State)
+		})
+		require.Nil(t, err)
+		require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		if err = client.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		targetStates := []hz.LifecycleState{
+			hz.LifecycleStateShuttingDown,
+			hz.LifecycleStateShutDown,
+		}
+		it.Eventually(t, func() bool {
+			receivedStatesMu.RLock()
+			defer receivedStatesMu.RUnlock()
+			return reflect.DeepEqual(targetStates, receivedStates)
+		})
+	})
+}
+
+func clientRemoveLifecycleListenerTest(t *testing.T) {
+	t.Parallel()
+	it.Tester(t, func(t *testing.T, client *hz.Client) {
+		var lifecycleEventReceived int32
+		subscriptionID, err := client.AddLifecycleListener(func(event hz.LifecycleStateChanged) {
+			// shutting down event is published before the actual shutdown is occurred
+			// client must not be shutdown before that event was published
+			if event.State == hz.LifecycleStateShuttingDown {
+				atomic.AddInt32(&lifecycleEventReceived, 1)
+			}
+		})
+		require.Nil(t, err)
+		require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+		if err = client.RemoveLifecycleListener(subscriptionID); err != nil {
+			t.Fatal(err)
+		}
+		if err = client.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		it.Eventually(t, func() bool {
+			return !client.Running() && lifecycleEventReceived == 0
+		})
+	})
+}
+
+func clientAddMembershipListenerTest(t *testing.T) {
+	t.Parallel()
+	var (
+		wgAdded,
+		wgRemoved sync.WaitGroup
+		memberCount int = 3
+	)
+	wgAdded.Add(1)
+	wgRemoved.Add(1)
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), memberCount)
+	defer cls.Shutdown()
+	client, err := hz.StartNewClientWithConfig(ctx, cls.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(ctx context.Context, client *hz.Client) {
+		err = client.Shutdown(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(ctx, client)
+	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		switch event.State {
+		case cluster.MembershipStateAdded:
+			t.Log("MembershipStateAdded")
+			wgAdded.Done()
+		case cluster.MembershipStateRemoved:
+			t.Log("MembershipStateRemoved")
+			wgRemoved.Done()
+		}
+	})
+	require.Nil(t, err)
+	require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	// member which is not connected by the client initially.
+	uuid := cls.MemberUUIDs[1]
+	//uuid := cls.MemberUUIDs[0]
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, uuid)
+	it.Must(err)
+	require.True(t, ok, "rc cannot terminate member")
+	wgRemoved.Wait()
+	_, err = cls.RC.StartMember(ctx, cls.ClusterID)
+	it.Must(err)
+	wgAdded.Wait()
+}
+
+func clientRemoveMembershipListenerTest(t *testing.T) {
+	t.Parallel()
+	var removed int32
+	ctx := context.Background()
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 2)
+	defer cls.Shutdown()
+	cfg := cls.DefaultConfig()
+	client, err := hz.StartNewClientWithConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(ctx context.Context, client *hz.Client) {
+		err = client.Shutdown(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(ctx, client)
+	subscriptionID, err := client.AddMembershipListener(func(event cluster.MembershipStateChanged) {
+		switch event.State {
+		case cluster.MembershipStateRemoved:
+			t.Log("MembershipStateRemoved")
+			atomic.AddInt32(&removed, 1)
+		}
+	})
+	require.Nil(t, err)
+	require.NotEqual(t, types.UUID{}, subscriptionID, "subscription UUID should not be empty")
+	err = client.RemoveMembershipListener(subscriptionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, cls.MemberUUIDs[1])
+	it.Must(err)
+	require.True(t, ok, "rc cannot terminate member")
+	client.Shutdown(ctx)
+	it.Eventually(t, func() bool {
+		return !client.Running() && removed == 0
+	})
+}
+
+func clientRunningTest(t *testing.T) {
+	t.Parallel()
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		assert.True(t, client.Running())
 		if err := client.Shutdown(context.Background()); err != nil {
@@ -102,25 +294,40 @@ func TestClientRunning(t *testing.T) {
 	})
 }
 
-func TestClientPortRangeAllAddresses(t *testing.T) {
+func clientNameTest(t *testing.T) {
+	t.Parallel()
+	clientName := "test-client-name"
+	cb := func(config *hz.Config) {
+		config.ClientName = clientName
+	}
+	it.TesterWithConfigBuilder(t, cb, func(t *testing.T, client *hz.Client) {
+		assert.Equal(t, clientName, client.Name())
+	})
+}
+
+func clientPortRangeAllAddressesTest(t *testing.T) {
+	t.Parallel()
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", "0.0.0.0"}
 	}, 4, 3)
 }
 
-func TestClientPortRangeMultipleAddresses(t *testing.T) {
+func clientPortRangeMultipleAddressesTest(t *testing.T) {
+	t.Parallel()
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{"127.0.0.1", "localhost", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
 }
 
-func TestClientPortRangeSingleAddress(t *testing.T) {
+func clientPortRangeSingleAddressTest(t *testing.T) {
+	t.Parallel()
 	portRangeConnectivityTest(t, func(validPort int) []string {
 		return []string{fmt.Sprintf("localhost:%d", validPort), "127.0.0.1", fmt.Sprintf("0.0.0.0:%d", validPort)}
 	}, 4, 3)
 }
 
-func TestClientMemberEvents(t *testing.T) {
+func clientMemberEventsTest(t *testing.T) {
+	t.Parallel()
 	handlerCalled := int32(0)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -140,7 +347,8 @@ func TestClientMemberEvents(t *testing.T) {
 	})
 }
 
-func TestClientEventOrder(t *testing.T) {
+func clientEventOrderTest(t *testing.T) {
+	t.Parallel()
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		// events should be processed in this order
@@ -193,7 +401,8 @@ func TestClientEventOrder(t *testing.T) {
 	})
 }
 
-func TestClientEventHandlingOrder(t *testing.T) {
+func clientEventHandlingOrderTest(t *testing.T) {
+	t.Parallel()
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		var lc hz.MapEntryListenerConfig
@@ -233,9 +442,9 @@ func TestClientEventHandlingOrder(t *testing.T) {
 	})
 }
 
-func TestClientHeartbeat(t *testing.T) {
-	// Slow test.
-	t.SkipNow()
+func clientHeartbeatTest(t *testing.T) {
+	t.Parallel()
+	it.MarkSlow(t)
 	it.MapTesterWithConfig(t, func(config *hz.Config) {
 	}, func(t *testing.T, m *hz.Map) {
 		time.Sleep(150 * time.Second)
@@ -247,7 +456,8 @@ func TestClientHeartbeat(t *testing.T) {
 	})
 }
 
-func TestClient_Shutdown(t *testing.T) {
+func clientShutdownTest(t *testing.T) {
+	t.Parallel()
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		if err := client.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
@@ -258,7 +468,8 @@ func TestClient_Shutdown(t *testing.T) {
 	})
 }
 
-func TestClientShutdownRace(t *testing.T) {
+func clientShutdownRaceTest(t *testing.T) {
+	t.Parallel()
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		const goroutineCount = 100
 		wg := &sync.WaitGroup{}
@@ -273,7 +484,9 @@ func TestClientShutdownRace(t *testing.T) {
 	})
 }
 
-func TestClient_AddDistributedObjectListener(t *testing.T) {
+func clientAddDistributedObjectListenerTest(t *testing.T) {
+	// TODO: Adapt this test for t.Parallel()
+	//t.Parallel()
 	type objInfo struct {
 		service string
 		object  string
@@ -329,9 +542,11 @@ func TestClient_AddDistributedObjectListener(t *testing.T) {
 	})
 }
 
-func TestClusterReconnection_ShutdownCluster(t *testing.T) {
+func clientClusterReconnectionShutdownClusterTest(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
+	port := it.NextPort()
+	cls := it.StartNewClusterWithOptions(t.Name(), port, it.MemberCount())
 	mu := &sync.Mutex{}
 	events := []hz.LifecycleState{}
 	config := cls.DefaultConfig()
@@ -364,11 +579,10 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	}
 	cls.Shutdown()
 	it.WaitEventually(t, &disconnectedWg)
-	cls = it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
+	cls = it.StartNewClusterWithOptions(t.Name(), port, it.MemberCount())
 	it.WaitEventually(t, &reconnectedWg)
 	cls.Shutdown()
 	c.Shutdown(ctx)
-
 	target := []hz.LifecycleState{
 		hz.LifecycleStateStarting,
 		hz.LifecycleStateConnected,
@@ -387,10 +601,12 @@ func TestClusterReconnection_ShutdownCluster(t *testing.T) {
 	})
 }
 
-func TestClusterReconnection_ReconnectModeOff(t *testing.T) {
+func clientClusterReconnectionReconnectModeOffTest(t *testing.T) {
+	// TODO: Adapt this test for t.Parallel()
+	//t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	cls := it.StartNewClusterWithOptions("go-cli-test-cluster", 15701, it.MemberCount())
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 	config := cls.DefaultConfig()
 	config.Cluster.ConnectionStrategy.ReconnectMode = cluster.ReconnectModeOff
 	c, err := hz.StartNewClientWithConfig(ctx, config)
@@ -422,7 +638,8 @@ func portRangeConnectivityTest(t *testing.T, getAddresses func(validPort int) []
 		})
 }
 
-func TestClient_GetDistributedObjects(t *testing.T) {
+func clientGetDistributedObjectsTest(t *testing.T) {
+	t.Parallel()
 	it.Tester(t, func(t *testing.T, client *hz.Client) {
 		var (
 			testMapName = it.NewUniqueObjectName("map")
@@ -462,7 +679,8 @@ func TestClient_GetDistributedObjects(t *testing.T) {
 	})
 }
 
-func TestClient_GetProxyInstance(t *testing.T) {
+func clientGetProxyInstanceTest(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		getFn func(ctx context.Context, client *hz.Client, name string) (interface{}, error)
 		name  string
@@ -536,10 +754,11 @@ func TestClient_GetProxyInstance(t *testing.T) {
 	})
 }
 
-func TestClientFailover_OSSCluster(t *testing.T) {
-	it.SkipIf(t, "enterprise")
+func clientFailoverOSSClusterTest(t *testing.T) {
+	t.Parallel()
+	skip.IfNot(t, "oss")
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("failover-test-cluster", 15701, it.MemberCount())
+	cls := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 	defer cls.Shutdown()
 	config := cls.DefaultConfig()
 	config.Failover.Enabled = true
@@ -553,18 +772,25 @@ func TestClientFailover_OSSCluster(t *testing.T) {
 	}
 }
 
-func TestClientFailover_EECluster(t *testing.T) {
-	it.SkipIf(t, "oss")
+func clientFailoverEEClusterTest(t *testing.T) {
+	t.Parallel()
+	skip.IfNot(t, "enterprise")
 	ctx := context.Background()
-	cls := it.StartNewClusterWithOptions("failover-test-cluster", 15701, it.MemberCount())
-	defer cls.Shutdown()
-	config := cls.DefaultConfig()
+	clsBase := t.Name()
+	cls1 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-1", clsBase), it.NextPort(), it.MemberCount())
+	defer cls1.Shutdown()
+	cls2 := it.StartNewClusterWithOptions(fmt.Sprintf("%s-2", clsBase), it.NextPort(), it.MemberCount())
+	defer cls2.Shutdown()
+	config := hz.Config{}
+	if it.TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
 	config.Failover.Enabled = true
-	config.Failover.TryCount = 1
-	// move the main cluster config to failover config list
-	config.Failover.SetConfigs(config.Cluster)
-	// use a non-existing cluster in the main cluster config
-	config.Cluster.Name = "non-existing-failover-test-cluster"
+	cfg1 := cls1.DefaultConfig()
+	cfg1.Cluster.Name = "not-this-cluster's-name"
+	cfg1.Cluster.ConnectionStrategy.Timeout = types.Duration(10 * time.Second)
+	cfg2 := cls2.DefaultConfig()
+	config.Failover.SetConfigs(cfg1.Cluster, cfg2.Cluster)
 	c, err := hz.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		t.Fatalf("should have connected to failover cluster")
@@ -574,11 +800,14 @@ func TestClientFailover_EECluster(t *testing.T) {
 	}
 }
 
-func TestClientFailover_EECluster_Reconnection(t *testing.T) {
-	it.SkipIf(t, "oss")
+func clientFailoverEEClusterReconnectionTest(t *testing.T) {
+	t.Parallel()
+	skip.IfNot(t, "enterprise")
 	ctx := context.Background()
-	cls1 := it.StartNewClusterWithOptions("failover-test-cluster1", 15701, it.MemberCount())
-	cls2 := it.StartNewClusterWithOptions("failover-test-cluster2", 16701, it.MemberCount())
+	cls1Name := fmt.Sprintf("%s-1", t.Name())
+	cls2Name := fmt.Sprintf("%s-2", t.Name())
+	cls1 := it.StartNewClusterWithOptions(cls1Name, it.NextPort(), it.MemberCount())
+	cls2 := it.StartNewClusterWithOptions(cls2Name, it.NextPort(), it.MemberCount())
 	defer cls2.Shutdown()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -611,28 +840,27 @@ func TestClientFailover_EECluster_Reconnection(t *testing.T) {
 	}
 }
 
-func highlight(t *testing.T, format string, args ...interface{}) {
-	log.Printf("\n===\n%s\n===", fmt.Sprintf(format, args...))
-}
-
-func TestClientFixConnection(t *testing.T) {
+func clientFixConnectionTest(t *testing.T) {
+	t.Parallel()
 	// This test removes the member that corresponds to the connections which receives membership state changes.
 	// Once that connection is closed, another connection should be randomly selected to receive membership state changes.
 	// A new member is added to confirm that is the case.
 	const memberCount = 3
+	highlight := func(format string, args ...interface{}) {
+		t.Logf("\n===\n%s\n===", fmt.Sprintf(format, args...))
+	}
 	addedCount := int64(0)
 	ctx := context.Background()
-	id := idGen.NextID()
-	clusterName := fmt.Sprintf("600-cluster-%d", id)
-	log.Println("Cluster name:", clusterName)
-	port := 20701 + id*10
-	cls := it.StartNewClusterWithOptions(clusterName, int(port), memberCount)
+	clusterName := t.Name()
+	t.Log("Cluster name:", clusterName)
+	port := it.NextPort()
+	cls := it.StartNewClusterWithOptions(clusterName, port, memberCount)
 	defer cls.Shutdown()
 	config := cls.DefaultConfig()
 	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", port+1))
 	config.Cluster.Name = clusterName
 	config.AddMembershipListener(func(event cluster.MembershipStateChanged) {
-		highlight(t, "%s member: %s", event.State.String(), event.Member.UUID)
+		highlight("%s member: %s", event.State.String(), event.Member.UUID)
 		if event.State == cluster.MembershipStateAdded {
 			atomic.AddInt64(&addedCount, 1)
 		}
@@ -647,7 +875,7 @@ func TestClientFixConnection(t *testing.T) {
 	defer client.Shutdown(ctx)
 	// terminate the member that corresponds to the connection which receives cluster membership updates
 	mUUID := cls.MemberUUIDs[1]
-	highlight(t, "Terminated member: %s", mUUID)
+	highlight("Terminated member: %s", mUUID)
 	ok, err := cls.RC.TerminateMember(ctx, cls.ClusterID, mUUID)
 	if err != nil {
 		t.Fatal(err)
@@ -659,21 +887,23 @@ func TestClientFixConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	highlight(t, "Started member: %s", m.UUID)
+	highlight("Started member: %s", m.UUID)
 	it.Eventually(t, func() bool {
 		return int64(memberCount+1) == atomic.LoadInt64(&addedCount)
 	})
 
 }
 
-func TestClientVersion(t *testing.T) {
+func clientVersionTest(t *testing.T) {
+	t.Parallel()
 	// adding this test here, so there's no "unused lint warning.
-	assert.Equal(t, "1.3.0", hz.ClientVersion)
+	assert.Equal(t, "1.4.0", hz.ClientVersion)
 }
 
-func TestInvocationTimeout(t *testing.T) {
+func clientInvocationTimeoutTest(t *testing.T) {
+	t.Parallel()
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("invocation-timeout", 41701, 1)
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		if it.TraceLoggingEnabled() {
@@ -698,11 +928,12 @@ func TestInvocationTimeout(t *testing.T) {
 	})
 }
 
-func TestClientStartShutdownMemoryLeak(t *testing.T) {
+func clientStartShutdownMemoryLeakTest(t *testing.T) {
+	t.Parallel()
 	// TODO make sure there is no leak, and find an upper memory limit for this
-	t.SkipNow()
+	it.MarkFlaky(t)
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("start-shutdown-memory-leak", 42701, it.MemberCount())
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		if it.TraceLoggingEnabled() {
@@ -734,9 +965,10 @@ func TestClientStartShutdownMemoryLeak(t *testing.T) {
 	})
 }
 
-func TestClientInvocationAfterShutdown(t *testing.T) {
+func clientInvocationAfterShutdownTest(t *testing.T) {
+	t.Parallel()
 	clientTester(t, func(t *testing.T, smart bool) {
-		tc := it.StartNewClusterWithOptions("invocation-after-shutdown", 43701, it.MemberCount())
+		tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), it.MemberCount())
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		if it.TraceLoggingEnabled() {
@@ -756,10 +988,11 @@ func TestClientInvocationAfterShutdown(t *testing.T) {
 	})
 }
 
-func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
+func clientClusterShutdownThenCheckOperationsNotHangingTest(t *testing.T) {
+	t.Parallel()
 	clientTester(t, func(t *testing.T, smart bool) {
-		cn := fmt.Sprintf("invocation-after-shutdown-2-%t", smart)
-		tc := it.StartNewClusterWithOptions(cn, 44701, it.MemberCount())
+		cn := fmt.Sprintf("%s-%t", t.Name(), smart)
+		tc := it.StartNewClusterWithOptions(cn, it.NextPort(), it.MemberCount())
 		defer tc.Shutdown()
 		config := tc.DefaultConfig()
 		cc := &config.Cluster
@@ -803,11 +1036,68 @@ func TestClusterShutdownThenCheckOperationsNotHanging(t *testing.T) {
 	})
 }
 
-func TestClientStartShutdownWithNilContext(t *testing.T) {
-	tc := it.StartNewClusterWithOptions("nil-context-cluster", 45701, 1)
+func clientStartShutdownWithNilContextTest(t *testing.T) {
+	t.Parallel()
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
 	defer tc.Shutdown()
 	client := it.MustClient(hz.StartNewClientWithConfig(nil, tc.DefaultConfig()))
 	it.Must(client.Shutdown(nil))
+}
+
+func clusterConnectionToMultipleAddrsTest(t *testing.T) {
+	ctx := context.Background()
+	t.Parallel()
+	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
+	defer tc.Shutdown()
+	mem, err := tc.RC.StartMember(ctx, tc.ClusterID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tc.MemberUUIDs = append(tc.MemberUUIDs, mem.UUID)
+	config := tc.DefaultConfig()
+	testCases := []struct {
+		name      string
+		addresses []string
+		expectErr bool
+	}{
+		{
+			name: "two valid seed addresses",
+			addresses: []string{
+				fmt.Sprintf("localhost:%d", tc.Port),
+				fmt.Sprintf("localhost:%d", mem.Port),
+			},
+		},
+		{
+			name: "first addr valid, second is invalid",
+			addresses: []string{
+				fmt.Sprintf("localhost:%d", tc.Port),
+				"non-existent.non-existent:1234",
+			},
+		},
+		{
+			name: "all addresses are invalid",
+			addresses: []string{
+				"non-existent.non-existent:123",
+				"non-existent.non-existent:1234",
+			},
+			expectErr: true,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			defer cancel()
+			configCopy := config
+			configCopy.Cluster.Network.SetAddresses(tc.addresses...)
+			client, err := hz.StartNewClientWithConfig(ctx, configCopy)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			it.Must(client.Shutdown(nil))
+		})
+	}
 }
 
 func clientTester(t *testing.T, f func(*testing.T, bool)) {

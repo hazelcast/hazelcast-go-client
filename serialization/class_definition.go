@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ type ClassDefinition struct {
 	Version   int32
 }
 
+// NewClassDefinition creates a new class definition for Portable.
+// For non-versioned portables, version must be sent as zero which is default version in serialization service.
 func NewClassDefinition(factoryID int32, classID int32, version int32) *ClassDefinition {
 	return &ClassDefinition{
 		FactoryID: factoryID,

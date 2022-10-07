@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -103,8 +103,8 @@ func (b *Config) SetPortableFactories(factories ...PortableFactory) {
 	b.portableFactories = append(b.portableFactories, factories...)
 }
 
-// PortableFactories returns a copy of portable factories
-// portable factories is a map of factory IDs and corresponding Portable factories.
+// PortableFactories returns a copy of portable factories.
+// Portable factories is a map of factory IDs and corresponding Portable factories.
 func (b *Config) PortableFactories() []PortableFactory {
 	fs := make([]PortableFactory, len(b.portableFactories))
 	copy(fs, b.portableFactories)
@@ -133,7 +133,7 @@ func (b *Config) CustomSerializers() map[reflect.Type]Serializer {
 	return sers
 }
 
-// SetClassDefinitions adds zore or more class definitions for portable factories.
+// SetClassDefinitions adds zero or more class definitions for portable factories.
 func (b *Config) SetClassDefinitions(definitions ...*ClassDefinition) {
 	b.classDefinitions = append(b.classDefinitions, definitions...)
 }

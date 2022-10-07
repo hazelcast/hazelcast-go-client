@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net"
 	"os"
 	"reflect"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -51,12 +54,17 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultPort = 7701
 const DefaultClusterName = "integration-test"
 
-var rc *RemoteControllerClient
+var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
-var defaultTestCluster *TestCluster
+var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
+	port := NextPort()
+	if SSLEnabled() {
+		return rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
+	}
+	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
+})
 var idGen = proxy.ReferenceIDGenerator{}
 
 func init() {
@@ -74,7 +82,8 @@ func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		config := defaultTestCluster.DefaultConfig()
+		cls := defaultTestCluster.Launch(t)
+		config := cls.DefaultConfig()
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
@@ -160,7 +169,7 @@ func (f SamplePortableFactory) FactoryID() int32 {
 	return SamplePortableFactoryID
 }
 
-// Must panics if err is not nil
+// Must panics if err is not nil.
 func Must(err error) {
 	if err != nil {
 		panic(err)
@@ -230,7 +239,7 @@ func SSLEnabled() bool {
 func HzVersion() string {
 	version := os.Getenv(EnvHzVersion)
 	if version == "" {
-		version = "4.2"
+		version = "5.1"
 	}
 	return version
 }
@@ -246,8 +255,8 @@ func MemberCount() int {
 	return 1
 }
 
-func CreateDefaultRemoteController() *RemoteControllerClient {
-	return CreateRemoteController("localhost:9701")
+func CreateDefaultRemoteController() *RemoteControllerClientWrapper {
+	return newRemoteControllerClientWrapper(CreateRemoteController("localhost:9701"))
 }
 
 func CreateRemoteController(addr string) *RemoteControllerClient {
@@ -260,7 +269,7 @@ func CreateRemoteController(addr string) *RemoteControllerClient {
 	return rc
 }
 
-func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
+func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWrapper {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
@@ -271,25 +280,7 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClient {
 			panic("remote controller not accesible")
 		}
 	}
-	if launchDefaultCluster && defaultTestCluster == nil {
-		if SSLEnabled() {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlSSLConfig(DefaultClusterName, DefaultPort), DefaultPort)
-		} else {
-			defaultTestCluster = startNewCluster(rc, MemberCount(), xmlConfig(DefaultClusterName, DefaultPort), DefaultPort)
-		}
-	}
 	return rc
-}
-
-type TestCluster struct {
-	RC          *RemoteControllerClient
-	ClusterID   string
-	MemberUUIDs []string
-	Port        int
-}
-
-func StartNewCluster(memberCount int) *TestCluster {
-	return StartNewClusterWithOptions(DefaultClusterName, DefaultPort, memberCount)
 }
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
@@ -298,30 +289,86 @@ func StartNewClusterWithOptions(clusterName string, port, memberCount int) *Test
 	if SSLEnabled() {
 		config = xmlSSLConfig(clusterName, port)
 	}
-	return startNewCluster(rc, memberCount, config, port)
+	return rc.startNewCluster(memberCount, config, port)
 }
 
 func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
 	ensureRemoteController(false)
-	return startNewCluster(rc, memberCount, config, port)
+	return rc.startNewCluster(memberCount, config, port)
 }
 
-func startNewCluster(rc *RemoteControllerClient, memberCount int, config string, port int) *TestCluster {
-	cluster := MustValue(rc.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
+type RemoteControllerClientWrapper struct {
+	mu *sync.Mutex
+	rc *RemoteControllerClient
+}
+
+func newRemoteControllerClientWrapper(rc *RemoteControllerClient) *RemoteControllerClientWrapper {
+	return &RemoteControllerClientWrapper{
+		mu: &sync.Mutex{},
+		rc: rc,
+	}
+}
+
+func (rcw *RemoteControllerClientWrapper) startNewCluster(memberCount int, config string, port int) *TestCluster {
+	cluster := MustValue(rcw.CreateClusterKeepClusterName(context.Background(), HzVersion(), config)).(*Cluster)
 	memberUUIDs := make([]string, 0, memberCount)
 	for i := 0; i < memberCount; i++ {
-		member := MustValue(rc.StartMember(context.Background(), cluster.ID)).(*Member)
+		member := MustValue(rcw.StartMember(context.Background(), cluster.ID)).(*Member)
 		memberUUIDs = append(memberUUIDs, member.UUID)
 	}
 	return &TestCluster{
-		RC:          rc,
+		RC:          rcw,
 		ClusterID:   cluster.ID,
 		MemberUUIDs: memberUUIDs,
 		Port:        port,
 	}
 }
 
+func (rcw *RemoteControllerClientWrapper) StartMember(ctx context.Context, clusterID string) (*Member, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.StartMember(ctx, clusterID)
+}
+
+func (rcw *RemoteControllerClientWrapper) Ping(ctx context.Context) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.Ping(ctx)
+}
+
+func (rcw *RemoteControllerClientWrapper) CreateClusterKeepClusterName(ctx context.Context, hzVersion string, xmlconfig string) (*Cluster, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.CreateClusterKeepClusterName(ctx, hzVersion, xmlconfig)
+}
+
+func (rcw *RemoteControllerClientWrapper) ShutdownMember(ctx context.Context, clusterID string, memberID string) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.ShutdownMember(ctx, clusterID, memberID)
+}
+
+func (rcw *RemoteControllerClientWrapper) TerminateMember(ctx context.Context, clusterID string, memberID string) (bool, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.TerminateMember(ctx, clusterID, memberID)
+}
+
+func (rcw *RemoteControllerClientWrapper) ExecuteOnController(ctx context.Context, clusterID string, script string, lang Lang) (*Response, error) {
+	rcw.mu.Lock()
+	defer rcw.mu.Unlock()
+	return rcw.rc.ExecuteOnController(ctx, clusterID, script, lang)
+}
+
+type TestCluster struct {
+	RC          *RemoteControllerClientWrapper
+	ClusterID   string
+	MemberUUIDs []string
+	Port        int
+}
+
 func (c TestCluster) Shutdown() {
+	// TODO: add Terminate method.
 	for _, memberUUID := range c.MemberUUIDs {
 		c.RC.ShutdownMember(context.Background(), c.ClusterID, memberUUID)
 	}
@@ -341,6 +388,16 @@ func (c TestCluster) DefaultConfig() hz.Config {
 	return config
 }
 
+func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
+	config := hz.Config{}
+	config.Cluster.Name = c.ClusterID
+	config.Cluster.Network.SetAddresses(fmt.Sprintf("localhost:%d", c.Port))
+	if TraceLoggingEnabled() {
+		config.Logger.Level = logger.TraceLevel
+	}
+	return config
+}
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -352,6 +409,16 @@ func xmlConfig(clusterName string, port int) string {
                <port>%d</port>
             </network>
 			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<map name="test-map-smart">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<map name="test-map-unisocket">
 				<map-store enabled="true">
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
@@ -402,6 +469,47 @@ func xmlSSLConfig(clusterName string, port int) string {
 			`, clusterName, port)
 }
 
+func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config
+           http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+			<cluster-name>%s</cluster-name>
+			<network>
+				<port>%d</port>
+				<ssl enabled="true">
+					<factory-class-name>
+						com.hazelcast.nio.ssl.ClasspathSSLContextFactory
+					</factory-class-name>
+					<properties>
+						<property name="keyStore">com/hazelcast/nio/ssl-mutual-auth/server1.keystore</property>
+						<property name="keyStorePassword">password</property>
+						<property name="trustStore">com/hazelcast/nio/ssl-mutual-auth/server1_knows_client1/server1.truststore
+						</property>
+						<property name="trustStorePassword">password</property>
+						<property name="trustManagerAlgorithm">SunX509</property>
+						<property name="javax.net.ssl.mutualAuthentication">REQUIRED</property>
+						<property name="keyManagerAlgorithm">SunX509</property>
+						<property name="protocol">TLSv1.2</property>
+					</properties>
+				</ssl>
+			</network>
+			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
+		</hazelcast>
+			`, clusterName, port)
+}
+
 func getLoggerLevel() logger.Level {
 	if TraceLoggingEnabled() {
 		return logger.TraceLevel
@@ -410,7 +518,10 @@ func getLoggerLevel() logger.Level {
 }
 
 func getDefaultClient(config *hz.Config) *hz.Client {
-	config.Logger.Level = getLoggerLevel()
+	lv := getLoggerLevel()
+	if lv == logger.TraceLevel {
+		config.Logger.Level = lv
+	}
 	client, err := hz.StartNewClientWithConfig(context.Background(), *config)
 	if err != nil {
 		panic(err)
@@ -421,14 +532,13 @@ func getDefaultClient(config *hz.Config) *hz.Client {
 // Eventually asserts that given condition will be met in 2 minutes,
 // checking target function every 200 milliseconds.
 func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
-	if !assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs) {
+	if !assert.Eventually(t, condition, time.Minute*2, time.Millisecond*200, msgAndArgs...) {
 		t.FailNow()
 	}
 }
 
 // Never asserts that the given condition doesn't satisfy in 3 seconds,
 // checking target function every 200 milliseconds.
-//
 func Never(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
 	if !assert.Never(t, condition, time.Second*3, time.Millisecond*200, msgAndArgs) {
 		t.FailNow()
@@ -457,4 +567,88 @@ func WaitEventuallyWithTimeout(t *testing.T, wg *sync.WaitGroup, timeout time.Du
 	case <-timer.C:
 		t.FailNow()
 	}
+}
+
+func EqualStringContent(b1, b2 []byte) bool {
+	s1 := sortedString(b1)
+	s2 := sortedString(b2)
+	return s1 == s2
+}
+
+func sortedString(b []byte) string {
+	bc := make([]byte, len(b))
+	copy(bc, b)
+	sort.Slice(bc, func(i, j int) bool {
+		return bc[i] < bc[j]
+	})
+	s := strings.ReplaceAll(string(bc), " ", "")
+	s = strings.ReplaceAll(s, "\t", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
+}
+
+var nextPort int32 = 10000
+
+func NextPort() int {
+	// let minimum step be 10, just a round, safe value.
+	// note that some tests may not use the MemberCount() function for the cluster size.
+	const maxStep = 10
+	step := MemberCount()
+	if step < maxStep {
+		step = maxStep
+	}
+nextblock:
+	for {
+		start := int(atomic.AddInt32(&nextPort, int32(step))) - step
+		// check that all ports in the range are open
+		for port := start; port < start+step; port++ {
+			if !isPortOpen(port) {
+				// ignoring the error from fmt.Fprintf, not useful in this case.
+				_, _ = fmt.Fprintf(os.Stderr, "it.NextPort: %d is not open, skipping the block: [%d:%d]\n", port, start, start+step)
+				continue nextblock
+			}
+		}
+		return start
+	}
+}
+
+func isPortOpen(port int) bool {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 10*time.Millisecond)
+	if err != nil {
+		return true
+	}
+	// ignoring the error from conn.Close, since there's nothing useful to do with it.
+	_ = conn.Close()
+	return false
+}
+
+type SingletonTestCluster struct {
+	mu       *sync.Mutex
+	cls      *TestCluster
+	launcher func() *TestCluster
+	name     string
+}
+
+func NewSingletonTestCluster(name string, launcher func() *TestCluster) *SingletonTestCluster {
+	return &SingletonTestCluster{
+		name:     name,
+		mu:       &sync.Mutex{},
+		launcher: launcher,
+	}
+}
+
+type testLogger interface {
+	Logf(format string, args ...interface{})
+}
+
+func (c *SingletonTestCluster) Launch(t testLogger) *TestCluster {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cls != nil {
+		return c.cls
+	}
+	t.Logf("Launching the auto-shutdown test cluster: %s", c.name)
+	c.cls = c.launcher()
+	return c.cls
 }

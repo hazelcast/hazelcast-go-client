@@ -7,13 +7,14 @@ jobs:
   test_client:
     runs-on: ${{ matrix.os }}
     name: Run tests of master on ${{ matrix.os }} with Go ${{ matrix.go_version }}
+    if: github.repository == 'hazelcast/hazelcast-go-client'
     strategy:
         matrix:
             os: [ ubuntu-latest ]
-            go_version: [ 1.17, 1.18 ]
+            go_version: [ 1.17, 1.18, 1.19 ]
         fail-fast: false
-    steps:     
-    
+    steps:
+
       - name: Setup Java
         uses: actions/setup-java@v1
         with:
@@ -34,4 +35,5 @@ jobs:
           MEMBER_COUNT: 3
         run: |
           ./rc.sh start
+          go mod tidy
           make test-cover

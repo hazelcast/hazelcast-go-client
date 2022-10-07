@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,6 @@ type Connection struct {
 	endpoint                  atomic.Value
 	logger                    logger.LogAdaptor
 	lastRead                  atomic.Value
-	clusterConfig             *pubcluster.Config
 	eventDispatcher           *event.DispatchService
 	pending                   chan invocation.Invocation
 	invocationService         *invocation.Service
@@ -102,26 +101,27 @@ func (c *Connection) setMemberUUID(uuid types.UUID) {
 	c.memberUUID.Store(uuid)
 }
 
-func (c *Connection) start(clusterCfg *pubcluster.Config, addr pubcluster.Address) error {
-	if socket, err := c.createSocket(clusterCfg, addr); err != nil {
+func (c *Connection) start(networkCfg *pubcluster.NetworkConfig, addr pubcluster.Address) error {
+	socket, err := c.createSocket(networkCfg, addr)
+	if err != nil {
 		return err
-	} else {
-		c.SetEndpoint(addr)
-		c.socket = socket
-		c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
-		c.lastWrite.Store(time.Time{})
-		c.closedTime.Store(time.Time{})
-		c.lastRead.Store(time.Now())
-		if err = c.sendProtocolStarter(); err != nil {
-			// ignoring the socket close error
-			_ = c.socket.Close()
-			c.socket = nil
-			return err
-		}
-		go c.socketReadLoop()
-		go c.socketWriteLoop()
-		return nil
 	}
+	c.SetEndpoint(addr)
+	c.socket = socket
+	c.bWriter = bufio.NewWriterSize(socket, writeBufferSize)
+	c.lastWrite.Store(time.Time{})
+	c.closedTime.Store(time.Time{})
+	c.lastRead.Store(time.Now())
+	if err = c.sendProtocolStarter(); err != nil {
+		// ignoring the socket close error
+		_ = c.socket.Close()
+		c.socket = nil
+		return err
+	}
+	go c.socketReadLoop()
+	go c.socketWriteLoop()
+	return nil
+
 }
 
 func (c *Connection) sendProtocolStarter() error {
@@ -129,18 +129,18 @@ func (c *Connection) sendProtocolStarter() error {
 	return err
 }
 
-func (c *Connection) createSocket(clusterCfg *pubcluster.Config, address pubcluster.Address) (net.Conn, error) {
-	conTimeout := positiveDurationOrMax(time.Duration(clusterCfg.Network.ConnectionTimeout))
+func (c *Connection) createSocket(networkCfg *pubcluster.NetworkConfig, address pubcluster.Address) (net.Conn, error) {
+	conTimeout := positiveDurationOrMax(time.Duration(networkCfg.ConnectionTimeout))
 	if socket, err := c.dialToAddressWithTimeout(address, conTimeout); err != nil {
 		return nil, err
 	} else {
-		if !c.clusterConfig.Network.SSL.Enabled {
+		if !networkCfg.SSL.Enabled {
 			return socket, err
 		}
 		c.logger.Debug(func() string {
 			return fmt.Sprintf("%d: SSL is enabled for connection", c.connectionID)
 		})
-		tlsCon := tls.Client(socket, c.clusterConfig.Network.SSL.TLSConfig())
+		tlsCon := tls.Client(socket, networkCfg.SSL.TLSConfig())
 		if err = tlsCon.Handshake(); err != nil {
 			return nil, err
 		}

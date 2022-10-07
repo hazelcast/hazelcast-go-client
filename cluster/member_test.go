@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package cluster_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,6 +64,27 @@ func TestMemberInfo_PublicAddress(t *testing.T) {
 			addr, ok := tc.M.PublicAddress()
 			assert.Equal(t, tc.Ok, ok)
 			assert.Equal(t, tc.A, addr)
+			assert.Equal(t, tc.M.String(), fmt.Sprintf("%s:%s", tc.M.Address, tc.M.UUID))
+		})
+	}
+}
+
+func TestEndpointQualifierType_String(t *testing.T) {
+	testCases := []struct {
+		info          string
+		want          string
+		qualifierType cluster.EndpointQualifierType
+	}{
+		{info: "EndpointQualifierTypeMember", want: "member", qualifierType: cluster.EndpointQualifierTypeMember},
+		{info: "EndpointQualifierTypeClient", want: "client", qualifierType: cluster.EndpointQualifierTypeClient},
+		{info: "EndpointQualifierTypeWan", want: "wan", qualifierType: cluster.EndpointQualifierTypeWan},
+		{info: "EndpointQualifierTypeRest", want: "rest", qualifierType: cluster.EndpointQualifierTypeRest},
+		{info: "EndpointQualifierTypeMemCache", want: "memcache", qualifierType: cluster.EndpointQualifierTypeMemCache},
+		{info: "UNKNOWN EndpointQualifierType", want: "UNKNOWN", qualifierType: cluster.EndpointQualifierTypeMemCache + 1},
+	}
+	for _, qt := range testCases {
+		t.Run(qt.info, func(t *testing.T) {
+			assert.Equal(t, qt.qualifierType.String(), qt.want)
 		})
 	}
 }

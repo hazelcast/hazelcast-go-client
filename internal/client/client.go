@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,8 @@ const (
 	Stopped
 )
 
+var handleClusterEventSubID = event.NextSubscriptionID()
+
 type Config struct {
 	Name          string
 	Cluster       *cluster.Config
@@ -86,22 +88,36 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+type shutdownHandler func(context.Context)
+
 type Client struct {
-	InvocationHandler    invocation.Handler
-	Logger               ilogger.LogAdaptor
-	ConnectionManager    *icluster.ConnectionManager
-	ClusterService       *icluster.Service
-	PartitionService     *icluster.PartitionService
-	ViewListenerService  *icluster.ViewListenerService
-	InvocationService    *invocation.Service
-	InvocationFactory    *icluster.ConnectionInvocationFactory
-	SerializationService *serialization.Service
-	EventDispatcher      *event.DispatchService
-	statsService         *stats.Service
-	heartbeatService     *icluster.HeartbeatService
-	clusterConfig        *cluster.Config
-	name                 string
-	state                int32
+	InvocationHandler      invocation.Handler
+	Logger                 ilogger.LogAdaptor
+	ConnectionManager      *icluster.ConnectionManager
+	ViewListenerService    *icluster.ViewListenerService
+	InvocationService      *invocation.Service
+	InvocationFactory      *icluster.ConnectionInvocationFactory
+	SerializationService   *serialization.Service
+	EventDispatcher        *event.DispatchService
+	StatsService           *stats.Service
+	heartbeatService       *icluster.HeartbeatService
+	clusterConfig          *cluster.Config
+	PartitionService       *icluster.PartitionService
+	ClusterService         *icluster.Service
+	name                   string
+	beforeShutdownHandlers []shutdownHandler
+	afterShutdownHandlers  []shutdownHandler
+	state                  int32
+}
+
+func (c *Client) AddBeforeShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.beforeShutdownHandlers = append(c.beforeShutdownHandlers, handler)
+}
+
+func (c *Client) AddAfterShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.afterShutdownHandlers = append(c.afterShutdownHandlers, handler)
 }
 
 func New(config *Config) (*Client, error) {
@@ -152,10 +168,10 @@ func (c *Client) Start(ctx context.Context) error {
 		return err
 	}
 	c.heartbeatService.Start()
-	if c.statsService != nil {
-		c.statsService.Start()
+	if c.StatsService != nil {
+		c.StatsService.Start()
 	}
-	c.EventDispatcher.Subscribe(icluster.EventCluster, event.MakeSubscriptionID(c.handleClusterEvent), c.handleClusterEvent)
+	c.EventDispatcher.Subscribe(icluster.EventCluster, handleClusterEventSubID, c.handleClusterEvent)
 	atomic.StoreInt32(&c.state, Ready)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateStarted))
 	return nil
@@ -169,12 +185,20 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	// execute registered shutdown handlers
+	for _, f := range c.beforeShutdownHandlers {
+		f(ctx)
+	}
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
 	c.ConnectionManager.Stop()
-	if c.statsService != nil {
-		c.statsService.Stop()
+	if c.StatsService != nil {
+		c.StatsService.Stop()
+	}
+	// execute registered shutdown handlers
+	for _, f := range c.afterShutdownHandlers {
+		f(ctx)
 	}
 	atomic.StoreInt32(&c.state, Stopped)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShutDown))
@@ -234,15 +258,18 @@ func (c *Client) createComponents(config *Config) {
 		Config:            config.Cluster,
 	})
 	invocationService := invocation.NewService(invocationHandler, c.EventDispatcher, c.Logger)
-	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger)
+	iv := time.Duration(c.clusterConfig.HeartbeatInterval)
+	it := time.Duration(c.clusterConfig.HeartbeatTimeout)
+	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger, iv, it)
 	if config.StatsEnabled {
-		c.statsService = stats.NewService(
+		c.StatsService = stats.NewService(
 			invocationService,
 			c.InvocationFactory,
 			c.EventDispatcher,
 			c.Logger,
 			config.StatsPeriod,
-			c.name)
+			c.name,
+		)
 	}
 	c.ConnectionManager = connectionManager
 	c.ClusterService = clusterService
