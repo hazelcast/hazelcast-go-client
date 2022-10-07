@@ -43,7 +43,8 @@ func RingbufferTesterWithConfigAndName(t *testing.T, ringBufferName func() strin
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		config := defaultTestCluster.DefaultConfig()
+		cls := defaultTestCluster.Launch(t)
+		config := cls.DefaultConfig()
 		if cbCallback != nil {
 			cbCallback(&config)
 		}
