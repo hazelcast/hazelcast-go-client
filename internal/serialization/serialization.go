@@ -62,8 +62,8 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 }
 
 // Used in tests
-func (s *Service) SetSchemaService(ss SchemaService) {
-	s.compactSerializer.ss = &ss
+func (s *Service) SetSchemaService(ss *SchemaService) {
+	s.compactSerializer.ss = ss
 }
 
 // ToData serializes an object to a Data.
