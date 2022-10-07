@@ -61,6 +61,11 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 	return s, nil
 }
 
+// Used in tests
+func (s *Service) SetSchemaService(ss SchemaService) {
+	s.compactSerializer.ss = &ss
+}
+
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
