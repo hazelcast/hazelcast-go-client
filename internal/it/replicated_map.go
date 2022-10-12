@@ -41,7 +41,7 @@ func ReplicatedMapTesterWithConfigAndName(t *testing.T, makeMapName func() strin
 		client *hz.Client
 		m      *hz.ReplicatedMap
 	)
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")

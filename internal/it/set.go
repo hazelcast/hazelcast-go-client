@@ -41,7 +41,7 @@ func SetTesterWithConfigAndName(t *testing.T, makeName func() string, configCall
 		client *hz.Client
 		s      *hz.Set
 	)
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")

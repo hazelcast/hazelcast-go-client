@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -179,7 +180,8 @@ func (rb *Ringbuffer) Capacity(ctx context.Context) (int64, error) {
 	return rb.capacity, nil
 }
 
-// Size returns number of items in the Ringbuffer. If no ttl is set, the size will always be equal to capacity after the
+// Size returns number of items in the Ringbuffer.
+// If no ttl is set, the size will always be equal to capacity after the
 // head completed the first loop-around the ring. This is because no items are getting retired.
 func (rb *Ringbuffer) Size(ctx context.Context) (int64, error) {
 	request := codec.EncodeRingbufferSizeRequest(rb.name)
@@ -228,11 +230,17 @@ func (rb *Ringbuffer) RemainingCapacity(ctx context.Context) (int64, error) {
 // ReadMany
 // Reads a batch of items from the Ringbuffer. If the number of available items after the first read item is smaller
 // than the maxCount, these items are returned. So it could be the number of items read is smaller than the maxCount.
-// If there are fewer items available than minCount, then this call blacks. Reading a batch of items is likely to
+// If there are fewer items available than minCount, then this call blacks. These blocking calls consume server memory
+// and if there are many calls, it can be possible to see leaking memory or OOME.Reading a batch of items is likely to
 // perform better because less overhead is involved. A filter can be provided to only select items that need to be read.
 // If the filter is nil, all items are read. If the filter is not null, only items where the filter function returns
 // true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
 // This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
+// If the startSequence is smaller than the smallest sequence still available in the Ringbuffer (HeadSequence}, then the smallest
+// available sequence will be used as the start sequence and the minimum/maximum number of items will be attempted to be read from there on.
+// If the startSequence is bigger than the last available sequence in the Ringbuffer (TailSequence), then the last available sequence
+// plus one will be used as the start sequence and the call will block until further items become available and it can read at least the
+// minimum number of items.
 func (rb *Ringbuffer) ReadMany(ctx context.Context, startSequence int64, minCount int32, maxCount int32, filter interface{}) (ReadResultSet, error) {
 	if startSequence < 0 {
 		return ReadResultSet{}, ihzerrors.NewIllegalArgumentError("startSequence can't be smaller then 0", nil)

@@ -23,7 +23,7 @@ import (
 )
 
 func SerializationTester(t *testing.T, f func(t *testing.T, config hazelcast.Config, clusterID, mapName string)) {
-	ensureRemoteController(true)
+	ensureRemoteController()
 	mapName := NewUniqueObjectName("map")
 	cls := defaultTestCluster.Launch(t)
 	config := cls.DefaultConfig()

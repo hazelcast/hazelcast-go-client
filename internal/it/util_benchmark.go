@@ -36,7 +36,7 @@ func Benchmarker(b *testing.B, f func(b *testing.B, config *hz.Config)) {
 }
 
 func BenchmarkerWithConfigBuilder(b *testing.B, configCallback func(*hz.Config), f func(b *testing.B, config *hz.Config)) {
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(b *testing.B, smart bool) {
 		cls := defaultTestCluster.Launch(b)
 		config := cls.DefaultConfig()
@@ -79,7 +79,7 @@ func MapBenchmarkerWithConfigAndName(b *testing.B, makeMapName func() string, cb
 		client *hz.Client
 		m      *hz.Map
 	)
-	ensureRemoteController(true)
+	ensureRemoteController()
 	warmups := warmupCount()
 	if warmups > 0 {
 		b.Logf("Warmups: %d", warmups)

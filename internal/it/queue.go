@@ -37,7 +37,7 @@ func QueueTesterWithConfigAndName(t *testing.T, queueName func() string, configC
 		client *hz.Client
 		q      *hz.Queue
 	)
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")

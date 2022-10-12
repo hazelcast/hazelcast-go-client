@@ -37,7 +37,7 @@ func RingbufferTesterWithConfigAndName(t *testing.T, ringBufferName func() strin
 		client *hz.Client
 		rb     *hz.Ringbuffer
 	)
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")

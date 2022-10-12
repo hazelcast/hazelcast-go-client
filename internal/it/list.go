@@ -37,7 +37,7 @@ func ListTesterWithConfigAndName(t *testing.T, listName func() string, cbCallbac
 		client *hz.Client
 		l      *hz.List
 	)
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")

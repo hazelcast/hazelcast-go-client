@@ -49,7 +49,7 @@ func (tcx MapTestContext) Properties() []string {
 }
 
 func (tcx MapTestContext) Tester(f func(MapTestContext)) {
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(tcx MapTestContext) {
 		if tcx.NameMaker == nil {
 			tcx.NameMaker = func(labels ...string) string {

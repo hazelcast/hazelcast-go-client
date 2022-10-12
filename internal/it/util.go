@@ -76,7 +76,7 @@ func Tester(t *testing.T, f func(t *testing.T, client *hz.Client)) {
 }
 
 func TesterWithConfigBuilder(t *testing.T, cbCallback func(config *hz.Config), f func(t *testing.T, client *hz.Client)) {
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
 		if LeakCheckEnabled() {
 			t.Logf("enabled leak check")
@@ -269,7 +269,7 @@ func CreateRemoteController(addr string) *RemoteControllerClient {
 	return rc
 }
 
-func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWrapper {
+func ensureRemoteController() *RemoteControllerClientWrapper {
 	rcMu.Lock()
 	defer rcMu.Unlock()
 	if rc == nil {
@@ -284,7 +284,7 @@ func ensureRemoteController(launchDefaultCluster bool) *RemoteControllerClientWr
 }
 
 func StartNewClusterWithOptions(clusterName string, port, memberCount int) *TestCluster {
-	ensureRemoteController(false)
+	ensureRemoteController()
 	config := xmlConfig(clusterName, port)
 	if SSLEnabled() {
 		config = xmlSSLConfig(clusterName, port)
@@ -293,7 +293,7 @@ func StartNewClusterWithOptions(clusterName string, port, memberCount int) *Test
 }
 
 func StartNewClusterWithConfig(memberCount int, config string, port int) *TestCluster {
-	ensureRemoteController(false)
+	ensureRemoteController()
 	return rc.startNewCluster(memberCount, config, port)
 }
 
@@ -398,6 +398,8 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
+const RingbufferCapacity = 10
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -429,8 +431,11 @@ func xmlConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
         </hazelcast>
-	`, clusterName, port)
+	`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLConfig(clusterName string, port int) string {
@@ -465,8 +470,11 @@ func xmlSSLConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
 		</hazelcast>
-			`, clusterName, port)
+			`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {

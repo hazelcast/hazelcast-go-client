@@ -39,7 +39,7 @@ func PNCounterTesterWithConfigAndName(t *testing.T, makeName func() string, conf
 		client *hz.Client
 		pn     *hz.PNCounter
 	)
-	ensureRemoteController(true)
+	ensureRemoteController()
 	runner := func(t *testing.T, smart bool) {
 		cls := defaultTestCluster.Launch(t)
 		config := cls.DefaultConfig()
