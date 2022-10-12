@@ -54,20 +54,17 @@ func main() {
 	item, err := rb.ReadOne(ctx, sequence)
 	if err != nil {
 		// example of validating for stale items
-		if errors.Is(err, hzerrors.ErrStaleSequence) {
-			log.Printf("The item with the sequence number = %d is no longer in the Ringbuffer", sequence)
-		} else {
-			log.Fatal(err)
+		if !errors.Is(err, hzerrors.ErrStaleSequence) {
+			panic(err)
 		}
+		log.Printf("The item with the sequence number = %d is no longer in the Ringbuffer", sequence)
 	}
 	fmt.Println(item)
 	printRingbufferStats(rb, ctx)
 	// Example adding and reading multiple items
 	// Add an item to the Ringbuffer
 	lastSequence, err := rb.AddAll(ctx, hazelcast.OverflowPolicyOverwrite, "One", "Two", "Three")
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 	fmt.Printf("Added 3 items, and the last item's sequence number=%d\n", lastSequence)
 	printRingbufferStats(rb, ctx)
 	// Good practice to define explicit timeouts for larger readings
@@ -115,6 +112,6 @@ func printRingbufferStats(rb *hazelcast.Ringbuffer, ctx context.Context) {
 
 func handleError(err error) {
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
