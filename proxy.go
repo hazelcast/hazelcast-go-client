@@ -440,6 +440,10 @@ func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) e
 	return p.invocationService.SendRequest(ctx, inv)
 }
 
+func (p *proxy) Name() string {
+	return p.name
+}
+
 type entryNotifiedHandler func(
 	binKey, binValue, binOldValue, binMergingValue iserialization.Data,
 	binEventType int32,
