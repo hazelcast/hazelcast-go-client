@@ -18,12 +18,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 
 	"github.com/hazelcast/hazelcast-go-client"
 )
@@ -32,41 +34,39 @@ func main() {
 	// Start the client with defaults
 	ctx := context.TODO()
 	client, err := hazelcast.StartNewClient(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
+	// Shutdown client
+	defer client.Shutdown(ctx)
 	// Get a random Ringbuffer
 	rand.Seed(time.Now().Unix())
-	queueName := fmt.Sprintf("sample-%d", rand.Int())
-	rb, err := client.GetRingbuffer(ctx, queueName)
-	if err != nil {
-		log.Fatal(err)
-	}
+	rbName := fmt.Sprintf("sample-%d", rand.Int())
+	rb, err := client.GetRingbuffer(ctx, rbName)
+	handleError(err)
+	defer rb.Destroy(ctx)
+	printRingbufferStats(rb, ctx)
 	// Example adding and retrieving single items
 	// Add an item to the Ringbuffer
 	sequence, err := rb.Add(ctx, "item 1", hazelcast.OverflowPolicyOverwrite)
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 	fmt.Printf("Added item 1 with sequence number=%d\n", sequence)
+	printRingbufferStats(rb, ctx)
 	// Get an item by a known sequence number
 	item, err := rb.ReadOne(ctx, sequence)
 	if err != nil {
 		// example of validating for stale items
-		if errors.Is(err, hzerrors.ErrStaleSequence) {
-			log.Printf("The item with the sequence number = %d is no longer in the Ringbuffer", sequence)
-		} else {
-			log.Fatal(err)
+		if !errors.Is(err, hzerrors.ErrStaleSequence) {
+			panic(err)
 		}
+		log.Printf("The item with the sequence number = %d is no longer in the Ringbuffer", sequence)
 	}
 	fmt.Println(item)
+	printRingbufferStats(rb, ctx)
 	// Example adding and reading multiple items
 	// Add an item to the Ringbuffer
 	lastSequence, err := rb.AddAll(ctx, hazelcast.OverflowPolicyOverwrite, "One", "Two", "Three")
-	if err != nil {
-		log.Fatal(err)
-	}
+	handleError(err)
 	fmt.Printf("Added 3 items, and the last item's sequence number=%d\n", lastSequence)
+	printRingbufferStats(rb, ctx)
 	// Good practice to define explicit timeouts for larger readings
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -82,6 +82,36 @@ func main() {
 		item, _ := resultSet.Get(i)
 		fmt.Println(item)
 	}
-	// Shutdown client
-	client.Shutdown(ctx)
+}
+
+func printRingbufferStats(rb *hazelcast.Ringbuffer, ctx context.Context) {
+	var (
+		err   error
+		stats struct {
+			Size              int64
+			Capacity          int64
+			RemainingCapacity int64
+			HeadSequence      int64
+			TailSequence      int64
+		}
+	)
+	stats.Size, err = rb.Size(ctx)
+	handleError(err)
+	stats.Capacity, err = rb.Capacity(ctx)
+	handleError(err)
+	stats.RemainingCapacity, err = rb.RemainingCapacity(ctx)
+	handleError(err)
+	stats.HeadSequence, err = rb.HeadSequence(ctx)
+	handleError(err)
+	stats.TailSequence, err = rb.TailSequence(ctx)
+	handleError(err)
+	s, err := json.MarshalIndent(stats, "", "  ")
+	handleError(err)
+	fmt.Printf("Ringbuffer %s: %s\n", rb.Name(), s)
+}
+
+func handleError(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
