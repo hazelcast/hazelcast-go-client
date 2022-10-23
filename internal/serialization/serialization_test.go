@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ const (
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	service, err := iserialization.NewService(&serialization.Config{})
+	service, err := iserialization.NewService(&serialization.Config{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 func TestSerializationService_ToData(t *testing.T) {
 	var expected int32 = 5
 	c := &serialization.Config{}
-	service, err := iserialization.NewService(c)
+	service, err := iserialization.NewService(c, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,7 +170,7 @@ func TestCustomSerializer(t *testing.T) {
 	customSerializer := &CustomArtistSerializer{}
 	config := &serialization.Config{}
 	config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
-	service := it.MustValue(iserialization.NewService(config)).(*iserialization.Service)
+	service := it.MustValue(iserialization.NewService(config, nil)).(*iserialization.Service)
 	data := it.MustValue(service.ToData(m)).(iserialization.Data)
 	ret := it.MustValue(service.ToObject(data))
 	data2 := it.MustValue(service.ToData(p)).(iserialization.Data)
@@ -185,7 +185,7 @@ func TestGlobalSerializer(t *testing.T) {
 	obj := &customObject{ID: 10, Person: "Furkan Şenharputlu"}
 	config := &serialization.Config{}
 	config.SetGlobalSerializer(&GlobalSerializer{})
-	service, _ := iserialization.NewService(config)
+	service, _ := iserialization.NewService(config, nil)
 	data, _ := service.ToData(obj)
 	ret, _ := service.ToObject(data)
 
@@ -252,7 +252,7 @@ func TestGobSerializer(t *testing.T) {
 	var strings = []string{w1, w2, w3}
 	expected := &fake2{Bool: aBoolean, B: aByte, C: aChar, D: aDouble, S: aShort, F: aFloat, I: anInt, L: aLong, Str: aString,
 		Bools: bools, Bytes: bytes, Chars: chars, Doubles: doubles, Shorts: shorts, Floats: floats, Ints: ints, Longs: longs, Strings: strings}
-	service, err := iserialization.NewService(&serialization.Config{})
+	service, err := iserialization.NewService(&serialization.Config{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +273,7 @@ func TestGobSerializer(t *testing.T) {
 func TestInt64SerializerWithInt(t *testing.T) {
 	var id = 15
 	config := &serialization.Config{}
-	service := mustSerializationService(iserialization.NewService(config))
+	service := mustSerializationService(iserialization.NewService(config, nil))
 	data := mustData(service.ToData(id))
 	ret := it.MustValue(service.ToObject(data))
 	assert.Equal(t, int64(id), ret)
@@ -282,7 +282,7 @@ func TestInt64SerializerWithInt(t *testing.T) {
 func TestInt64ArraySerializerWithIntArray(t *testing.T) {
 	var ids = []int{15, 10, 20, 12, 35}
 	config := &serialization.Config{}
-	service := mustSerializationService(iserialization.NewService(config))
+	service := mustSerializationService(iserialization.NewService(config, nil))
 	data := mustData(service.ToData(ids))
 	ret := it.MustValue(service.ToObject(data))
 	var ids64 = make([]int64, 5)
@@ -301,7 +301,7 @@ func TestDefaultSerializerWithUInt(t *testing.T) {
 	// This is wrong!
 	var id = uint(15)
 	config := &serialization.Config{}
-	service := mustSerializationService(iserialization.NewService(config))
+	service := mustSerializationService(iserialization.NewService(config, nil))
 	data := mustData(service.ToData(id))
 	ret := it.MustValue(service.ToObject(data))
 	assert.Equal(t, id, ret)
@@ -310,7 +310,7 @@ func TestDefaultSerializerWithUInt(t *testing.T) {
 func TestIntSerializer(t *testing.T) {
 	var id = 15
 	config := &serialization.Config{}
-	service := mustSerializationService(iserialization.NewService(config))
+	service := mustSerializationService(iserialization.NewService(config, nil))
 	data := mustData(service.ToData(id))
 	ret := it.MustValue(service.ToObject(data))
 	assert.Equal(t, int64(id), ret)
@@ -319,7 +319,7 @@ func TestIntSerializer(t *testing.T) {
 func TestSerializeData(t *testing.T) {
 	data := iserialization.Data([]byte{10, 20, 0, 30, 5, 7, 6})
 	config := &serialization.Config{}
-	service := mustSerializationService(iserialization.NewService(config))
+	service := mustSerializationService(iserialization.NewService(config, nil))
 	serializedData, err := service.ToData(data)
 	if err != nil {
 		t.Fatal(err)
@@ -331,7 +331,7 @@ func TestSerializeData(t *testing.T) {
 
 func TestSerializeRune(t *testing.T) {
 	config := &serialization.Config{}
-	ss := mustSerializationService(iserialization.NewService(config))
+	ss := mustSerializationService(iserialization.NewService(config, nil))
 	var target rune = 0x2318
 	data, err := ss.ToData(target)
 	if err != nil {
@@ -345,7 +345,7 @@ func TestSerializeRune(t *testing.T) {
 }
 
 func TestUndefinedDataDeserialization(t *testing.T) {
-	s, _ := iserialization.NewService(&serialization.Config{})
+	s, _ := iserialization.NewService(&serialization.Config{}, nil)
 	dataOutput := iserialization.NewPositionalObjectDataOutput(1, s, !s.SerializationConfig.LittleEndian)
 	dataOutput.WriteInt32(0) // partition
 	dataOutput.WriteInt32(-100)
@@ -369,7 +369,7 @@ func TestWithExplicitSerializer(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
 	obj := EmployeeDTO{age: 30, id: 102310312}
 	data, err := service.ToData(obj)
 	// Ensure that data is serialized as compact
@@ -392,7 +392,7 @@ func TestAllTypesWithCustomSerializer(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
 	mainDTO := NewMainDTO()
 	data, err := service.ToData(mainDTO)
 	if err != nil {
@@ -474,7 +474,7 @@ func TestMissingNestedCompactSerializerPanicsNoSerializerFound(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
 	mainDTO := NewMainDTO()
 	_, err := service.ToData(mainDTO)
 	if err == nil {
@@ -489,7 +489,7 @@ func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
 	mainDTO := NewMainDTO()
 	data, err := service.ToData(mainDTO)
 	if err != nil {
@@ -560,8 +560,8 @@ func TestBits(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
-	service2 := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
+	service2 := mustSerializationService(iserialization.NewService(c, nil))
 	booleans := make([]bool, 8)
 	booleans[0] = true
 	booleans[4] = true
@@ -594,7 +594,7 @@ func TestWithExplicitSerializerNested(t *testing.T) {
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
 	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
 	ids := make([]int64, 2)
 	ids[0] = 22
@@ -630,13 +630,13 @@ func TestWithExplicitSerializerNested(t *testing.T) {
 	}
 }
 func TestSchemaEvolution_fieldAdded(t *testing.T) {
-	schemaService := iserialization.NewSchemaService()
+	schemaService := iserialization.NewSchemaService(nil)
 	compactConfig := serialization.CompactConfig{}
 	compactConfig.SetSerializers(EmployeeDTOCompactSerializerV2{})
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
 	service.SetSchemaService(schemaService)
 	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
 	data := it.MustValue(service.ToData(employeeDTO)).(iserialization.Data)
@@ -645,7 +645,7 @@ func TestSchemaEvolution_fieldAdded(t *testing.T) {
 	c2 := &serialization.Config{
 		Compact: compactConfig2,
 	}
-	service2 := mustSerializationService(iserialization.NewService(c2))
+	service2 := mustSerializationService(iserialization.NewService(c2, nil))
 	service2.SetSchemaService(schemaService)
 	ret := it.MustValue(service2.ToObject(data))
 	returnedEmployeeDTO := ret.(EmployeeDTO)
@@ -653,13 +653,13 @@ func TestSchemaEvolution_fieldAdded(t *testing.T) {
 	assert.Equal(t, employeeDTO.id, returnedEmployeeDTO.id)
 }
 func TestSchemaEvolution_fieldRemoved(t *testing.T) {
-	schemaService := iserialization.NewSchemaService()
+	schemaService := iserialization.NewSchemaService(nil)
 	compactConfig := serialization.CompactConfig{}
 	compactConfig.SetSerializers(EmployeeDTOCompactSerializerV3{})
 	c := &serialization.Config{
 		Compact: compactConfig,
 	}
-	service := mustSerializationService(iserialization.NewService(c))
+	service := mustSerializationService(iserialization.NewService(c, nil))
 	service.SetSchemaService(schemaService)
 	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
 	data := it.MustValue(service.ToData(employeeDTO)).(iserialization.Data)
@@ -668,7 +668,7 @@ func TestSchemaEvolution_fieldRemoved(t *testing.T) {
 	c2 := &serialization.Config{
 		Compact: compactConfig2,
 	}
-	service2 := mustSerializationService(iserialization.NewService(c2))
+	service2 := mustSerializationService(iserialization.NewService(c2, nil))
 	service2.SetSchemaService(schemaService)
 	ret := it.MustValue(service2.ToObject(data))
 	returnedEmployeeDTO := ret.(EmployeeDTO)

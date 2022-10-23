@@ -104,6 +104,7 @@ type Client struct {
 	clusterConfig          *cluster.Config
 	PartitionService       *icluster.PartitionService
 	ClusterService         *icluster.Service
+	Invoker                *Invoker
 	name                   string
 	beforeShutdownHandlers []shutdownHandler
 	afterShutdownHandlers  []shutdownHandler
@@ -120,7 +121,7 @@ func (c *Client) AddAfterShutdownHandler(handler func(ctx context.Context)) {
 	c.afterShutdownHandlers = append(c.afterShutdownHandlers, handler)
 }
 
-func New(config *Config) (*Client, error) {
+func New(config *Config, schemaCh chan serialization.SchemaMsg) (*Client, error) {
 	id := atomic.AddInt32(&nextId, 1)
 	name := config.Name
 	if name == "" {
@@ -130,7 +131,7 @@ func New(config *Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	serService, err := serialization.NewService(config.Serialization)
+	serService, err := serialization.NewService(config.Serialization, schemaCh)
 	if err != nil {
 		return nil, err
 	}
@@ -279,6 +280,7 @@ func (c *Client) createComponents(config *Config) {
 	c.ViewListenerService = viewListener
 	c.ConnectionManager.SetInvocationService(invocationService)
 	c.ClusterService.SetInvocationService(invocationService)
+	c.Invoker = NewInvoker(c.InvocationFactory, c.InvocationService, &c.Logger)
 }
 
 func (c *Client) handleClusterEvent(event event.Event) {

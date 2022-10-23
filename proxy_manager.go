@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -28,30 +29,24 @@ import (
 )
 
 type proxyManager struct {
-	mu              *sync.RWMutex
-	proxies         map[string]interface{}
-	invocationProxy *proxy
-	serviceBundle   creationBundle
-	refIDGenerator  *iproxy.ReferenceIDGenerator
-	ncmDestroyFn    func(service, object string)
+	mu             *sync.RWMutex
+	proxies        map[string]interface{}
+	invoker        *client.Invoker
+	serviceBundle  creationBundle
+	refIDGenerator *iproxy.ReferenceIDGenerator
+	ncmDestroyFn   func(service, object string)
 }
 
 func newProxyManager(bundle creationBundle) *proxyManager {
 	bundle.Check()
-	pm := &proxyManager{
+	return &proxyManager{
 		mu:             &sync.RWMutex{},
 		proxies:        map[string]interface{}{},
 		serviceBundle:  bundle,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
 		ncmDestroyFn:   bundle.NCMDestroyFn,
+		invoker:        bundle.Invoker,
 	}
-	p, err := newProxy(context.Background(), pm.serviceBundle, "", "", pm.refIDGenerator, func(ctx context.Context) bool { return false }, false)
-	if err != nil {
-		// It actually never panics since the proxy is local.
-		panic(err)
-	}
-	pm.invocationProxy = p
-	return pm
 }
 
 func (m *proxyManager) Proxies() map[string]interface{} {
@@ -155,7 +150,7 @@ func (m *proxyManager) getFlakeIDGenerator(ctx context.Context, name string) (*F
 }
 
 func (m *proxyManager) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
-	return m.invocationProxy.invokeOnRandomTarget(ctx, request, handler)
+	return m.invoker.InvokeOnRandomTarget(ctx, request, handler)
 }
 
 func (m *proxyManager) addDistributedObjectEventListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import (
 // See: https://hazelcast.atlassian.net/wiki/spaces/IMDG/pages/1650294837/Hazelcast+Serialization+Improvements
 
 func TestSerializationImprovements_1_UTFString(t *testing.T) {
-	ss := mustSerializationService(iserialization.NewService(&serialization.Config{}))
+	ss := mustSerializationService(iserialization.NewService(&serialization.Config{}, nil))
 	target := "\x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60" // 😭‍😭‍😭
 	data, err := ss.ToData(target)
 	if err != nil {
@@ -48,7 +48,7 @@ func TestSerializationImprovements_1_UTFString(t *testing.T) {
 }
 
 func TestSerializationImprovements_2_StringLength(t *testing.T) {
-	ss := mustSerializationService(iserialization.NewService(&serialization.Config{}))
+	ss := mustSerializationService(iserialization.NewService(&serialization.Config{}, nil))
 	// the following text has 23 bytes but have 8 Unicode runes.
 	text := "\x60\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\xf0\x9f\x98\xad\xe2\x80\x8d\x60"
 	assert.Equal(t, 8, utf8.RuneCountInString(text))
@@ -63,7 +63,7 @@ func TestSerializationImprovements_2_StringLength(t *testing.T) {
 func TestSerializationImprovements_4_UUID(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
-	ss := mustSerializationService(iserialization.NewService(config))
+	ss := mustSerializationService(iserialization.NewService(config, nil))
 	target := types.NewUUIDWith(math.MaxUint64, math.MaxUint64)
 	data, err := ss.ToData(target)
 	if err != nil {
@@ -79,7 +79,7 @@ func TestSerializationImprovements_4_UUID(t *testing.T) {
 func TestSerializationImprovements_JavaDate(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
-	ss := mustSerializationService(iserialization.NewService(config))
+	ss := mustSerializationService(iserialization.NewService(config, nil))
 	target := time.Date(2021, 2, 1, 9, 1, 15, 11000, time.Local)
 	data, err := ss.ToData(target)
 	if err != nil {
@@ -178,7 +178,7 @@ func TestSerializationImprovements(t *testing.T) {
 func serializationImprovementsTester(f func(ss *iserialization.Service)) {
 	config := &serialization.Config{}
 	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
-	ss := mustSerializationService(iserialization.NewService(config))
+	ss := mustSerializationService(iserialization.NewService(config, nil))
 	f(ss)
 }
 

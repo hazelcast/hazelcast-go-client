@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,52 @@
 
 package serialization
 
-type SchemaService struct {
-	schemaMap map[int64]Schema
+import (
+	"context"
+	"sync"
+)
+
+type SchemaMsg struct {
+	ID         int64
+	ResponseCh chan *Schema
 }
 
-func NewSchemaService() *SchemaService {
+type SchemaService struct {
+	schemaMap map[int64]*Schema
+	mu        *sync.RWMutex
+	ch        chan<- SchemaMsg
+}
+
+func NewSchemaService(ch chan<- SchemaMsg) *SchemaService {
 	return &SchemaService{
-		schemaMap: make(map[int64]Schema),
+		schemaMap: make(map[int64]*Schema),
+		mu:        &sync.RWMutex{},
+		ch:        ch,
 	}
 }
 
-func (s *SchemaService) Get(schemaId int64) (Schema, bool) {
-	schema, ok := s.schemaMap[schemaId]
+func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema, ok bool) {
+	// TODO: return error
+	s.mu.RLock()
+	schema, ok = s.schemaMap[schemaId]
+	s.mu.RUnlock()
+	if !ok {
+		rch := make(chan *Schema)
+		s.ch <- SchemaMsg{ID: schemaId, ResponseCh: rch}
+		select {
+		case schema = <-rch:
+			ok = schema != nil
+		case <-ctx.Done():
+			if ctx.Err() != nil {
+				return nil, false
+			}
+		}
+	}
 	return schema, ok
 }
 
-func (s *SchemaService) PutLocal(schema Schema) {
+func (s *SchemaService) PutLocal(schema *Schema) {
+	s.mu.Lock()
 	s.schemaMap[schema.ID()] = schema
+	s.mu.Unlock()
 }

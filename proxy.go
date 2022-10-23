@@ -19,7 +19,6 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
+	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -75,6 +75,7 @@ type creationBundle struct {
 	Config               *Config
 	Logger               logger.LogAdaptor
 	NCMDestroyFn         func(service, object string)
+	Invoker              *client.Invoker
 }
 
 func (b creationBundle) Check() {
@@ -105,20 +106,21 @@ func (b creationBundle) Check() {
 	if b.NCMDestroyFn == nil {
 		panic("NearCacheManager is nil")
 	}
+	if b.Invoker == nil {
+		panic("Invoker is nil")
+	}
 }
 
 type proxy struct {
 	logger               logger.LogAdaptor
-	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	partitionService     *cluster.PartitionService
 	listenerBinder       *cluster.ConnectionListenerBinder
 	config               *Config
 	clusterService       *cluster.Service
-	invocationFactory    *cluster.ConnectionInvocationFactory
-	cb                   *cb.CircuitBreaker
 	refIDGen             *iproxy.ReferenceIDGenerator
 	removeFromCacheFn    func(ctx context.Context) bool
+	invoker              *client.Invoker
 	serviceName          string
 	name                 string
 	smart                bool
@@ -126,24 +128,16 @@ type proxy struct {
 
 func newProxy(ctx context.Context, bundle creationBundle, svc string, obj string, idg *iproxy.ReferenceIDGenerator, removeFromCacheFn func(ctx context.Context) bool, remote bool) (*proxy, error) {
 	bundle.Check()
-	circuitBreaker := cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt32),
-		cb.MaxFailureCount(10),
-		cb.RetryPolicy(func(attempt int) time.Duration {
-			return time.Duration((attempt+1)*100) * time.Millisecond
-		}))
 	p := &proxy{
 		serviceName:          svc,
 		name:                 obj,
-		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,
 		partitionService:     bundle.PartitionService,
 		clusterService:       bundle.ClusterService,
-		invocationFactory:    bundle.InvocationFactory,
 		listenerBinder:       bundle.ListenerBinder,
 		config:               bundle.Config,
 		logger:               bundle.Logger,
-		cb:                   circuitBreaker,
+		invoker:              bundle.Invoker,
 		removeFromCacheFn:    removeFromCacheFn,
 		refIDGen:             idg,
 		smart:                !bundle.Config.Cluster.Unisocket,
@@ -246,54 +240,24 @@ func (p *proxy) validateAndSerializeValues(values []interface{}) ([]iserializati
 	return valuesData, nil
 }
 
-func (p *proxy) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMessage, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if res, err := p.cb.TryContext(ctx, f); err != nil {
-		return nil, err
-	} else {
-		return res.(*proto.ClientMessage), nil
-	}
-}
-
 func (p *proxy) invokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData iserialization.Data) (*proto.ClientMessage, error) {
-	if partitionID, err := p.partitionService.GetPartitionID(keyData); err != nil {
+	partitionID, err := p.partitionService.GetPartitionID(keyData)
+	if err != nil {
 		return nil, err
-	} else {
-		return p.invokeOnPartition(ctx, request, partitionID)
 	}
+	return p.invoker.InvokeOnPartition(ctx, request, partitionID)
 }
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
-	now := time.Now()
-	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if attempt > 0 {
-			request = request.Copy()
-		}
-		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler, now)
-		if err := p.sendInvocation(ctx, inv); err != nil {
-			return nil, err
-		}
-		return inv.GetWithContext(ctx)
-	})
+	return p.invoker.InvokeOnRandomTarget(ctx, request, handler)
 }
 
 func (p *proxy) invokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
-	now := time.Now()
-	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if inv, err := p.invokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
-			return nil, err
-		} else {
-			return inv.GetWithContext(ctx)
-		}
-	})
+	return p.invoker.InvokeOnPartition(ctx, request, partitionID)
 }
 
 func (p *proxy) invokeOnPartitionAsync(ctx context.Context, request *proto.ClientMessage, partitionID int32, now time.Time) (invocation.Invocation, error) {
-	inv := p.invocationFactory.NewInvocationOnPartitionOwner(request, partitionID, now)
-	err := p.sendInvocation(ctx, inv)
-	return inv, err
+	return p.invoker.InvokeOnPartitionAsync(ctx, request, partitionID, now)
 }
 
 func (p *proxy) convertToObject(data iserialization.Data) (interface{}, error) {
@@ -428,10 +392,6 @@ func (p *proxy) prepareEntryNotifiedEvent(binKey, binValue, binOldValue, binMerg
 	eventType := EntryEventType(binEventType)
 	event := newEntryNotifiedEvent(p.name, member, key, value, oldValue, mergingValue, int(affectedEntries), eventType)
 	return event, nil
-}
-
-func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
-	return p.invocationService.SendRequest(ctx, inv)
 }
 
 func (p *proxy) Name() string {

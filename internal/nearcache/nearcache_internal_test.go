@@ -195,7 +195,7 @@ func TestFilterDataMembers(t *testing.T) {
 
 func TestRecordStore_sample(t *testing.T) {
 	sc := &serialization.Config{}
-	ss, err := iserialization.NewService(sc)
+	ss, err := iserialization.NewService(sc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
