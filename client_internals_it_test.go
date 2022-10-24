@@ -474,16 +474,16 @@ func proxyManagerShutdownTest(t *testing.T) {
 	// make sure the map was not destroyed
 	client = it.MustClient(hz.StartNewClientWithConfig(ctx, config))
 	defer client.Shutdown(ctx)
-	it.Eventually(t, func() bool {
-		ois := it.MustValue(client.GetDistributedObjectsInfo(ctx)).([]types.DistributedObjectInfo)
-		t.Logf("OIS: %v", ois)
-		for _, item := range ois {
-			if item.Name == mapName && item.ServiceName == hz.ServiceNameMap {
-				return true
-			}
+	ois := it.MustValue(client.GetDistributedObjectsInfo(ctx)).([]types.DistributedObjectInfo)
+	t.Logf("OIS: %v", ois)
+	var ok bool
+	for _, item := range ois {
+		if item.Name == mapName && item.ServiceName == hz.ServiceNameMap {
+			ok = true
+			break
 		}
-		return false
-	})
+	}
+	require.True(t, ok)
 }
 
 type invokeFilter func(inv invocation.Invocation) (ok bool)

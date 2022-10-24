@@ -1347,7 +1347,7 @@ func (m *Map) LocalMapStats() LocalMapStats {
 	return LocalMapStats{}
 }
 
-func (m *Map) destroyLocally(ctx context.Context) bool {
+func (m *Map) destroyLocally(ctx context.Context) {
 	m.logger.Trace(func() string {
 		return fmt.Sprintf("hazelcast.Map.destroyLocally: %s", m.name)
 	})
@@ -1356,7 +1356,6 @@ func (m *Map) destroyLocally(ctx context.Context) bool {
 			m.logger.Errorf("hazelcast.Map.destroyLocally: %w", err)
 		}
 	}
-	return true
 }
 
 func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error {
