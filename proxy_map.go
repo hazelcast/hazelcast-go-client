@@ -39,7 +39,7 @@ Map is a distributed map.
 Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast Map with methods like Get and Put.
 For details, see https://docs.hazelcast.com/imdg/latest/data-structures/map.html
 
-Listening for Map Events
+# Listening for Map Events
 
 To listen events of a map, you can use the AddListener, AddListenerWithKey, AddListenerWithPredicate and AddListenerWithPredicateAndKey methods.
 The first method adds a listener to the map's all events. The others filter the events depending on a key and/or a predicate.
@@ -71,7 +71,7 @@ Adding an event listener returns a subscription ID, which you can later use to r
 
 	err = m.RemoveListener(ctx, subscriptionID)
 
-Using Locks
+# Using Locks
 
 You can lock entries in a Map.
 When an entry is locked, only the owner of that lock can access that entry in the cluster until it is unlocked by the owner of force unlocked.
@@ -98,7 +98,7 @@ Once the lock context is created, it can be used to lock/unlock entries and used
 As mentioned before, lock context is a regular context.Context which carry a special lock ID.
 You can pass any context.Context to any Map function, but in that case lock ownership between operations using the same hazelcast.Client instance is not possible.
 
-Using the Near Cache
+# Using the Near Cache
 
 Map entries in Hazelcast are partitioned across the cluster members.
 Hazelcast clients do not have local data at all.
@@ -108,9 +108,9 @@ If you have a data structure that is mostly read, then you should consider creat
 
 These benefits do not come for free. See the following trade-offs:
 
-    * Clients with a Near Cache has to hold the extra cached data, which increases memory consumption.
-    * If invalidation is enabled and entries are updated frequently, then invalidations will be costly.
-    * Near Cache breaks the strong consistency guarantees; you might be reading stale data.
+  - Clients with a Near Cache has to hold the extra cached data, which increases memory consumption.
+  - If invalidation is enabled and entries are updated frequently, then invalidations will be costly.
+  - Near Cache breaks the strong consistency guarantees; you might be reading stale data.
 
 Near Cache is highly recommended for data structures that are mostly read.
 
@@ -138,49 +138,48 @@ That can be accomplished by setting SerializeKeys: true, shown in the example be
 
 The following types cannot be used as keys without setting SerializeKeys==true:
 
-	* Maps
-	* Slices
-	* Structs with having at least one field with an incomparable type.
+  - Maps
+  - Slices
+  - Structs with having at least one field with an incomparable type.
 
 Following Map methods support the Near Cache:
 
-	* Clear
-	* ContainsKey
-	* Delete
-	* Evict
-	* EvictAll
-	* ExecuteOnKey
-	* ExecuteOnKeys
-	* Get
-	* GetAll
-	* LoadAllReplacing
-	* LoadAllWithoutReplacing
-	* LocalMapStats
-	* Put
-	* PutWithMaxIdle
-	* PutWithTTL
-	* PutWithTTLAndMaxIdle
-	* PutAll
-	* PutIfAbsent
-	* PutIfAbsentWithTTL
-	* PutIfAbsentWithTTLAndMaxIdle
-	* PutTransient
-	* PutTransientWithMaxIdle
-	* PutTransientWithTTL
-	* PutTransientWithTTLAndMaxIdle
-	* Remove
-	* RemoveIfSame
-	* RemoveAll
-	* Replace
-	* ReplaceIfSame
-	* Set
-	* SetWithTTL
-	* SetWithTTLAndMaxIdle
-	* TryPut
-	* TryPutWithTimeout
-	* TryRemove
-	* TryRemoveWithTimeout
-
+  - Clear
+  - ContainsKey
+  - Delete
+  - Evict
+  - EvictAll
+  - ExecuteOnKey
+  - ExecuteOnKeys
+  - Get
+  - GetAll
+  - LoadAllReplacing
+  - LoadAllWithoutReplacing
+  - LocalMapStats
+  - Put
+  - PutWithMaxIdle
+  - PutWithTTL
+  - PutWithTTLAndMaxIdle
+  - PutAll
+  - PutIfAbsent
+  - PutIfAbsentWithTTL
+  - PutIfAbsentWithTTLAndMaxIdle
+  - PutTransient
+  - PutTransientWithMaxIdle
+  - PutTransientWithTTL
+  - PutTransientWithTTLAndMaxIdle
+  - Remove
+  - RemoveIfSame
+  - RemoveAll
+  - Replace
+  - ReplaceIfSame
+  - Set
+  - SetWithTTL
+  - SetWithTTLAndMaxIdle
+  - TryPut
+  - TryPutWithTimeout
+  - TryRemove
+  - TryRemoveWithTimeout
 */
 type Map struct {
 	*proxy
@@ -1346,17 +1345,6 @@ func (m *Map) LocalMapStats() LocalMapStats {
 		return m.ncm.GetLocalMapStats()
 	}
 	return LocalMapStats{}
-}
-
-func (m *Map) destroyLocally(ctx context.Context) {
-	m.logger.Trace(func() string {
-		return fmt.Sprintf("hazelcast.Map.destroyLocally: %s", m.name)
-	})
-	if m.hasNearCache {
-		if err := m.ncm.Destroy(ctx, m.name); err != nil {
-			m.logger.Errorf("hazelcast.Map.destroyLocally: %w", err)
-		}
-	}
 }
 
 func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error {
