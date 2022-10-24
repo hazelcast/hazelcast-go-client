@@ -454,7 +454,7 @@ func clientClusterConnectionConfigRetryTimeTest(t *testing.T) {
 
 func proxyManagerShutdownTest(t *testing.T) {
 	ctx := context.Background()
-	tc := it.StartNewClusterWithOptions(t.Name(), it.NextPort(), 1)
+	tc := it.StartNewClusterWithOptions(it.NewUniqueObjectName(t.Name()), it.NextPort(), 1)
 	defer tc.Shutdown()
 	config := tc.DefaultConfigWithNoSSL()
 	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
@@ -476,6 +476,7 @@ func proxyManagerShutdownTest(t *testing.T) {
 	defer client.Shutdown(ctx)
 	it.Eventually(t, func() bool {
 		ois := it.MustValue(client.GetDistributedObjectsInfo(ctx)).([]types.DistributedObjectInfo)
+		t.Logf("OIS: %v", ois)
 		return len(ois) == 2
 	})
 }
