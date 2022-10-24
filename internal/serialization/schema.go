@@ -32,7 +32,7 @@ type Schema struct {
 	fixedSizeFieldsLength int32
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, rabin RabinFingerPrint) *Schema {
+func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor) *Schema {
 	fds := make([]*FieldDescriptor, len(fieldDefinitionMap))
 	c := 0
 	for _, fd := range fieldDefinitionMap {
@@ -48,7 +48,7 @@ func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, 
 		Fields:           fieldDefinitionMap,
 		fieldDefinitions: fds,
 	}
-	schema.init(rabin)
+	schema.init()
 	return schema
 }
 
@@ -76,7 +76,7 @@ func (s Schema) String() string {
 		s.TypeName, s.numberOfVarSizeFields, s.fixedSizeFieldsLength, s.Fields)
 }
 
-func (s *Schema) init(rabin RabinFingerPrint) {
+func (s *Schema) init() {
 	var fixedSizeFields, varSizeFields, booleanFields []*FieldDescriptor
 
 	for _, fd := range s.fieldDefinitions {
@@ -121,5 +121,5 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		fd.index = int32(i)
 	}
 	s.numberOfVarSizeFields = int32(len(varSizeFields))
-	s.id = rabin.OfSchema(s)
+	s.id = RabinFingerPrint.OfSchema(s)
 }

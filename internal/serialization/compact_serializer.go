@@ -30,7 +30,6 @@ type CompactStreamSerializer struct {
 	typeToSerializer     map[reflect.Type]pubserialization.CompactSerializer
 	typeNameToSerializer map[string]pubserialization.CompactSerializer
 	ss                   *SchemaService
-	fingerprint          RabinFingerPrint
 }
 
 func NewCompactStreamSerializer(cfg pubserialization.CompactConfig, schemaCh chan SchemaMsg) *CompactStreamSerializer {
@@ -45,7 +44,6 @@ func NewCompactStreamSerializer(cfg pubserialization.CompactConfig, schemaCh cha
 		typeToSchema:         make(map[reflect.Type]*Schema),
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
-		fingerprint:          NewRabinFingerPrint(),
 	}
 }
 
@@ -75,7 +73,7 @@ func (c CompactStreamSerializer) Write(output pubserialization.DataOutput, objec
 	if !ok {
 		sw := NewSchemaWriter(serializer.TypeName())
 		serializer.Write(sw, object)
-		schema = sw.Build(c.fingerprint)
+		schema = sw.Build()
 		c.ss.PutLocal(schema)
 		c.typeToSchema[t] = schema
 	}

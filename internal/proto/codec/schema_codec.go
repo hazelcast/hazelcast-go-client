@@ -21,7 +21,7 @@ import (
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-func EncodeSchema(clientMessage *proto.ClientMessage, schema iserialization.Schema) {
+func EncodeSchema(clientMessage *proto.ClientMessage, schema *iserialization.Schema) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 
 	EncodeString(clientMessage, schema.TypeName)
@@ -30,7 +30,7 @@ func EncodeSchema(clientMessage *proto.ClientMessage, schema iserialization.Sche
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeSchema(frameIterator *proto.ForwardFrameIterator) iserialization.Schema {
+func DecodeSchema(frameIterator *proto.ForwardFrameIterator) *iserialization.Schema {
 	// begin frame
 	frameIterator.Next()
 
@@ -38,8 +38,5 @@ func DecodeSchema(frameIterator *proto.ForwardFrameIterator) iserialization.Sche
 	fields := DecodeListMultiFrameForFieldDescriptor(frameIterator)
 	FastForwardToEndFrame(frameIterator)
 
-	return iserialization.Schema{
-		TypeName: typeName,
-		Fields:   fields,
-	}
+	return iserialization.NewSchema(typeName, fields)
 }

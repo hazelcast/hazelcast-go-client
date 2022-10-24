@@ -1164,8 +1164,7 @@ func DecodeNullableForSchema(frameIterator *proto.ForwardFrameIterator) *iserial
 	if NextFrameIsNullFrame(frameIterator) {
 		return nil
 	}
-	schema := DecodeSchema(frameIterator)
-	return &schema
+	return DecodeSchema(frameIterator)
 }
 
 func EncodeListMultiFrameForFieldDescriptor(message *proto.ClientMessage, fields []*iserialization.FieldDescriptor) {

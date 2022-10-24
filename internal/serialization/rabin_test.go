@@ -26,14 +26,12 @@ import (
 )
 
 func TestRabinFingerprintIsConsistentWithWrittenData(t *testing.T) {
-	rabin := serialization.NewRabinFingerPrint()
 	fieldDefinitionMap := make(map[string]*serialization.FieldDescriptor)
 	ageField := serialization.NewFieldDescriptor("age", pserialization.FieldKindInt32)
 	nameField := serialization.NewFieldDescriptor("name", pserialization.FieldKindString)
 	fieldDefinitionMap["age"] = &ageField
 	fieldDefinitionMap["name"] = &nameField
-
-	schema := serialization.NewSchema("student", fieldDefinitionMap, rabin)
+	schema := serialization.NewSchema("student", fieldDefinitionMap)
 	schemaId := schema.ID()
 	/*
 		The magic number is generated using the following code snippet:
