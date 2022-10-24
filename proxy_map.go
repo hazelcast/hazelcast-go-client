@@ -108,9 +108,9 @@ If you have a data structure that is mostly read, then you should consider creat
 
 These benefits do not come for free. See the following trade-offs:
 
-    * Clients with a Near Cache has to hold the extra cached data, which increases memory consumption.
-    * If invalidation is enabled and entries are updated frequently, then invalidations will be costly.
-    * Near Cache breaks the strong consistency guarantees; you might be reading stale data.
+  - Clients with a Near Cache has to hold the extra cached data, which increases memory consumption.
+  - If invalidation is enabled and entries are updated frequently, then invalidations will be costly.
+  - Near Cache breaks the strong consistency guarantees; you might be reading stale data.
 
 Near Cache is highly recommended for data structures that are mostly read.
 
@@ -138,49 +138,48 @@ That can be accomplished by setting SerializeKeys: true, shown in the example be
 
 The following types cannot be used as keys without setting SerializeKeys==true:
 
-	* Maps
-	* Slices
-	* Structs with having at least one field with an incomparable type.
+  - Maps
+  - Slices
+  - Structs with having at least one field with an incomparable type.
 
 Following Map methods support the Near Cache:
 
-	* Clear
-	* ContainsKey
-	* Delete
-	* Evict
-	* EvictAll
-	* ExecuteOnKey
-	* ExecuteOnKeys
-	* Get
-	* GetAll
-	* LoadAllReplacing
-	* LoadAllWithoutReplacing
-	* LocalMapStats
-	* Put
-	* PutWithMaxIdle
-	* PutWithTTL
-	* PutWithTTLAndMaxIdle
-	* PutAll
-	* PutIfAbsent
-	* PutIfAbsentWithTTL
-	* PutIfAbsentWithTTLAndMaxIdle
-	* PutTransient
-	* PutTransientWithMaxIdle
-	* PutTransientWithTTL
-	* PutTransientWithTTLAndMaxIdle
-	* Remove
-	* RemoveIfSame
-	* RemoveAll
-	* Replace
-	* ReplaceIfSame
-	* Set
-	* SetWithTTL
-	* SetWithTTLAndMaxIdle
-	* TryPut
-	* TryPutWithTimeout
-	* TryRemove
-	* TryRemoveWithTimeout
-
+  - Clear
+  - ContainsKey
+  - Delete
+  - Evict
+  - EvictAll
+  - ExecuteOnKey
+  - ExecuteOnKeys
+  - Get
+  - GetAll
+  - LoadAllReplacing
+  - LoadAllWithoutReplacing
+  - LocalMapStats
+  - Put
+  - PutWithMaxIdle
+  - PutWithTTL
+  - PutWithTTLAndMaxIdle
+  - PutAll
+  - PutIfAbsent
+  - PutIfAbsentWithTTL
+  - PutIfAbsentWithTTLAndMaxIdle
+  - PutTransient
+  - PutTransientWithMaxIdle
+  - PutTransientWithTTL
+  - PutTransientWithTTLAndMaxIdle
+  - Remove
+  - RemoveIfSame
+  - RemoveAll
+  - Replace
+  - ReplaceIfSame
+  - Set
+  - SetWithTTL
+  - SetWithTTLAndMaxIdle
+  - TryPut
+  - TryPutWithTimeout
+  - TryRemove
+  - TryRemoveWithTimeout
 */
 type Map struct {
 	*proxy
