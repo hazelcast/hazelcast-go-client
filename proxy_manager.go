@@ -242,8 +242,12 @@ func makeProxyName(serviceName string, objectName string) string {
 	return fmt.Sprintf("%s%s", serviceName, objectName)
 }
 
+type proxyDestroyer interface {
+	removeFromCache(ctx context.Context) bool
+}
+
 func (m *proxyManager) destroyProxies(ctx context.Context) {
 	for _, p := range m.Proxies() {
-		p.(*proxy).destroyLocally(ctx)
+		p.(proxyDestroyer).removeFromCache(ctx)
 	}
 }

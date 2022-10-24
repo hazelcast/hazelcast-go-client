@@ -1347,6 +1347,18 @@ func (m *Map) LocalMapStats() LocalMapStats {
 	return LocalMapStats{}
 }
 
+func (m *Map) destroyLocally(ctx context.Context) bool {
+	m.logger.Trace(func() string {
+		return fmt.Sprintf("hazelcast.Map.destroyLocally: %s", m.name)
+	})
+	if m.hasNearCache {
+		if err := m.ncm.Destroy(ctx, m.name); err != nil {
+			m.logger.Errorf("hazelcast.Map.destroyLocally: %w", err)
+		}
+	}
+	return true
+}
+
 func (m *Map) addIndex(ctx context.Context, indexConfig types.IndexConfig) error {
 	if err := validateAndNormalizeIndexConfig(&indexConfig); err != nil {
 		return err

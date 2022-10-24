@@ -168,7 +168,8 @@ func (p *proxy) create(ctx context.Context) error {
 // Destroy removes this object cluster-wide.
 // Clears and releases all resources for this object.
 func (p *proxy) Destroy(ctx context.Context) error {
-	if !p.destroyLocally(ctx) {
+	// wipe from proxy manager cache
+	if !p.removeFromCacheFn(ctx) {
 		// no need to destroy on cluster, since the proxy is stale and was already destroyed
 		return nil
 	}
@@ -180,22 +181,8 @@ func (p *proxy) Destroy(ctx context.Context) error {
 	return nil
 }
 
-func (p *proxy) destroyLocally(ctx context.Context) bool {
-	// wipe from proxy manager cache
-	if !p.removeFromCacheFn(ctx) {
-		return false
-	}
-	if m, ok := interface{}(p).(*Map); ok {
-		m.logger.Trace(func() string {
-			return fmt.Sprintf("hazelcast.Map.destroyLocally: %s", m.name)
-		})
-		if m.hasNearCache {
-			if err := m.ncm.Destroy(ctx, m.name); err != nil {
-				m.logger.Errorf("hazelcast.Map.destroyLocally: %w", err)
-			}
-		}
-	}
-	return true
+func (p *proxy) removeFromCache(ctx context.Context) bool {
+	return p.removeFromCacheFn(ctx)
 }
 
 func (p *proxy) validateAndSerialize(arg1 interface{}) (iserialization.Data, error) {
