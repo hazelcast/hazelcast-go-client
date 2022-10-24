@@ -477,7 +477,12 @@ func proxyManagerShutdownTest(t *testing.T) {
 	it.Eventually(t, func() bool {
 		ois := it.MustValue(client.GetDistributedObjectsInfo(ctx)).([]types.DistributedObjectInfo)
 		t.Logf("OIS: %v", ois)
-		return len(ois) == 2
+		for _, item := range ois {
+			if item.Name == mapName && item.ServiceName == hz.ServiceNameMap {
+				return true
+			}
+		}
+		return false
 	})
 }
 
