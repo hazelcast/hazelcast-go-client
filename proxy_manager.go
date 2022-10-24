@@ -238,14 +238,11 @@ func makeProxyName(serviceName string, objectName string) string {
 }
 
 type proxyDestroyer interface {
-	Destroy(ctx context.Context) error
+	removeFromCache(ctx context.Context) bool
 }
 
 func (m *proxyManager) destroyProxies(ctx context.Context) {
-	for key, p := range m.Proxies() {
-		ds := p.(proxyDestroyer)
-		if err := ds.Destroy(ctx); err != nil {
-			m.serviceBundle.Logger.Errorf("proxy %s key cannot be destroyed: %w", key, err)
-		}
+	for _, p := range m.Proxies() {
+		p.(proxyDestroyer).removeFromCache(ctx)
 	}
 }

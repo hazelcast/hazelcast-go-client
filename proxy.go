@@ -175,6 +175,10 @@ func (p *proxy) Destroy(ctx context.Context) error {
 	return nil
 }
 
+func (p *proxy) removeFromCache(ctx context.Context) bool {
+	return p.removeFromCacheFn(ctx)
+}
+
 func (p *proxy) validateAndSerialize(arg1 interface{}) (iserialization.Data, error) {
 	if check.Nil(arg1) {
 		return nil, ihzerrors.NewIllegalArgumentError("nil arg is not allowed", nil)
