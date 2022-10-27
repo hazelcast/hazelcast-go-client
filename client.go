@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/cp"
 	"sync"
 	"time"
 
@@ -70,6 +71,7 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
+	cpSubsystem             *cp.CpSubSystem
 	nearCacheMgrsMu         *sync.RWMutex
 	nearCacheMgrs           map[string]*inearcache.Manager
 	cfg                     *Config
@@ -409,6 +411,11 @@ func (c *Client) createComponents(config *Config) {
 		ListenerBinder:       listenerBinder,
 		Logger:               c.ic.Logger,
 	}
+	cpProxyManagerServiceBundle := cp.CpCreationBundle{
+		InvocationService:    c.ic.InvocationService,
+		SerializationService: c.ic.SerializationService,
+		Logger:               &c.ic.Logger,
+	}
 	destroyNearCacheFun := func(service, object string) {
 		c.nearCacheMgrsMu.RLock()
 		defer c.nearCacheMgrsMu.RUnlock()
@@ -420,9 +427,16 @@ func (c *Client) createComponents(config *Config) {
 	}
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
+	c.cpSubsystem = cp.NewCpSubsystem(cpProxyManagerServiceBundle)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 }
 
+func (c *Client) GetCpSubsystem() (*cp.CpSubSystem, error) {
+	if c.ic.State() != client.Ready {
+		return nil, hzerrors.ErrClientNotActive
+	}
+	return c.cpSubsystem, nil
+}
 func (c *Client) getNearCacheManager(service string) *inearcache.Manager {
 	c.nearCacheMgrsMu.RLock()
 	mgr, ok := c.nearCacheMgrs[service]
