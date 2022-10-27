@@ -7,11 +7,13 @@ import (
 )
 
 type proxy struct {
-	logger               logger.LogAdaptor
+	groupId              RaftGroupId
 	invocationService    *invocation.Service
+	logger               logger.LogAdaptor
+	objectName           string
+	proxyName            string
 	serializationService *iserialization.Service
 	serviceName          string
-	name                 string
 }
 
 func newProxy() {
@@ -19,9 +21,18 @@ func newProxy() {
 
 }
 
-func (p *proxy) Name() {
-
+func (p *proxy) GroupId() RaftGroupId {
+	return p.groupId
 }
+
+func (p *proxy) Name() string {
+	return p.proxyName
+}
+
+func (p *proxy) ServiceName() string {
+	return p.serviceName
+}
+
 func (p *proxy) Destroy() {
 
 }

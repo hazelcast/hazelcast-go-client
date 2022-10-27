@@ -1,12 +1,7 @@
 package cp
 
 type RaftGroupId struct {
-	name     string
-	seed     int64
-	id       int64
-	stringId string
-}
-
-func (r *RaftGroupId) getStringId() {
-
+	Name string
+	Seed int64
+	Id   int64
 }
