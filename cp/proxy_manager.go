@@ -48,13 +48,13 @@ func (b serviceBundle) Check() {
 	}
 }
 
-type ProxyManager struct {
+type proxyManager struct {
 	bundle  *serviceBundle
 	mu      *sync.RWMutex
 	proxies map[string]interface{}
 }
 
-func NewCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) (*ProxyManager, error) {
+func newCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) (*proxyManager, error) {
 	b := &serviceBundle{
 		invocationService:    is,
 		invocationFactory:    cif,
@@ -62,7 +62,7 @@ func NewCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvoca
 		logger:               l,
 	}
 	b.Check()
-	p := &ProxyManager{
+	p := &proxyManager{
 		mu:      &sync.RWMutex{},
 		proxies: map[string]interface{}{},
 		bundle:  b,
@@ -70,7 +70,7 @@ func NewCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvoca
 	return p, nil
 }
 
-func (m *ProxyManager) getOrCreateProxy(ctx context.Context, serviceName string, proxyName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
+func (m *proxyManager) getOrCreateProxy(ctx context.Context, serviceName string, proxyName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
 	proxyName = m.withoutDefaultGroupName(ctx, proxyName)
 	objectName := m.objectNameForProxy(ctx, proxyName)
 	groupId, _ := m.createGroupId(ctx, proxyName)
@@ -86,7 +86,7 @@ func (m *ProxyManager) getOrCreateProxy(ctx context.Context, serviceName string,
 		// someone has already created the proxy
 		return wrapper, nil
 	}
-	p, err := newProxy(ctx, m.bundle, groupId, serviceName, proxyName, objectName)
+	p, err := newProxy(m.bundle, groupId, serviceName, proxyName, objectName)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (m *ProxyManager) getOrCreateProxy(ctx context.Context, serviceName string,
 	return wrapper, nil
 }
 
-func (m *ProxyManager) objectNameForProxy(ctx context.Context, name string) string {
+func (m *proxyManager) objectNameForProxy(ctx context.Context, name string) string {
 	idx := strings.Index(name, "@")
 	if idx == -1 {
 		return name
@@ -114,7 +114,7 @@ func (m *ProxyManager) objectNameForProxy(ctx context.Context, name string) stri
 	return objectName
 }
 
-func (m *ProxyManager) createGroupId(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
+func (m *proxyManager) createGroupId(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
 	request := codec.EncodeCPGroupCreateCPGroupRequest(proxyName)
 	now := time.Now()
 	inv := m.bundle.invocationFactory.NewInvocationOnRandomTarget(request, nil, now)
@@ -130,7 +130,7 @@ func (m *ProxyManager) createGroupId(ctx context.Context, proxyName string) (*ty
 	return &groupId, nil
 }
 
-func (m *ProxyManager) withoutDefaultGroupName(ctx context.Context, proxyName string) string {
+func (m *proxyManager) withoutDefaultGroupName(ctx context.Context, proxyName string) string {
 	name := strings.TrimSpace(proxyName)
 	idx := strings.Index(name, "@")
 	if idx == -1 {
@@ -149,7 +149,7 @@ func (m *ProxyManager) withoutDefaultGroupName(ctx context.Context, proxyName st
 	return name
 }
 
-func (m *ProxyManager) GetAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
+func (m *proxyManager) getAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
 	p, err := m.getOrCreateProxy(ctx, AtomicLongService, name, func(p *proxy) (interface{}, error) {
 		return newAtomicLong(p), nil
 	})

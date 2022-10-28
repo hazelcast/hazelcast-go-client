@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/cp"
 	"sync"
 	"time"
 
@@ -70,7 +71,7 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
-	cpSubsystem             *CPSubsystem
+	cpSubsystem             *cp.CPSubsystem
 	nearCacheMgrsMu         *sync.RWMutex
 	nearCacheMgrs           map[string]*inearcache.Manager
 	cfg                     *Config
@@ -421,11 +422,11 @@ func (c *Client) createComponents(config *Config) {
 	}
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
-	c.cpSubsystem = NewCpSubsystem(c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.cpSubsystem = cp.NewCpSubsystem(c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 }
 
-func (c *Client) GetCpSubsystem() (*CPSubsystem, error) {
+func (c *Client) GetCpSubsystem() (*cp.CPSubsystem, error) {
 	if c.ic.State() != client.Ready {
 		return nil, hzerrors.ErrClientNotActive
 	}

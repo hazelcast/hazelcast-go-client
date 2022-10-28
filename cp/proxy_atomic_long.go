@@ -15,20 +15,20 @@ func newAtomicLong(p *proxy) *AtomicLong {
 
 func (al *AtomicLong) AddAndGet(delta int64) (int64, error) {
 	request := codec.EncodeAtomicLongAddAndGetRequest(al.groupId, al.proxyName, delta)
-	response, err := al.invokeOnRandomTarget(context.Background(), request, nil)
-	if err != nil {
+	if response, err := al.invokeOnRandomTarget(context.Background(), request, nil); err != nil {
 		return -1, err
+	} else {
+		return codec.DecodeAtomicLongAddAndGetResponse(response), nil
 	}
-	return codec.DecodeAtomicLongAddAndGetResponse(response), nil
 }
 
 func (al *AtomicLong) CompareAndSet(expect int64, update int64) (bool, error) {
 	request := codec.EncodeAtomicLongCompareAndSetRequest(al.groupId, al.proxyName, expect, update)
-	response, err := al.invokeOnRandomTarget(context.Background(), request, nil)
-	if err != nil {
+	if response, err := al.invokeOnRandomTarget(context.Background(), request, nil); err != nil {
 		return false, err
+	} else {
+		return codec.DecodeAtomicLongCompareAndSetResponse(response), nil
 	}
-	return codec.DecodeAtomicLongCompareAndSetResponse(response), nil
 }
 
 func (al *AtomicLong) Get() (interface{}, error) {
@@ -42,29 +42,26 @@ func (al *AtomicLong) Get() (interface{}, error) {
 
 func (al *AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error) {
 	request := codec.EncodeAtomicLongGetAndAddRequest(al.groupId, al.proxyName, delta)
-	response, err := al.invokeOnRandomTarget(ctx, request, nil)
-	if err != nil {
+	if response, err := al.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return -1, err
+	} else {
+		return codec.DecodeAtomicLongGetAndAddResponse(response), nil
 	}
-	return codec.DecodeAtomicLongGetAndAddResponse(response), nil
 }
 
 func (al *AtomicLong) GetAndSet(ctx context.Context, value int64) (int64, error) {
 	request := codec.EncodeAtomicLongGetAndSetRequest(al.groupId, al.proxyName, value)
-	response, err := al.invokeOnRandomTarget(ctx, request, nil)
-	if err != nil {
+	if response, err := al.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return -1, err
+	} else {
+		return codec.DecodeAtomicLongGetAndSetResponse(response), nil
 	}
-	return codec.DecodeAtomicLongGetAndSetResponse(response), nil
 }
 
 func (al *AtomicLong) Set(ctx context.Context, value int64) error {
 	request := codec.EncodeAtomicLongGetAndSetRequest(al.groupId, al.proxyName, value)
 	_, err := al.invokeOnRandomTarget(ctx, request, nil)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (al *AtomicLong) IncrementAndGet() (int64, error) {

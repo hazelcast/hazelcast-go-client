@@ -7,6 +7,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"math"
@@ -14,10 +15,10 @@ import (
 )
 
 type proxy struct {
-	groupId              types.RaftGroupId
-	invocationService    *invocation.Service
 	cb                   *cb.CircuitBreaker
+	groupId              types.RaftGroupId
 	invocationFactory    *cluster.ConnectionInvocationFactory
+	invocationService    *invocation.Service
 	logger               logger.LogAdaptor
 	objectName           string
 	proxyName            string
@@ -25,8 +26,7 @@ type proxy struct {
 	serviceName          string
 }
 
-// Called by proxyManager -> getOrCreateProxy method.
-func newProxy(ctx context.Context, bundle *serviceBundle, gi *types.RaftGroupId, svc string, pname string, obj string) (*proxy, error) {
+func newProxy(bundle *serviceBundle, gi *types.RaftGroupId, svc string, pxy string, obj string) (*proxy, error) {
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -36,7 +36,7 @@ func newProxy(ctx context.Context, bundle *serviceBundle, gi *types.RaftGroupId,
 	p := &proxy{
 		groupId:              *gi,
 		serviceName:          svc,
-		proxyName:            pname,
+		proxyName:            pxy,
 		objectName:           obj,
 		invocationService:    bundle.invocationService,
 		serializationService: bundle.serializationService,
@@ -59,35 +59,29 @@ func (p *proxy) ServiceName() string {
 	return p.serviceName
 }
 
-func (p *proxy) Destroy() {
-
-}
-
-func (p *proxy) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMessage, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if res, err := p.cb.TryContext(ctx, f); err != nil {
-		return nil, err
-	} else {
-		return res.(*proto.ClientMessage), nil
-	}
-}
-
-func (p *proxy) sendInvocation(ctx context.Context, inv invocation.Invocation) error {
-	return p.invocationService.SendRequest(ctx, inv)
+func (p *proxy) Destroy() error {
+	request := codec.EncodeCPGroupDestroyCPObjectRequest(p.groupId, p.serviceName, p.objectName)
+	_, err := p.invokeOnRandomTarget(context.Background(), request, nil)
+	return err
 }
 
 func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
 	now := time.Now()
-	return p.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if res, err := p.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
 		}
 		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler, now)
-		if err := p.sendInvocation(ctx, inv); err != nil {
+		if err := p.invocationService.SendRequest(ctx, inv); err != nil {
 			return nil, err
 		}
 		return inv.GetWithContext(ctx)
-	})
+	}); err != nil {
+		return nil, err
+	} else {
+		return res.(*proto.ClientMessage), nil
+	}
 }
