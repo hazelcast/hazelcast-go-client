@@ -28,7 +28,7 @@ type proxy struct {
 }
 
 // Called by proxyManager -> proxyFor method.
-func newProxy(ctx context.Context, bundle CpCreationBundle, svc string, obj string) (*proxy, error) {
+func newProxy(ctx context.Context, bundle CpCreationBundle, gi *types.RaftGroupId, svc string, pname string, obj string) (*proxy, error) {
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -36,7 +36,9 @@ func newProxy(ctx context.Context, bundle CpCreationBundle, svc string, obj stri
 			return time.Duration((attempt+1)*100) * time.Millisecond
 		}))
 	p := &proxy{
+		groupId:              *gi,
 		serviceName:          svc,
+		proxyName:            pname,
 		objectName:           obj,
 		invocationService:    bundle.InvocationService,
 		serializationService: bundle.SerializationService,

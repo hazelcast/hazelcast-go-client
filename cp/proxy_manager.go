@@ -2,8 +2,12 @@ package cp
 
 import (
 	"context"
-	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/types"
+	"strings"
 	"sync"
+	"time"
 )
 
 type ProxyManager struct {
@@ -21,31 +25,28 @@ func newCpProxyManager(bundle CpCreationBundle) (*ProxyManager, error) {
 	return p, nil
 }
 
-func (*ProxyManager) GetOrCreateProxy() (*proxy, error) {
-	return nil, nil
-}
-
 func (m *ProxyManager) proxyFor(
 	ctx context.Context,
 	serviceName string,
-	objectName string,
+	proxyName string,
 	wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
-
-	name := makeProxyName(serviceName, objectName)
+	// identifiers for proxy
+	proxyName = m.withoutDefaultGroupName(ctx, proxyName)
+	objectName := m.objectNameForProxy(ctx, proxyName)
+	groupId, _ := m.createGroupId(ctx, proxyName)
 	m.mu.RLock()
-	wrapper, ok := m.proxies[name]
+	wrapper, ok := m.proxies[proxyName]
 	m.mu.RUnlock()
 	if ok {
 		return wrapper, nil
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if wrapper, ok := m.proxies[name]; ok {
+	if wrapper, ok := m.proxies[proxyName]; ok {
 		// someone has already created the proxy
 		return wrapper, nil
 	}
-
-	p, err := newProxy(ctx, m.bundle, serviceName, objectName)
+	p, err := newProxy(ctx, m.bundle, groupId, serviceName, proxyName, objectName)
 	if err != nil {
 		return nil, err
 	}
@@ -53,24 +54,77 @@ func (m *ProxyManager) proxyFor(
 	if err != nil {
 		return nil, err
 	}
-	m.proxies[name] = wrapper
+	m.proxies[proxyName] = wrapper
 	return wrapper, nil
 }
 
-func makeProxyName(serviceName string, objectName string) string {
-	return fmt.Sprintf("%s%s", serviceName, objectName)
+func (pm *ProxyManager) objectNameForProxy(ctx context.Context, name string) string {
+	idx := strings.Index(name, "@")
+	if idx == -1 {
+		return name
+	}
+	groupName := strings.TrimSpace(name[idx+1:])
+	if len(groupName) <= 0 {
+		panic("Custom CP group name cannot be empty string")
+	}
+	objectName := strings.TrimSpace(name[:idx])
+	if len(objectName) <= 0 {
+		panic("Object name cannot be empty string")
+	}
+	return objectName
 }
 
-func (pm *ProxyManager) getAtomicLong(name string) (*AtomicLong, error) {
-	p, err := pm.proxyFor(context.Background(), ATOMIC_LONG_SERVICE, name, func(p *proxy) (interface{}, error) {
+func (pm *ProxyManager) createGroupId(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
+	request := codec.EncodeCPGroupCreateCPGroupRequest(proxyName)
+	response, err := pm.invoke(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	groupId := codec.DecodeCPGroupCreateCPGroupResponse(response)
+	return &groupId, nil
+}
+
+const (
+	_DEFAULT_GROUP_NAME     = "default"
+	_METADATA_CP_GROUP_NAME = "metadata"
+)
+
+func (pm *ProxyManager) withoutDefaultGroupName(ctx context.Context, proxyName string) string {
+	name := strings.TrimSpace(proxyName)
+	idx := strings.Index(name, "@")
+	if idx == -1 {
+		return name
+	}
+	if ci := strings.Index(name[idx+1:], "@"); ci != -1 {
+		panic("Custom group name must be specified at most once")
+	}
+	groupName := strings.TrimSpace(name[idx+1:])
+	if lgn := strings.ToLower(groupName); lgn == _METADATA_CP_GROUP_NAME {
+		panic("\"CP data structures cannot run on the METADATA CP group!\"")
+	}
+	if strings.ToLower(groupName) == _DEFAULT_GROUP_NAME {
+		return name[:idx]
+	}
+	return name
+
+}
+
+func (pm *ProxyManager) invoke(ctx context.Context, request *proto.ClientMessage) (*proto.ClientMessage, error) {
+	now := time.Now()
+	inv := pm.bundle.InvocationFactory.NewInvocationOnRandomTarget(request, nil, now)
+	err := pm.bundle.InvocationService.SendRequest(context.Background(), inv)
+	if err != nil {
+		return nil, err
+	}
+	return inv.GetWithContext(ctx)
+}
+
+func (pm *ProxyManager) getAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
+	p, err := pm.proxyFor(ctx, ATOMIC_LONG_SERVICE, name, func(p *proxy) (interface{}, error) {
 		return newAtomicLong(p), nil
 	})
 	if err != nil {
 		return nil, err
 	}
 	return p.(*AtomicLong), nil
-}
-
-func (*ProxyManager) getGroupId(proxyName string) (string, error) {
-	return "", nil
 }
