@@ -414,6 +414,7 @@ func (c *Client) createComponents(config *Config) {
 	cpProxyManagerServiceBundle := cp.CpCreationBundle{
 		InvocationService:    c.ic.InvocationService,
 		SerializationService: c.ic.SerializationService,
+		InvocationFactory:    c.ic.InvocationFactory,
 		Logger:               &c.ic.Logger,
 	}
 	destroyNearCacheFun := func(service, object string) {

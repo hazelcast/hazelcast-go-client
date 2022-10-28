@@ -17,9 +17,9 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/cp"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -34,7 +34,7 @@ const (
 
 // Alters the currently stored value by applying a function on it.
 
-func EncodeAtomicLongAlterRequest(groupId cp.RaftGroupId, name string, function iserialization.Data, returnValueType int32) *proto.ClientMessage {
+func EncodeAtomicLongAlterRequest(groupId types.RaftGroupId, name string, function iserialization.Data, returnValueType int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

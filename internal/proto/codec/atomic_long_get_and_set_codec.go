@@ -17,8 +17,8 @@
 package codec
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/cp"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -33,7 +33,7 @@ const (
 
 // Atomically sets the given value and returns the old value.
 
-func EncodeAtomicLongGetAndSetRequest(groupId cp.RaftGroupId, name string, newValue int64) *proto.ClientMessage {
+func EncodeAtomicLongGetAndSetRequest(groupId types.RaftGroupId, name string, newValue int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

@@ -1,6 +1,7 @@
 package cp
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -17,6 +18,7 @@ const (
 type CpCreationBundle struct {
 	InvocationService    *invocation.Service
 	SerializationService *iserialization.Service
+	InvocationFactory    *cluster.ConnectionInvocationFactory
 	Logger               *logger.LogAdaptor
 }
 
@@ -46,5 +48,5 @@ func NewCpSubsystem(bundle CpCreationBundle) *CpSubSystem {
 }
 
 func (c *CpSubSystem) GetAtomicLong(name string) (*AtomicLong, error) {
-	return c.proxyManager.getAtomicLong()
+	return c.proxyManager.getAtomicLong(name)
 }

@@ -22,34 +22,27 @@ import (
 )
 
 const (
-	AtomicLongGetCodecRequestMessageType  = int32(0x090500)
-	AtomicLongGetCodecResponseMessageType = int32(0x090501)
+	CPGroupDestroyCPObjectCodecRequestMessageType  = int32(0x1E0200)
+	CPGroupDestroyCPObjectCodecResponseMessageType = int32(0x1E0201)
 
-	AtomicLongGetCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
-
-	AtomicLongGetResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	CPGroupDestroyCPObjectCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Gets the current value.
+// Destroys the distributed object with the given name on the requested
+// CP group
 
-func EncodeAtomicLongGetRequest(groupId types.RaftGroupId, name string) *proto.ClientMessage {
+func EncodeCPGroupDestroyCPObjectRequest(groupId types.RaftGroupId, serviceName string, objectName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, AtomicLongGetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, CPGroupDestroyCPObjectCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(AtomicLongGetCodecRequestMessageType)
+	clientMessage.SetMessageType(CPGroupDestroyCPObjectCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeRaftGroupId(clientMessage, groupId)
-	EncodeString(clientMessage, name)
+	EncodeString(clientMessage, serviceName)
+	EncodeString(clientMessage, objectName)
 
 	return clientMessage
-}
-
-func DecodeAtomicLongGetResponse(clientMessage *proto.ClientMessage) int64 {
-	frameIterator := clientMessage.FrameIterator()
-	initialFrame := frameIterator.Next()
-
-	return FixSizedTypesCodec.DecodeLong(initialFrame.Content, AtomicLongGetResponseResponseOffset)
 }

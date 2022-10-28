@@ -1,4 +1,4 @@
-package cp
+package types
 
 type RaftGroupId struct {
 	Name string

@@ -18,39 +18,36 @@ package codec
 
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
-	AtomicLongApplyCodecRequestMessageType  = int32(0x090100)
-	AtomicLongApplyCodecResponseMessageType = int32(0x090101)
+	CPGroupCreateCPGroupCodecRequestMessageType  = int32(0x1E0100)
+	CPGroupCreateCPGroupCodecResponseMessageType = int32(0x1E0101)
 
-	AtomicLongApplyCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+	CPGroupCreateCPGroupCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Applies a function on the value, the actual stored value will not change
+// Creates a new CP group with the given name
 
-func EncodeAtomicLongApplyRequest(groupId types.RaftGroupId, name string, function iserialization.Data) *proto.ClientMessage {
+func EncodeCPGroupCreateCPGroupRequest(proxyName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
-	clientMessage.SetRetryable(false)
+	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, AtomicLongApplyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, CPGroupCreateCPGroupCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(AtomicLongApplyCodecRequestMessageType)
+	clientMessage.SetMessageType(CPGroupCreateCPGroupCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
-	EncodeRaftGroupId(clientMessage, groupId)
-	EncodeString(clientMessage, name)
-	EncodeData(clientMessage, function)
+	EncodeString(clientMessage, proxyName)
 
 	return clientMessage
 }
 
-func DecodeAtomicLongApplyResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeCPGroupCreateCPGroupResponse(clientMessage *proto.ClientMessage) types.RaftGroupId {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeRaftGroupId(frameIterator)
 }
