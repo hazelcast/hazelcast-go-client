@@ -2,13 +2,11 @@ package cp
 
 import (
 	"context"
-	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	"math"
@@ -27,8 +25,8 @@ type proxy struct {
 	serviceName          string
 }
 
-// Called by proxyManager -> proxyFor method.
-func newProxy(ctx context.Context, bundle CpCreationBundle, gi *types.RaftGroupId, svc string, pname string, obj string) (*proxy, error) {
+// Called by proxyManager -> getOrCreateProxy method.
+func newProxy(ctx context.Context, bundle *serviceBundle, gi *types.RaftGroupId, svc string, pname string, obj string) (*proxy, error) {
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -40,24 +38,13 @@ func newProxy(ctx context.Context, bundle CpCreationBundle, gi *types.RaftGroupI
 		serviceName:          svc,
 		proxyName:            pname,
 		objectName:           obj,
-		invocationService:    bundle.InvocationService,
-		serializationService: bundle.SerializationService,
-		invocationFactory:    bundle.InvocationFactory,
-		logger:               *bundle.Logger,
+		invocationService:    bundle.invocationService,
+		serializationService: bundle.serializationService,
+		invocationFactory:    bundle.invocationFactory,
+		logger:               *bundle.logger,
 		cb:                   circuitBreaker,
 	}
-	if err := p.create(ctx); err != nil {
-		return nil, err
-	}
 	return p, nil
-}
-
-func (p *proxy) create(ctx context.Context) error {
-	request := codec.EncodeCPGroupCreateCPGroupRequest(p.objectName)
-	if _, err := p.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return fmt.Errorf("error creating proxy: %w", err)
-	}
-	return nil
 }
 
 func (p *proxy) GroupId() types.RaftGroupId {

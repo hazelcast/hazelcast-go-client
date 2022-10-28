@@ -22,14 +22,6 @@ func (al *AtomicLong) AddAndGet(delta int64) (int64, error) {
 	return codec.DecodeAtomicLongAddAndGetResponse(response), nil
 }
 
-func (al *AtomicLong) IncrementAndGet() (int64, error) {
-	return al.AddAndGet(1)
-}
-
-func (al *AtomicLong) DecrementAndGet() (int64, error) {
-	return al.AddAndGet(-1)
-}
-
 func (al *AtomicLong) CompareAndSet(expect int64, update int64) (bool, error) {
 	request := codec.EncodeAtomicLongCompareAndSetRequest(al.groupId, al.proxyName, expect, update)
 	response, err := al.invokeOnRandomTarget(context.Background(), request, nil)
@@ -57,14 +49,6 @@ func (al *AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error)
 	return codec.DecodeAtomicLongGetAndAddResponse(response), nil
 }
 
-func (al *AtomicLong) GetAndDecrement(ctx context.Context) (int64, error) {
-	return al.GetAndAdd(ctx, -1)
-}
-
-func (al *AtomicLong) GetAndIncrement(ctx context.Context) (int64, error) {
-	return al.GetAndAdd(ctx, 1)
-}
-
 func (al *AtomicLong) GetAndSet(ctx context.Context, value int64) (int64, error) {
 	request := codec.EncodeAtomicLongGetAndSetRequest(al.groupId, al.proxyName, value)
 	response, err := al.invokeOnRandomTarget(ctx, request, nil)
@@ -81,4 +65,20 @@ func (al *AtomicLong) Set(ctx context.Context, value int64) error {
 		return err
 	}
 	return nil
+}
+
+func (al *AtomicLong) IncrementAndGet() (int64, error) {
+	return al.AddAndGet(1)
+}
+
+func (al *AtomicLong) DecrementAndGet() (int64, error) {
+	return al.AddAndGet(-1)
+}
+
+func (al *AtomicLong) GetAndDecrement(ctx context.Context) (int64, error) {
+	return al.GetAndAdd(ctx, -1)
+}
+
+func (al *AtomicLong) GetAndIncrement(ctx context.Context) (int64, error) {
+	return al.GetAndAdd(ctx, 1)
 }
