@@ -106,7 +106,6 @@ func (pm *ProxyManager) withoutDefaultGroupName(ctx context.Context, proxyName s
 		return name[:idx]
 	}
 	return name
-
 }
 
 func (pm *ProxyManager) invoke(ctx context.Context, request *proto.ClientMessage) (*proto.ClientMessage, error) {
