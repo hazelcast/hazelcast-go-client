@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	AtomicLongService      = "hz:raft:atomicLongService"
-	AtomicReferenceService = "hz:raft:atomicRefService"
-	CountDownLatchService  = "hz:raft:countDownLatchService"
-	LockService            = "hz:raft:lockService"
-	SemaphoreService       = "hz:raft:semaphoreService"
+	atomicLongService      = "hz:raft:atomicLongService"
+	atomicReferenceService = "hz:raft:atomicRefService"
+	countDownLatchService  = "hz:raft:countDownLatchService"
+	lockService            = "hz:raft:lockService"
+	semaphoreService       = "hz:raft:semaphoreService"
 )
 
 const (
@@ -33,7 +33,7 @@ type serviceBundle struct {
 	logger               *logger.LogAdaptor
 }
 
-func (b serviceBundle) Check() {
+func (b serviceBundle) check() {
 	if b.invocationService == nil {
 		panic("invocationFactory is nil")
 	}
@@ -61,7 +61,7 @@ func newCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvoca
 		serializationService: ss,
 		logger:               l,
 	}
-	b.Check()
+	b.check()
 	p := &proxyManager{
 		mu:      &sync.RWMutex{},
 		proxies: map[string]interface{}{},
@@ -71,8 +71,8 @@ func newCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvoca
 }
 
 func (m *proxyManager) getOrCreateProxy(ctx context.Context, serviceName string, proxyName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
-	proxyName = m.withoutDefaultGroupName(ctx, proxyName)
-	objectName := m.objectNameForProxy(ctx, proxyName)
+	proxyName = m.withoutDefaultGroupName(proxyName)
+	objectName := m.objectNameForProxy(proxyName)
 	groupId, _ := m.createGroupId(ctx, proxyName)
 	m.mu.RLock()
 	wrapper, ok := m.proxies[proxyName]
@@ -98,7 +98,7 @@ func (m *proxyManager) getOrCreateProxy(ctx context.Context, serviceName string,
 	return wrapper, nil
 }
 
-func (m *proxyManager) objectNameForProxy(ctx context.Context, name string) string {
+func (m *proxyManager) objectNameForProxy(name string) string {
 	idx := strings.Index(name, "@")
 	if idx == -1 {
 		return name
@@ -130,7 +130,7 @@ func (m *proxyManager) createGroupId(ctx context.Context, proxyName string) (*ty
 	return &groupId, nil
 }
 
-func (m *proxyManager) withoutDefaultGroupName(ctx context.Context, proxyName string) string {
+func (m *proxyManager) withoutDefaultGroupName(proxyName string) string {
 	name := strings.TrimSpace(proxyName)
 	idx := strings.Index(name, "@")
 	if idx == -1 {
@@ -150,7 +150,7 @@ func (m *proxyManager) withoutDefaultGroupName(ctx context.Context, proxyName st
 }
 
 func (m *proxyManager) getAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
-	p, err := m.getOrCreateProxy(ctx, AtomicLongService, name, func(p *proxy) (interface{}, error) {
+	p, err := m.getOrCreateProxy(ctx, atomicLongService, name, func(p *proxy) (interface{}, error) {
 		return newAtomicLong(p), nil
 	})
 	if err != nil {
