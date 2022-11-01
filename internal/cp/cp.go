@@ -8,18 +8,18 @@ import (
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
-type CPSubsystem struct {
+type CPSubSystem struct {
 	proxyManager *proxyManager
 }
 
-func NewCpSubsystem(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) *CPSubsystem {
+func NewCPSubsystem(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) *CPSubSystem {
 	proxyManager, _ := newCpProxyManager(ss, cif, is, l)
-	cp := &CPSubsystem{
+	cp := &CPSubSystem{
 		proxyManager: proxyManager,
 	}
 	return cp
 }
 
-func (c *CPSubsystem) GetAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
+func (c *CPSubSystem) GetAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
 	return c.proxyManager.getAtomicLong(ctx, name)
 }

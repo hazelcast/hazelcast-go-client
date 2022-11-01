@@ -1,7 +1,6 @@
 package types
 
-type RaftGroupId struct {
+type CPGroupId struct {
 	Name string
-	Seed int64
 	Id   int64
 }

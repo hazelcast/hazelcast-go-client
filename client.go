@@ -71,7 +71,7 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
-	cpSubsystem             *cp.CPSubsystem
+	cpSubsystem             *cp.CPSubSystem
 	nearCacheMgrsMu         *sync.RWMutex
 	nearCacheMgrs           map[string]*inearcache.Manager
 	cfg                     *Config
@@ -422,16 +422,14 @@ func (c *Client) createComponents(config *Config) {
 	}
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
-	c.cpSubsystem = cp.NewCpSubsystem(c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.cpSubsystem = cp.NewCPSubsystem(c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 }
 
-func (c *Client) GetCpSubsystem() (*cp.CPSubsystem, error) {
-	if c.ic.State() != client.Ready {
-		return nil, hzerrors.ErrClientNotActive
-	}
-	return c.cpSubsystem, nil
+func (c *Client) CPSubsystem() *cp.CPSubSystem {
+	return c.cpSubsystem
 }
+
 func (c *Client) getNearCacheManager(service string) *inearcache.Manager {
 	c.nearCacheMgrsMu.RLock()
 	mgr, ok := c.nearCacheMgrs[service]
