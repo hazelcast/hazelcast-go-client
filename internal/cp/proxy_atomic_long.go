@@ -64,6 +64,17 @@ func (a *AtomicLong) Set(ctx context.Context, value int64) error {
 	return err
 }
 
+func (a *AtomicLong) Apply(ctx context.Context, function interface{}) (interface{}, error) {
+	data, _ := a.serializationService.ToData(function)
+	request := codec.EncodeAtomicLongApplyRequest(a.groupId, a.objectName, data)
+	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+		return nil, err
+	} else {
+		obj, _ := a.serializationService.ToObject(codec.DecodeAtomicLongApplyResponse(response))
+		return obj, nil
+	}
+}
+
 func (a *AtomicLong) IncrementAndGet(ctx context.Context) (int64, error) {
 	return a.AddAndGet(ctx, 1)
 }

@@ -19,7 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/cp"
+	"github.com/hazelcast/hazelcast-go-client/internal/cp"
 	"sync"
 	"time"
 
@@ -440,6 +440,7 @@ func (c *Client) getNearCacheManager(service string) *inearcache.Manager {
 		return mgr
 	}
 	c.nearCacheMgrsMu.Lock()
+	mgr, ok = c.nearCacheMgrs[service]
 	mgr, ok = c.nearCacheMgrs[service]
 	if !ok {
 		ris := c.cfg.NearCacheInvalidation.ReconciliationIntervalSeconds()
