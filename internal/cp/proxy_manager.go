@@ -5,6 +5,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/cp"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cp/types"
+	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -72,9 +73,18 @@ func newCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvoca
 }
 
 func (m *proxyManager) getOrCreateProxy(ctx context.Context, serviceName string, proxyName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
-	proxyName = m.withoutDefaultGroupName(proxyName)
-	objectName := m.objectNameForProxy(proxyName)
-	groupId, _ := m.createGroupId(ctx, proxyName)
+	proxyName, err := withoutDefaultGroupName(proxyName)
+	if err != nil {
+		return nil, err
+	}
+	objectName, err := objectNameForProxy(proxyName)
+	if err != nil {
+		return nil, err
+	}
+	groupId, err := m.createGroupId(ctx, proxyName)
+	if err != nil {
+		return nil, err
+	}
 	m.mu.RLock()
 	wrapper, ok := m.proxies[proxyName]
 	m.mu.RUnlock()
@@ -99,20 +109,20 @@ func (m *proxyManager) getOrCreateProxy(ctx context.Context, serviceName string,
 	return wrapper, nil
 }
 
-func (m *proxyManager) objectNameForProxy(name string) string {
+func objectNameForProxy(name string) (string, error) {
 	idx := strings.Index(name, "@")
 	if idx == -1 {
-		return name
+		return name, nil
 	}
 	groupName := strings.TrimSpace(name[idx+1:])
 	if len(groupName) <= 0 {
-		panic("Custom CP group name cannot be empty string")
+		return "", hzerrors.NewIllegalArgumentError("Custom CP group name cannot be empty string", nil)
 	}
 	objectName := strings.TrimSpace(name[:idx])
 	if len(objectName) <= 0 {
-		panic("Object name cannot be empty string")
+		return "", hzerrors.NewIllegalArgumentError("Object name cannot be empty string", nil)
 	}
-	return objectName
+	return objectName, nil
 }
 
 func (m *proxyManager) createGroupId(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
@@ -131,23 +141,23 @@ func (m *proxyManager) createGroupId(ctx context.Context, proxyName string) (*ty
 	return &groupId, nil
 }
 
-func (m *proxyManager) withoutDefaultGroupName(proxyName string) string {
+func withoutDefaultGroupName(proxyName string) (string, error) {
 	name := strings.TrimSpace(proxyName)
 	idx := strings.Index(name, "@")
 	if idx == -1 {
-		return name
+		return name, nil
 	}
 	if ci := strings.Index(name[idx+1:], "@"); ci != -1 {
-		panic("Custom group name must be specified at most once")
+		return "", hzerrors.NewIllegalArgumentError("Custom group name must be specified at most once", nil)
 	}
 	groupName := strings.TrimSpace(name[idx+1:])
 	if lgn := strings.ToLower(groupName); lgn == metadataCpGroupName {
-		panic("\"CP data structures cannot run on the METADATA CP group!\"")
+		return "", hzerrors.NewIllegalArgumentError("CP data structures cannot run on the METADATA CP group!", nil)
 	}
 	if strings.ToLower(groupName) == defaultGroupName {
-		return name[:idx]
+		return name[:idx], nil
 	}
-	return name
+	return name, nil
 }
 
 func (m *proxyManager) getAtomicLong(ctx context.Context, name string) (cp.AtomicLong, error) {
