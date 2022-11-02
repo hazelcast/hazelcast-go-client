@@ -24,7 +24,7 @@ type AtomicLong interface {
 	// only if the current value equals the expected value.
 	CompareAndSet(ctx context.Context, expect int64, update int64) (bool, error)
 	// Get gets the current value.
-	Get(ctx context.Context) (interface{}, error)
+	Get(ctx context.Context) (int64, error)
 	// GetAndAdd atomically adds the given value to the current value.
 	GetAndAdd(ctx context.Context, delta int64) (int64, error)
 	// GetAndSet atomically sets the given value and returns the old value.

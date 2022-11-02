@@ -36,10 +36,10 @@ func (a AtomicLong) CompareAndSet(ctx context.Context, expect int64, update int6
 	}
 }
 
-func (a AtomicLong) Get(ctx context.Context) (interface{}, error) {
+func (a AtomicLong) Get(ctx context.Context) (int64, error) {
 	request := codec.EncodeAtomicLongGetRequest(a.groupId, a.proxyName)
 	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return nil, err
+		return 0, err
 	} else {
 		return codec.DecodeAtomicLongGetResponse(response), nil
 	}
