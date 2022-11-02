@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	_ cp.SubSystem = SubSystem{}
+	_ cp.Subsystem = SubSystem{}
 )
 
 type SubSystem struct {
