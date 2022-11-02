@@ -47,10 +47,6 @@ func newProxy(bundle *serviceBundle, gi *types.RaftGroupId, svc string, pxy stri
 	return p, nil
 }
 
-func (p *proxy) GroupId() types.RaftGroupId {
-	return p.groupId
-}
-
 func (p *proxy) Name() string {
 	return p.proxyName
 }
@@ -59,9 +55,9 @@ func (p *proxy) ServiceName() string {
 	return p.serviceName
 }
 
-func (p *proxy) Destroy() error {
+func (p *proxy) Destroy(ctx context.Context) error {
 	request := codec.EncodeCPGroupDestroyCPObjectRequest(p.groupId, p.serviceName, p.objectName)
-	_, err := p.invokeOnRandomTarget(context.Background(), request, nil)
+	_, err := p.invokeOnRandomTarget(ctx, request, nil)
 	return err
 }
 

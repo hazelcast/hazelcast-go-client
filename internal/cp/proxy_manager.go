@@ -2,6 +2,7 @@ package cp
 
 import (
 	"context"
+	"github.com/hazelcast/hazelcast-go-client/cp"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cp/types"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
@@ -149,7 +150,7 @@ func (m *proxyManager) withoutDefaultGroupName(proxyName string) string {
 	return name
 }
 
-func (m *proxyManager) getAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
+func (m *proxyManager) getAtomicLong(ctx context.Context, name string) (cp.AtomicLong, error) {
 	p, err := m.getOrCreateProxy(ctx, atomicLongService, name, func(p *proxy) (interface{}, error) {
 		return newAtomicLong(p), nil
 	})

@@ -1,8 +1,7 @@
 package types
 
-import "github.com/hazelcast/hazelcast-go-client/types"
-
 type RaftGroupId struct {
-	*types.CPGroupId
+	Name string
+	Id   int64
 	Seed int64
 }

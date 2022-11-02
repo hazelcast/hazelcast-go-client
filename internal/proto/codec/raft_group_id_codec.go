@@ -17,9 +17,8 @@
 package codec
 
 import (
-	types2 "github.com/hazelcast/hazelcast-go-client/internal/cp/types"
+	"github.com/hazelcast/hazelcast-go-client/internal/cp/types"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
-	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
 const (
@@ -28,7 +27,7 @@ const (
 	RaftGroupIdCodecIdInitialFrameSize = RaftGroupIdCodecIdFieldOffset + proto.LongSizeInBytes
 )
 
-func EncodeRaftGroupId(clientMessage *proto.ClientMessage, raftGroupId types2.RaftGroupId) {
+func EncodeRaftGroupId(clientMessage *proto.ClientMessage, raftGroupId types.RaftGroupId) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, RaftGroupIdCodecIdInitialFrameSize))
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, RaftGroupIdCodecSeedFieldOffset, int64(raftGroupId.Seed))
@@ -40,7 +39,7 @@ func EncodeRaftGroupId(clientMessage *proto.ClientMessage, raftGroupId types2.Ra
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeRaftGroupId(frameIterator *proto.ForwardFrameIterator) types2.RaftGroupId {
+func DecodeRaftGroupId(frameIterator *proto.ForwardFrameIterator) types.RaftGroupId {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -49,10 +48,10 @@ func DecodeRaftGroupId(frameIterator *proto.ForwardFrameIterator) types2.RaftGro
 
 	name := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return types2.RaftGroupId{
-		CPGroupId: &types.CPGroupId{
-			Name: name,
-			Id:   id,
-		},
-		Seed: seed}
+
+	return types.RaftGroupId{
+		Name: name,
+		Id:   id,
+		Seed: seed,
+	}
 }
