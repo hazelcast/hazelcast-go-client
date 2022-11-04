@@ -80,6 +80,44 @@ func (a AtomicLong) Apply(ctx context.Context, function interface{}) (interface{
 	}
 }
 
+func (a AtomicLong) Alter(ctx context.Context, function interface{}) error {
+	data, err := a.serializationService.ToData(function)
+	if err != nil {
+		return err
+	}
+	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 1)
+	if _, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int64, error) {
+	data, err := a.serializationService.ToData(function)
+	if err != nil {
+		return 0, err
+	}
+	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 0)
+	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+		return 0, nil
+	} else {
+		return codec.DecodeAtomicLongAlterResponse(response), err
+	}
+}
+
+func (a AtomicLong) AlterAndGet(ctx context.Context, function interface{}) (int64, error) {
+	data, err := a.serializationService.ToData(function)
+	if err != nil {
+		return 0, err
+	}
+	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 1)
+	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+		return 0, nil
+	} else {
+		return codec.DecodeAtomicLongAlterResponse(response), err
+	}
+}
+
 func (a AtomicLong) IncrementAndGet(ctx context.Context) (int64, error) {
 	return a.AddAndGet(ctx, 1)
 }

@@ -31,8 +31,6 @@ type AtomicLong interface {
 	GetAndSet(ctx context.Context, value int64) (int64, error)
 	// Set atomically sets the given value.
 	Set(ctx context.Context, value int64) error
-	// Apply applies a function on the value, the actual stored value will not change.
-	Apply(ctx context.Context, function interface{}) (interface{}, error)
 	// IncrementAndGet atomically increments the current value by one.
 	IncrementAndGet(ctx context.Context) (int64, error)
 	// DecrementAndGet atomically decrements the current value by one.
@@ -41,4 +39,12 @@ type AtomicLong interface {
 	GetAndDecrement(ctx context.Context) (int64, error)
 	// GetAndIncrement atomically increments the current value by one.
 	GetAndIncrement(ctx context.Context) (int64, error)
+	// Apply applies a function on the value, the actual stored value will not change.
+	Apply(ctx context.Context, function interface{}) (interface{}, error)
+	// Alter alters the currently stored value by applying a function on it.
+	Alter(ctx context.Context, function interface{}) error
+	// GetAndAlter alters the currently stored value by applying a function on it and gets the old value.
+	GetAndAlter(ctx context.Context, function interface{}) (int64, error)
+	// AlterAndGet alters the currently stored value by applying a function on it and gets the result.
+	AlterAndGet(ctx context.Context, function interface{}) (int64, error)
 }
