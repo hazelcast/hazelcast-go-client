@@ -21,7 +21,7 @@ func newAtomicLong(p *proxy) *AtomicLong {
 func (a AtomicLong) AddAndGet(ctx context.Context, delta int64) (int64, error) {
 	request := codec.EncodeAtomicLongAddAndGetRequest(a.groupId, a.proxyName, delta)
 	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return -1, err
+		return 0, err
 	} else {
 		return codec.DecodeAtomicLongAddAndGetResponse(response), nil
 	}
@@ -48,7 +48,7 @@ func (a AtomicLong) Get(ctx context.Context) (int64, error) {
 func (a AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error) {
 	request := codec.EncodeAtomicLongGetAndAddRequest(a.groupId, a.proxyName, delta)
 	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return -1, err
+		return 0, err
 	} else {
 		return codec.DecodeAtomicLongGetAndAddResponse(response), nil
 	}
@@ -57,7 +57,7 @@ func (a AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error) {
 func (a AtomicLong) GetAndSet(ctx context.Context, value int64) (int64, error) {
 	request := codec.EncodeAtomicLongGetAndSetRequest(a.groupId, a.proxyName, value)
 	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return -1, err
+		return 0, err
 	} else {
 		return codec.DecodeAtomicLongGetAndSetResponse(response), nil
 	}
@@ -86,10 +86,8 @@ func (a AtomicLong) Alter(ctx context.Context, function interface{}) error {
 		return err
 	}
 	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 1)
-	if _, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return err
-	}
-	return nil
+	_, err = a.invokeOnRandomTarget(ctx, request, nil)
+	return err
 }
 
 func (a AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int64, error) {
@@ -99,9 +97,9 @@ func (a AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int6
 	}
 	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 0)
 	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return 0, nil
+		return 0, err
 	} else {
-		return codec.DecodeAtomicLongAlterResponse(response), err
+		return codec.DecodeAtomicLongAlterResponse(response), nil
 	}
 }
 
@@ -112,9 +110,9 @@ func (a AtomicLong) AlterAndGet(ctx context.Context, function interface{}) (int6
 	}
 	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 1)
 	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
-		return 0, nil
+		return 0, err
 	} else {
-		return codec.DecodeAtomicLongAlterResponse(response), err
+		return codec.DecodeAtomicLongAlterResponse(response), nil
 	}
 }
 
