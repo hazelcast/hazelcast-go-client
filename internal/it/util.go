@@ -65,6 +65,10 @@ var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster 
 	}
 	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
 })
+var cpEnabledTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
+	port := NextPort()
+	return rc.startNewCluster(3, xmlCPConfig(DefaultClusterName, port), port)
+})
 var idGen = proxy.ReferenceIDGenerator{}
 
 func init() {
@@ -466,6 +470,58 @@ func xmlSSLConfig(clusterName string, port int) string {
 				</data-serializable-factories>
 			</serialization>
 		</hazelcast>
+			`, clusterName, port)
+}
+
+func xmlCPConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+               <port>%d</port>
+            </network>
+			<map name="test-map">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<map name="test-map-smart">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<map name="test-map-unisocket">
+				<map-store enabled="true">
+					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
+				</map-store>
+			</map>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
+			<cp-subsystem>
+				<cp-member-count>3</cp-member-count>
+				<group-size>0</group-size>
+				<session-time-to-live-seconds>300</session-time-to-live-seconds>
+				<session-heartbeat-interval-seconds>5</session-heartbeat-interval-seconds>
+				<missing-cp-member-auto-removal-seconds>14400</missing-cp-member-auto-removal-seconds>
+				<fail-on-indeterminate-operation-state>false</fail-on-indeterminate-operation-state>
+				<raft-algorithm>
+					<leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
+					<leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
+					<max-missed-leader-heartbeat-count>5</max-missed-leader-heartbeat-count>
+					<append-request-max-entry-count>100</append-request-max-entry-count>
+					<commit-index-advance-count-to-snapshot>10000</commit-index-advance-count-to-snapshot>
+					<uncommitted-entry-count-to-reject-new-appends>100</uncommitted-entry-count-to-reject-new-appends>
+					<append-request-backoff-timeout-in-millis>100</append-request-backoff-timeout-in-millis>
+				</raft-algorithm>
+			</cp-subsystem>
+        </hazelcast>
 			`, clusterName, port)
 }
 

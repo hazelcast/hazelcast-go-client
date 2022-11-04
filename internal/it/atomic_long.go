@@ -25,7 +25,7 @@ func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, con
 	)
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
-		cls := defaultTestCluster.Launch(t)
+		cls := cpEnabledTestCluster.Launch(t)
 		config := cls.DefaultConfig()
 		if configCallback != nil {
 			configCallback(&config)

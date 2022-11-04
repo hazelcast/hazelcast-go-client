@@ -1,4 +1,4 @@
-package cp
+package hazelcast_test
 
 import (
 	"context"
@@ -38,7 +38,7 @@ func TestAtomicLong_Set(t *testing.T) {
 		require.NoError(t, err)
 		v, err := a.Get(context.Background())
 		require.NoError(t, err)
-		require.Equal(t, 271, v)
+		require.Equal(t, int64(271), v)
 	})
 }
 
@@ -46,7 +46,7 @@ func TestAtomicLong_Get(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a cp.AtomicLong) {
 		v, err := a.Get(context.Background())
 		require.NoError(t, err)
-		require.Equal(t, 0, v)
+		require.Equal(t, int64(0), v)
 	})
 }
 
@@ -54,10 +54,10 @@ func TestAtomicLong_AddAndGet(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a cp.AtomicLong) {
 		v, err := a.AddAndGet(context.Background(), 271)
 		require.NoError(t, err)
-		require.Equal(t, v, 271)
+		require.Equal(t, v, int64(271))
 		v, err = a.Get(context.Background())
 		require.NoError(t, err)
-		require.Equal(t, 271, v)
+		require.Equal(t, int64(271), v)
 	})
 }
 
