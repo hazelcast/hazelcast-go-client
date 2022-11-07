@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -172,8 +172,9 @@ type DataOutput interface {
 // If any of the methods results in an error, all following methods will return the zero value
 // for that type immediately.
 // Example usage:
-//  field1 = input.ReadString()
-//  field2 = input.ReadString()
+//
+//	field1 = input.ReadString()
+//	field2 = input.ReadString()
 type DataInput interface {
 	// Position returns the head position in the byte array.
 	Position() int32
@@ -313,9 +314,10 @@ type PortableWriter interface {
 // PortableReader provides a mean of reading portable fields from a binary in form of go primitives
 // arrays of go primitives, nested portable fields and array of portable fields.
 // Example usage:
-// 	s.id = reader.ReadInt16("id")
-//  s.age = reader.ReadInt32("age")
-//  return reader.Error()
+//
+//		s.id = reader.ReadInt16("id")
+//	 s.age = reader.ReadInt32("age")
+//	 return reader.Error()
 type PortableReader interface {
 	// ReadByte takes fieldName Name of the field and returns the byte value read.
 	// It returns zero if an error is set previously.

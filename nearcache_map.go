@@ -19,9 +19,10 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"sync/atomic"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"

@@ -398,6 +398,8 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
+const RingbufferCapacity = 10
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -429,8 +431,11 @@ func xmlConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
         </hazelcast>
-	`, clusterName, port)
+	`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLConfig(clusterName string, port int) string {
@@ -465,8 +470,11 @@ func xmlSSLConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
 		</hazelcast>
-			`, clusterName, port)
+			`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
