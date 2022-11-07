@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,8 @@ func MultiMapTesterWithConfigAndName(t *testing.T, makeMapName func() string, co
 			t.Logf("enabled leak check")
 			defer goleak.VerifyNone(t)
 		}
-		config := defaultTestCluster.DefaultConfig()
+		cls := defaultTestCluster.Launch(t)
+		config := cls.DefaultConfig()
 		if configCallback != nil {
 			configCallback(&config)
 		}

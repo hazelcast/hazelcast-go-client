@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-package event
+/*
+Package nearcache contains the configuration and data types for the Near Cache.
 
-import "testing"
-
-func TestMakeSubscriptionID(t *testing.T) {
-	subscriptionID := MakeSubscriptionID(func() {})
-	if subscriptionID == 0 {
-		t.Fatalf("unexpected 0")
-	}
-}
-
-func TestMakeSubscriptionIDFails(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.Fatalf("expected a panic")
-		}
-	}()
-	MakeSubscriptionID(42)
-}
+Checkout the Map documentation for an overview of the Near Cache.
+*/
+package nearcache

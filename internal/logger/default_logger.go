@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -39,7 +40,9 @@ const (
 // DefaultLogger has Go's built-in logger embedded in it. It adds level logging.
 // To set the logging level, one should use the LoggingLevel property. For example
 // to set it to debug level:
-//  config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
+//
+//	config.SetProperty(property.LoggingLevel.Name(), logger.DebugLevel)
+//
 // If loggerConfig.SetLogger() method is called, the LoggingLevel property will not be used.
 type DefaultLogger struct {
 	*log.Logger
@@ -104,6 +107,22 @@ func (la LogAdaptor) Debug(f func() string) {
 // Trace runs the given function to generate the logger string, if logger level is trace or finer.
 func (la LogAdaptor) Trace(f func() string) {
 	la.Log(logger.WeightTrace, f)
+}
+
+// TraceHere logs the function name, source file and line number of the call site.
+func (la LogAdaptor) TraceHere() {
+	const pkg = "github.com/hazelcast/hazelcast-go-client/"
+	const pkgLen = len(pkg)
+	la.Log(logger.WeightTrace, func() string {
+		pc, file, line, ok := runtime.Caller(3)
+		if ok {
+			if details := runtime.FuncForPC(pc); details != nil {
+				fun := details.Name()[pkgLen:]
+				return fmt.Sprintf("HERE -> %s [%s:%d]", fun, file, line)
+			}
+		}
+		return fmt.Sprintf("(could not generate TraceHere output)")
+	})
 }
 
 // Info runs the given function to generate the logger string, if logger level is trace or finer.

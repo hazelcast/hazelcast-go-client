@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,9 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 			r.close()
 			return io.EOF
 		}
-		if err := r.fetchNextPage(context.Background()); err != nil {
+		ctx, cancel := r.contextWithCancel()
+		defer cancel()
+		if err := r.fetchNextPage(ctx); err != nil {
 			return err
 		}
 		// after fetching next page, the page and its cols change, so have to refresh them
@@ -133,7 +135,7 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 func (r *QueryResult) closeQuery() error {
 	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
 		close(r.doneCh)
-		if err := r.ss.closeQuery(r.queryID, r.conn); err != nil {
+		if err := r.ss.closeQuery(context.Background(), r.queryID, r.conn); err != nil {
 			return err
 		}
 	}
@@ -155,6 +157,18 @@ func (r *QueryResult) fetchNextPage(ctx context.Context) error {
 	r.err = err
 	r.index = 0
 	return nil
+}
+
+func (r *QueryResult) contextWithCancel() (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		select {
+		case <-r.doneCh:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx, cancel
 }
 
 // ExecResult contains the result of an SQL query which doesn't return any rows.

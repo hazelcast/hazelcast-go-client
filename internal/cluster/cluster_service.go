@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -103,13 +103,7 @@ func (s *Service) SQLMember() *pubcluster.MemberInfo {
 
 func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
 	s.membersMap.reset()
-	addrSet := NewAddrSet()
-	addrs, err := clusterCtx.AddressProvider.Addresses()
-	if err != nil {
-		return nil, err
-	}
-	addrSet.AddAddrs(addrs)
-	return addrSet.Addrs(), nil
+	return UniqueAddrs(clusterCtx.AddressProvider)
 }
 
 func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo) (pubcluster.Address, error) {
@@ -153,30 +147,23 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 	return err
 }
 
-type AddrSet struct {
-	addrs map[string]pubcluster.Address
-}
-
-func NewAddrSet() AddrSet {
-	return AddrSet{addrs: map[string]pubcluster.Address{}}
-}
-
-func (a AddrSet) AddAddr(addr pubcluster.Address) {
-	a.addrs[addr.String()] = addr
-}
-
-func (a AddrSet) AddAddrs(addrs []pubcluster.Address) {
-	for _, addr := range addrs {
-		a.AddAddr(addr)
+// UniqueAddrs return unique addresses while preserving initial order
+func UniqueAddrs(ap AddressProvider) ([]pubcluster.Address, error) {
+	addrs, err := ap.Addresses()
+	if err != nil {
+		return nil, err
 	}
-}
-
-func (a AddrSet) Addrs() []pubcluster.Address {
-	addrs := make([]pubcluster.Address, 0, len(a.addrs))
-	for _, addr := range a.addrs {
-		addrs = append(addrs, addr)
+	l := len(addrs)
+	uniqueSet := make(map[pubcluster.Address]struct{}, l)
+	uniqueAddrs := make([]pubcluster.Address, 0, l)
+	for _, a := range addrs {
+		if _, ok := uniqueSet[a]; ok {
+			continue
+		}
+		uniqueAddrs = append(uniqueAddrs, a)
+		uniqueSet[a] = struct{}{}
 	}
-	return addrs
+	return uniqueAddrs, nil
 }
 
 type membersMap struct {

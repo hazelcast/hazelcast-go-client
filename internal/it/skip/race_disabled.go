@@ -1,5 +1,8 @@
+//go:build !race
+// +build !race
+
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -14,17 +17,6 @@
  * limitations under the License.
  */
 
-package event
+package skip
 
-import (
-	"reflect"
-)
-
-// MakeSubscriptionID creates subscription ID from a function
-func MakeSubscriptionID(fun interface{}) int64 {
-	value := reflect.ValueOf(fun)
-	if value.Kind() != reflect.Func {
-		panic("not a func")
-	}
-	return int64(value.Pointer())
-}
+const raceDetectorEnabled = false
