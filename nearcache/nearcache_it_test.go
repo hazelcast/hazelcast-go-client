@@ -22,13 +22,14 @@ package nearcache_test
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"math/rand"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

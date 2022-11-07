@@ -154,8 +154,8 @@ EvictionConfig is the configuration for eviction.
 You can set a limit for number of entries.
 The default values of the eviction configuration are:
 
-	* EvictionPolicyLRU as eviction policy
-	* 10_000 as maximum size for Map.
+  - EvictionPolicyLRU as eviction policy
+  - 10_000 as maximum size for Map.
 
 Eviction policy and comparator are mutually exclusive.
 */

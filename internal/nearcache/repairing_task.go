@@ -39,8 +39,8 @@ import (
 ReparingTask runs on Near Cache side and only one instance is created per data-structure type like IMap and ICache.
 Repairing responsibilities of this task are:
 
-    * To scan RepairingHandlers to see if any Near Cache needs to be invalidated according to missed invalidation counts (controlled via MaxToleratedMissCount).
-    * To send periodic generic-operations to cluster members in order to fetch latest partition sequences and UUIDs (controlled via InvalidationMinReconciliationIntervalSeconds.
+  - To scan RepairingHandlers to see if any Near Cache needs to be invalidated according to missed invalidation counts (controlled via MaxToleratedMissCount).
+  - To send periodic generic-operations to cluster members in order to fetch latest partition sequences and UUIDs (controlled via InvalidationMinReconciliationIntervalSeconds.
 
 See: com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask
 */

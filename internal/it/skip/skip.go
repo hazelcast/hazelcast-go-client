@@ -59,7 +59,7 @@ var skipChecker = defaultSkipChecker()
 If can be used to skip a test case based on comma-separated conditions.
 There are two kinds of conditions, comparisons and booleans.
 
-Comparison conditions
+# Comparison conditions
 
 Comparison conditions are in the following format:
 
@@ -144,7 +144,7 @@ The following conditions are evaluated to false:
 	hz = 5.1
 	hz = 5.1.0
 
-Boolean conditions
+# Boolean conditions
 
 Boolean conditions are in the following format:
 
@@ -163,7 +163,7 @@ KEY is one of the following keys:
 
 ! operator negates the value of the key.
 
-Many Conditions
+# Many Conditions
 
 More than one condition may be specified by separating them with commas.
 All conditions should be satisfied to skip.
@@ -175,7 +175,6 @@ You can use multiple skip.If statements to skip when one of the conditions is sa
 	// skip if the OS is windows or client version is greater than 1.3.2 and the Hazelcast cluster is open source:
 	skip.If(t, "os = windows")
 	skip.If(t, "ver > 1.3.2, oss")
-
 */
 func If(t *testing.T, conditions string) {
 	if skipChecker.CanSkip(conditions) {

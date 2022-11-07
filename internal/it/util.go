@@ -398,6 +398,8 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
+const RingbufferCapacity = 10
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"
@@ -429,8 +431,11 @@ func xmlConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
         </hazelcast>
-	`, clusterName, port)
+	`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLConfig(clusterName string, port int) string {
@@ -465,8 +470,11 @@ func xmlSSLConfig(clusterName string, port int) string {
 					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
 				</data-serializable-factories>
 			</serialization>
+			<ringbuffer name="test*">
+        			<capacity>%d</capacity>
+    		</ringbuffer>
 		</hazelcast>
-			`, clusterName, port)
+			`, clusterName, port, RingbufferCapacity)
 }
 
 func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
@@ -539,7 +547,6 @@ func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) 
 
 // Never asserts that the given condition doesn't satisfy in 3 seconds,
 // checking target function every 200 milliseconds.
-//
 func Never(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
 	if !assert.Never(t, condition, time.Second*3, time.Millisecond*200, msgAndArgs) {
 		t.FailNow()
