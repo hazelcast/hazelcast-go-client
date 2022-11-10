@@ -15,15 +15,15 @@ import (
 )
 
 type proxy struct {
+	logger               logger.LogAdaptor
 	cb                   *cb.CircuitBreaker
-	groupId              types.RaftGroupId
+	serializationService *iserialization.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	invocationService    *invocation.Service
-	logger               logger.LogAdaptor
 	objectName           string
 	proxyName            string
-	serializationService *iserialization.Service
 	serviceName          string
+	groupId              types.RaftGroupId
 }
 
 func newProxy(bundle *serviceBundle, gi *types.RaftGroupId, svc string, pxy string, obj string) (*proxy, error) {
