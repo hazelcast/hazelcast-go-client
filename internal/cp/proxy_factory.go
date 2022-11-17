@@ -66,7 +66,7 @@ func newCpProxyFactory(ss *iserialization.Service, cif *cluster.ConnectionInvoca
 	return p
 }
 
-func (m *proxyFactory) getOrCreateProxy(ctx context.Context, serviceName string, p string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
+func (m *proxyFactory) getOrCreateProxy(ctx context.Context, serviceName string, p string) (interface{}, error) {
 	p, err := withoutDefaultGroupName(p)
 	if err != nil {
 		return nil, err
@@ -83,11 +83,11 @@ func (m *proxyFactory) getOrCreateProxy(ctx context.Context, serviceName string,
 	if err != nil {
 		return nil, err
 	}
-	wprxy, err := wrapProxyFn(prxy)
-	if err != nil {
-		return nil, err
+	if serviceName == atomicLongService {
+		return AtomicLong{prxy}, nil
+	} else {
+		return nil, nil
 	}
-	return wprxy, nil
 }
 
 func objectNameForProxy(name string) (string, error) {
@@ -142,9 +142,7 @@ func withoutDefaultGroupName(proxyName string) (string, error) {
 }
 
 func (m *proxyFactory) getAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
-	p, err := m.getOrCreateProxy(ctx, atomicLongService, name, func(p *proxy) (interface{}, error) {
-		return newAtomicLong(p), nil
-	})
+	p, err := m.getOrCreateProxy(ctx, atomicLongService, name)
 	if err != nil {
 		return nil, err
 	}

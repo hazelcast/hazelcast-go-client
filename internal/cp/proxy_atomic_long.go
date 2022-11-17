@@ -21,10 +21,6 @@ type AtomicLong struct {
 	*proxy
 }
 
-func newAtomicLong(p *proxy) *AtomicLong {
-	return &AtomicLong{proxy: p}
-}
-
 // AddAndGet atomically adds the given value to the current value.
 func (a AtomicLong) AddAndGet(ctx context.Context, delta int64) (int64, error) {
 	request := codec.EncodeAtomicLongAddAndGetRequest(a.groupId, a.proxyName, delta)

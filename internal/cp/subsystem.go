@@ -29,16 +29,16 @@ import (
 // force-destroyed. For this reason, please make sure that you are completely
 // done with a CP data structure before destroying its proxy.
 type Subsystem struct {
-	proxyManager *proxyFactory
+	proxyFactory *proxyFactory
 }
 
 func NewCPSubsystem(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Subsystem {
 	var c Subsystem
-	c.proxyManager = newCpProxyFactory(ss, cif, is, l)
+	c.proxyFactory = newCpProxyFactory(ss, cif, is, l)
 	return c
 }
 
 // GetAtomicLong returns the distributed AtomicLong instance with given name.
 func (c Subsystem) GetAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
-	return c.proxyManager.getAtomicLong(ctx, name)
+	return c.proxyFactory.getAtomicLong(ctx, name)
 }
