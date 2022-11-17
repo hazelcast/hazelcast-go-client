@@ -26,7 +26,7 @@ type proxy struct {
 	groupId              types.RaftGroupId
 }
 
-func newProxy(bundle *serviceBundle, gi *types.RaftGroupId, svc string, pxy string, obj string) (*proxy, error) {
+func newProxy(bundle *bundle, gi *types.RaftGroupId, svc string, pxy string, obj string) (*proxy, error) {
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),

@@ -34,7 +34,7 @@ type Subsystem struct {
 
 func NewCPSubsystem(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Subsystem {
 	var c Subsystem
-	c.proxyFactory = newCpProxyFactory(ss, cif, is, l)
+	c.proxyFactory = newProxyFactory(ss, cif, is, l)
 	return c
 }
 

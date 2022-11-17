@@ -26,14 +26,14 @@ const (
 	metadataCpGroupName = "metadata"
 )
 
-type serviceBundle struct {
+type bundle struct {
 	invocationService    *invocation.Service
 	serializationService *iserialization.Service
 	invocationFactory    *cluster.ConnectionInvocationFactory
 	logger               *logger.LogAdaptor
 }
 
-func (b serviceBundle) check() {
+func (b bundle) check() {
 	if b.invocationService == nil {
 		panic("invocationFactory is nil")
 	}
@@ -49,41 +49,43 @@ func (b serviceBundle) check() {
 }
 
 type proxyFactory struct {
-	bundle *serviceBundle
+	bundle *bundle
 }
 
-func newCpProxyFactory(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) *proxyFactory {
-	b := &serviceBundle{
+func newProxyFactory(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) *proxyFactory {
+	b := &bundle{
 		invocationService:    is,
 		invocationFactory:    cif,
 		serializationService: ss,
 		logger:               l,
 	}
 	b.check()
-	p := &proxyFactory{
+	return &proxyFactory{
 		bundle: b,
 	}
-	return p
 }
 
-func (m *proxyFactory) getOrCreateProxy(ctx context.Context, serviceName string, p string) (interface{}, error) {
-	p, err := withoutDefaultGroupName(p)
+func (m *proxyFactory) getOrCreateProxy(ctx context.Context, sn string, n string) (interface{}, error) {
+	var (
+		err error
+		pxy string
+		obj string
+		gid *types.RaftGroupId
+	)
+	if pxy, err = withoutDefaultGroupName(n); err != nil {
+		return nil, err
+	}
+	if obj, err = objectNameForProxy(n); err != nil {
+		return nil, err
+	}
+	if gid, err = m.createGroupId(ctx, n); err != nil {
+		return nil, err
+	}
+	prxy, err := newProxy(m.bundle, gid, sn, pxy, obj)
 	if err != nil {
 		return nil, err
 	}
-	o, err := objectNameForProxy(p)
-	if err != nil {
-		return nil, err
-	}
-	g, err := m.createGroupId(ctx, p)
-	if err != nil {
-		return nil, err
-	}
-	prxy, err := newProxy(m.bundle, g, serviceName, p, o)
-	if err != nil {
-		return nil, err
-	}
-	if serviceName == atomicLongService {
+	if sn == atomicLongService {
 		return AtomicLong{prxy}, nil
 	} else {
 		return nil, nil
