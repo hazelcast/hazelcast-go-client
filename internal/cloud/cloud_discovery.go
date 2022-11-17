@@ -76,7 +76,7 @@ func makeCoordinatorURL(token string) string {
 func baseURL() string {
 	url := os.Getenv(envCoordinatorBaseURL)
 	if url == "" {
-		return "https://coordinator.hazelcast.cloud"
+		return "https://api.viridian.hazelcast.com"
 	}
 	return url
 }
