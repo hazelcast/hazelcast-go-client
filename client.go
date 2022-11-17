@@ -19,7 +19,6 @@ package hazelcast
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/cp"
 	icp "github.com/hazelcast/hazelcast-go-client/internal/cp"
 	"sync"
 	"time"
@@ -43,6 +42,9 @@ const (
 	// ClientVersion is the semantic versioning compatible client version.
 	ClientVersion = internal.CurrentClientVersion
 )
+
+type AtomicLong = icp.AtomicLong
+type Subsystem = icp.Subsystem
 
 // StartNewClient creates and starts a new client with the default configuration.
 // The default configuration is tuned connect to an Hazelcast cluster running on the same computer with the client.
@@ -72,7 +74,7 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
-	cpSubsystem             icp.SubSystem
+	cpSubsystem             Subsystem
 	nearCacheMgrsMu         *sync.RWMutex
 	nearCacheMgrs           map[string]*inearcache.Manager
 	cfg                     *Config
@@ -328,7 +330,7 @@ func (c *Client) SQL() sql.Service {
 }
 
 // CPSubsystem returns a service to offer a set of in-memory linearizable data structures.
-func (c *Client) CPSubsystem() cp.Subsystem {
+func (c *Client) CPSubsystem() Subsystem {
 	return c.cpSubsystem
 }
 

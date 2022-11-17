@@ -19,14 +19,12 @@ func checkAndPrint(value interface{}, err error) {
 }
 
 /*
-	In order to use CP Subsystem in, you need to enable it in the config XML as follows:
-
+	In order to use CP Subsystem in, you need to have at least three member and CP should be enabled in the XML.
+	Zero member means CP Subsystem is disabled.
 	<cp-subsystem>
-        <cp-member-count>3</cp-member-count>
-		...
-    </cp-subsystem>
-
-	Member count needs to be at least three. Zero member count means CP is disabled.
+		<cp-member-count>3</cp-member-count>
+		<group-size>3</group-size>
+	</cp-subsystem>
 */
 
 func main() {

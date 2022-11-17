@@ -33,11 +33,9 @@ func TestWithoutDefaultGroupName(t *testing.T) {
 	n, err := withoutDefaultGroupName("test@default")
 	require.NoError(t, err)
 	require.Equal(t, n, "test")
-
 	n, err = withoutDefaultGroupName("test@DEFAULT")
 	require.NoError(t, err)
 	require.Equal(t, n, "test")
-
 	n, err = withoutDefaultGroupName("test@custom")
 	require.NoError(t, err)
 	require.Equal(t, n, "test@custom")
@@ -51,7 +49,6 @@ func TestWithoutDefaultGroupName_WithMultipleGroupNames(t *testing.T) {
 func TestWithoutDefaultGroupName_WithMetadataGroupName(t *testing.T) {
 	_, err := withoutDefaultGroupName("test@METADATA")
 	require.Error(t, err, "CP data structures cannot run on the METADATA CP group!")
-
 	_, err = withoutDefaultGroupName("test@metadata")
 	require.Error(t, err, "CP data structures cannot run on the METADATA CP group!")
 }

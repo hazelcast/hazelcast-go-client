@@ -3,26 +3,21 @@ package it
 import (
 	"context"
 	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/cp"
 	"testing"
 )
 
-func AtomicLongTester(t *testing.T, f func(t *testing.T, a cp.AtomicLong)) {
+func AtomicLongTester(t *testing.T, f func(t *testing.T, a hz.AtomicLong)) {
 	AtomicLongTesterWithConfig(t, nil, f)
 }
 
-func AtomicLongTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, a cp.AtomicLong)) {
+func AtomicLongTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, a hz.AtomicLong)) {
 	makeName := func() string {
 		return NewUniqueObjectName("atomic-long")
 	}
 	AtomicLongTesterWithConfigAndName(t, makeName, configCallback, f)
 }
 
-func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, configCallback func(*hz.Config), f func(t *testing.T, a cp.AtomicLong)) {
-	var (
-		client *hz.Client
-		atm    cp.AtomicLong
-	)
+func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, configCallback func(*hz.Config), f func(t *testing.T, a hz.AtomicLong)) {
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
 		cls := cpEnabledTestCluster.Launch(t)
@@ -31,7 +26,7 @@ func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, con
 			configCallback(&config)
 		}
 		config.Cluster.Unisocket = !smart
-		client, atm = GetClientAtomicLongWithConfig(makeName(), &config)
+		client, atm := GetClientAtomicLongWithConfig(makeName(), &config)
 		defer func() {
 			ctx := context.Background()
 			if err := atm.Destroy(ctx); err != nil {
@@ -55,12 +50,12 @@ func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, con
 	}
 }
 
-func GetClientAtomicLongWithConfig(name string, config *hz.Config) (*hz.Client, cp.AtomicLong) {
+func GetClientAtomicLongWithConfig(name string, config *hz.Config) (*hz.Client, hz.AtomicLong) {
 	client := getDefaultClient(config)
 	cp := client.CPSubsystem()
 	if a, err := cp.GetAtomicLong(context.Background(), name); err != nil {
 		panic(err)
 	} else {
-		return client, a
+		return client, *a
 	}
 }

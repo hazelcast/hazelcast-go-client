@@ -2,7 +2,6 @@ package cp
 
 import (
 	"context"
-	"github.com/hazelcast/hazelcast-go-client/cp"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cp/types"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
@@ -11,7 +10,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -50,13 +48,11 @@ func (b serviceBundle) check() {
 	}
 }
 
-type proxyManager struct {
-	bundle  *serviceBundle
-	mu      *sync.RWMutex
-	proxies map[string]interface{}
+type proxyFactory struct {
+	bundle *serviceBundle
 }
 
-func newCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) (*proxyManager, error) {
+func newCpProxyFactory(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) *proxyFactory {
 	b := &serviceBundle{
 		invocationService:    is,
 		invocationFactory:    cif,
@@ -64,49 +60,34 @@ func newCpProxyManager(ss *iserialization.Service, cif *cluster.ConnectionInvoca
 		logger:               l,
 	}
 	b.check()
-	p := &proxyManager{
-		mu:      &sync.RWMutex{},
-		proxies: map[string]interface{}{},
-		bundle:  b,
+	p := &proxyFactory{
+		bundle: b,
 	}
-	return p, nil
+	return p
 }
 
-func (m *proxyManager) getOrCreateProxy(ctx context.Context, serviceName string, proxyName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
-	proxyName, err := withoutDefaultGroupName(proxyName)
+func (m *proxyFactory) getOrCreateProxy(ctx context.Context, serviceName string, p string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
+	p, err := withoutDefaultGroupName(p)
 	if err != nil {
 		return nil, err
 	}
-	objectName, err := objectNameForProxy(proxyName)
+	o, err := objectNameForProxy(p)
 	if err != nil {
 		return nil, err
 	}
-	groupId, err := m.createGroupId(ctx, proxyName)
+	g, err := m.createGroupId(ctx, p)
 	if err != nil {
 		return nil, err
 	}
-	m.mu.RLock()
-	wrapper, ok := m.proxies[proxyName]
-	m.mu.RUnlock()
-	if ok {
-		return wrapper, nil
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if wrapper, ok := m.proxies[proxyName]; ok {
-		// someone has already created the proxy
-		return wrapper, nil
-	}
-	p, err := newProxy(m.bundle, groupId, serviceName, proxyName, objectName)
+	prxy, err := newProxy(m.bundle, g, serviceName, p, o)
 	if err != nil {
 		return nil, err
 	}
-	wrapper, err = wrapProxyFn(p)
+	wprxy, err := wrapProxyFn(prxy)
 	if err != nil {
 		return nil, err
 	}
-	m.proxies[proxyName] = wrapper
-	return wrapper, nil
+	return wprxy, nil
 }
 
 func objectNameForProxy(name string) (string, error) {
@@ -125,7 +106,7 @@ func objectNameForProxy(name string) (string, error) {
 	return objectName, nil
 }
 
-func (m *proxyManager) createGroupId(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
+func (m *proxyFactory) createGroupId(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
 	request := codec.EncodeCPGroupCreateCPGroupRequest(proxyName)
 	now := time.Now()
 	inv := m.bundle.invocationFactory.NewInvocationOnRandomTarget(request, nil, now)
@@ -160,7 +141,7 @@ func withoutDefaultGroupName(proxyName string) (string, error) {
 	return name, nil
 }
 
-func (m *proxyManager) getAtomicLong(ctx context.Context, name string) (cp.AtomicLong, error) {
+func (m *proxyFactory) getAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
 	p, err := m.getOrCreateProxy(ctx, atomicLongService, name, func(p *proxy) (interface{}, error) {
 		return newAtomicLong(p), nil
 	})
