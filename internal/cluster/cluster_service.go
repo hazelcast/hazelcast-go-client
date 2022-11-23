@@ -114,6 +114,10 @@ func (s *Service) Reset() {
 	s.membersMap.reset()
 }
 
+func (s *Service) FailoverService() *FailoverService {
+	return s.failoverService
+}
+
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
 	s.logger.Debug(func() string {
 		return fmt.Sprintf("%d: members updated: %v", conn.connectionID, memberInfos)
