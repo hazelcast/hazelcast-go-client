@@ -130,7 +130,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	if err != nil {
 		return nil, err
 	}
-	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
+	metadata, page, updateCount, infiniteRows, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
 	if err != (*sql.Error)(nil) {
 		return nil, ihzerrors.NewSQLError("decoding SQL execute response", err)
 	}
@@ -138,7 +138,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return &ExecResult{UpdateCount: updateCount}, nil
 	}
 	md := itypes.NewRowMetadata(metadata)
-	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize)
+	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize, infiniteRows)
 }
 
 func (s *SQLService) serializeParams(params []driver.Value) ([]iserialization.Data, error) {
