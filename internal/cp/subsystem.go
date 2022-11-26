@@ -32,7 +32,7 @@ type Subsystem struct {
 	proxyFactory *proxyFactory
 }
 
-func NewCPSubsystem(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Subsystem {
+func NewSubsystem(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Subsystem {
 	var c Subsystem
 	c.proxyFactory = newProxyFactory(ss, cif, is, l)
 	return c

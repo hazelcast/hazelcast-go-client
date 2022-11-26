@@ -19,9 +19,7 @@ const (
 	countDownLatchService  = "hz:raft:countDownLatchService"
 	lockService            = "hz:raft:lockService"
 	semaphoreService       = "hz:raft:semaphoreService"
-)
 
-const (
 	defaultGroupName    = "default"
 	metadataCpGroupName = "metadata"
 )
@@ -78,7 +76,7 @@ func (m *proxyFactory) getOrCreateProxy(ctx context.Context, sn string, n string
 	if obj, err = objectNameForProxy(n); err != nil {
 		return nil, err
 	}
-	if gid, err = m.createGroupId(ctx, n); err != nil {
+	if gid, err = m.createGroupID(ctx, n); err != nil {
 		return nil, err
 	}
 	prxy, err := newProxy(m.bundle, gid, sn, pxy, obj)
@@ -90,6 +88,22 @@ func (m *proxyFactory) getOrCreateProxy(ctx context.Context, sn string, n string
 	} else {
 		return nil, nil
 	}
+}
+
+func (m *proxyFactory) createGroupID(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
+	request := codec.EncodeCPGroupCreateCPGroupRequest(proxyName)
+	now := time.Now()
+	inv := m.bundle.invocationFactory.NewInvocationOnRandomTarget(request, nil, now)
+	err := m.bundle.invocationService.SendRequest(context.Background(), inv)
+	if err != nil {
+		return nil, err
+	}
+	response, err := inv.GetWithContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	groupId := codec.DecodeCPGroupCreateCPGroupResponse(response)
+	return &groupId, nil
 }
 
 func objectNameForProxy(name string) (string, error) {
@@ -106,22 +120,6 @@ func objectNameForProxy(name string) (string, error) {
 		return "", hzerrors.NewIllegalArgumentError("Object name cannot be empty string", nil)
 	}
 	return objectName, nil
-}
-
-func (m *proxyFactory) createGroupId(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
-	request := codec.EncodeCPGroupCreateCPGroupRequest(proxyName)
-	now := time.Now()
-	inv := m.bundle.invocationFactory.NewInvocationOnRandomTarget(request, nil, now)
-	err := m.bundle.invocationService.SendRequest(context.Background(), inv)
-	if err != nil {
-		return nil, err
-	}
-	response, err := inv.GetWithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	groupId := codec.DecodeCPGroupCreateCPGroupResponse(response)
-	return &groupId, nil
 }
 
 func withoutDefaultGroupName(proxyName string) (string, error) {

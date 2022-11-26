@@ -55,6 +55,7 @@ const (
 )
 
 const DefaultClusterName = "integration-test"
+const ClusterNameCPEnabled = "integration-test-cp"
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
@@ -67,7 +68,7 @@ var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster 
 })
 var cpEnabledTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
 	port := NextPort()
-	return rc.startNewCluster(3, xmlCPConfig(DefaultClusterName, port), port)
+	return rc.startNewCluster(3, xmlCPConfig(ClusterNameCPEnabled, port), port)
 })
 var idGen = proxy.ReferenceIDGenerator{}
 
