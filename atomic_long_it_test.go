@@ -49,7 +49,7 @@ func TestAtomicLong(t *testing.T) {
 }
 
 func atomicLongSet(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		err := a.Set(context.Background(), 271)
 		require.NoError(t, err)
 		v, err := a.Get(context.Background())
@@ -59,7 +59,7 @@ func atomicLongSet(t *testing.T) {
 }
 
 func atomicLongGet(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.Get(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, int64(0), v)
@@ -67,7 +67,7 @@ func atomicLongGet(t *testing.T) {
 }
 
 func atomicLongAddAndGet(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.AddAndGet(context.Background(), 271)
 		require.NoError(t, err)
 		require.Equal(t, v, int64(271))
@@ -78,7 +78,7 @@ func atomicLongAddAndGet(t *testing.T) {
 }
 
 func atomicLongCompareAndSet(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.CompareAndSet(context.Background(), 0, 271)
 		require.NoError(t, err)
 		require.True(t, v)
@@ -89,7 +89,7 @@ func atomicLongCompareAndSet(t *testing.T) {
 }
 
 func atomicLongCompareAndSetFail(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.CompareAndSet(context.Background(), 172, 0)
 		require.NoError(t, err)
 		require.False(t, v)
@@ -100,7 +100,7 @@ func atomicLongCompareAndSetFail(t *testing.T) {
 }
 
 func atomicLongDecrementAndGet(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.DecrementAndGet(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, v, int64(-1))
@@ -111,7 +111,7 @@ func atomicLongDecrementAndGet(t *testing.T) {
 }
 
 func atomicLongGetAndSet(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndSet(context.Background(), 271)
 		require.NoError(t, err)
 		require.Equal(t, v, int64(0))
@@ -122,7 +122,7 @@ func atomicLongGetAndSet(t *testing.T) {
 }
 
 func atomicLongGetAndIncrement(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndIncrement(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, v, int64(0))
@@ -133,7 +133,7 @@ func atomicLongGetAndIncrement(t *testing.T) {
 }
 
 func atomicLongIncrementAndGet(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.IncrementAndGet(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, v, int64(1))
@@ -144,7 +144,7 @@ func atomicLongIncrementAndGet(t *testing.T) {
 }
 
 func atomicLongGetAndAdd(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndAdd(context.Background(), 271)
 		require.NoError(t, err)
 		require.Equal(t, v, int64(0))
@@ -155,7 +155,7 @@ func atomicLongGetAndAdd(t *testing.T) {
 }
 
 func atomicLongGetAndDecrement(t *testing.T) {
-	it.AtomicLongTester(t, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndDecrement(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, v, int64(0))
@@ -169,7 +169,7 @@ func atomicLongApply(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
-	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a *hz.AtomicLong) {
 		err := a.Set(context.Background(), 2)
 		require.NoError(t, err)
 		v, err := a.Apply(context.Background(), &Multiplication{2})
@@ -185,7 +185,7 @@ func atomicLongAlter(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
-	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a *hz.AtomicLong) {
 		err := a.Set(context.Background(), 2)
 		require.NoError(t, err)
 		err = a.Alter(context.Background(), &Multiplication{2})
@@ -201,7 +201,7 @@ func atomicLongGetAndAlter(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
-	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a *hz.AtomicLong) {
 		err := a.Set(context.Background(), 2)
 		require.NoError(t, err)
 		v, err := a.GetAndAlter(context.Background(), &Multiplication{2})
@@ -217,7 +217,7 @@ func atomicLongAlterAndGet(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
-	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a hz.AtomicLong) {
+	it.AtomicLongTesterWithConfig(t, cb, func(t *testing.T, a *hz.AtomicLong) {
 		err := a.Set(context.Background(), 2)
 		require.NoError(t, err)
 		v, err := a.AlterAndGet(context.Background(), &Multiplication{2})

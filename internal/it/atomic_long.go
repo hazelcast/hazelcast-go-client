@@ -6,18 +6,18 @@ import (
 	"testing"
 )
 
-func AtomicLongTester(t *testing.T, f func(t *testing.T, a hz.AtomicLong)) {
+func AtomicLongTester(t *testing.T, f func(t *testing.T, a *hz.AtomicLong)) {
 	AtomicLongTesterWithConfig(t, nil, f)
 }
 
-func AtomicLongTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, a hz.AtomicLong)) {
+func AtomicLongTesterWithConfig(t *testing.T, configCallback func(*hz.Config), f func(t *testing.T, a *hz.AtomicLong)) {
 	makeName := func() string {
 		return NewUniqueObjectName("atomic-long")
 	}
 	AtomicLongTesterWithConfigAndName(t, makeName, configCallback, f)
 }
 
-func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, configCallback func(*hz.Config), f func(t *testing.T, a hz.AtomicLong)) {
+func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, configCallback func(*hz.Config), f func(t *testing.T, a *hz.AtomicLong)) {
 	ensureRemoteController(true)
 	runner := func(t *testing.T, smart bool) {
 		cls := cpEnabledTestCluster.Launch(t)
@@ -50,12 +50,12 @@ func AtomicLongTesterWithConfigAndName(t *testing.T, makeName func() string, con
 	}
 }
 
-func GetClientAtomicLongWithConfig(name string, config *hz.Config) (*hz.Client, hz.AtomicLong) {
+func GetClientAtomicLongWithConfig(name string, config *hz.Config) (*hz.Client, *hz.AtomicLong) {
 	client := getDefaultClient(config)
 	cp := client.CPSubsystem()
 	if a, err := cp.GetAtomicLong(context.Background(), name); err != nil {
 		panic(err)
 	} else {
-		return client, *a
+		return client, a
 	}
 }

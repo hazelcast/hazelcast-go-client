@@ -86,7 +86,7 @@ func (m *proxyFactory) getOrCreateProxy(ctx context.Context, sn string, n string
 		return nil, err
 	}
 	if sn == atomicLongService {
-		return AtomicLong{prxy}, nil
+		return &AtomicLong{prxy}, nil
 	} else {
 		return nil, nil
 	}
