@@ -7,17 +7,6 @@ import (
 	"log"
 )
 
-func logError(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func checkAndPrint(value interface{}, err error) {
-	logError(err)
-	fmt.Println(value)
-}
-
 /*
 	In order to use CP Subsystem in, you need to have at least three member and CP should be enabled in the XML.
 	Zero member means CP Subsystem is disabled.
@@ -30,22 +19,46 @@ func checkAndPrint(value interface{}, err error) {
 func main() {
 	ctx := context.Background()
 	client, err := hazelcast.StartNewClient(ctx)
-	logError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	cp := client.CPSubsystem()
 	viewCounter, err := cp.GetAtomicLong(context.Background(), "views")
-	logError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	val, err := viewCounter.Get(ctx)
-	checkAndPrint(val, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(val)
 	err = viewCounter.Set(ctx, 10)
-	logError(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	val, err = viewCounter.Get(ctx)
-	checkAndPrint(val, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(val)
 	val, err = viewCounter.AddAndGet(ctx, 50)
-	checkAndPrint(val, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(val)
 	val, err = viewCounter.IncrementAndGet(ctx)
-	checkAndPrint(val, err)
-	r, err := viewCounter.CompareAndSet(ctx, 61, 62)
-	checkAndPrint(r, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(val)
+	e, err := viewCounter.CompareAndSet(ctx, 61, 62)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(e)
 	val, err = viewCounter.DecrementAndGet(ctx)
-	checkAndPrint(val, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(val)
 }
