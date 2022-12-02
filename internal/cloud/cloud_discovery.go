@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	url2 "net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -48,7 +49,12 @@ func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.LogAdaptor) *
 func (c *DiscoveryClient) DiscoverNodes(ctx context.Context) ([]Address, error) {
 	url := makeCoordinatorURL(c.token)
 	if j, err := c.httpClient.GetJSONArray(ctx, url); err != nil {
-		return nil, hzerrors.NewInvalidConfigurationError(fmt.Sprintf("failed to connect Hazelcast Cloud service: %s", baseURL()), nil)
+		switch err.(type) {
+		case *url2.Error:
+			return nil, hzerrors.NewInvalidConfigurationError(fmt.Sprintf("failed to reach Hazelcast Cloud/Viridian service: %s", baseURL()), nil)
+		default:
+			return nil, err
+		}
 	} else {
 		addrs := extractAddresses(j)
 		c.logger.Trace(func() string { return fmt.Sprintf("cloud addresses: %v", addrs) })
