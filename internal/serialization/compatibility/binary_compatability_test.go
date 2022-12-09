@@ -51,13 +51,16 @@ func readBinaryFile(t *testing.T) {
 		require.NoErrorf(t, err, "Could not locate file "+createFileName(v)+". Follow the instructions in BinaryCompatibilityFileGenerator to generate the file.")
 		i := serialization.NewObjectDataInput(b, 0, nil, true)
 		for i.Available() != 0 {
-			buf := i.ReadRaw(2)
-			as := int32(binary.BigEndian.Uint16(buf))
-			object_key_buf := i.ReadRaw(as)
+			buf := i.ReadUInt16()
+			object_key_buf := i.ReadRaw(int32(buf))
 			objectKey := string(object_key_buf)
+
 			n := i.ReadInt32()
 			if n != -1 {
-				bytes = i.ReadRaw(n)
+				bytes = make([]byte, n)
+				for j := int32(0); j < n; j++ {
+					bytes[j] = i.ReadByte()
+				}
 				dataMap[objectKey] = bytes
 			}
 		}
@@ -70,17 +73,15 @@ func createSerializationService(t *testing.T, byteOrder binary.ByteOrder) *seria
 	require.NoError(t, err)
 	err = cfg.SetCustomSerializer(reflect.TypeOf(&CustomStreamSerializable{}), &CustomStreamSerializer{})
 	require.NoError(t, err)
-	cdb := serialization2.NewClassDefinition(PortableFactoryId, InnerPortableClassId, cfg.PortableVersion)
-	err = cdb.AddInt32Field("i")
-	require.NoError(t, err)
-	err = cdb.AddFloat32Field("f")
-	require.NoError(t, err)
-	cfg.SetClassDefinitions(cdb)
+	cfg.PortableVersion = 1
+	cd := serialization2.NewClassDefinition(PortableFactoryId, InnerPortableClassId, 1)
+	cd.AddInt32Field("i")
+	cd.AddFloat32Field("f")
+	cfg.SetClassDefinitions(cd)
 	cfg.SetPortableFactories(&PortableFactory{})
 	cfg.SetIdentifiedDataSerializableFactories(&IdentifiedFactory{})
-	cfg.LittleEndian = true
-	if byteOrder == binary.BigEndian {
-		cfg.LittleEndian = false
+	if byteOrder == binary.LittleEndian {
+		cfg.LittleEndian = true
 	}
 	s, err := serialization.NewService(&cfg)
 	require.NoError(t, err)
