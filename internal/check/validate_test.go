@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -62,9 +62,8 @@ func TestValidateAsNonNegativeInt32_Error(t *testing.T) {
 		value int64
 	}{
 		{"non-negative", -1},
-		{"32-bit", math.MaxInt32 + 1},
+		{"overflows int32", math.MaxInt32 + 1},
 	}
-
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			_, err := check.NonNegativeInt32(int(tc.value))

@@ -41,13 +41,13 @@ func TestStatement_SetCursorBufferSize(t *testing.T) {
 		{Value: 0, Target: v0},
 		{Value: 1, Target: v1},
 		{Value: 4096, Target: v4096},
-		{Value: -1, ErrString: "setting cursor buffer size: non-negative integer number expected: -1: illegal argument error"},
+		{Value: -1, ErrString: "setting cursor buffer size: non-negative integer expected: illegal argument error"},
 	}
 	if !runtime.Is32BitArch() {
 		v := math.MaxInt32
 		testCases = append(testCases, cursorBufferSizeTestCase{
 			Value:     v + 1,
-			ErrString: "setting cursor buffer size: signed 32-bit integer number expected: 2147483648: illegal argument error",
+			ErrString: "setting cursor buffer size: integer overflows int32: illegal argument error",
 		})
 	}
 

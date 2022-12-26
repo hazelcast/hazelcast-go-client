@@ -2,7 +2,7 @@
 // +build hazelcastinternal
 
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -162,43 +162,45 @@ func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMes
 }
 
 const (
-	TypeFieldOffset                   = proto.TypeFieldOffset
-	MessageTypeOffset                 = proto.MessageTypeOffset
-	ByteSizeInBytes                   = proto.ByteSizeInBytes
-	BooleanSizeInBytes                = proto.BooleanSizeInBytes
-	ShortSizeInBytes                  = proto.ShortSizeInBytes
-	CharSizeInBytes                   = proto.CharSizeInBytes
-	IntSizeInBytes                    = proto.IntSizeInBytes
-	FloatSizeInBytes                  = proto.FloatSizeInBytes
-	LongSizeInBytes                   = proto.LongSizeInBytes
-	DoubleSizeInBytes                 = proto.DoubleSizeInBytes
-	UUIDSizeInBytes                   = proto.UUIDSizeInBytes
-	UuidSizeInBytes                   = proto.UuidSizeInBytes // Deprecated
-	EntryListUUIDLongEntrySizeInBytes = proto.EntryListUUIDLongEntrySizeInBytes
-	LocalDateSizeInBytes              = proto.LocalDateSizeInBytes
-	LocalTimeSizeInBytes              = proto.LocalTimeSizeInBytes
-	LocalDateTimeSizeInBytes          = proto.LocalDateTimeSizeInBytes
-	OffsetDateTimeSizeInBytes         = proto.OffsetDateTimeSizeInBytes
-	CorrelationIDFieldOffset          = proto.CorrelationIDFieldOffset
-	CorrelationIDOffset               = proto.CorrelationIDOffset
-	FragmentationIDOffset             = proto.FragmentationIDOffset
-	PartitionIDOffset                 = proto.PartitionIDOffset
-	RequestThreadIdOffset             = proto.RequestThreadIDOffset
-	RequestTtlOffset                  = proto.RequestTTLOffset
-	RequestIncludeValueOffset         = proto.RequestIncludeValueOffset
-	RequestListenerFlagsOffset        = proto.RequestListenerFlagsOffset
-	RequestLocalOnlyOffset            = proto.RequestLocalOnlyOffset
-	RequestReferenceIdOffset          = proto.RequestReferenceIdOffset
-	ResponseBackupAcksOffset          = proto.ResponseBackupAcksOffset
-	UnfragmentedMessage               = proto.UnfragmentedMessage
-	DefaultFlags                      = proto.DefaultFlags
-	BeginFragmentFlag                 = proto.BeginFragmentFlag
-	EndFragmentFlag                   = proto.EndFragmentFlag
-	IsFinalFlag                       = proto.IsFinalFlag
-	BeginDataStructureFlag            = proto.BeginDataStructureFlag
-	EndDataStructureFlag              = proto.EndDataStructureFlag
-	IsNullFlag                        = proto.IsNullFlag
-	IsEventFlag                       = proto.IsEventFlag
-	BackupEventFlag                   = proto.BackupEventFlag
-	SizeOfFrameLengthAndFlags         = proto.SizeOfFrameLengthAndFlags
+	TypeFieldOffset                      = proto.TypeFieldOffset
+	MessageTypeOffset                    = proto.MessageTypeOffset
+	ByteSizeInBytes                      = proto.ByteSizeInBytes
+	BooleanSizeInBytes                   = proto.BooleanSizeInBytes
+	ShortSizeInBytes                     = proto.ShortSizeInBytes
+	CharSizeInBytes                      = proto.CharSizeInBytes
+	IntSizeInBytes                       = proto.IntSizeInBytes
+	FloatSizeInBytes                     = proto.FloatSizeInBytes
+	LongSizeInBytes                      = proto.LongSizeInBytes
+	DoubleSizeInBytes                    = proto.DoubleSizeInBytes
+	UUIDSizeInBytes                      = proto.UUIDSizeInBytes
+	UuidSizeInBytes                      = proto.UuidSizeInBytes // Deprecated
+	EntryListUUIDLongEntrySizeInBytes    = proto.EntryListUUIDLongEntrySizeInBytes
+	EntryListIntegerLongSizeInBytes      = proto.EntryListIntegerLongSizeInBytes
+	EntryListIntegerUUIDEntrySizeInBytes = proto.EntryListIntegerUUIDEntrySizeInBytes
+	LocalDateSizeInBytes                 = proto.LocalDateSizeInBytes
+	LocalTimeSizeInBytes                 = proto.LocalTimeSizeInBytes
+	LocalDateTimeSizeInBytes             = proto.LocalDateTimeSizeInBytes
+	OffsetDateTimeSizeInBytes            = proto.OffsetDateTimeSizeInBytes
+	CorrelationIDFieldOffset             = proto.CorrelationIDFieldOffset
+	CorrelationIDOffset                  = proto.CorrelationIDOffset
+	FragmentationIDOffset                = proto.FragmentationIDOffset
+	PartitionIDOffset                    = proto.PartitionIDOffset
+	RequestThreadIdOffset                = proto.RequestThreadIDOffset
+	RequestTtlOffset                     = proto.RequestTTLOffset
+	RequestIncludeValueOffset            = proto.RequestIncludeValueOffset
+	RequestListenerFlagsOffset           = proto.RequestListenerFlagsOffset
+	RequestLocalOnlyOffset               = proto.RequestLocalOnlyOffset
+	RequestReferenceIdOffset             = proto.RequestReferenceIdOffset
+	ResponseBackupAcksOffset             = proto.ResponseBackupAcksOffset
+	UnfragmentedMessage                  = proto.UnfragmentedMessage
+	DefaultFlags                         = proto.DefaultFlags
+	BeginFragmentFlag                    = proto.BeginFragmentFlag
+	EndFragmentFlag                      = proto.EndFragmentFlag
+	IsFinalFlag                          = proto.IsFinalFlag
+	BeginDataStructureFlag               = proto.BeginDataStructureFlag
+	EndDataStructureFlag                 = proto.EndDataStructureFlag
+	IsNullFlag                           = proto.IsNullFlag
+	IsEventFlag                          = proto.IsEventFlag
+	BackupEventFlag                      = proto.BackupEventFlag
+	SizeOfFrameLengthAndFlags            = proto.SizeOfFrameLengthAndFlags
 )
