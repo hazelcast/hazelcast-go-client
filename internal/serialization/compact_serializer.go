@@ -65,7 +65,10 @@ func (c CompactStreamSerializer) Read(input pubserialization.DataInput) interfac
 
 func (c CompactStreamSerializer) Write(output pubserialization.DataOutput, object interface{}) {
 	t := reflect.TypeOf(object)
-	serializer := c.typeToSerializer[t]
+	serializer, ok := c.typeToSerializer[t]
+	if !ok {
+		panic(fmt.Sprintf("no compact serializer found for type: %s", t.Name()))
+	}
 	schema, ok := c.typeToSchema[t]
 	if !ok {
 		sw := NewSchemaWriter(serializer.TypeName())
@@ -88,8 +91,8 @@ func (c CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
 func (c CompactStreamSerializer) getOrReadSchema(input pubserialization.DataInput) Schema {
 	schemaId := input.ReadInt64()
 	schema, ok := c.ss.Get(schemaId)
-	if ok {
-		return schema
+	if !ok {
+		panic(hzerrors.NewSerializationError(fmt.Sprintf("the schema cannot be found with id: %d", schemaId), nil))
 	}
-	panic(hzerrors.NewSerializationError(fmt.Sprintf("the schema cannot be found with id: %d", schemaId), nil))
+	return schema
 }

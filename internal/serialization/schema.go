@@ -19,12 +19,13 @@ package serialization
 import (
 	"fmt"
 	"sort"
+
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type Schema struct {
-	fieldDefinitionMap map[string]*FieldDescriptor
-	typeName           string
-	// Go does not have TreeMap, so we use a slice to store sorted fields
+	fieldDefinitionMap    map[string]*FieldDescriptor
+	typeName              string
 	fieldDefinitions      []*FieldDescriptor
 	id                    int64
 	numberOfVarSizeFields int32
@@ -76,14 +77,18 @@ func (s *Schema) TypeName() string {
 }
 
 func (s *Schema) init(rabin RabinFingerPrint) {
-	var fixedSizeFields []*FieldDescriptor
-	var varSizeFields []*FieldDescriptor
-	for _, fd := range s.fieldDefinitionMap {
+	var fixedSizeFields, varSizeFields, booleanFields []*FieldDescriptor
+
+	for _, fd := range s.fieldDefinitions {
 		fieldKind := fd.fieldKind
 		if FieldOperations(fieldKind).KindSizeInBytes() == variableKindSize {
 			varSizeFields = append(varSizeFields, fd)
 		} else {
-			fixedSizeFields = append(fixedSizeFields, fd)
+			if fieldKind == serialization.FieldKindBoolean {
+				booleanFields = append(booleanFields, fd)
+			} else {
+				fixedSizeFields = append(fixedSizeFields, fd)
+			}
 		}
 	}
 	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
@@ -92,13 +97,28 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		return kindSize1 < kindSize2
 	})
 	var offset int32
-	for _, descriptor := range fixedSizeFields {
-		descriptor.offset = offset
-		offset += FieldOperations(descriptor.fieldKind).KindSizeInBytes()
+	for _, fd := range fixedSizeFields {
+		fd.offset = offset
+		offset += FieldOperations(fd.fieldKind).KindSizeInBytes()
 	}
+
+	bitOffset := 0
+	for _, fd := range booleanFields {
+		fd.offset = offset
+		fd.bitOffset = int8(bitOffset % BitsInAByte)
+		bitOffset += 1
+		if bitOffset%BitsInAByte == 0 {
+			offset += 1
+		}
+	}
+
+	if bitOffset%BitsInAByte != 0 {
+		offset += 1
+	}
+
 	s.fixedSizeFieldsLength = offset
-	for i, descriptor := range varSizeFields {
-		descriptor.index = int32(i)
+	for i, fd := range varSizeFields {
+		fd.index = int32(i)
 	}
 	s.numberOfVarSizeFields = int32(len(varSizeFields))
 	s.id = rabin.OfSchema(s)
