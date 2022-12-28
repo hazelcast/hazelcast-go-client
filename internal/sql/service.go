@@ -24,9 +24,9 @@ import (
 	"sync/atomic"
 	"unsafe"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	idriver "github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
@@ -44,9 +44,9 @@ type Service struct {
 	service *idriver.SQLService
 }
 
-func NewService(cm *cluster.ConnectionManager, ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) Service {
+func NewService(cm *cluster.ConnectionManager, ss *iserialization.Service, iv *client.Invoker, l *logger.LogAdaptor) Service {
 	var s Service
-	s.service = idriver.NewSQLService(cm, ss, cif, is, l)
+	s.service = idriver.NewSQLService(cm, ss, iv, l)
 	return s
 }
 

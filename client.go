@@ -31,6 +31,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/sql"
@@ -91,7 +92,9 @@ func newClient(config Config) (*Client, error) {
 		StatsEnabled:  config.Stats.Enabled,
 		StatsPeriod:   time.Duration(config.Stats.Period),
 	}
-	ic, err := client.New(icc)
+	// TODO: size of the channel
+	schemaCh := make(chan serialization.SchemaMsg)
+	ic, err := client.New(icc, schemaCh)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +121,44 @@ func newClient(config Config) (*Client, error) {
 	c.createComponents(&config)
 	c.ic.AddBeforeShutdownHandler(c.destroyProxies)
 	c.ic.AddAfterShutdownHandler(c.stopNearCacheManagers)
+	go c.schemaInvoker(schemaCh)
 	return c, nil
+}
+
+func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
+	c.ic.Logger.Debug(func() string {
+		return "Started the schema invoker"
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	sid := event.NextSubscriptionID()
+	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, sid, func(ev event.Event) {
+		e := ev.(*lifecycle.StateChangedEvent)
+		if e.State == lifecycle.StateShuttingDown {
+			cancel()
+		}
+	})
+	for {
+		select {
+		case msg, ok := <-ch:
+			if ok {
+				req := codec.EncodeClientFetchSchemaRequest(msg.ID)
+				resp, err := c.ic.Invoker.InvokeOnRandomTarget(ctx, req, nil)
+				if err != nil {
+					c.ic.Logger.Errorf("invoking ClientFetchSchema with schema ID: %d: %s", msg.ID, err)
+					msg.ResponseCh <- nil
+					continue
+				}
+				schema := codec.DecodeClientFetchSchemaResponse(resp)
+				msg.ResponseCh <- schema
+			}
+		case <-ctx.Done():
+			c.ic.Logger.Debug(func() string {
+				return "Stopped the schema invoker"
+			})
+			return
+		}
+	}
 }
 
 // Name returns client's name
@@ -413,6 +453,7 @@ func (c *Client) createComponents(config *Config) {
 		InvocationFactory:    c.ic.InvocationFactory,
 		ListenerBinder:       listenerBinder,
 		Logger:               c.ic.Logger,
+		Invoker:              c.ic.Invoker,
 	}
 	destroyNearCacheFun := func(service, object string) {
 		c.nearCacheMgrsMu.RLock()
@@ -425,7 +466,7 @@ func (c *Client) createComponents(config *Config) {
 	}
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
-	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.Invoker, &c.ic.Logger)
 }
 
 func (c *Client) getNearCacheManager(service string) *inearcache.Manager {

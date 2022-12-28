@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -34,11 +34,11 @@ func NewSchemaWriter(typeName string) SchemaWriter {
 }
 
 func (s SchemaWriter) addField(fd FieldDescriptor) {
-	s.fieldDefinitionMap[fd.fieldName] = &fd
+	s.fieldDefinitionMap[fd.FieldName] = &fd
 }
 
-func (s SchemaWriter) Build(rabin RabinFingerPrint) Schema {
-	return NewSchema(s.typeName, s.fieldDefinitionMap, rabin)
+func (s SchemaWriter) Build() *Schema {
+	return NewSchema(s.typeName, s.fieldDefinitionMap)
 }
 
 func (s SchemaWriter) WriteBoolean(fieldName string, value bool) {

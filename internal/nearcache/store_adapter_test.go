@@ -39,7 +39,7 @@ func TestGetRecordStorageMemoryCost_64bit(t *testing.T) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := serialization.NewService(&cfg)
+	ss, err := serialization.NewService(&cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestGetRecordStorageMemoryCost_32bit(t *testing.T) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := serialization.NewService(&cfg)
+	ss, err := serialization.NewService(&cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

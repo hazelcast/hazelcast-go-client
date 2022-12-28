@@ -54,7 +54,10 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultClusterName = "integration-test"
+const (
+	DefaultClusterName = "integration-test"
+	RingbufferCapacity = 10
+)
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
@@ -397,8 +400,6 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	}
 	return config
 }
-
-const RingbufferCapacity = 10
 
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`

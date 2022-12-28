@@ -123,6 +123,8 @@ func (codecUtil) NextFrameIsDataStructureEndFrame(frameIterator *proto.ForwardFr
 	return frameIterator.PeekNext().IsEndFrame()
 }
 
+// NextFrameIsNullFrame
+// Deprecated:
 func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator) bool {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
@@ -381,14 +383,20 @@ func (fixSizedTypesCodec) DecodeShort(buffer []byte, offset int32) int16 {
 	return int16(binary.LittleEndian.Uint16(buffer[offset:]))
 }
 
+// EncodeInt
+// Deprecated:
 func (fixSizedTypesCodec) EncodeInt(buffer []byte, offset, value int32) {
 	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
 }
 
+// DecodeInt
+// Deprecated:
 func (fixSizedTypesCodec) DecodeInt(buffer []byte, offset int32) int32 {
 	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
 }
 
+// EncodeLong
+// Deprecated:
 func (fixSizedTypesCodec) EncodeLong(buffer []byte, offset int32, value int64) {
 	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
 }
@@ -1118,4 +1126,62 @@ func decodeLocalTime(buffer []byte, offset int32) (h, m, s, nanos int) {
 	offset += proto.ByteSizeInBytes
 	nanos = int(FixSizedTypesCodec.DecodeInt(buffer, offset))
 	return h, m, s, nanos
+}
+
+func EncodeInt(buffer []byte, offset, value int32) {
+	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
+}
+
+func DecodeInt(buffer []byte, offset int32) int32 {
+	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
+}
+
+func EncodeLong(buffer []byte, offset int32, value int64) {
+	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
+}
+
+func FastForwardToEndFrame(frameIterator *proto.ForwardFrameIterator) {
+	expectedEndFrames := 1
+	for expectedEndFrames != 0 {
+		frame := frameIterator.Next()
+		if frame.IsEndFrame() {
+			expectedEndFrames--
+		} else if frame.IsBeginFrame() {
+			expectedEndFrames++
+		}
+	}
+}
+
+func NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator) bool {
+	isNullFrame := frameIterator.PeekNext().IsNullFrame()
+	if isNullFrame {
+		frameIterator.Next()
+	}
+	return isNullFrame
+}
+
+func DecodeNullableForSchema(frameIterator *proto.ForwardFrameIterator) *iserialization.Schema {
+	if NextFrameIsNullFrame(frameIterator) {
+		return nil
+	}
+	return DecodeSchema(frameIterator)
+}
+
+func EncodeListMultiFrameForFieldDescriptor(message *proto.ClientMessage, fields []*iserialization.FieldDescriptor) {
+	message.AddFrame(proto.NewBeginFrame())
+	for i := 0; i < len(fields); i++ {
+		EncodeFieldDescriptor(message, fields[i])
+	}
+	message.AddFrame(proto.NewEndFrame())
+}
+
+func DecodeListMultiFrameForFieldDescriptor(frameIterator *proto.ForwardFrameIterator) map[string]*iserialization.FieldDescriptor {
+	result := map[string]*iserialization.FieldDescriptor{}
+	frameIterator.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
+		fd := DecodeFieldDescriptor(frameIterator)
+		result[fd.FieldName] = &fd
+	}
+	frameIterator.Next()
+	return result
 }

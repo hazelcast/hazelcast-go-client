@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package serialization
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -25,14 +26,13 @@ import (
 )
 
 type CompactStreamSerializer struct {
-	typeToSchema         map[reflect.Type]Schema
+	typeToSchema         map[reflect.Type]*Schema
 	typeToSerializer     map[reflect.Type]pubserialization.CompactSerializer
 	typeNameToSerializer map[string]pubserialization.CompactSerializer
 	ss                   *SchemaService
-	fingerprint          RabinFingerPrint
 }
 
-func NewCompactStreamSerializer(cfg pubserialization.CompactConfig) *CompactStreamSerializer {
+func NewCompactStreamSerializer(cfg pubserialization.CompactConfig, schemaCh chan SchemaMsg) *CompactStreamSerializer {
 	typeToSerializer := make(map[reflect.Type]pubserialization.CompactSerializer)
 	typeNameToSerializer := make(map[string]pubserialization.CompactSerializer)
 	for typeName, serializer := range cfg.Serializers() {
@@ -40,11 +40,10 @@ func NewCompactStreamSerializer(cfg pubserialization.CompactConfig) *CompactStre
 		typeToSerializer[serializer.Type()] = serializer
 	}
 	return &CompactStreamSerializer{
-		ss:                   NewSchemaService(),
-		typeToSchema:         make(map[reflect.Type]Schema),
+		ss:                   NewSchemaService(schemaCh),
+		typeToSchema:         make(map[reflect.Type]*Schema),
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
-		fingerprint:          NewRabinFingerPrint(),
 	}
 }
 
@@ -53,11 +52,12 @@ func (CompactStreamSerializer) ID() int32 {
 }
 
 func (c CompactStreamSerializer) Read(input pubserialization.DataInput) interface{} {
-	schema := c.getOrReadSchema(input)
-	typeName := schema.TypeName()
-	serializer, ok := c.typeNameToSerializer[typeName]
+	// TODO: move context to the method signature
+	ctx := context.Background()
+	schema := c.getOrReadSchema(ctx, input)
+	serializer, ok := c.typeNameToSerializer[schema.TypeName]
 	if !ok {
-		panic(fmt.Sprintf("no compact serializer found for type: %s", typeName))
+		panic(fmt.Sprintf("no compact serializer found for type: %s", schema.TypeName))
 	}
 	reader := NewDefaultCompactReader(c, input.(*ObjectDataInput), schema)
 	return serializer.Read(reader)
@@ -73,7 +73,7 @@ func (c CompactStreamSerializer) Write(output pubserialization.DataOutput, objec
 	if !ok {
 		sw := NewSchemaWriter(serializer.TypeName())
 		serializer.Write(sw, object)
-		schema = sw.Build(c.fingerprint)
+		schema = sw.Build()
 		c.ss.PutLocal(schema)
 		c.typeToSchema[t] = schema
 	}
@@ -88,9 +88,9 @@ func (c CompactStreamSerializer) IsRegisteredAsCompact(t reflect.Type) bool {
 	return ok
 }
 
-func (c CompactStreamSerializer) getOrReadSchema(input pubserialization.DataInput) Schema {
+func (c CompactStreamSerializer) getOrReadSchema(ctx context.Context, input pubserialization.DataInput) *Schema {
 	schemaId := input.ReadInt64()
-	schema, ok := c.ss.Get(schemaId)
+	schema, ok := c.ss.Get(ctx, schemaId)
 	if !ok {
 		panic(hzerrors.NewSerializationError(fmt.Sprintf("the schema cannot be found with id: %d", schemaId), nil))
 	}
