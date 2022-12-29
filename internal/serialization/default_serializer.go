@@ -387,8 +387,8 @@ func (UUIDSerializer) Read(input serialization.DataInput) interface{} {
 
 func (UUIDSerializer) Write(output serialization.DataOutput, i interface{}) {
 	uuid := i.(types.UUID)
-	output.WriteInt64(int64(uuid.LeastSignificantBits()))
 	output.WriteInt64(int64(uuid.MostSignificantBits()))
+	output.WriteInt64(int64(uuid.LeastSignificantBits()))
 }
 
 type JavaDateSerializer struct{}
