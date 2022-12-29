@@ -18,12 +18,10 @@ package cloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/rest"
-	iurl "net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -48,10 +46,6 @@ func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.LogAdaptor) *
 func (c *DiscoveryClient) DiscoverNodes(ctx context.Context) ([]Address, error) {
 	url := makeCoordinatorURL(c.token)
 	if j, err := c.httpClient.GetJSONArray(ctx, url); err != nil {
-		var e *iurl.Error
-		if errors.As(err, &e) {
-			e.URL = ""
-		}
 		return nil, err
 	} else {
 		addrs := extractAddresses(j)

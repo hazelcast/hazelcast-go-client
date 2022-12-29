@@ -19,8 +19,10 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
+	iurl "net/url"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -64,6 +66,10 @@ func (c *HTTPClient) Get(ctx context.Context, url string, headers ...HTTPHeader)
 	}
 	i, err := c.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if resp, err := c.httpClient.Do(req); err != nil {
+			var e *iurl.Error
+			if errors.As(err, &e) {
+				e.URL = ""
+			}
 			return nil, err
 		} else if resp.StatusCode < 300 {
 			return resp, nil
