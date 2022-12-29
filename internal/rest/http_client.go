@@ -22,7 +22,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	uri "net/url"
+	"net/url"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -56,8 +56,8 @@ func NewHTTPClient() *HTTPClient {
 	}
 }
 
-func (c *HTTPClient) Get(ctx context.Context, url string, headers ...HTTPHeader) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+func (c *HTTPClient) Get(ctx context.Context, uri string, headers ...HTTPHeader) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (c *HTTPClient) Get(ctx context.Context, url string, headers ...HTTPHeader)
 	}
 	i, err := c.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if resp, err := c.httpClient.Do(req); err != nil {
-			var e *uri.Error
+			var e *url.Error
 			if errors.As(err, &e) {
 				e.URL = ""
 			}
