@@ -17,21 +17,21 @@ func TestAtomicLong(t *testing.T) {
 		f          func(t *testing.T)
 		noParallel bool
 	}{
-		{name: "AtomicLongSet", f: atomicLongSet},
-		{name: "AtomicLongGet", f: atomicLongGet},
 		{name: "AtomicLongAddAndGet", f: atomicLongAddAndGet},
-		{name: "AtomicLongCompareAndSet_Success", f: atomicLongCompareAndSet},
-		{name: "AtomicLongCompareAndSet_Fail", f: atomicLongCompareAndSetFail},
-		{name: "AtomicLongDecrementAndGet", f: atomicLongDecrementAndGet},
-		{name: "AtomicLongGetAndSet", f: atomicLongGetAndSet},
-		{name: "AtomicLongGetAndIncrement", f: atomicLongGetAndIncrement},
-		{name: "AtomicLongIncrementAndGet", f: atomicLongIncrementAndGet},
-		{name: "AtomicLongGetAndAdd", f: atomicLongGetAndAdd},
-		{name: "AtomicLongGetAndDecrement", f: atomicLongGetAndDecrement},
-		{name: "AtomicLongApply", f: atomicLongApply},
 		{name: "AtomicLongAlter", f: atomicLongAlter},
-		{name: "AtomicLongGetAndAlter", f: atomicLongGetAndAlter},
 		{name: "AtomicLongAlterAndGet", f: atomicLongAlterAndGet},
+		{name: "AtomicLongApply", f: atomicLongApply},
+		{name: "AtomicLongCompareAndSet_Fail", f: atomicLongCompareAndSetFail},
+		{name: "AtomicLongCompareAndSet_Success", f: atomicLongCompareAndSet},
+		{name: "AtomicLongDecrementAndGet", f: atomicLongDecrementAndGet},
+		{name: "AtomicLongGet", f: atomicLongGet},
+		{name: "AtomicLongGetAndAdd", f: atomicLongGetAndAdd},
+		{name: "AtomicLongGetAndAlter", f: atomicLongGetAndAlter},
+		{name: "AtomicLongGetAndDecrement", f: atomicLongGetAndDecrement},
+		{name: "AtomicLongGetAndIncrement", f: atomicLongGetAndIncrement},
+		{name: "AtomicLongGetAndSet", f: atomicLongGetAndSet},
+		{name: "AtomicLongIncrementAndGet", f: atomicLongIncrementAndGet},
+		{name: "AtomicLongSet", f: atomicLongSet},
 	}
 	// run no-parallel test first
 	sort.Slice(testCases, func(i, j int) bool {

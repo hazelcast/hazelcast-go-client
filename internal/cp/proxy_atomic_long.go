@@ -18,29 +18,35 @@ package cp
 
 import (
 	"context"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
 
-// AtomicLong is a redundant and highly available distributed counter
-// for 64-bit integers (``long`` type in Java).
-// It works on top of the Raft consensus algorithm. It offers linearizability
-// during crash failures and network partitions. It is CP with respect to
-// the CAP principle. If a network partition occurs, it remains available
-// on at most one side of the partition.
-// AtomicLong implementation does not offer exactly-once / effectively-once
-// execution semantics. It goes with at-least-once execution semantics
-// by default and can cause an API call to be committed multiple times
-// in case of CP member failures. It can be tuned to offer at-most-once
-// execution semantics. Please see `fail-on-indeterminate-operation-state`
-// server-side setting.
+const (
+	alterValueTypeOldValue = 0
+	alterValueTypeNewValue = 1
+)
+
+// AtomicLong is a redundant and highly available distributed counter for 64-bit integers (“long“ type in Java).
+// It works on top of the Raft consensus algorithm.
+// It offers linearizability during crash failures and network partitions.
+// It is CP with respect to the CAP principle.
+// If a network partition occurs, it remains available on at most one side of the partition.
+// AtomicLong implementation does not offer exactly-once / effectively-once execution semantics.
+// It goes with at-least-once execution semantics by default and can cause an API call to be committed multiple times in case of CP member failures.
+// It can be tuned to offer at-most-once execution semantics.
+// Please see `fail-on-indeterminate-operation-state` server-side setting.
+// AtomicLong implementation is type aliased in the public API so all the exported fields and methods are directly accessible by users.
+// Be aware of that while editing the fields and methods of both proxy and AtomicLong structs.
 type AtomicLong struct {
 	*proxy
 }
 
 // AddAndGet atomically adds the given value to the current value.
-func (a AtomicLong) AddAndGet(ctx context.Context, delta int64) (int64, error) {
-	request := codec.EncodeAtomicLongAddAndGetRequest(a.groupId, a.proxyName, delta)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (a *AtomicLong) AddAndGet(ctx context.Context, delta int64) (int64, error) {
+	request := codec.EncodeAtomicLongAddAndGetRequest(a.groupID, a.name, delta)
+	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
 		return 0, err
 	} else {
 		return codec.DecodeAtomicLongAddAndGetResponse(response), nil
@@ -48,9 +54,10 @@ func (a AtomicLong) AddAndGet(ctx context.Context, delta int64) (int64, error) {
 }
 
 // CompareAndSet Atomically sets the value to the given updated value only if the current value equals the expected value.
-func (a AtomicLong) CompareAndSet(ctx context.Context, expect int64, update int64) (bool, error) {
-	request := codec.EncodeAtomicLongCompareAndSetRequest(a.groupId, a.proxyName, expect, update)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (a *AtomicLong) CompareAndSet(ctx context.Context, expect int64, update int64) (bool, error) {
+	request := codec.EncodeAtomicLongCompareAndSetRequest(a.groupID, a.name, expect, update)
+	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
 		return false, err
 	} else {
 		return codec.DecodeAtomicLongCompareAndSetResponse(response), nil
@@ -58,9 +65,10 @@ func (a AtomicLong) CompareAndSet(ctx context.Context, expect int64, update int6
 }
 
 // Get gets the current value.
-func (a AtomicLong) Get(ctx context.Context) (int64, error) {
-	request := codec.EncodeAtomicLongGetRequest(a.groupId, a.proxyName)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (a *AtomicLong) Get(ctx context.Context) (int64, error) {
+	request := codec.EncodeAtomicLongGetRequest(a.groupID, a.name)
+	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
 		return 0, err
 	} else {
 		return codec.DecodeAtomicLongGetResponse(response), nil
@@ -68,9 +76,10 @@ func (a AtomicLong) Get(ctx context.Context) (int64, error) {
 }
 
 // GetAndAdd atomically adds the given value to the current value.
-func (a AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error) {
-	request := codec.EncodeAtomicLongGetAndAddRequest(a.groupId, a.proxyName, delta)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (a *AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error) {
+	request := codec.EncodeAtomicLongGetAndAddRequest(a.groupID, a.name, delta)
+	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
 		return 0, err
 	} else {
 		return codec.DecodeAtomicLongGetAndAddResponse(response), nil
@@ -78,9 +87,10 @@ func (a AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error) {
 }
 
 // GetAndSet atomically sets the given value and returns the old value.
-func (a AtomicLong) GetAndSet(ctx context.Context, value int64) (int64, error) {
-	request := codec.EncodeAtomicLongGetAndSetRequest(a.groupId, a.proxyName, value)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (a *AtomicLong) GetAndSet(ctx context.Context, value int64) (int64, error) {
+	request := codec.EncodeAtomicLongGetAndSetRequest(a.groupID, a.name, value)
+	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
 		return 0, err
 	} else {
 		return codec.DecodeAtomicLongGetAndSetResponse(response), nil
@@ -88,43 +98,52 @@ func (a AtomicLong) GetAndSet(ctx context.Context, value int64) (int64, error) {
 }
 
 // Set atomically sets the given value.
-func (a AtomicLong) Set(ctx context.Context, value int64) error {
-	request := codec.EncodeAtomicLongGetAndSetRequest(a.groupId, a.proxyName, value)
+func (a *AtomicLong) Set(ctx context.Context, value int64) error {
+	request := codec.EncodeAtomicLongGetAndSetRequest(a.groupID, a.name, value)
 	_, err := a.invokeOnRandomTarget(ctx, request, nil)
 	return err
 }
 
 // Apply applies a function on the value, the actual stored value will not change.
-func (a AtomicLong) Apply(ctx context.Context, function interface{}) (interface{}, error) {
-	data, _ := a.serializationService.ToData(function)
-	request := codec.EncodeAtomicLongApplyRequest(a.groupId, a.objectName, data)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
+func (a *AtomicLong) Apply(ctx context.Context, function interface{}) (interface{}, error) {
+	data, err := a.ss.ToData(function)
+	if err != nil {
+		return nil, err
+	}
+	request := codec.EncodeAtomicLongApplyRequest(a.groupID, a.object, data)
+	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
 		return nil, err
 	} else {
-		obj, _ := a.serializationService.ToObject(codec.DecodeAtomicLongApplyResponse(response))
-		return obj, nil
+		obj, err := a.ss.ToObject(codec.DecodeAtomicLongApplyResponse(response))
+		if err != nil {
+			return nil, err
+		} else {
+			return obj, nil
+		}
 	}
 }
 
-// Alter alters the currently stored value by applying a function on it.
-func (a AtomicLong) Alter(ctx context.Context, function interface{}) error {
-	data, err := a.serializationService.ToData(function)
+func (a *AtomicLong) alter(ctx context.Context, function interface{}, valueType int32) (*proto.ClientMessage, error) {
+	data, err := a.ss.ToData(function)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 1)
-	_, err = a.invokeOnRandomTarget(ctx, request, nil)
+	request := codec.EncodeAtomicLongAlterRequest(a.groupID, a.object, data, valueType)
+	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	return response, nil
+}
+
+// Alter alters the currently stored value by applying a function on it.
+func (a *AtomicLong) Alter(ctx context.Context, function interface{}) error {
+	_, err := a.alter(ctx, function, alterValueTypeNewValue)
 	return err
 }
 
 // GetAndAlter alters the currently stored value by applying a function on it and gets the old value.
-func (a AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int64, error) {
-	data, err := a.serializationService.ToData(function)
+func (a *AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int64, error) {
+	response, err := a.alter(ctx, function, alterValueTypeOldValue)
 	if err != nil {
-		return 0, err
-	}
-	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 0)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return 0, err
 	} else {
 		return codec.DecodeAtomicLongAlterResponse(response), nil
@@ -132,13 +151,9 @@ func (a AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int6
 }
 
 // AlterAndGet alters the currently stored value by applying a function on it and gets the result.
-func (a AtomicLong) AlterAndGet(ctx context.Context, function interface{}) (int64, error) {
-	data, err := a.serializationService.ToData(function)
+func (a *AtomicLong) AlterAndGet(ctx context.Context, function interface{}) (int64, error) {
+	response, err := a.alter(ctx, function, alterValueTypeNewValue)
 	if err != nil {
-		return 0, err
-	}
-	request := codec.EncodeAtomicLongAlterRequest(a.groupId, a.objectName, data, 1)
-	if response, err := a.invokeOnRandomTarget(ctx, request, nil); err != nil {
 		return 0, err
 	} else {
 		return codec.DecodeAtomicLongAlterResponse(response), nil
@@ -146,21 +161,21 @@ func (a AtomicLong) AlterAndGet(ctx context.Context, function interface{}) (int6
 }
 
 // IncrementAndGet atomically increments the current value by one.
-func (a AtomicLong) IncrementAndGet(ctx context.Context) (int64, error) {
+func (a *AtomicLong) IncrementAndGet(ctx context.Context) (int64, error) {
 	return a.AddAndGet(ctx, 1)
 }
 
 // DecrementAndGet atomically decrements the current value by one.
-func (a AtomicLong) DecrementAndGet(ctx context.Context) (int64, error) {
+func (a *AtomicLong) DecrementAndGet(ctx context.Context) (int64, error) {
 	return a.AddAndGet(ctx, -1)
 }
 
 // GetAndDecrement atomically decrements the current value by one.
-func (a AtomicLong) GetAndDecrement(ctx context.Context) (int64, error) {
+func (a *AtomicLong) GetAndDecrement(ctx context.Context) (int64, error) {
 	return a.GetAndAdd(ctx, -1)
 }
 
 // GetAndIncrement atomically increments the current value by one.
-func (a AtomicLong) GetAndIncrement(ctx context.Context) (int64, error) {
+func (a *AtomicLong) GetAndIncrement(ctx context.Context) (int64, error) {
 	return a.GetAndAdd(ctx, 1)
 }

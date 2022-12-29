@@ -4,61 +4,112 @@ import (
 	"context"
 	"fmt"
 	"github.com/hazelcast/hazelcast-go-client"
-	"log"
+	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 /*
-	In order to use CP Subsystem in, you need to have at least three member and CP should be enabled in the XML.
-	Zero member means CP Subsystem is disabled.
-	<cp-subsystem>
-		<cp-member-count>3</cp-member-count>
-		<group-size>3</group-size>
-	</cp-subsystem>
+To use CP Subsystem, you need to have at least three member in your cluster.
+Member count which will be used by CP Subsystem has to be specified in the Hazelcast config file.
+The default zero member means CP Subsystem is disabled.
+
+<cp-subsystem>
+	<cp-member-count>3</cp-member-count>
+	<group-size>3</group-size>
+</cp-subsystem>
 */
 
 func main() {
 	ctx := context.Background()
-	client, err := hazelcast.StartNewClient(ctx)
+	cfg := hazelcast.NewConfig()
+	cfg.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
+	client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	cp := client.CPSubsystem()
-	viewCounter, err := cp.GetAtomicLong(context.Background(), "views")
+	counter, err := cp.GetAtomicLong(ctx, "counter")
+	val, err := counter.Get(ctx)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	val, err := viewCounter.Get(ctx)
+	fmt.Println("counter:", val)
+	err = counter.Set(ctx, 10)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(val)
-	err = viewCounter.Set(ctx, 10)
+	val, err = counter.Get(ctx)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	val, err = viewCounter.Get(ctx)
+	fmt.Println("counter:", val)
+	val, err = counter.AddAndGet(ctx, 50)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(val)
-	val, err = viewCounter.AddAndGet(ctx, 50)
+	fmt.Println("counter:", val)
+	val, err = counter.IncrementAndGet(ctx)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(val)
-	val, err = viewCounter.IncrementAndGet(ctx)
+	fmt.Println("counter:", val)
+	res, err := counter.CompareAndSet(ctx, 61, 62)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(val)
-	e, err := viewCounter.CompareAndSet(ctx, 61, 62)
+	fmt.Println("CompareAndSet() operation result:", res)
+	val, err = counter.DecrementAndGet(ctx)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(e)
-	val, err = viewCounter.DecrementAndGet(ctx)
+	fmt.Println("counter:", val)
+	val, err = counter.AlterAndGet(ctx, &Multiplication{2})
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	fmt.Println(val)
+	fmt.Println("counter:", val)
+	modified, err := counter.Apply(ctx, &Multiplication{3})
+	fmt.Println(": ", modified)
+
+}
+
+/*
+Multiplication is a function for multiplying the data by given multiplier.
+This function is present on server side by default.
+Identified serialization method is used to call it on Alter and Apply methods of AtomicLong.
+*/
+const multiplicationFactoryID = 66
+const multiplicationProcessorClassID = 16
+
+type Multiplication struct {
+	multiplier int64
+}
+
+func (s Multiplication) FactoryID() int32 {
+	return multiplicationFactoryID
+}
+
+func (s Multiplication) ClassID() int32 {
+	return multiplicationProcessorClassID
+}
+
+func (s Multiplication) WriteData(output serialization.DataOutput) {
+	output.WriteInt64(s.multiplier)
+}
+
+func (s *Multiplication) ReadData(input serialization.DataInput) {
+	s.multiplier = input.ReadInt64()
+}
+
+type MultiplicationFactory struct {
+}
+
+func (f MultiplicationFactory) Create(id int32) serialization.IdentifiedDataSerializable {
+	if id == multiplicationProcessorClassID {
+		return &Multiplication{}
+	}
+	panic(fmt.Sprintf("unknown class ID: %d", id))
+}
+
+func (f MultiplicationFactory) FactoryID() int32 {
+	return multiplicationFactoryID
 }

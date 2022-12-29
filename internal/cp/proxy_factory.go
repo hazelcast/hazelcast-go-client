@@ -26,100 +26,61 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"strings"
-	"time"
 )
 
 const (
-	atomicLongService      = "hz:raft:atomicLongService"
-	atomicReferenceService = "hz:raft:atomicRefService"
-	countDownLatchService  = "hz:raft:countDownLatchService"
-	lockService            = "hz:raft:lockService"
-	semaphoreService       = "hz:raft:semaphoreService"
+	atomicLongService = "hz:raft:atomicLongService"
 
 	defaultGroupName    = "default"
 	metadataCpGroupName = "metadata"
 )
 
-type bundle struct {
-	invocationService    *invocation.Service
-	serializationService *iserialization.Service
-	invocationFactory    *cluster.ConnectionInvocationFactory
-	logger               *logger.LogAdaptor
-}
-
-func (b bundle) check() {
-	if b.invocationService == nil {
-		panic("invocationFactory is nil")
-	}
-	if b.invocationFactory == nil {
-		panic("invocationService is nil")
-	}
-	if b.serializationService == nil {
-		panic("serializationService is nil")
-	}
-	if b.logger == nil {
-		panic("logger is nil")
-	}
-}
-
 type proxyFactory struct {
-	bundle *bundle
+	is         *invocation.Service
+	ss         *iserialization.Service
+	invFactory *cluster.ConnectionInvocationFactory
+	lg         *logger.LogAdaptor
 }
 
-func newProxyFactory(ss *iserialization.Service, cif *cluster.ConnectionInvocationFactory, is *invocation.Service, l *logger.LogAdaptor) *proxyFactory {
-	b := &bundle{
-		invocationService:    is,
-		invocationFactory:    cif,
-		serializationService: ss,
-		logger:               l,
-	}
-	b.check()
+func newProxyFactory(ss *iserialization.Service, invFactory *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor) *proxyFactory {
 	return &proxyFactory{
-		bundle: b,
+		is:         is,
+		invFactory: invFactory,
+		ss:         ss,
+		lg:         lg,
 	}
 }
 
-func (m *proxyFactory) getOrCreateProxy(ctx context.Context, sn string, n string) (interface{}, error) {
-	var (
-		err error
-		pxy string
-		obj string
-		gid *types.RaftGroupId
-	)
-	if pxy, err = withoutDefaultGroupName(n); err != nil {
-		return nil, err
-	}
-	if obj, err = objectNameForProxy(n); err != nil {
-		return nil, err
-	}
-	if gid, err = m.createGroupID(ctx, n); err != nil {
-		return nil, err
-	}
-	prxy, err := newProxy(m.bundle, gid, sn, pxy, obj)
+func (m *proxyFactory) getOrCreateProxy(ctx context.Context, service string, name string) (interface{}, error) {
+	pxy, err := withoutDefaultGroupName(name)
 	if err != nil {
 		return nil, err
 	}
-	if sn == atomicLongService {
+	obj, err := objectNameForProxy(name)
+	if err != nil {
+		return nil, err
+	}
+	prxy := newProxy(m.ss, m.invFactory, m.is, m.lg, service, pxy, obj)
+	if gid, err := m.createGroupID(ctx, prxy, name); err != nil {
+		return nil, err
+	} else {
+		prxy.groupID = gid
+	}
+	if service == atomicLongService {
 		return &AtomicLong{prxy}, nil
 	} else {
-		return nil, nil
+		return nil, hzerrors.NewIllegalArgumentError("requested data structure is supported by Go Client CP Subsystem", nil)
 	}
 }
 
-func (m *proxyFactory) createGroupID(ctx context.Context, proxyName string) (*types.RaftGroupId, error) {
+func (m *proxyFactory) createGroupID(ctx context.Context, p *proxy, proxyName string) (types.RaftGroupId, error) {
 	request := codec.EncodeCPGroupCreateCPGroupRequest(proxyName)
-	now := time.Now()
-	inv := m.bundle.invocationFactory.NewInvocationOnRandomTarget(request, nil, now)
-	err := m.bundle.invocationService.SendRequest(context.Background(), inv)
+	response, err := p.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
-		return nil, err
+		return types.RaftGroupId{}, err
+	} else {
+		return codec.DecodeCPGroupCreateCPGroupResponse(response), nil
 	}
-	response, err := inv.GetWithContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	groupId := codec.DecodeCPGroupCreateCPGroupResponse(response)
-	return &groupId, nil
 }
 
 func objectNameForProxy(name string) (string, error) {
@@ -127,15 +88,15 @@ func objectNameForProxy(name string) (string, error) {
 	if idx == -1 {
 		return name, nil
 	}
-	groupName := strings.TrimSpace(name[idx+1:])
-	if len(groupName) <= 0 {
-		return "", hzerrors.NewIllegalArgumentError("Custom CP group name cannot be empty string", nil)
+	group := strings.TrimSpace(name[idx+1:])
+	if group == "" {
+		return "", hzerrors.NewIllegalArgumentError("custom CP group name cannot be empty string", nil)
 	}
-	objectName := strings.TrimSpace(name[:idx])
-	if len(objectName) <= 0 {
-		return "", hzerrors.NewIllegalArgumentError("Object name cannot be empty string", nil)
+	obj := strings.TrimSpace(name[:idx])
+	if obj == "" {
+		return "", hzerrors.NewIllegalArgumentError("object name cannot be empty string", nil)
 	}
-	return objectName, nil
+	return obj, nil
 }
 
 func withoutDefaultGroupName(proxyName string) (string, error) {
@@ -145,13 +106,13 @@ func withoutDefaultGroupName(proxyName string) (string, error) {
 		return name, nil
 	}
 	if ci := strings.Index(name[idx+1:], "@"); ci != -1 {
-		return "", hzerrors.NewIllegalArgumentError("Custom group name must be specified at most once", nil)
+		return "", hzerrors.NewIllegalArgumentError("custom group name must be specified at most once", nil)
 	}
-	groupName := strings.TrimSpace(name[idx+1:])
-	if lgn := strings.ToLower(groupName); lgn == metadataCpGroupName {
-		return "", hzerrors.NewIllegalArgumentError("CP data structures cannot run on the METADATA CP group!", nil)
+	group := strings.TrimSpace(name[idx+1:])
+	if n := strings.ToLower(group); n == metadataCpGroupName {
+		return "", hzerrors.NewIllegalArgumentError("cp data structures cannot run on the METADATA CP group!", nil)
 	}
-	if strings.ToLower(groupName) == defaultGroupName {
+	if strings.ToLower(group) == defaultGroupName {
 		return name[:idx], nil
 	}
 	return name, nil

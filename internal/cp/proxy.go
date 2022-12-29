@@ -30,19 +30,24 @@ import (
 	"time"
 )
 
+/*
+proxy is the parent struct of CP Subsystem data structures.
+It's exported fields and methods are in public API so directly accessible by users.
+Be careful while adding new methods/fields to proxy.
+*/
 type proxy struct {
-	logger               logger.LogAdaptor
-	cb                   *cb.CircuitBreaker
-	serializationService *iserialization.Service
-	invocationFactory    *cluster.ConnectionInvocationFactory
-	invocationService    *invocation.Service
-	objectName           string
-	proxyName            string
-	serviceName          string
-	groupId              types.RaftGroupId
+	cb         *cb.CircuitBreaker
+	groupID    types.RaftGroupId
+	invFactory *cluster.ConnectionInvocationFactory
+	is         *invocation.Service
+	lg         *logger.LogAdaptor
+	name       string
+	object     string
+	service    string
+	ss         *iserialization.Service
 }
 
-func newProxy(bundle *bundle, gi *types.RaftGroupId, svc string, pxy string, obj string) (*proxy, error) {
+func newProxy(ss *iserialization.Service, invFactory *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor, svc string, pxy string, obj string) *proxy {
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -50,29 +55,28 @@ func newProxy(bundle *bundle, gi *types.RaftGroupId, svc string, pxy string, obj
 			return time.Duration((attempt+1)*100) * time.Millisecond
 		}))
 	p := &proxy{
-		groupId:              *gi,
-		serviceName:          svc,
-		proxyName:            pxy,
-		objectName:           obj,
-		invocationService:    bundle.invocationService,
-		serializationService: bundle.serializationService,
-		invocationFactory:    bundle.invocationFactory,
-		logger:               *bundle.logger,
-		cb:                   circuitBreaker,
+		cb:         circuitBreaker,
+		invFactory: invFactory,
+		is:         is,
+		lg:         lg,
+		name:       pxy,
+		object:     obj,
+		service:    svc,
+		ss:         ss,
 	}
-	return p, nil
+	return p
 }
 
 func (p *proxy) Name() string {
-	return p.proxyName
+	return p.name
 }
 
 func (p *proxy) ServiceName() string {
-	return p.serviceName
+	return p.service
 }
 
 func (p *proxy) Destroy(ctx context.Context) error {
-	request := codec.EncodeCPGroupDestroyCPObjectRequest(p.groupId, p.serviceName, p.objectName)
+	request := codec.EncodeCPGroupDestroyCPObjectRequest(p.groupID, p.service, p.object)
 	_, err := p.invokeOnRandomTarget(ctx, request, nil)
 	return err
 }
@@ -82,18 +86,19 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if res, err := p.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+	response, err := p.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
 		}
-		inv := p.invocationFactory.NewInvocationOnRandomTarget(request, handler, now)
-		if err := p.invocationService.SendRequest(ctx, inv); err != nil {
+		inv := p.invFactory.NewInvocationOnRandomTarget(request, handler, now)
+		if err := p.is.SendRequest(ctx, inv); err != nil {
 			return nil, err
 		}
 		return inv.GetWithContext(ctx)
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	} else {
-		return res.(*proto.ClientMessage), nil
+		return response.(*proto.ClientMessage), nil
 	}
 }
