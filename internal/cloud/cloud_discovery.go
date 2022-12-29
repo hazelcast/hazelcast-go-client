@@ -19,12 +19,13 @@ package cloud
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/cluster"
-	"github.com/hazelcast/hazelcast-go-client/internal/logger"
-	"github.com/hazelcast/hazelcast-go-client/internal/rest"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/logger"
+	"github.com/hazelcast/hazelcast-go-client/internal/rest"
 )
 
 const envCoordinatorBaseURL = "HZ_CLOUD_COORDINATOR_BASE_URL"
