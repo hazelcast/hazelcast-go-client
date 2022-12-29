@@ -17,6 +17,7 @@
 package serialization
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -77,8 +78,8 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 	if err != nil {
 		return Data{}, err
 	}
-	dataOutput.WriteInt32(0) // partition
-	dataOutput.WriteInt32(serializer.ID())
+	dataOutput.WriteInt32_(0, binary.BigEndian) // partition
+	dataOutput.WriteInt32_(serializer.ID(), binary.BigEndian)
 	serializer.Write(dataOutput, object)
 	return dataOutput.buffer[:dataOutput.position], err
 }

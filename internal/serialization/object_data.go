@@ -134,6 +134,12 @@ func (o *ObjectDataOutput) WriteInt32(v int32) {
 	o.position += Int32SizeInBytes
 }
 
+func (o *ObjectDataOutput) WriteInt32_(v int32, bo binary.ByteOrder) {
+	o.EnsureAvailable(Int32SizeInBytes)
+	WriteInt32(o.buffer, o.position, v, bo)
+	o.position += Int32SizeInBytes
+}
+
 func (o *ObjectDataOutput) WriteInt64(v int64) {
 	o.EnsureAvailable(Int64SizeInBytes)
 	WriteInt64(o.buffer, o.position, v, o.bo)

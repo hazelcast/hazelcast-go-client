@@ -68,6 +68,28 @@ func TestSerializationService_ToData(t *testing.T) {
 	}
 }
 
+func TestSerializationService_ToData_LittleEndianTrue(t *testing.T) {
+	var expected int32 = 100
+	c := &serialization.Config{}
+	c.LittleEndian = true
+	service, err := iserialization.NewService(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := service.ToData(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	temp, err := service.ToObject(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ret := temp.(int32)
+	if expected != ret {
+		t.Error("ToData() returns ", ret, " expected ", expected)
+	}
+}
+
 type CustomArtistSerializer struct {
 }
 
