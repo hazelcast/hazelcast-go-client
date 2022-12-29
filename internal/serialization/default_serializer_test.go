@@ -17,6 +17,7 @@
 package serialization
 
 import (
+	"github.com/hazelcast/hazelcast-go-client/types"
 	"reflect"
 	"testing"
 
@@ -31,6 +32,7 @@ func TestDefaultSerializer(t *testing.T) {
 		Target interface{}
 	}{
 		{Value: int8(-42), Target: uint8(0xd6)},
+		{Value: types.NewUUIDWith(uint64(1234), uint64(5678)), Target: types.NewUUIDWith(uint64(1234), uint64(5678))},
 	}
 	sc := &serialization.Config{}
 	sc.SetGlobalSerializer(&PanicingGlobalSerializer{})
