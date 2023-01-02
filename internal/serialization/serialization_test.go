@@ -315,9 +315,10 @@ func TestSerializeRune(t *testing.T) {
 func TestUndefinedDataDeserialization(t *testing.T) {
 	s := it.MustSerializationService(iserialization.NewService(&serialization.Config{}))
 	dataOutput := iserialization.NewPositionalObjectDataOutput(1, s, !s.SerializationConfig.LittleEndian)
-	dataOutput.WriteInt32(0) // partition
-	dataOutput.WriteInt32(-100)
+	dataOutput.WriteInt32BigEndian(0)    // partition
+	dataOutput.WriteInt32BigEndian(-100) // serializer id
 	dataOutput.WriteString("Furkan")
 	data := iserialization.Data(dataOutput.ToBuffer())
-	_ = it.MustValue(s.ToObject(data))
+	_, err := s.ToObject(data)
+	require.Errorf(t, err, "err should not be nil")
 }
