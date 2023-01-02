@@ -134,9 +134,9 @@ func (o *ObjectDataOutput) WriteInt32(v int32) {
 	o.position += Int32SizeInBytes
 }
 
-func (o *ObjectDataOutput) WriteInt32_(v int32, bo binary.ByteOrder) {
+func (o *ObjectDataOutput) WriteInt32BigEndian(v int32) {
 	o.EnsureAvailable(Int32SizeInBytes)
-	WriteInt32(o.buffer, o.position, v, bo)
+	WriteInt32(o.buffer, o.position, v, binary.BigEndian)
 	o.position += Int32SizeInBytes
 }
 
