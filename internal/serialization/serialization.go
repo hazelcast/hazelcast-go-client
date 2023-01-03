@@ -77,8 +77,8 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 	if err != nil {
 		return Data{}, err
 	}
-	dataOutput.WriteInt32(0) // partition
-	dataOutput.WriteInt32(serializer.ID())
+	dataOutput.WriteInt32BigEndian(0) // partition
+	dataOutput.WriteInt32BigEndian(serializer.ID())
 	serializer.Write(dataOutput, object)
 	return dataOutput.buffer[:dataOutput.position], err
 }
