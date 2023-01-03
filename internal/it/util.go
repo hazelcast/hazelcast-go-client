@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"math/rand"
 	"net"
 	"os"
@@ -200,12 +201,27 @@ func MustBool(value bool, err error) bool {
 	return value
 }
 
+// MustData returns data if err is nil, otherwise it panics.
+func MustData(value interface{}, err error) iserialization.Data {
+	if err != nil {
+		panic(err)
+	}
+	return value.(iserialization.Data)
+}
+
 // MustClient returns client if err is nil, otherwise it panics.
 func MustClient(client *hz.Client, err error) *hz.Client {
 	if err != nil {
 		panic(err)
 	}
 	return client
+}
+
+func MustSerializationService(ss *iserialization.Service, err error) *iserialization.Service {
+	if err != nil {
+		panic(err)
+	}
+	return ss
 }
 
 func NewUniqueObjectName(service string, labels ...string) string {
