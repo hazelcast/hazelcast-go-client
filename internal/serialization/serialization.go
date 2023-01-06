@@ -69,6 +69,9 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 			err = makeError(rec)
 		}
 	}()
+	if object == nil {
+		return nil, nil
+	}
 	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
@@ -271,7 +274,8 @@ func (s *Service) lookUpCustomSerializer(obj interface{}) pubserialization.Seria
 				return val
 			}
 		} else {
-			if reflect.TypeOf(obj) == key {
+			typ := reflect.TypeOf(obj)
+			if typ == key {
 				return val
 			}
 		}

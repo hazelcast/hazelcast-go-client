@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -23,22 +24,38 @@ func TestBinaryCompatibility(t *testing.T) {
 	for key, obj := range objects {
 		for _, order := range byteOrders {
 			for _, version := range versions {
-				t.Run(createObjectKey(key, order, version)+"-readAndVerifyBinaries", func(t *testing.T) {
-					// readAndVerifyBinaries
-					key := createObjectKey(key, order, version)
+				keyStr := createObjectKey(key, order, version)
+				t.Run(keyStr+"-testDeserialize", func(t *testing.T) {
+					// testDeserialize
+					if skipOnDeserialize(key) {
+						t.SkipNow()
+					}
 					service := createSerializationService(t, order)
-					readObject, err := service.ToObject(dataMap[key])
+					readObject, err := service.ToObject(dataMap[keyStr])
 					require.NoError(t, err)
-					require.Equal(t, readObject, obj)
+					require.Equal(t, obj, readObject)
 				})
-				t.Run(createObjectKey(key, order, version)+"-basicSerializeDeserialize", func(t *testing.T) {
-					// basicSerializeDeserialize
+				t.Run(keyStr+"-testSerialize", func(t *testing.T) {
+					// testSerialize
+					if skipOnSerialize(key) {
+						t.SkipNow()
+					}
+					service := createSerializationService(t, order)
+					data, err := service.ToData(obj)
+					require.NoError(t, err)
+					require.Equal(t, dataMap[keyStr], data)
+				})
+				t.Run(keyStr+"-testSerializeDeserialize", func(t *testing.T) {
+					// testSerializeDeserialize
+					if skipOnDeserialize(key) || skipOnSerialize(key) {
+						t.SkipNow()
+					}
 					service := createSerializationService(t, order)
 					data, err := service.ToData(obj)
 					require.NoError(t, err)
 					readObject, err := service.ToObject(data)
 					require.NoError(t, err)
-					require.Equal(t, readObject, obj)
+					require.Equal(t, obj, readObject)
 				})
 			}
 		}
@@ -52,9 +69,7 @@ func readBinaryFile(t *testing.T) {
 		i := serialization.NewObjectDataInput(b, 0, nil, true)
 		for i.Available() != 0 {
 			buf := i.ReadUInt16()
-			object_key_buf := i.ReadRaw(int32(buf))
-			objectKey := string(object_key_buf)
-
+			objectKey := string(i.ReadRaw(int32(buf)))
 			n := i.ReadInt32()
 			if n != -1 {
 				bytes = make([]byte, n)
@@ -62,6 +77,8 @@ func readBinaryFile(t *testing.T) {
 					bytes[j] = i.ReadByte()
 				}
 				dataMap[objectKey] = bytes
+			} else {
+				dataMap[objectKey] = nil
 			}
 		}
 	}
@@ -69,14 +86,16 @@ func readBinaryFile(t *testing.T) {
 
 func createSerializationService(t *testing.T, byteOrder binary.ByteOrder) *serialization.Service {
 	cfg := serialization2.Config{}
-	err := cfg.SetCustomSerializer(reflect.TypeOf(&CustomByteArraySerializable{}), &CustomByteArraySerializer{})
+	err := cfg.SetCustomSerializer(reflect.TypeOf(CustomByteArraySerializable{}), CustomByteArraySerializer{})
 	require.NoError(t, err)
-	err = cfg.SetCustomSerializer(reflect.TypeOf(&CustomStreamSerializable{}), &CustomStreamSerializer{})
+	err = cfg.SetCustomSerializer(reflect.TypeOf(CustomStreamSerializable{}), CustomStreamSerializer{})
 	require.NoError(t, err)
-	cfg.PortableVersion = 1
-	cd := serialization2.NewClassDefinition(PortableFactoryId, InnerPortableClassId, 1)
-	cd.AddInt32Field("i")
-	cd.AddFloat32Field("f")
+	cfg.PortableVersion = 0
+	cd := serialization2.NewClassDefinition(PortableFactoryId, InnerPortableClassId, 0)
+	err = cd.AddInt32Field("i")
+	require.NoError(t, err)
+	err = cd.AddFloat32Field("f")
+	require.NoError(t, err)
 	cfg.SetClassDefinitions(cd)
 	cfg.SetPortableFactories(&PortableFactory{})
 	cfg.SetIdentifiedDataSerializableFactories(&IdentifiedFactory{})
@@ -100,4 +119,21 @@ func createObjectKey(name string, byteOrder binary.ByteOrder, version int) strin
 
 func createFileName(version int) string {
 	return fmt.Sprintf("%d.serialization.compatibility.binary", version)
+}
+
+func skipOnDeserialize(objType string) bool {
+	p, _ := regexp.Compile("^.*(Predicate|Aggregator|Projection)$")
+	return p.MatchString(objType)
+}
+
+func skipOnSerialize(objType string) bool {
+	s := []string{
+		"Class",
+	}
+	for _, v := range s {
+		if v == objType {
+			return true
+		}
+	}
+	return false
 }

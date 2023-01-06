@@ -1,13 +1,14 @@
 package compatibility
 
 import (
-	bytes2 "bytes"
+	pacbytes "bytes"
 	"encoding/binary"
-	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	types2 "go/types"
+	pactypes "go/types"
 	"math"
 	"math/big"
 	"time"
@@ -54,13 +55,18 @@ type AnIdentifiedDataSerializable struct {
 	longsNil    []int64
 	stringsNil  []string
 
-	unsigned_byte  uint8
-	unsigned_short uint16
+	byteSize      byte
+	bytesFully    []byte
+	bytesOffset   []byte
+	strChars      []uint16
+	strBytes      []byte
+	unsignedByte  uint8
+	unsignedShort uint16
 
-	portable                       serialization.Portable
-	identified                     serialization.IdentifiedDataSerializable
-	custom_serializable            CustomStreamSerializable
-	custom_byte_array_serializable CustomByteArraySerializable
+	portableObject                    serialization.Portable
+	identifiedDataSerializableObject  serialization.IdentifiedDataSerializable
+	customStreamSerializableObject    CustomStreamSerializable
+	customByteArraySerializableObject CustomByteArraySerializable
 
 	data iserialization.Data
 }
@@ -103,8 +109,8 @@ func (i AnIdentifiedDataSerializable) WriteData(output serialization.DataOutput)
 	output.WriteInt64Array(i.longsNil)
 	output.WriteStringArray(i.stringsNil)
 
-	byteSize := byte(len(i.bytes))
-	output.WriteByte(byteSize)
+	i.byteSize = byte(len(i.bytes))
+	output.WriteByte(i.byteSize)
 	output.WriteByteArray(i.bytes)
 	output.WriteByte(i.bytes[1])
 	output.WriteByte(i.bytes[2])
@@ -117,13 +123,13 @@ func (i AnIdentifiedDataSerializable) WriteData(output serialization.DataOutput)
 	}
 	output.WriteUInt16Array(charArray)
 	output.WriteStringBytes(i.str)
-	output.WriteByte(i.unsigned_byte)
-	output.WriteUInt16(i.unsigned_short)
+	output.WriteByte(i.unsignedByte)
+	output.WriteUInt16(i.unsignedShort)
 
-	output.WriteObject(i.portable)
-	output.WriteObject(i.identified)
-	output.WriteObject(i.custom_serializable)
-	output.WriteObject(i.custom_byte_array_serializable)
+	output.WriteObject(i.portableObject)
+	output.WriteObject(i.identifiedDataSerializableObject)
+	output.WriteObject(i.customStreamSerializableObject)
+	output.WriteObject(i.customByteArraySerializableObject)
 
 	var payload []byte
 	if i.data.Type() != iserialization.TypeNil {
@@ -134,7 +140,77 @@ func (i AnIdentifiedDataSerializable) WriteData(output serialization.DataOutput)
 	output.WriteByteArray(payload)
 }
 
-func (e AnIdentifiedDataSerializable) ReadData(input serialization.DataInput) {
+func (i *AnIdentifiedDataSerializable) ReadData(input serialization.DataInput) {
+	i.bool = input.ReadBool()
+	i.b = input.ReadByte()
+	i.c = input.ReadUInt16()
+	i.d = input.ReadFloat64()
+	i.s = input.ReadInt16()
+	i.f = input.ReadFloat32()
+	i.i = input.ReadInt32()
+	i.l = input.ReadInt64()
+	i.str = input.ReadString()
+
+	i.booleans = input.ReadBoolArray()
+	i.bytes = input.ReadByteArray()
+	i.chars = input.ReadUInt16Array()
+	i.doubles = input.ReadFloat64Array()
+	i.shorts = input.ReadInt16Array()
+	i.floats = input.ReadFloat32Array()
+	i.ints = input.ReadInt32Array()
+	i.longs = input.ReadInt64Array()
+	i.strings = input.ReadStringArray()
+
+	i.booleansNil = input.ReadBoolArray()
+	i.bytesNil = input.ReadByteArray()
+	i.charsNil = input.ReadUInt16Array()
+	i.doublesNil = input.ReadFloat64Array()
+	i.shortsNil = input.ReadInt16Array()
+	i.floatsNil = input.ReadFloat32Array()
+	i.intsNil = input.ReadInt32Array()
+	i.longsNil = input.ReadInt64Array()
+	i.stringsNil = input.ReadStringArray()
+
+	i.byteSize = input.ReadByte()
+	i.bytesFully = input.ReadRaw(int32(i.byteSize))
+	i.bytesOffset = make([]byte, 2)
+	i.bytesOffset[0] = input.ReadByte()
+	i.bytesOffset[1] = input.ReadByte()
+
+	strSize := input.ReadInt32()
+	i.strChars = make([]uint16, strSize)
+	for j := 0; j < int(strSize); j++ {
+		i.strChars[j] = input.ReadUInt16()
+	}
+	i.strBytes = input.ReadRaw(strSize)
+	i.unsignedByte = input.ReadByte()
+	i.unsignedShort = input.ReadUInt16()
+
+	portableObject := input.ReadObject()
+	if portableObject != nil {
+		i.portableObject = portableObject.(serialization.Portable)
+	}
+	identifiedDataSerializableObject := input.ReadObject()
+	if identifiedDataSerializableObject != nil {
+		i.identifiedDataSerializableObject = identifiedDataSerializableObject.(serialization.IdentifiedDataSerializable)
+	}
+	customByteArraySerializableObject := input.ReadObject()
+	if customByteArraySerializableObject != nil {
+		i.customByteArraySerializableObject = customByteArraySerializableObject.(CustomByteArraySerializable)
+	}
+	customStreamSerializableObject := input.ReadObject()
+	if customStreamSerializableObject != nil {
+		i.customStreamSerializableObject = customStreamSerializableObject.(CustomStreamSerializable)
+	}
+	i.data = readDataFromInput(input)
+}
+
+func readDataFromInput(inp serialization.DataInput) iserialization.Data {
+	buff := inp.ReadByteArray()
+	if buff != nil {
+		return buff
+	}
+	return nil
 }
 
 type IdentifiedFactory struct{}
@@ -167,7 +243,7 @@ func (e CustomStreamSerializer) Read(input serialization.DataInput) interface{} 
 }
 
 func (e CustomStreamSerializer) Write(out serialization.DataOutput, object interface{}) {
-	css, ok := object.(*CustomStreamSerializable)
+	css, ok := object.(CustomStreamSerializable)
 	if !ok {
 		panic("can serialize only CustomStreamSerializable")
 	}
@@ -187,7 +263,7 @@ func (e CustomByteArraySerializer) ID() (id int32) {
 	return CustomByteArraySerializableId
 }
 func (e CustomByteArraySerializer) Read(input serialization.DataInput) interface{} {
-	buf := bytes2.NewBuffer(input.ReadByteArray())
+	buf := pacbytes.NewBuffer(input.ReadByteArray())
 	var i int32
 	var f float32
 	err := binary.Read(buf, binary.BigEndian, &i)
@@ -202,22 +278,14 @@ func (e CustomByteArraySerializer) Read(input serialization.DataInput) interface
 }
 
 func (e CustomByteArraySerializer) Write(output serialization.DataOutput, object interface{}) {
-	cba, ok := object.(*CustomByteArraySerializable)
+	cba, ok := object.(CustomByteArraySerializable)
 	if !ok {
 		panic("can serialize only CustomByteArraySerializable")
 	}
-	buf := bytes2.NewBuffer(make([]byte, 10))
-	err := binary.Write(buf, binary.BigEndian, cba.I)
-	if err != nil {
-		panic(err)
-	}
-	err = binary.Write(buf, binary.BigEndian, cba.F)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Print("written : ")
-	fmt.Println(buf.Bytes())
-	output.WriteByteArray(buf.Bytes())
+	buf := make([]byte, 10)
+	binary.BigEndian.PutUint32(buf, uint32(cba.I))
+	binary.BigEndian.PutUint32(buf[4:], math.Float32bits(cba.F))
+	output.WriteByteArray(buf)
 }
 
 type AnInnerPortable struct {
@@ -293,10 +361,10 @@ type APortable struct {
 	unsignedByte  uint8
 	unsignedShort uint16
 
-	portableObject                    types2.Object
-	identifiedDataSerializableObject  types2.Object
-	customStreamSerializableObject    types2.Object
-	customByteArraySerializableObject types2.Object
+	portableObject                    pactypes.Object
+	identifiedDataSerializableObject  pactypes.Object
+	customStreamSerializableObject    pactypes.Object
+	customByteArraySerializableObject pactypes.Object
 	data                              iserialization.Data
 }
 
@@ -526,19 +594,19 @@ func (p PortableFactory) Create(classID int32) serialization.Portable {
 }
 
 var (
-	aNullObject  types2.Object = nil
-	aBoolean     bool          = true
-	aByte        byte          = 113
-	aChar        uint16        = 'x'
-	aDouble      float64       = -897543.3678909
-	aShort       int16         = -500
-	aFloat       float32       = 900.5678
-	anInt        int32         = 56789
-	aLong        int64         = -50992225
-	anSqlString  string        = "this > 5 AND this < 100"
-	aString      string        = anSqlString
-	aUUID        types.UUID    = types.NewUUIDWith(uint64(aLong), uint64(anInt))
-	aSmallString string        = "😊 Hello Приве́т नमस्ते שָׁלוֹם"
+	aNullObject  pactypes.Object = nil
+	aBoolean     bool            = true
+	aByte        byte            = 113
+	aChar        uint16          = 'x'
+	aDouble      float64         = -897543.3678909
+	aShort       int16           = -500
+	aFloat       float32         = 900.5678
+	anInt        int32           = 56789
+	aLong        int64           = -50992225
+	anSqlString  string          = "this > 5 AND this < 100"
+	aString      string          = anSqlString
+	aUUID        types.UUID      = types.NewUUIDWith(uint64(aLong), uint64(anInt))
+	aSmallString string          = "😊 Hello Приве́т नमस्ते שָׁלוֹם"
 
 	booleans = []bool{true, false, true}
 	// byte is signed in Java but unsigned in Go!
@@ -565,8 +633,9 @@ var (
 	anIdentifiedDataSerializable AnIdentifiedDataSerializable = AnIdentifiedDataSerializable{bool: aBoolean, b: aByte,
 		c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong, str: aSmallString, booleans: booleans,
 		bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
-		unsigned_byte: math.MaxUint8, unsigned_short: math.MaxUint16, portable: anInnerPortable, custom_serializable: aCustomStreamSerializable,
-		custom_byte_array_serializable: aCustomByteArraySerializable, data: aData}
+		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: bytes,
+		unsignedByte: math.MaxUint8, unsignedShort: math.MaxUint16, portableObject: anInnerPortable, identifiedDataSerializableObject: nil, customStreamSerializableObject: aCustomStreamSerializable,
+		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData}
 
 	aDate = time.Date(1990, 2, 1, 0, 0, 0, 0, time.UTC)
 
@@ -614,96 +683,78 @@ var (
 		anOffsetDateTime, aBigInteger, aBigDecimal, aClass}
 
 	allTestObjects = map[string]interface{}{
+		"NULL":            aNullObject,
+		"Boolean":         aBoolean,
+		"Byte":            aByte,
+		"Character":       aChar,
+		"Double":          aDouble,
+		"Short":           aShort,
+		"Float":           aFloat,
+		"Integer":         anInt,
+		"Long":            aLong,
+		"String":          anSqlString,
+		"UUID":            aUUID,
+		"AnInnerPortable": anInnerPortable,
 
-		"NULL":                         aNullObject,
-		"Boolean":                      aBoolean,
-		"Byte":                         aByte,
-		"Character":                    aChar,
-		"Double":                       aDouble,
-		"Short":                        aShort,
-		"Float":                        aFloat,
-		"Integer":                      anInt,
-		"Long":                         aLong,
-		"String":                       anSqlString,
-		"UUID":                         aUUID,
-		"boolean[]":                    booleans,
-		"byte[]":                       bytes,
-		"char[]":                       chars,
-		"double[]":                     doubles,
-		"short[]":                      shorts,
-		"float[]":                      floats,
-		"int[]":                        ints,
-		"long[]":                       longs,
-		"String[]":                     strings,
-		"LocalDate":                    aLocalDate,
-		"LocalTime":                    aLocalTime,
-		"LocalDateTime":                aLocalDateTime,
-		"OffsetDateTime":               anOffsetDateTime,
-		"BigInteger":                   aBigInteger,
-		"BigDecimal":                   aBigDecimal,
-		"Class":                        aClass,
-		"AnInnerPortable":              anInnerPortable,
-		"CustomStreamSerializable":     aCustomStreamSerializable,
-		"CustomByteArraySerializable":  aCustomByteArraySerializable,
-		"AnIdentifiedDataSerializable": anIdentifiedDataSerializable,
-		/*
+		"boolean[]":                   booleans,
+		"byte[]":                      bytes,
+		"char[]":                      chars,
+		"double[]":                    doubles,
+		"short[]":                     shorts,
+		"float[]":                     floats,
+		"int[]":                       ints,
+		"long[]":                      longs,
+		"String[]":                    strings,
+		"CustomStreamSerializable":    aCustomStreamSerializable,
+		"CustomByteArraySerializable": aCustomByteArraySerializable,
+		// "AnIdentifiedDataSerializable": anIdentifiedDataSerializable,
+		// "APortable":                    aPortable,
+		"LocalDate":      aLocalDate,
+		"LocalTime":      aLocalTime,
+		"LocalDateTime":  aLocalDateTime,
+		"OffsetDateTime": anOffsetDateTime,
+		"BigInteger":     aBigInteger,
+		"BigDecimal":     aBigDecimal,
+		"Class":          aClass,
 
-			"APortable":                    aPortable,
+		"TruePredicate":        predicate.True(),
+		"FalsePredicate":       predicate.False(),
+		"SqlPredicate":         predicate.SQL(anSqlString),
+		"EqualPredicate":       predicate.Equal(anSqlString, anInt),
+		"NotEqualPredicate":    predicate.NotEqual(anSqlString, anInt),
+		"GreaterLessPredicate": predicate.Greater(anSqlString, anInt),
+		"BetweenPredicate":     predicate.Between(anSqlString, anInt, anInt),
+		"LikePredicate":        predicate.Like(anSqlString, anSqlString),
+		"ILikePredicate":       predicate.ILike(anSqlString, anSqlString),
+		"InPredicate":          predicate.In(anSqlString, anInt, anInt),
+		"RegexPredicate":       predicate.Regex(anSqlString, anSqlString),
+		"AndPredicate": predicate.And(
+			predicate.SQL(anSqlString),
+			predicate.Equal(anSqlString, anInt),
+			predicate.NotEqual(anSqlString, anInt),
+			predicate.Greater(anSqlString, anInt),
+			predicate.GreaterOrEqual(anSqlString, anInt),
+		),
+		"OrPredicate": predicate.Or(
+			predicate.SQL(anSqlString),
+			predicate.Equal(anSqlString, anInt),
+			predicate.NotEqual(anSqlString, anInt),
+			predicate.Greater(anSqlString, anInt),
+			predicate.GreaterOrEqual(anSqlString, anInt),
+		),
+		"InstanceOfPredicate": predicate.InstanceOf("com.hazelcast.nio.serialization.compatibility.CustomStreamSerializable"),
 
-				"ArrayList": []interface{}{nil, _non_null_list},
-				"LinkedList": [None, _non_null_list],
-				"TruePredicate": predicate.true(),
-				"FalsePredicate": predicate.false(),
-				"SqlPredicate": predicate.sql(_sql_string),
-				"EqualPredicate": predicate.equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				"NotEqualPredicate": predicate.not_equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				"GreaterLessPredicate": predicate.greater(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				"BetweenPredicate": predicate.between(
-				_sql_string, REFERENCE_OBJECTS["Integer"], REFERENCE_OBJECTS["Integer"]
-			),
-				"LikePredicate": predicate.like(_sql_string, _sql_string),
-				"ILikePredicate": predicate.ilike(_sql_string, _sql_string),
-				"InPredicate": predicate.in_(
-				_sql_string, REFERENCE_OBJECTS["Integer"], REFERENCE_OBJECTS["Integer"]
-			),
-				"RegexPredicate": predicate.regex(_sql_string, _sql_string),
-				"AndPredicate": predicate.and_(
-				predicate.sql(_sql_string),
-				predicate.equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				predicate.not_equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				predicate.greater(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				predicate.greater_or_equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-			),
-				"OrPredicate": predicate.or_(
-				predicate.sql(_sql_string),
-				predicate.equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				predicate.not_equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				predicate.greater(_sql_string, REFERENCE_OBJECTS["Integer"]),
-				predicate.greater_or_equal(_sql_string, REFERENCE_OBJECTS["Integer"]),
-			),
-				"InstanceOfPredicate": predicate.instance_of(
-				"com.hazelcast.nio.serialization.compatibility.CustomStreamSerializable"
-			),
-				"DistinctValuesAggregator": aggregator.distinct(_sql_string),
-				"MaxAggregator": aggregator.max_(_sql_string),
-				"MaxByAggregator": aggregator.max_by(_sql_string),
-				"MinAggregator": aggregator.min_(_sql_string),
-				"MinByAggregator": aggregator.min_by(_sql_string),
-				"CountAggregator": aggregator.count(_sql_string),
-				"NumberAverageAggregator": aggregator.number_avg(_sql_string),
-				"IntegerAverageAggregator": aggregator.int_avg(_sql_string),
-				"LongAverageAggregator": aggregator.long_avg(_sql_string),
-				"DoubleAverageAggregator": aggregator.double_avg(_sql_string),
-				"IntegerSumAggregator": aggregator.int_sum(_sql_string),
-				"LongSumAggregator": aggregator.long_sum(_sql_string),
-				"DoubleSumAggregator": aggregator.double_sum(_sql_string),
-				"FixedSumAggregator": aggregator.fixed_point_sum(_sql_string),
-				"FloatingPointSumAggregator": aggregator.floating_point_sum(_sql_string),
-				"SingleAttributeProjection": projection.single_attribute(_sql_string),
-				"MultiAttributeProjection": projection.multi_attribute(
-				_sql_string, _sql_string, _sql_string
-			),
-				"IdentityProjection": projection.identity(),
-		*/
+		"CountAggregator": aggregate.Count(anSqlString),
+		// "DistinctValuesAggregator": aggregate.DistinctValues(anSqlString),
+		// "MaxByAggregator":          aggregate.Max(anSqlString),
+		// "MinByAggregator":          aggregate.Min(anSqlString),
+		"MaxAggregator":            aggregate.MaxAll(),
+		"MinAggregator":            aggregate.MinAll(),
+		"DoubleSumAggregator":      aggregate.DoubleSum(anSqlString),
+		"IntegerSumAggregator":     aggregate.IntSum(anSqlString),
+		"LongSumAggregator":        aggregate.LongSum(anSqlString),
+		"DoubleAverageAggregator":  aggregate.DoubleAverage(anSqlString),
+		"IntegerAverageAggregator": aggregate.IntAverage(anSqlString),
+		"LongAverageAggregator":    aggregate.LongAverage(anSqlString),
 	}
 )
