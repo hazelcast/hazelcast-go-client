@@ -12,10 +12,10 @@ To use CP Subsystem, you need to have at least three member in your cluster.
 Member count which will be used by CP Subsystem has to be specified in the Hazelcast config file.
 The default zero member means CP Subsystem is disabled.
 
-<cp-subsystem>
-	<cp-member-count>3</cp-member-count>
-	<group-size>3</group-size>
-</cp-subsystem>
+	<cp-subsystem>
+		<cp-member-count>3</cp-member-count>
+		<group-size>3</group-size>
+	</cp-subsystem>
 */
 
 func main() {
