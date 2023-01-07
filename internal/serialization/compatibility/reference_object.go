@@ -114,14 +114,11 @@ func (i AnIdentifiedDataSerializable) WriteData(output serialization.DataOutput)
 	output.WriteByteArray(i.bytes)
 	output.WriteByte(i.bytes[1])
 	output.WriteByte(i.bytes[2])
-	output.WriteInt32(int32(len(i.str)))
 
-	stringToSlice := []rune(i.str)
-	var charArray = make([]uint16, len(stringToSlice))
-	for i, r := range stringToSlice {
-		charArray[i] = uint16(r)
+	output.WriteInt32(int32(len(i.str)))
+	for _, r := range i.str {
+		output.WriteUInt16(uint16(r))
 	}
-	output.WriteUInt16Array(charArray)
 	output.WriteStringBytes(i.str)
 	output.WriteByte(i.unsignedByte)
 	output.WriteUInt16(i.unsignedShort)
@@ -696,18 +693,18 @@ var (
 		"UUID":            aUUID,
 		"AnInnerPortable": anInnerPortable,
 
-		"boolean[]":                   booleans,
-		"byte[]":                      bytes,
-		"char[]":                      chars,
-		"double[]":                    doubles,
-		"short[]":                     shorts,
-		"float[]":                     floats,
-		"int[]":                       ints,
-		"long[]":                      longs,
-		"String[]":                    strings,
-		"CustomStreamSerializable":    aCustomStreamSerializable,
-		"CustomByteArraySerializable": aCustomByteArraySerializable,
-		// "AnIdentifiedDataSerializable": anIdentifiedDataSerializable,
+		"boolean[]":                    booleans,
+		"byte[]":                       bytes,
+		"char[]":                       chars,
+		"double[]":                     doubles,
+		"short[]":                      shorts,
+		"float[]":                      floats,
+		"int[]":                        ints,
+		"long[]":                       longs,
+		"String[]":                     strings,
+		"CustomStreamSerializable":     aCustomStreamSerializable,
+		"CustomByteArraySerializable":  aCustomByteArraySerializable,
+		"AnIdentifiedDataSerializable": anIdentifiedDataSerializable,
 		// "APortable":                    aPortable,
 		"LocalDate":      aLocalDate,
 		"LocalTime":      aLocalTime,
