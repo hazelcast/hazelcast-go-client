@@ -34,6 +34,8 @@ import (
 	"testing"
 	"time"
 
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
+
 	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/goleak"
