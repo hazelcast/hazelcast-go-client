@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -84,8 +84,8 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 	if err != nil {
 		return Data{}, err
 	}
-	dataOutput.WriteInt32(0) // partition
-	dataOutput.WriteInt32(serializer.ID())
+	dataOutput.WriteInt32BigEndian(0) // partition
+	dataOutput.WriteInt32BigEndian(serializer.ID())
 	serializer.Write(dataOutput, object)
 	return dataOutput.buffer[:dataOutput.position], err
 }

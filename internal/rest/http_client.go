@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
@@ -54,8 +56,8 @@ func NewHTTPClient() *HTTPClient {
 	}
 }
 
-func (c *HTTPClient) Get(ctx context.Context, url string, headers ...HTTPHeader) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+func (c *HTTPClient) Get(ctx context.Context, uri string, headers ...HTTPHeader) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +66,10 @@ func (c *HTTPClient) Get(ctx context.Context, url string, headers ...HTTPHeader)
 	}
 	i, err := c.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if resp, err := c.httpClient.Do(req); err != nil {
+			var e *url.Error
+			if errors.As(err, &e) {
+				e.URL = ""
+			}
 			return nil, err
 		} else if resp.StatusCode < 300 {
 			return resp, nil
