@@ -74,11 +74,11 @@ func (iv *Invoker) InvokeOnConnection(ctx context.Context, req *proto.ClientMess
 func (iv *Invoker) InvokeOnPartition(ctx context.Context, request *proto.ClientMessage, partitionID int32) (*proto.ClientMessage, error) {
 	now := time.Now()
 	return iv.TryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if inv, err := iv.InvokeOnPartitionAsync(ctx, request, partitionID, now); err != nil {
+		inv, err := iv.InvokeOnPartitionAsync(ctx, request, partitionID, now)
+		if err != nil {
 			return nil, err
-		} else {
-			return inv.GetWithContext(ctx)
 		}
+		return inv.GetWithContext(ctx)
 	})
 }
 
