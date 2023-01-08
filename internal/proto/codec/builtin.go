@@ -535,6 +535,14 @@ func EncodeListMultiFrameForString(message *proto.ClientMessage, values []string
 	message.AddFrame(proto.NewEndFrame())
 }
 
+func EncodeListMultiFrameForSchema(message *proto.ClientMessage, values []*iserialization.Schema) {
+	message.AddFrame(proto.NewBeginFrame())
+	for i := 0; i < len(values); i++ {
+		EncodeSchema(message, values[i])
+	}
+	message.AddFrame(proto.NewEndFrame())
+}
+
 func EncodeListMultiFrameForStackTraceElement(message *proto.ClientMessage, values []ihzerrors.StackTraceElement) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {

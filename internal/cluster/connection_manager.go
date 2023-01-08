@@ -520,6 +520,9 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	if err != nil {
 		return err
 	}
+	if err = m.sendStateToCluster(ctx); err != nil {
+		return err
+	}
 	m.eventDispatcher.Publish(NewConnectionOpened(conn))
 	return nil
 }
@@ -677,6 +680,28 @@ func (m *ConnectionManager) tryConnectMember(ctx context.Context, member *pubclu
 		return err
 	}
 	if _, err := connectMember(ctx, m, addr, m.networkConfig()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ConnectionManager) sendStateToCluster(ctx context.Context) error {
+	if err := m.sendAllSchemas(ctx, m.serializationService.SchemaService().Schemas()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ConnectionManager) sendAllSchemas(ctx context.Context, schemas []*iserialization.Schema) error {
+	if len(schemas) == 0 {
+		return nil
+	}
+	req := codec.EncodeClientSendAllSchemasRequest(schemas)
+	inv := m.invocationFactory.NewInvocationOnRandomTarget(req, nil, time.Now())
+	if err := m.invocationService.SendUrgentRequest(ctx, inv); err != nil {
+		return err
+	}
+	if _, err := inv.GetWithContext(ctx); err != nil {
 		return err
 	}
 	return nil

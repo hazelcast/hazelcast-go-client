@@ -630,45 +630,41 @@ func TestWithExplicitSerializerNested(t *testing.T) {
 	}
 }
 func TestSchemaEvolution_fieldAdded(t *testing.T) {
-	schemaService := iserialization.NewSchemaService(nil)
-	compactConfig := serialization.CompactConfig{}
-	compactConfig.SetSerializers(EmployeeDTOCompactSerializerV2{})
-	c := &serialization.Config{
-		Compact: compactConfig,
-	}
+	var cc serialization.CompactConfig
+	cc.SetSerializers(EmployeeDTOCompactSerializerV2{})
+	ss := iserialization.NewSchemaService(cc, nil)
+	c := &serialization.Config{Compact: cc}
 	service := mustSerializationService(iserialization.NewService(c, nil))
-	service.SetSchemaService(schemaService)
+	service.SetSchemaService(ss)
 	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
 	data := it.MustValue(service.ToData(employeeDTO)).(iserialization.Data)
-	compactConfig2 := serialization.CompactConfig{}
-	compactConfig2.SetSerializers(EmployeeDTOCompactSerializer{})
+	cc2 := serialization.CompactConfig{}
+	cc2.SetSerializers(EmployeeDTOCompactSerializer{})
 	c2 := &serialization.Config{
-		Compact: compactConfig2,
+		Compact: cc2,
 	}
 	service2 := mustSerializationService(iserialization.NewService(c2, nil))
-	service2.SetSchemaService(schemaService)
+	service2.SetSchemaService(ss)
 	ret := it.MustValue(service2.ToObject(data))
 	returnedEmployeeDTO := ret.(EmployeeDTO)
 	assert.Equal(t, employeeDTO.age, returnedEmployeeDTO.age)
 	assert.Equal(t, employeeDTO.id, returnedEmployeeDTO.id)
 }
 func TestSchemaEvolution_fieldRemoved(t *testing.T) {
-	schemaService := iserialization.NewSchemaService(nil)
-	compactConfig := serialization.CompactConfig{}
-	compactConfig.SetSerializers(EmployeeDTOCompactSerializerV3{})
-	c := &serialization.Config{
-		Compact: compactConfig,
-	}
-	service := mustSerializationService(iserialization.NewService(c, nil))
+	var cc serialization.CompactConfig
+	cc.SetSerializers(EmployeeDTOCompactSerializerV3{})
+	schemaService := iserialization.NewSchemaService(cc, nil)
+	cfg := &serialization.Config{Compact: cc}
+	service := mustSerializationService(iserialization.NewService(cfg, nil))
 	service.SetSchemaService(schemaService)
 	employeeDTO := EmployeeDTO{age: 30, id: 102310312}
 	data := it.MustValue(service.ToData(employeeDTO)).(iserialization.Data)
 	compactConfig2 := serialization.CompactConfig{}
 	compactConfig2.SetSerializers(EmployeeDTOCompactSerializer{})
-	c2 := &serialization.Config{
+	cfg2 := &serialization.Config{
 		Compact: compactConfig2,
 	}
-	service2 := mustSerializationService(iserialization.NewService(c2, nil))
+	service2 := mustSerializationService(iserialization.NewService(cfg2, nil))
 	service2.SetSchemaService(schemaService)
 	ret := it.MustValue(service2.ToObject(data))
 	returnedEmployeeDTO := ret.(EmployeeDTO)

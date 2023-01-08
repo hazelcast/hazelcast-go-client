@@ -35,13 +35,17 @@ type CompactStreamSerializer struct {
 func NewCompactStreamSerializer(cfg pubserialization.CompactConfig, schemaCh chan SchemaMsg) *CompactStreamSerializer {
 	typeToSerializer := make(map[reflect.Type]pubserialization.CompactSerializer)
 	typeNameToSerializer := make(map[string]pubserialization.CompactSerializer)
-	for typeName, serializer := range cfg.Serializers() {
-		typeNameToSerializer[typeName] = serializer
-		typeToSerializer[serializer.Type()] = serializer
+	typeToSchema := map[reflect.Type]*Schema{}
+	for typeName, ser := range cfg.Serializers() {
+		typeNameToSerializer[typeName] = ser
+		typeToSerializer[ser.Type()] = ser
+		s := makeSchemaFromSerializer(ser)
+		typeToSchema[ser.Type()] = s
+
 	}
 	return &CompactStreamSerializer{
-		ss:                   NewSchemaService(schemaCh),
-		typeToSchema:         make(map[reflect.Type]*Schema),
+		ss:                   NewSchemaService(cfg, schemaCh),
+		typeToSchema:         typeToSchema,
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
 	}
@@ -69,14 +73,8 @@ func (c CompactStreamSerializer) Write(output pubserialization.DataOutput, objec
 	if !ok {
 		panic(fmt.Sprintf("no compact serializer found for type: %s", t.Name()))
 	}
-	schema, ok := c.typeToSchema[t]
-	if !ok {
-		sw := NewSchemaWriter(serializer.TypeName())
-		serializer.Write(sw, object)
-		schema = sw.Build()
-		c.ss.PutLocal(schema)
-		c.typeToSchema[t] = schema
-	}
+	schema := c.typeToSchema[t]
+	// schema will always be non-nil at this point
 	output.WriteInt64(schema.ID())
 	w := NewDefaultCompactWriter(c, output.(*PositionalObjectDataOutput), schema)
 	serializer.Write(w, object)
@@ -95,4 +93,20 @@ func (c CompactStreamSerializer) getOrReadSchema(ctx context.Context, input pubs
 		panic(hzerrors.NewSerializationError(fmt.Sprintf("the schema cannot be found with id: %d", schemaId), nil))
 	}
 	return schema
+}
+
+func MakeSchemasFromConfig(cfg pubserialization.CompactConfig) map[int64]*Schema {
+	r := map[int64]*Schema{}
+	for _, ser := range cfg.Serializers() {
+		s := makeSchemaFromSerializer(ser)
+		r[s.ID()] = s
+	}
+	return r
+}
+
+func makeSchemaFromSerializer(ser pubserialization.CompactSerializer) *Schema {
+	sw := NewSchemaWriter(ser.TypeName())
+	// create the zero value for the type in the serializer and
+	ser.Write(sw, reflect.Zero(ser.Type()).Interface())
+	return sw.Build()
 }

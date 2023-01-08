@@ -19,6 +19,8 @@ package serialization
 import (
 	"context"
 	"sync"
+
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type SchemaMsg struct {
@@ -32,12 +34,22 @@ type SchemaService struct {
 	ch        chan<- SchemaMsg
 }
 
-func NewSchemaService(ch chan<- SchemaMsg) *SchemaService {
+func NewSchemaService(cfg pubserialization.CompactConfig, ch chan<- SchemaMsg) *SchemaService {
 	return &SchemaService{
-		schemaMap: make(map[int64]*Schema),
+		schemaMap: MakeSchemasFromConfig(cfg),
 		mu:        &sync.RWMutex{},
 		ch:        ch,
 	}
+}
+
+func (s *SchemaService) Schemas() []*Schema {
+	s.mu.RLock()
+	schemas := make([]*Schema, 0, len(s.schemaMap))
+	for _, v := range s.schemaMap {
+		schemas = append(schemas, v)
+	}
+	s.mu.RUnlock()
+	return schemas
 }
 
 func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema, ok bool) {
@@ -58,10 +70,4 @@ func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema
 		}
 	}
 	return schema, ok
-}
-
-func (s *SchemaService) PutLocal(schema *Schema) {
-	s.mu.Lock()
-	s.schemaMap[schema.ID()] = schema
-	s.mu.Unlock()
 }

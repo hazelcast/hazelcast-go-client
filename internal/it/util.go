@@ -401,6 +401,10 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
+func (c TestCluster) StartMember(ctx context.Context) (*Member, error) {
+	return c.RC.StartMember(ctx, c.ClusterID)
+}
+
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`
         <hazelcast xmlns="http://www.hazelcast.com/schema/config"

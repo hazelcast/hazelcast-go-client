@@ -61,6 +61,10 @@ func NewService(config *pubserialization.Config, schemaCh chan SchemaMsg) (*Serv
 	return s, nil
 }
 
+func (s *Service) SchemaService() *SchemaService {
+	return s.compactSerializer.ss
+}
+
 // SetSchemaService is used in tests
 func (s *Service) SetSchemaService(ss *SchemaService) {
 	s.compactSerializer.ss = ss

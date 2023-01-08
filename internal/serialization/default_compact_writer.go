@@ -320,10 +320,10 @@ func (r *DefaultCompactWriter) End() {
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %v", fieldName, r.schema), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field name: '%s' for %v", fieldName, r.schema), nil))
 	}
 	if fd.Kind != fieldKind {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %v", fieldName, r.schema), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field type: '%s' for %v", fieldName, r.schema), nil))
 	}
 	return *fd
 }
