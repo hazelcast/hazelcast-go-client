@@ -63,6 +63,7 @@ func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema
 		select {
 		case schema = <-rch:
 			ok = schema != nil
+			s.putLocal(schema)
 		case <-ctx.Done():
 			if ctx.Err() != nil {
 				return nil, false
@@ -72,8 +73,10 @@ func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema
 	return schema, ok
 }
 
-func (s *SchemaService) PutLocal(schema *Schema) {
+func (s *SchemaService) putLocal(schema *Schema) {
 	s.mu.Lock()
-	s.schemaMap[schema.ID()] = schema
+	if _, ok := s.schemaMap[schema.ID()]; !ok {
+		s.schemaMap[schema.ID()] = schema
+	}
 	s.mu.Unlock()
 }
