@@ -71,3 +71,9 @@ func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema
 	}
 	return schema, ok
 }
+
+func (s *SchemaService) PutLocal(schema *Schema) {
+	s.mu.Lock()
+	s.schemaMap[schema.ID()] = schema
+	s.mu.Unlock()
+}
