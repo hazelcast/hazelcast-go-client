@@ -192,6 +192,9 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	} else if addr, err = m.startUnisocket(ctx); err != nil {
 		return err
 	}
+	if err = m.sendStateToCluster(ctx); err != nil {
+		return err
+	}
 	m.checkClusterIDChanged()
 	m.eventDispatcher.Publish(NewConnected(addr))
 	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateConnected))
@@ -518,9 +521,6 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	}
 	conn, err = m.processAuthenticationResult(conn, result)
 	if err != nil {
-		return err
-	}
-	if err = m.sendStateToCluster(ctx); err != nil {
 		return err
 	}
 	m.eventDispatcher.Publish(NewConnectionOpened(conn))
