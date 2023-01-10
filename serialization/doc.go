@@ -224,21 +224,18 @@ Here is an example:
 
 	func (e EmployeeCustomSerializer) Read(input serialization.DataInput) interface{} {
 		surname := input.ReadString()
-		return &Employee{Surname: surname}
+		return Employee{Surname: surname}
 	}
 
 	func (e EmployeeCustomSerializer) Write(output serialization.DataOutput, object interface{}) {
-		employee, ok := object.(*Employee)
-		if !ok {
-			panic("can serialize only Employee")
-		}
+		employee := object.(Employee)
 		output.WriteString(employee.Surname)
 	}
 
 You should register the serializer in the configuration with the corresponding type:
 
 	config := hazelcast.Config{}
-	config.Serialization.SetCustomSerializer(reflect.TypeOf(&Employee{}), &EmployeeCustomSerializer{})
+	config.Serialization.SetCustomSerializer(reflect.TypeOf(Employee{}), &EmployeeCustomSerializer{})
 
 # Global Serializer
 
