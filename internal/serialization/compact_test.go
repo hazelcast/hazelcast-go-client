@@ -69,7 +69,6 @@ func compactBasicTest(t *testing.T) {
 
 func basicQueryTest(t *testing.T) {
 	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testBasicQuery
-	skip.If(t, "hz < 5.2")
 	tcx := it.CompactTestContext{
 		T:           t,
 		Serializers: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},

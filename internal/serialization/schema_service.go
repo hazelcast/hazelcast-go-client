@@ -63,7 +63,9 @@ func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema
 		select {
 		case schema = <-rch:
 			ok = schema != nil
-			s.putLocal(schema)
+			if ok {
+				s.putLocal(schema)
+			}
 		case <-ctx.Done():
 			if ctx.Err() != nil {
 				return nil, false

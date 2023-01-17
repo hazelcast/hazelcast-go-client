@@ -124,7 +124,7 @@ func (codecUtil) NextFrameIsDataStructureEndFrame(frameIterator *proto.ForwardFr
 }
 
 // NextFrameIsNullFrame
-// Deprecated:
+// Deprecated: Use NextFrameIsNullFrame function instead.
 func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator) bool {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
@@ -384,19 +384,19 @@ func (fixSizedTypesCodec) DecodeShort(buffer []byte, offset int32) int16 {
 }
 
 // EncodeInt
-// Deprecated:
+// Deprecated: Use EncodeInt function instead.
 func (fixSizedTypesCodec) EncodeInt(buffer []byte, offset, value int32) {
 	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
 }
 
 // DecodeInt
-// Deprecated:
+// Deprecated: Use DecodeInt function instead.
 func (fixSizedTypesCodec) DecodeInt(buffer []byte, offset int32) int32 {
 	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
 }
 
 // EncodeLong
-// Deprecated:
+// Deprecated: Use EncodeLong function instead.
 func (fixSizedTypesCodec) EncodeLong(buffer []byte, offset int32, value int64) {
 	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
 }
