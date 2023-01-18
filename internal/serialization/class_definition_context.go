@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"sync"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 
@@ -28,6 +29,7 @@ import (
 
 type ClassDefinitionContext struct {
 	classDefs map[string]*serialization.ClassDefinition
+	mu        *sync.RWMutex
 	factoryID int32
 }
 
@@ -35,14 +37,18 @@ func NewClassDefinitionContext(factoryID int32) *ClassDefinitionContext {
 	return &ClassDefinitionContext{
 		factoryID: factoryID,
 		classDefs: make(map[string]*serialization.ClassDefinition),
+		mu:        &sync.RWMutex{},
 	}
 }
 
 func (c *ClassDefinitionContext) LookUp(classID int32, version int32) *serialization.ClassDefinition {
-	return c.classDefs[encodeVersionedClassID(classID, version)]
+	c.mu.RLock()
+	cd := c.classDefs[encodeVersionedClassID(classID, version)]
+	c.mu.RUnlock()
+	return cd
 }
 
-func (c *ClassDefinitionContext) Register(classDefinition *serialization.ClassDefinition) error {
+func (c *ClassDefinitionContext) register(classDefinition *serialization.ClassDefinition) error {
 	if classDefinition == nil {
 		return nil
 	}
@@ -50,10 +56,12 @@ func (c *ClassDefinitionContext) Register(classDefinition *serialization.ClassDe
 		text := fmt.Sprintf("this factory's id is %d, intended factory id is %d.", c.factoryID, classDefinition.FactoryID)
 		return ihzerrors.NewSerializationError(text, nil)
 	}
-	classDefKey := encodeVersionedClassID(classDefinition.ClassID, classDefinition.Version)
-	current := c.classDefs[classDefKey]
+	k := encodeVersionedClassID(classDefinition.ClassID, classDefinition.Version)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	current := c.classDefs[k]
 	if current == nil {
-		c.classDefs[classDefKey] = classDefinition
+		c.classDefs[k] = classDefinition
 		return nil
 	}
 	if !reflect.DeepEqual(current, classDefinition) {
