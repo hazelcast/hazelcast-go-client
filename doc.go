@@ -226,6 +226,79 @@ In order to force using a specific date/time type, create a time.Time value and 
 	dateTimeValue := types.LocalDateTime(t)
 	dateTimeWithTimezoneValue := types.OffsetDateTime(t)
 
+# TLS/SSL
+
+One of the offers of Hazelcast is the TLS/SSL protocol which you can use to establish an encrypted communication across your cluster with key stores and trust stores.
+
+  - A Java keyStore is a file that includes a private key and a public certificate.
+    The equivalent of a key store is the combination of keyfile and certfile at the Go client side.
+  - A Java trustStore is a file that includes a list of certificates trusted by your application which is named certificate authority.
+    The equivalent of a trust store is a cafile at the Go client side.
+
+You should set keyStore and trustStore before starting the members.
+
+Hazelcast allows you to encrypt socket level communication between Hazelcast members and between Hazelcast clients and members, for end to end encryption.
+To use it, see the TLS/SSL for Hazelcast Members section: https://docs.hazelcast.com/hazelcast/latest/security/tls-ssl.html#tlsssl-for-hazelcast-members
+
+TLS/SSL for the Hazelcast Go client can be configured using the cluster.SSLConfig{} struct.
+This struct is accessible from the hazelcast.Config struct through Cluster.Network.SSL path.
+You can either edit the hazelcast.Config object or create a cluster.SSLConfig{} instance and then assign it to config.Cluster.Network.SSL.
+
+TLS/SSL for the Hazelcast Go client can be enabled/disabled using the SSLConfig.Enabled option.
+When this option is set to True, TLS/SSL will be configured with respect to the other SSL options.
+Setting this option to False will result in discarding the other SSL options.
+
+	// error handling is omitted for brevity.
+	config := hazelcast.Config{}
+	config.Cluster.Network.SSL.Enabled = true
+	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
+
+Certificates of the Hazelcast members can be validated against CA file.
+SSLConfig.SetCAPath()'s argument should point to the absolute path of the concatenated CA certificates in PEM format.
+When SSL is enabled and CA file path is not set, a set of default CA certificates from default locations will be used.
+
+	// error handling is omitted for brevity.
+	config := hazelcast.NewConfig()
+	_ := config.Cluster.Network.SSL.SetCAPath("/path/of/server.pem")
+	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
+
+When mutual authentication is enabled on the member side, clients or other members should also provide a certificate file that identifies themselves.
+Then, Hazelcast members can use these certificates to validate the identity of their peers.
+To enable mutual authentication, firstly, you need to set the following property on the server side in the hazelcast.xml file:
+
+	<network>
+	  <ssl enabled="true">
+	    <properties>
+	      <property name="javax.net.ssl.mutualAuthentication">REQUIRED</property>
+	    </properties>
+	  </ssl>
+	</network>
+
+Client certificate, private key and private key password can be set using the SSLConfig.AddClientCertAndEncryptedKeyPath().
+The arguments should point to the absolute paths of the client certificate and private key in PEM format.
+If the private key is encrypted using a password, third argument will be used to decrypt it.
+
+	// error handling is omitted for brevity.
+	config := hazelcast.NewConfig()
+	_ := config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath("/path/of/cert.pem", "path/of/key.pem", "password")
+	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
+
+SSLConfig has tls.Config embedded in it so that users can set any field of tls config as they wish.
+You can set the tls.Config using the SSLConfig.SetTLSConfig() method.
+Check out this page for further details about tls.Config options: https://pkg.go.dev/crypto/tls#Config
+
+	// error handling is omitted for brevity.
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "foo.bar", MinVersion: tls.VersionTLS13})
+	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
+
+Hazelcast Go client offers the following protocols:
+
+  - TLSv1 : TLS 1.0 Protocol described in RFC 2246
+  - TLSv1_1 : TLS 1.1 Protocol described in RFC 4346
+  - TLSv1_2 : TLS 1.2 Protocol described in RFC 5246
+  - TLSv1_3 : TLS 1.3 Protocol described in RFC 8446
+
 # Management Center Integration
 
 Hazelcast Management Center can monitor your clients if client-side statistics are enabled.
