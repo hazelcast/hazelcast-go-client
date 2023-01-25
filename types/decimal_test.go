@@ -8,9 +8,11 @@ import (
 )
 
 func TestDecimal_String(t *testing.T) {
-	decimals := [8]types.Decimal{
+	decimals := [10]types.Decimal{
 		types.NewDecimal(big.NewInt(123), 0),
 		types.NewDecimal(big.NewInt(-123), 0),
+		types.NewDecimal(big.NewInt(-123), 2),
+		types.NewDecimal(big.NewInt(-123), 5),
 		types.NewDecimal(big.NewInt(123), -1),
 		types.NewDecimal(big.NewInt(123), -3),
 		types.NewDecimal(big.NewInt(123), 1),
@@ -18,9 +20,11 @@ func TestDecimal_String(t *testing.T) {
 		types.NewDecimal(big.NewInt(123), 10),
 		types.NewDecimal(big.NewInt(-123), 12),
 	}
-	targets := [8]string{
+	targets := [10]string{
 		"123",
 		"-123",
+		"-1.23",
+		"0.00123",
 		"1.23E+3",
 		"1.23E+5",
 		"12.3",
@@ -35,9 +39,11 @@ func TestDecimal_String(t *testing.T) {
 }
 
 func TestDecimal_Float64(t *testing.T) {
-	decimals := [8]types.Decimal{
+	decimals := [10]types.Decimal{
 		types.NewDecimal(big.NewInt(123), 0),
 		types.NewDecimal(big.NewInt(-123), 0),
+		types.NewDecimal(big.NewInt(-123), 2),
+		types.NewDecimal(big.NewInt(-123), 5),
 		types.NewDecimal(big.NewInt(123), -1),
 		types.NewDecimal(big.NewInt(123), -3),
 		types.NewDecimal(big.NewInt(123), 1),
@@ -45,9 +51,11 @@ func TestDecimal_Float64(t *testing.T) {
 		types.NewDecimal(big.NewInt(123), 10),
 		types.NewDecimal(big.NewInt(-123), 12),
 	}
-	targets := [8]float64{
+	targets := [10]float64{
 		123,
 		-123,
+		-1.23,
+		0.00123,
 		1.23e+3,
 		1.23e+5,
 		12.3,

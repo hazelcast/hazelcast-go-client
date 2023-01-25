@@ -33,10 +33,10 @@ type Decimal struct {
 }
 
 // NewDecimal creates and returns a Decimal value with the given big int and scale.
-// Scale must be nonnegative and must be less or equal to math.MaxInt32. otherwise NewDecimal panics.
+// Scale must be in the range of [math.MinInt32, math.MaxInt32]. otherwise NewDecimal panics.
 func NewDecimal(unscaledValue *big.Int, scale int) Decimal {
-	if err := check.WithinRangeInt32(int32(scale), 0, math.MaxInt32); err != nil {
-		panic(fmt.Errorf("creating decumal: %w", err))
+	if err := check.WithinRangeInt32(int32(scale), math.MinInt32, math.MaxInt32); err != nil {
+		panic(fmt.Errorf("creating decimal: %w", err))
 	}
 	return Decimal{
 		unscaledValue: unscaledValue,
@@ -50,11 +50,12 @@ func (d Decimal) UnscaledValue() *big.Int {
 }
 
 // Scale returns the scale of the decimal.
-// The returned value is nonnegative and less or equal to math.MaxInt32.
 func (d Decimal) Scale() int {
 	return int(d.scale)
 }
 
+// Float64 converts the decimal to a float64 and returns it.
+// Note that this conversion can lose information about the precision of the decimal value.
 func (d Decimal) Float64() float64 {
 	f, err := strconv.ParseFloat(d.String(), 64)
 	if err != nil {
@@ -63,6 +64,17 @@ func (d Decimal) Float64() float64 {
 	return f
 }
 
+// Float32 converts the decimal to a float32 and returns it.
+// Note that this conversion can lose information about the precision of the decimal value.
+func (d Decimal) Float32() float32 {
+	f, err := strconv.ParseFloat(d.String(), 32)
+	if err != nil {
+		return 0.0
+	}
+	return float32(f)
+}
+
+// String returns the string representation of the decimal, using scientific notation if an exponent is needed.
 func (d Decimal) String() string {
 	bigStr := d.unscaledValue.String()
 	if d.scale == 0 {
@@ -90,7 +102,7 @@ func (d Decimal) String() string {
 			val.WriteString(bigStr[point:])
 		} else {
 			if negative {
-				point += 1
+				point++
 			}
 			val.WriteString(bigStr[0:point] + "." + bigStr[point:])
 		}
@@ -99,7 +111,7 @@ func (d Decimal) String() string {
 			if negative {
 				val.WriteString(bigStr[0:2] + "." + bigStr[2:])
 			} else {
-				val.WriteString(bigStr[0:1] + "." + bigStr[2:])
+				val.WriteString(bigStr[0:1] + "." + bigStr[1:])
 			}
 		}
 		val.WriteByte('E')
