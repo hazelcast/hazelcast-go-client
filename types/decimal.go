@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strconv"
+	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 )
@@ -51,4 +53,60 @@ func (d Decimal) UnscaledValue() *big.Int {
 // The returned value is nonnegative and less or equal to math.MaxInt32.
 func (d Decimal) Scale() int {
 	return int(d.scale)
+}
+
+func (d Decimal) Float64() float64 {
+	f, err := strconv.ParseFloat(d.String(), 64)
+	if err != nil {
+		return 0.0
+	}
+	return f
+}
+
+func (d Decimal) String() string {
+	bigStr := d.unscaledValue.String()
+	if d.scale == 0 {
+		return bigStr
+	}
+	var negative bool
+	point := int32(len(bigStr)) - d.scale
+	if bigStr[0] == '-' {
+		negative = true
+		point -= 1
+	} else {
+		negative = false
+	}
+	var val strings.Builder
+	if d.scale >= 0 && point-1 >= -6 {
+		if point <= 0 {
+			val.WriteString("0.")
+			for point < 0 {
+				val.WriteByte('0')
+				point++
+			}
+			if negative {
+				point++
+			}
+			val.WriteString(bigStr[point:])
+		} else {
+			if negative {
+				point += 1
+			}
+			val.WriteString(bigStr[0:point] + "." + bigStr[point:])
+		}
+	} else {
+		if len(bigStr) > 1 {
+			if negative {
+				val.WriteString(bigStr[0:2] + "." + bigStr[2:])
+			} else {
+				val.WriteString(bigStr[0:1] + "." + bigStr[2:])
+			}
+		}
+		val.WriteByte('E')
+		if point >= 0 {
+			val.WriteByte('+')
+		}
+		val.WriteString(strconv.FormatInt(int64(point-1), 10))
+	}
+	return val.String()
 }
