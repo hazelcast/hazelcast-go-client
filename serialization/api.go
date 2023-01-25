@@ -235,7 +235,6 @@ type DataInput interface {
 	// ReadStringArray returns []string read.
 	// It returns nil if an error is set previously.
 	ReadStringArray() []string
-	ReadRaw(size int32) []byte
 }
 
 // PortableWriter provides a mean of writing portable fields to a binary in form of go primitives

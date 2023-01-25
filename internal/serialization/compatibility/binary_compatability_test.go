@@ -13,15 +13,15 @@ import (
 )
 
 var (
-	objects    = allTestObjects
 	dataMap    = make(map[string]serialization.Data)
 	byteOrders = []binary.ByteOrder{binary.BigEndian, binary.LittleEndian}
 	versions   = []int{1}
 )
 
 func TestBinaryCompatibility(t *testing.T) {
+	initializeVariables()
 	readBinaryFile(t)
-	for key, obj := range objects {
+	for key, obj := range allTestObjects {
 		for _, order := range byteOrders {
 			for _, version := range versions {
 				keyStr := createObjectKey(key, order, version)
@@ -69,7 +69,7 @@ func readBinaryFile(t *testing.T) {
 		i := serialization.NewObjectDataInput(b, 0, nil, true)
 		for i.Available() != 0 {
 			buf := i.ReadUInt16()
-			objectKey := string(i.ReadRaw(int32(buf)))
+			objectKey := string(i.ReadRawBytes(int32(buf)))
 			n := i.ReadInt32()
 			if n != -1 {
 				bytes = make([]byte, n)

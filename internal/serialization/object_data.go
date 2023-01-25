@@ -483,7 +483,7 @@ func (i *ObjectDataInput) ReadByteArray() []byte {
 	return arr
 }
 
-func (i *ObjectDataInput) ReadRaw(size int32) []byte {
+func (i *ObjectDataInput) ReadRawBytes(size int32) []byte {
 	arr := i.buffer[i.position : i.position+size]
 	i.position += size
 	return arr
