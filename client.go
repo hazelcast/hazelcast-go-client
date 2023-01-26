@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -149,6 +149,9 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	m, err := c.proxyManager.getMap(ctx, name)
 	if err != nil {
 		return nil, err
+	}
+	if m.hasNearCache {
+		return m, nil
 	}
 	ncc, ok, err := c.cfg.GetNearCache(name)
 	if err != nil {
