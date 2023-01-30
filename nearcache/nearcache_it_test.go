@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -1095,6 +1095,23 @@ func TestRepairingTaskRun(t *testing.T) {
 		}
 	}
 	time.Sleep(2 * time.Second)
+}
+
+func TestSameNearCacheBackingStoreForEachGetMap(t *testing.T) {
+	tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		ctx := context.Background()
+		// the first map
+		m1 := tcx.M
+		// the second map
+		m2 := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
+		require.Equal(t, int64(0), m1.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		it.Must(m1.Set(ctx, "k1", "v1"))
+		it.MustValue(m1.Get(ctx, "k1"))
+		require.Equal(t, int64(1), m1.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		require.Equal(t, int64(1), m2.LocalMapStats().NearCacheStats.OwnedEntryCount)
+	})
 }
 
 func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tcx it.MapTestContext, size int32) string) {
