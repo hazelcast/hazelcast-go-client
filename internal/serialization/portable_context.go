@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package serialization
 
 import (
+	"sync"
+
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 type PortableContext struct {
 	service         *Service
 	classDefContext map[int32]*ClassDefinitionContext
+	mu              *sync.RWMutex
 	portableVersion int32
 }
 
@@ -31,6 +34,7 @@ func NewPortableContext(service *Service, portableVersion int32) *PortableContex
 		service:         service,
 		portableVersion: portableVersion,
 		classDefContext: make(map[int32]*ClassDefinitionContext),
+		mu:              &sync.RWMutex{},
 	}
 }
 
@@ -110,19 +114,30 @@ func (c *PortableContext) LookUpOrRegisterClassDefiniton(portable serialization.
 }
 
 func (c *PortableContext) LookUpClassDefinition(factoryID int32, classID int32, version int32) *serialization.ClassDefinition {
+	c.mu.RLock()
 	factory := c.classDefContext[factoryID]
+	c.mu.RUnlock()
 	if factory == nil {
 		return nil
 	}
 	return factory.LookUp(classID, version)
 }
 
-func (c *PortableContext) RegisterClassDefinition(classDefinition *serialization.ClassDefinition) error {
-	factoryID := classDefinition.FactoryID
-	if c.classDefContext[factoryID] == nil {
-		c.classDefContext[factoryID] = NewClassDefinitionContext(factoryID)
+func (c *PortableContext) RegisterClassDefinition(cd *serialization.ClassDefinition) error {
+	c.mu.RLock()
+	factoryID := cd.FactoryID
+	f := c.classDefContext[factoryID]
+	c.mu.RUnlock()
+	if f == nil {
+		c.mu.Lock()
+		f = c.classDefContext[factoryID]
+		if f == nil {
+			f = NewClassDefinitionContext(factoryID)
+			c.classDefContext[factoryID] = f
+		}
+		c.mu.Unlock()
 	}
-	return c.classDefContext[factoryID].Register(classDefinition)
+	return f.register(cd)
 }
 
 func (c *PortableContext) ClassVersion(portable serialization.Portable) int32 {
