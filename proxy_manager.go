@@ -28,7 +28,6 @@ import (
 )
 
 type proxyManager struct {
-	mu              *sync.RWMutex
 	proxies         *sync.Map
 	invocationProxy *proxy
 	serviceBundle   creationBundle
@@ -39,7 +38,6 @@ type proxyManager struct {
 func newProxyManager(bundle creationBundle) *proxyManager {
 	bundle.Check()
 	pm := &proxyManager{
-		mu:             &sync.RWMutex{},
 		proxies:        &sync.Map{},
 		serviceBundle:  bundle,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
@@ -188,8 +186,6 @@ func (m *proxyManager) removeDistributedObjectEventListener(ctx context.Context,
 
 func (m *proxyManager) remove(ctx context.Context, serviceName string, objectName string) bool {
 	name := makeProxyName(serviceName, objectName)
-	m.mu.Lock()
-	defer m.mu.Unlock()
 	p, ok := m.proxies.Load(name)
 	if !ok {
 		return false
