@@ -18,7 +18,6 @@ package hazelcast
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -61,10 +60,8 @@ func (m *proxyManager) Proxies() map[string]interface{} {
 	return cp
 }
 
-func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
-	p, err := m.proxyFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
-		return newMap(p), nil
-	})
+func (m *proxyManager) getMap(ctx context.Context, name string, fn func(p *proxy) (interface{}, error)) (*Map, error) {
+	p, err := m.proxyFor(ctx, ServiceNameMap, name, fn)
 	if err != nil {
 		return nil, err
 	}
@@ -200,12 +197,7 @@ func (m *proxyManager) remove(ctx context.Context, serviceName string, objectNam
 	return true
 }
 
-func (m *proxyManager) proxyFor(
-	ctx context.Context,
-	serviceName string,
-	objectName string,
-	wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
-
+func (m *proxyManager) proxyFor(ctx context.Context, serviceName string, objectName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
 	name := makeProxyName(serviceName, objectName)
 	wrapper, ok := m.proxies.Load(name)
 	if ok {
@@ -236,7 +228,7 @@ func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorCo
 }
 
 func makeProxyName(serviceName string, objectName string) string {
-	return fmt.Sprintf("%s%s", serviceName, objectName)
+	return serviceName + objectName
 }
 
 type proxyDestroyer interface {
