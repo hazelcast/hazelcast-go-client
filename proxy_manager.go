@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package hazelcast
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -54,10 +53,18 @@ func newProxyManager(bundle creationBundle) *proxyManager {
 	return pm
 }
 
-func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
-	p, err := m.proxyFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
-		return newMap(p), nil
-	})
+func (m *proxyManager) Proxies() map[string]interface{} {
+	cp := make(map[string]interface{}, len(m.proxies))
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for k, p := range m.proxies {
+		cp[k] = p
+	}
+	return cp
+}
+
+func (m *proxyManager) getMap(ctx context.Context, name string, fn func(p *proxy) (interface{}, error)) (*Map, error) {
+	p, err := m.proxyFor(ctx, ServiceNameMap, name, fn)
 	if err != nil {
 		return nil, err
 	}
@@ -185,12 +192,7 @@ func (m *proxyManager) remove(ctx context.Context, serviceName string, objectNam
 	return true
 }
 
-func (m *proxyManager) proxyFor(
-	ctx context.Context,
-	serviceName string,
-	objectName string,
-	wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
-
+func (m *proxyManager) proxyFor(ctx context.Context, serviceName string, objectName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
 	name := makeProxyName(serviceName, objectName)
 	m.mu.RLock()
 	wrapper, ok := m.proxies[name]
@@ -229,5 +231,5 @@ func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorCo
 }
 
 func makeProxyName(serviceName string, objectName string) string {
-	return fmt.Sprintf("%s%s", serviceName, objectName)
+	return serviceName + objectName
 }

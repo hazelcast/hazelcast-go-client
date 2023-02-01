@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,15 @@ package nearcache_test
 import (
 	"context"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"math/rand"
 	"os"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/hazelcast/hazelcast-go-client/predicate"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1094,6 +1096,34 @@ func TestRepairingTaskRun(t *testing.T) {
 		}
 	}
 	time.Sleep(2 * time.Second)
+}
+
+func TestNearCacheMemLeakForEachGetMap(t *testing.T) {
+	tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatBinary, true)
+	tcx.Tester(func(tcx it.MapTestContext) {
+		t := tcx.T
+		ctx := context.Background()
+		const iterations = 1000
+		a := allocatedMem(func() {
+			for i := 0; i < iterations; i++ {
+				it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName))
+			}
+		})
+		t.Logf("allocated: %d", a)
+		if a > 64*iterations {
+			t.Fatalf("Memory leak")
+		}
+	})
+}
+
+func allocatedMem(f func()) uint64 {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	b1 := m.TotalAlloc
+	f()
+	runtime.ReadMemStats(&m)
+	b2 := m.TotalAlloc
+	return b2 - b1
 }
 
 func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tcx it.MapTestContext, size int32) string) {
