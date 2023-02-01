@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
@@ -1097,21 +1098,32 @@ func TestRepairingTaskRun(t *testing.T) {
 	time.Sleep(2 * time.Second)
 }
 
-func TestSameNearCacheBackingStoreForEachGetMap(t *testing.T) {
+func TestNearCacheMemLeakForEachGetMap(t *testing.T) {
 	tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatBinary, true)
 	tcx.Tester(func(tcx it.MapTestContext) {
 		t := tcx.T
 		ctx := context.Background()
-		// the first map
-		m1 := tcx.M
-		// the second map
-		m2 := it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName)).(*hz.Map)
-		require.Equal(t, int64(0), m1.LocalMapStats().NearCacheStats.OwnedEntryCount)
-		it.Must(m1.Set(ctx, "k1", "v1"))
-		it.MustValue(m1.Get(ctx, "k1"))
-		require.Equal(t, int64(1), m1.LocalMapStats().NearCacheStats.OwnedEntryCount)
-		require.Equal(t, int64(1), m2.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		const iterations = 1000
+		a := allocatedMem(func() {
+			for i := 0; i < iterations; i++ {
+				it.MustValue(tcx.Client.GetMap(ctx, tcx.MapName))
+			}
+		})
+		t.Logf("allocated: %d", a)
+		if a > 64*iterations {
+			t.Fatalf("Memory leak")
+		}
 	})
+}
+
+func allocatedMem(f func()) uint64 {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	b1 := m.TotalAlloc
+	f()
+	runtime.ReadMemStats(&m)
+	b2 := m.TotalAlloc
+	return b2 - b1
 }
 
 func memberInvalidatesClientNearCache(t *testing.T, port int, makeScript func(tcx it.MapTestContext, size int32) string) {

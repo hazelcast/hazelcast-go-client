@@ -18,7 +18,6 @@ package hazelcast
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
@@ -242,7 +241,7 @@ func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorCo
 }
 
 func makeProxyName(serviceName string, objectName string) string {
-	return fmt.Sprintf("%s%s", serviceName, objectName)
+	return serviceName + objectName
 }
 
 type proxyDestroyer interface {
