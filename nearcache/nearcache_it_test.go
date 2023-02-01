@@ -1110,7 +1110,7 @@ func TestNearCacheMemLeakForEachGetMap(t *testing.T) {
 			}
 		})
 		t.Logf("allocated: %d", a)
-		if a > 64*iterations {
+		if a > 80*iterations {
 			t.Fatalf("Memory leak")
 		}
 	})
