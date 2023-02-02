@@ -57,21 +57,7 @@ func (d Decimal) Scale() int {
 // Float64 converts the decimal to a float64 and returns it.
 // Note that this conversion can lose information about the precision of the decimal value.
 func (d Decimal) Float64() float64 {
-	f, err := strconv.ParseFloat(d.String(), 64)
-	if err != nil {
-		return 0.0
-	}
-	return f
-}
-
-// Float32 converts the decimal to a float32 and returns it.
-// Note that this conversion can lose information about the precision of the decimal value.
-func (d Decimal) Float32() float32 {
-	f, err := strconv.ParseFloat(d.String(), 32)
-	if err != nil {
-		return 0.0
-	}
-	return float32(f)
+	return float64(d.UnscaledValue().Int64()) / math.Pow10(d.Scale())
 }
 
 // String returns the string representation of the decimal, using scientific notation if an exponent is needed.
@@ -80,17 +66,18 @@ func (d Decimal) String() string {
 	if d.scale == 0 {
 		return bigStr
 	}
-	var negative bool
+	negative := false
 	point := int32(len(bigStr)) - d.scale
 	if bigStr[0] == '-' {
 		negative = true
 		point -= 1
-	} else {
-		negative = false
 	}
 	var val strings.Builder
 	if d.scale >= 0 && point-1 >= -6 {
 		if point <= 0 {
+			if negative {
+				val.WriteByte('-')
+			}
 			val.WriteString("0.")
 			for point < 0 {
 				val.WriteByte('0')
@@ -113,9 +100,11 @@ func (d Decimal) String() string {
 			} else {
 				val.WriteString(bigStr[0:1] + "." + bigStr[1:])
 			}
+		} else {
+			val.WriteString(bigStr)
 		}
 		val.WriteByte('E')
-		if point >= 0 {
+		if point-1 >= 0 {
 			val.WriteByte('+')
 		}
 		val.WriteString(strconv.FormatInt(int64(point-1), 10))
