@@ -49,7 +49,7 @@ type AnIdentifiedDataSerializable struct {
 	unsignedByte  uint8
 	unsignedShort uint16
 
-	portableObject                    serialization.Portable
+	portableObject                    *AnInnerPortable
 	identifiedDataSerializableObject  serialization.IdentifiedDataSerializable
 	customStreamSerializableObject    CustomStreamSerializable
 	customByteArraySerializableObject CustomByteArraySerializable
@@ -168,7 +168,7 @@ func (i *AnIdentifiedDataSerializable) ReadData(input serialization.DataInput) {
 
 	portableObject := input.ReadObject()
 	if portableObject != nil {
-		i.portableObject = portableObject.(serialization.Portable)
+		i.portableObject = portableObject.(*AnInnerPortable)
 	}
 	identifiedDataSerializableObject := input.ReadObject()
 	if identifiedDataSerializableObject != nil {
@@ -269,8 +269,8 @@ func (e CustomByteArraySerializer) Write(output serialization.DataOutput, object
 }
 
 type AnInnerPortable struct {
-	anInt  int32
-	aFloat float32
+	i int32
+	f float32
 }
 
 func (p AnInnerPortable) FactoryID() int32 {
@@ -282,13 +282,13 @@ func (p AnInnerPortable) ClassID() int32 {
 }
 
 func (p AnInnerPortable) WritePortable(out serialization.PortableWriter) {
-	out.WriteInt32("i", p.anInt)
-	out.WriteFloat32("f", p.aFloat)
+	out.WriteInt32("i", p.i)
+	out.WriteFloat32("f", p.f)
 }
 
 func (p *AnInnerPortable) ReadPortable(reader serialization.PortableReader) {
-	p.anInt = reader.ReadInt32("i")
-	p.aFloat = reader.ReadFloat32("f")
+	p.i = reader.ReadInt32("i")
+	p.f = reader.ReadFloat32("f")
 }
 
 type APortable struct {

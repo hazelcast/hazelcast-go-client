@@ -5,7 +5,6 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 	pactypes "go/types"
-	"math"
 	"math/big"
 	"time"
 )
@@ -70,17 +69,17 @@ var (
 	}
 	aData iserialization.Data = []byte("111313123131313131")
 
-	anInnerPortable           *AnInnerPortable         = &AnInnerPortable{anInt: anInt, aFloat: aFloat}
+	anInnerPortable           *AnInnerPortable         = &AnInnerPortable{i: anInt, f: aFloat}
 	aCustomStreamSerializable CustomStreamSerializable = CustomStreamSerializable{I: anInt, F: aFloat}
 
 	aCustomByteArraySerializable CustomByteArraySerializable = CustomByteArraySerializable{I: anInt, F: aFloat}
 	portables                                                = []serialization.Portable{anInnerPortable, anInnerPortable, anInnerPortable}
 
 	anIdentifiedDataSerializable AnIdentifiedDataSerializable = AnIdentifiedDataSerializable{bool: aBoolean, b: aByte,
-		c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong, str: aSmallString, booleans: booleans,
+		c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong, str: anSqlString, booleans: booleans,
 		bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
 		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
-		unsignedByte: math.MaxUint8, unsignedShort: math.MaxUint16, portableObject: anInnerPortable, identifiedDataSerializableObject: nil, customStreamSerializableObject: aCustomStreamSerializable,
+		unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: nil, customStreamSerializableObject: aCustomStreamSerializable,
 		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData}
 
 	aDate = time.Date(1990, 2, 1, 0, 0, 0, 0, time.UTC)
@@ -130,17 +129,16 @@ var (
 )
 
 func initializeVariables() {
-	anIdentifiedDataSerializable.strChars = make([]uint16, len(aSmallString))
-	for i, r := range aSmallString {
+	anIdentifiedDataSerializable.strChars = make([]uint16, len(anIdentifiedDataSerializable.str))
+	for i, r := range anIdentifiedDataSerializable.str {
 		anIdentifiedDataSerializable.strChars[i] = uint16(r)
 	}
-	anIdentifiedDataSerializable.strBytes = make([]byte, len(aSmallString))
-	for i, r := range aSmallString {
+	anIdentifiedDataSerializable.strBytes = make([]byte, len(anIdentifiedDataSerializable.str))
+	for i, r := range anIdentifiedDataSerializable.str {
 		anIdentifiedDataSerializable.strBytes[i] = byte(r)
 	}
-
 	allTestObjects = map[string]interface{}{
-		"AnIdentifiedDataSerializable": anIdentifiedDataSerializable,
+		"AnIdentifiedDataSerializable": &anIdentifiedDataSerializable,
 		/*
 			"NULL":            aNullObject,
 			"Boolean":         aBoolean,

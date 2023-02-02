@@ -86,9 +86,9 @@ func readBinaryFile(t *testing.T) {
 
 func createSerializationService(t *testing.T, byteOrder binary.ByteOrder) *serialization.Service {
 	cfg := serialization2.Config{}
-	err := cfg.SetCustomSerializer(reflect.TypeOf(CustomByteArraySerializable{}), CustomByteArraySerializer{})
+	err := cfg.SetCustomSerializer(reflect.TypeOf(CustomByteArraySerializable{}), &CustomByteArraySerializer{})
 	require.NoError(t, err)
-	err = cfg.SetCustomSerializer(reflect.TypeOf(CustomStreamSerializable{}), CustomStreamSerializer{})
+	err = cfg.SetCustomSerializer(reflect.TypeOf(CustomStreamSerializable{}), &CustomStreamSerializer{})
 	require.NoError(t, err)
 	cfg.PortableVersion = 0
 	cd := serialization2.NewClassDefinition(PortableFactoryId, InnerPortableClassId, 0)
