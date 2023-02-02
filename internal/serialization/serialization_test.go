@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package serialization_test
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"reflect"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,6 +64,8 @@ func TestSerializationService_ToData_LittleEndianTrue(t *testing.T) {
 }
 
 type CustomArtistSerializer struct {
+	readerCalled bool
+	writerCalled bool
 }
 
 func (*CustomArtistSerializer) ID() int32 {
@@ -70,6 +73,7 @@ func (*CustomArtistSerializer) ID() int32 {
 }
 
 func (s *CustomArtistSerializer) Read(input serialization.DataInput) interface{} {
+	s.readerCalled = true
 	var network bytes.Buffer
 	typ := input.ReadInt32()
 	data := input.ReadByteArray()
@@ -88,6 +92,7 @@ func (s *CustomArtistSerializer) Read(input serialization.DataInput) interface{}
 }
 
 func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) {
+	s.writerCalled = true
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	if err := enc.Encode(obj); err != nil {
@@ -156,18 +161,15 @@ func (*painter) Type() int32 {
 
 func TestCustomSerializer(t *testing.T) {
 	m := &musician{"Furkan", "Şenharputlu"}
-	p := &painter{"Leonardo", "da Vinci"}
-	customSerializer := &CustomArtistSerializer{}
+	ser := &CustomArtistSerializer{}
 	config := &serialization.Config{}
-	config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
+	it.Must(config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), ser))
 	service := it.MustSerializationService(iserialization.NewService(config))
 	data := it.MustData(service.ToData(m))
 	ret := it.MustValue(service.ToObject(data))
-	data2 := it.MustData(service.ToData(p))
-	ret2 := it.MustValue(service.ToObject(data2))
-	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
-		t.Error("custom serialization failed")
-	}
+	require.Equal(t, m, ret)
+	assert.True(t, ser.readerCalled)
+	assert.True(t, ser.writerCalled)
 }
 
 func TestGlobalSerializer(t *testing.T) {

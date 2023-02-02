@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -40,23 +40,22 @@ func (e EmployeeCustomSerializer) ID() int32 {
 
 func (e EmployeeCustomSerializer) Read(input serialization.DataInput) interface{} {
 	surname := input.ReadString()
-	return &Employee{Surname: surname}
+	return Employee{Surname: surname}
 }
 
 func (e EmployeeCustomSerializer) Write(output serialization.DataOutput, object interface{}) {
-	employee, ok := object.(*Employee)
-	if !ok {
-		panic("can serialize only Employee")
-	}
+	employee := object.(Employee)
 	output.WriteString(employee.Surname)
 }
 
 func main() {
 	// Configure serializer
 	config := hazelcast.NewConfig()
-	config.Serialization.SetCustomSerializer(reflect.TypeOf(&Employee{}), &EmployeeCustomSerializer{})
+	if err := config.Serialization.SetCustomSerializer(reflect.TypeOf(Employee{}), &EmployeeCustomSerializer{}); err != nil {
+		panic(err)
+	}
 	// Start the client with custom serializer
-	ctx := context.TODO()
+	ctx := context.Background()
 	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		log.Fatal(err)
@@ -70,13 +69,13 @@ func main() {
 	}
 	// Store an object in the map
 	emp := Employee{"Doe"}
-	m.Put(ctx, "employee-1", emp)
+	if _, err := m.Put(ctx, "employee-1", emp); err != nil {
+		panic(err)
+	}
 	// Retrieve the object and print
 	value, err := m.Get(ctx, "employee-1")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Surname of stored employee:", value.(Employee).Surname)
-	// Shutdown client
-	client.Shutdown(ctx)
 }
