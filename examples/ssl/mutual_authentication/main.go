@@ -26,27 +26,28 @@ import (
 func main() {
 	// To use SSLConfig with mutual authentication, Hazelcast server should be started with SSL and mutual authentication enabled
 	ctx := context.TODO()
-	config := hazelcast.NewConfig()
-	config.Cluster.Network.SetAddresses("foo.bar.com:8888")
+	var cfg hazelcast.Config
+	cfg = hazelcast.Config{}
+	cfg.Cluster.Network.SetAddresses("foo.bar.com:8888")
 	// TLS/SSL is enabled
-	config.Cluster.Network.SSL.Enabled = true
+	cfg.Cluster.Network.SSL.Enabled = true
 	// Absolute paths of PEM files must be given
-	err := config.Cluster.Network.SSL.SetCAPath("/path/of/server.pem")
+	err := cfg.Cluster.Network.SSL.SetCAPath("/path/of/server.pem")
 	if err != nil {
 		return
 	}
 	// Add client certificate and client private key to TLS config by decrypting private key using password
-	err = config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath("/path/of/cert.pem", "path/of/key.pem", "password")
+	err = cfg.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath("/path/of/cert.pem", "path/of/key.pem", "password")
 	if err != nil {
 		panic(err)
 	}
 	// Set the server name and select the protocol used in SSL communication, default is TLSv1_2
-	config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "foo.bar", MinVersion: tls.VersionTLS13})
+	cfg.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "foo.bar", MinVersion: tls.VersionTLS13})
 	// Start a new Hazelcast client with SSL configuration.
-	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
+	client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
 		panic(err)
 	}
-	defer client.Shutdown(ctx)
 	fmt.Println("Connection Successful!")
+	client.Shutdown(ctx)
 }

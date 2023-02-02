@@ -228,25 +228,13 @@ In order to force using a specific date/time type, create a time.Time value and 
 
 # TLS/SSL
 
-One of the offers of Hazelcast is the TLS/SSL protocol which you can use to establish an encrypted communication across your cluster with key stores and trust stores.
+Hazelcast supports encrypted communication between the client and the server using TLS/SSL protocol with key stores and trust stores.
+This features requires Hazelcast Enterprise.
 
-  - A Java keyStore is a file that includes a private key and a public certificate.
-    The equivalent of a key store is the combination of keyfile and certfile at the Go client side.
-  - A Java trustStore is a file that includes a list of certificates trusted by your application which is named certificate authority.
-    The equivalent of a trust store is a cafile at the Go client side.
+In order to use TLS encryption, the Hazelcast members should be configured.
+See https://docs.hazelcast.com/hazelcast/latest/security/tls-ssl.html#tlsssl-for-hazelcast-members for more information.
 
-You should set keyStore and trustStore before starting the members.
-
-Hazelcast allows you to encrypt socket level communication between Hazelcast members and between Hazelcast clients and members, for end to end encryption.
-To use it, see the TLS/SSL for Hazelcast Members section: https://docs.hazelcast.com/hazelcast/latest/security/tls-ssl.html#tlsssl-for-hazelcast-members
-
-TLS/SSL for the Hazelcast Go client can be configured using the cluster.SSLConfig{} struct.
-This struct is accessible from the hazelcast.Config struct through Cluster.Network.SSL path.
-You can either edit the hazelcast.Config object or create a cluster.SSLConfig{} instance and then assign it to config.Cluster.Network.SSL.
-
-TLS/SSL for the Hazelcast Go client can be enabled/disabled using the SSLConfig.Enabled option.
-When this option is set to True, TLS/SSL will be configured with respect to the other SSL options.
-Setting this option to False will result in discarding the other SSL options.
+In order to enable TLS on the client side, set config.Cluster.Network.SSl.Enabled to true.
 
 	// error handling is omitted for brevity.
 	config := hazelcast.Config{}
@@ -274,7 +262,7 @@ To enable mutual authentication, firstly, you need to set the following property
 	  </ssl>
 	</network>
 
-Client certificate, private key and private key password can be set using the SSLConfig.AddClientCertAndEncryptedKeyPath().
+Client certificate, private key and private key password can be set using the SSLConfig.AddClientCertAndEncryptedKeyPath() method.
 The arguments should point to the absolute paths of the client certificate and private key in PEM format.
 If the private key is encrypted using a password, third argument will be used to decrypt it.
 
@@ -283,7 +271,7 @@ If the private key is encrypted using a password, third argument will be used to
 	_ := config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath("/path/of/cert.pem", "path/of/key.pem", "password")
 	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
 
-SSLConfig has tls.Config embedded in it so that users can set any field of tls config as they wish.
+SSLConfig has tls.Config embedded in it so that users can set any field of TLS config as they wish.
 You can set the tls.Config using the SSLConfig.SetTLSConfig() method.
 Check out this page for further details about tls.Config options: https://pkg.go.dev/crypto/tls#Config
 
