@@ -269,7 +269,7 @@ func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
 		pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
 		pw.raw = true
 	}
-	return pw.output.ObjectDataOutput
+	return pw.output
 }
 
 func (pw *DefaultPortableWriter) End() {

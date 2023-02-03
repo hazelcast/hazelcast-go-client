@@ -67,7 +67,7 @@ var (
 		"イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム",
 		"The quick brown fox jumps over the lazy dog",
 	}
-	aData iserialization.Data = []byte("111313123131313131")
+	aData iserialization.Data = []byte{49, 49, 49, 51, 49, 51, 49, 50, 51, 49, 51, 49, 51, 49, 51, 49, 51, 49}
 
 	anInnerPortable           *AnInnerPortable         = &AnInnerPortable{i: anInt, f: aFloat}
 	aCustomStreamSerializable CustomStreamSerializable = CustomStreamSerializable{I: anInt, F: aFloat}
@@ -95,19 +95,20 @@ var (
 		(types.LocalDate)(time.Date(1938, 11, 10, 0, 0, 0, 0, time.Local)),
 	}
 	localTimes = []types.LocalTime{
-		(types.LocalTime)(time.Date(0, 0, 0, 9, 5, 10, 123456789, time.Local)),
-		(types.LocalTime)(time.Date(0, 0, 0, 18, 30, 55, 567891234, time.Local)),
-		(types.LocalTime)(time.Date(0, 0, 0, 15, 44, 39, 192837465, time.Local)),
+		(types.LocalTime)(time.Date(0, 1, 1, 9, 5, 10, 123456789, time.Local)),
+		(types.LocalTime)(time.Date(0, 1, 1, 18, 30, 55, 567891234, time.Local)),
+		(types.LocalTime)(time.Date(0, 1, 1, 15, 44, 39, 192837465, time.Local)),
 	}
+	dasa           = types.LocalTime{}
 	localDataTimes = []types.LocalDateTime{
 		(types.LocalDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.Local)),
 		(types.LocalDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.Local)),
 		(types.LocalDateTime)(time.Date(2021, 6, 28, 18, 30, 55, 567891234, time.Local)),
 	}
 	offsetDataTimes = []types.OffsetDateTime{
-		(types.OffsetDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.FixedZone("", 18))),
-		(types.OffsetDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.FixedZone("", 5))),
-		(types.OffsetDateTime)(time.Date(2021, 6, 28, 18, 30, 55, 567891234, time.FixedZone("", -10))),
+		(types.OffsetDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.FixedZone("", 18*60*60))),
+		(types.OffsetDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.FixedZone("", 5*60*60))),
+		(types.OffsetDateTime)(time.Date(2021, 6, 28, 18, 30, 55, 567891234, time.FixedZone("", -10*60*60))),
 	}
 
 	aBigInteger = big.NewInt(1314432323232411)
@@ -115,11 +116,15 @@ var (
 	aClass = "java.math.BigDecimal"
 
 	aBigDecimal = types.NewDecimal(big.NewInt(31231), 0)
-	decimals    = []types.Decimal{}
-	aPortable   = APortable{boolean: aBoolean, b: aByte, c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong,
+	decimals    = []types.Decimal{aBigDecimal, aBigDecimal, aBigDecimal}
+
+	aPortable *APortable = &APortable{boolean: aBoolean, b: aByte, c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong,
 		str: anSqlString, bd: aBigDecimal, ld: aLocalDate, lt: aLocalTime, ldt: aLocalDateTime, odt: anOffsetDateTime, p: anInnerPortable,
 		booleans: booleans, bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
 		decimals: decimals, dates: localDates, times: localTimes, dateTimes: localDataTimes, offsetDateTimes: offsetDataTimes, portables: portables,
+		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
+		unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: &anIdentifiedDataSerializable, customStreamSerializableObject: aCustomStreamSerializable,
+		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData,
 	}
 	//anIdentifiedDataSerializable, aCustomStreamSerializable, aCustomByteArraySerializable,
 	nonNilList = []interface{}{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString,
@@ -137,9 +142,20 @@ func initializeVariables() {
 	for i, r := range anIdentifiedDataSerializable.str {
 		anIdentifiedDataSerializable.strBytes[i] = byte(r)
 	}
+	aPortable.strChars = make([]uint16, len(aPortable.str))
+	for i, r := range aPortable.str {
+		aPortable.strChars[i] = uint16(r)
+	}
+	aPortable.strBytes = make([]byte, len(aPortable.str))
+	for i, r := range aPortable.str {
+		aPortable.strBytes[i] = byte(r)
+	}
+
 	allTestObjects = map[string]interface{}{
-		"AnIdentifiedDataSerializable": &anIdentifiedDataSerializable,
+		"APortable": aPortable,
 		/*
+			"AnIdentifiedDataSerializable": &anIdentifiedDataSerializable,
+
 			"NULL":            aNullObject,
 			"Boolean":         aBoolean,
 			"Byte":            aByte,
@@ -164,55 +180,55 @@ func initializeVariables() {
 			"String[]":                     strings,
 			"CustomStreamSerializable":     aCustomStreamSerializable,
 			"CustomByteArraySerializable":  aCustomByteArraySerializable,
-		*/
-		// "APortable":                    aPortable,
-		/*"LocalDate":      aLocalDate,
-		"LocalTime":      aLocalTime,
-		"LocalDateTime":  aLocalDateTime,
-		"OffsetDateTime": anOffsetDateTime,
-		"BigInteger":     aBigInteger,
-		"BigDecimal":     aBigDecimal,
-		"Class":          aClass,
 
-		"TruePredicate":        predicate.True(),
-		"FalsePredicate":       predicate.False(),
-		"SqlPredicate":         predicate.SQL(anSqlString),
-		"EqualPredicate":       predicate.Equal(anSqlString, anInt),
-		"NotEqualPredicate":    predicate.NotEqual(anSqlString, anInt),
-		"GreaterLessPredicate": predicate.Greater(anSqlString, anInt),
-		"BetweenPredicate":     predicate.Between(anSqlString, anInt, anInt),
-		"LikePredicate":        predicate.Like(anSqlString, anSqlString),
-		"ILikePredicate":       predicate.ILike(anSqlString, anSqlString),
-		"InPredicate":          predicate.In(anSqlString, anInt, anInt),
-		"RegexPredicate":       predicate.Regex(anSqlString, anSqlString),
-		"AndPredicate": predicate.And(
-			predicate.SQL(anSqlString),
-			predicate.Equal(anSqlString, anInt),
-			predicate.NotEqual(anSqlString, anInt),
-			predicate.Greater(anSqlString, anInt),
-			predicate.GreaterOrEqual(anSqlString, anInt),
-		),
-		"OrPredicate": predicate.Or(
-			predicate.SQL(anSqlString),
-			predicate.Equal(anSqlString, anInt),
-			predicate.NotEqual(anSqlString, anInt),
-			predicate.Greater(anSqlString, anInt),
-			predicate.GreaterOrEqual(anSqlString, anInt),
-		),
-		"InstanceOfPredicate": predicate.InstanceOf("com.hazelcast.nio.serialization.compatibility.CustomStreamSerializable"),
 
-		"CountAggregator": aggregate.Count(anSqlString),
-		// "DistinctValuesAggregator": aggregate.DistinctValues(anSqlString),
-		// "MaxByAggregator":          aggregate.Max(anSqlString),
-		// "MinByAggregator":          aggregate.Min(anSqlString),
-		"MaxAggregator":            aggregate.MaxAll(),
-		"MinAggregator":            aggregate.MinAll(),
-		"DoubleSumAggregator":      aggregate.DoubleSum(anSqlString),
-		"IntegerSumAggregator":     aggregate.IntSum(anSqlString),
-		"LongSumAggregator":        aggregate.LongSum(anSqlString),
-		"DoubleAverageAggregator":  aggregate.DoubleAverage(anSqlString),
-		"IntegerAverageAggregator": aggregate.IntAverage(anSqlString),
-		"LongAverageAggregator":    aggregate.LongAverage(anSqlString),*/
+			"LocalDate":      aLocalDate,
+			"LocalTime":      aLocalTime,
+			"LocalDateTime":  aLocalDateTime,
+			"OffsetDateTime": anOffsetDateTime,
+			"BigInteger":     aBigInteger,
+			"BigDecimal":     aBigDecimal,
+			"Class":          aClass,
+
+			"TruePredicate":        predicate.True(),
+			"FalsePredicate":       predicate.False(),
+			"SqlPredicate":         predicate.SQL(anSqlString),
+			"EqualPredicate":       predicate.Equal(anSqlString, anInt),
+			"NotEqualPredicate":    predicate.NotEqual(anSqlString, anInt),
+			"GreaterLessPredicate": predicate.Greater(anSqlString, anInt),
+			"BetweenPredicate":     predicate.Between(anSqlString, anInt, anInt),
+			"LikePredicate":        predicate.Like(anSqlString, anSqlString),
+			"ILikePredicate":       predicate.ILike(anSqlString, anSqlString),
+			"InPredicate":          predicate.In(anSqlString, anInt, anInt),
+			"RegexPredicate":       predicate.Regex(anSqlString, anSqlString),
+			"AndPredicate": predicate.And(
+				predicate.SQL(anSqlString),
+				predicate.Equal(anSqlString, anInt),
+				predicate.NotEqual(anSqlString, anInt),
+				predicate.Greater(anSqlString, anInt),
+				predicate.GreaterOrEqual(anSqlString, anInt),
+			),
+			"OrPredicate": predicate.Or(
+				predicate.SQL(anSqlString),
+				predicate.Equal(anSqlString, anInt),
+				predicate.NotEqual(anSqlString, anInt),
+				predicate.Greater(anSqlString, anInt),
+				predicate.GreaterOrEqual(anSqlString, anInt),
+			),
+			"InstanceOfPredicate": predicate.InstanceOf("com.hazelcast.nio.serialization.compatibility.CustomStreamSerializable"),
+
+			"CountAggregator": aggregate.Count(anSqlString),
+			"DistinctValuesAggregator": aggregate.DistinctValues(anSqlString),
+			"MaxByAggregator":          aggregate.Max(anSqlString),
+			"MinByAggregator":          aggregate.Min(anSqlString),
+			"MaxAggregator":            aggregate.MaxAll(),
+			"MinAggregator":            aggregate.MinAll(),
+			"DoubleSumAggregator":      aggregate.DoubleSum(anSqlString),
+			"IntegerSumAggregator":     aggregate.IntSum(anSqlString),
+			"LongSumAggregator":        aggregate.LongSum(anSqlString),
+			"DoubleAverageAggregator":  aggregate.DoubleAverage(anSqlString),
+			"IntegerAverageAggregator": aggregate.IntAverage(anSqlString),
+			"LongAverageAggregator":    aggregate.LongAverage(anSqlString),*/
 	}
 
 }

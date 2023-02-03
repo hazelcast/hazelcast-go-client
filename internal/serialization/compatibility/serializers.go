@@ -6,9 +6,70 @@ import (
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	pactypes "go/types"
 	"math"
 )
+
+type CustomStreamSerializable struct {
+	I int32
+	F float32
+}
+
+type CustomStreamSerializer struct{}
+
+func (e CustomStreamSerializer) ID() (id int32) {
+	return CustomStreamSerializableId
+}
+func (e CustomStreamSerializer) Read(input serialization.DataInput) interface{} {
+	i := input.ReadInt32()
+	f := input.ReadFloat32()
+	return CustomStreamSerializable{I: i, F: f}
+}
+
+func (e CustomStreamSerializer) Write(out serialization.DataOutput, object interface{}) {
+	css, ok := object.(CustomStreamSerializable)
+	if !ok {
+		panic("can serialize only CustomStreamSerializable")
+	}
+	out.WriteInt32(css.I)
+	out.WriteFloat32(css.F)
+}
+
+type CustomByteArraySerializable struct {
+	I int32
+	F float32
+}
+
+type CustomByteArraySerializer struct {
+}
+
+func (e CustomByteArraySerializer) ID() (id int32) {
+	return CustomByteArraySerializableId
+}
+func (e CustomByteArraySerializer) Read(input serialization.DataInput) interface{} {
+	buf := pacbytes.NewBuffer(input.ReadByteArray())
+	var i int32
+	var f float32
+	err := binary.Read(buf, binary.BigEndian, &i)
+	if err != nil {
+		return nil
+	}
+	err = binary.Read(buf, binary.BigEndian, &f)
+	if err != nil {
+		return nil
+	}
+	return CustomByteArraySerializable{I: i, F: f}
+}
+
+func (e CustomByteArraySerializer) Write(output serialization.DataOutput, object interface{}) {
+	cba, ok := object.(CustomByteArraySerializable)
+	if !ok {
+		panic("can serialize only CustomByteArraySerializable")
+	}
+	buf := make([]byte, 10)
+	binary.BigEndian.PutUint32(buf, uint32(cba.I))
+	binary.BigEndian.PutUint32(buf[4:], math.Float32bits(cba.F))
+	output.WriteByteArray(buf)
+}
 
 type AnIdentifiedDataSerializable struct {
 	bool bool
@@ -110,16 +171,10 @@ func (i AnIdentifiedDataSerializable) WriteData(output serialization.DataOutput)
 
 	output.WriteObject(i.portableObject)
 	output.WriteObject(i.identifiedDataSerializableObject)
-	output.WriteObject(i.customStreamSerializableObject)
 	output.WriteObject(i.customByteArraySerializableObject)
+	output.WriteObject(i.customStreamSerializableObject)
 
-	var payload []byte
-	if i.data.Type() != iserialization.TypeNil {
-		payload = nil
-	} else {
-		payload = i.data.ToByteArray()
-	}
-	output.WriteByteArray(payload)
+	writeDataToOutput(output, i.data)
 }
 
 func (i *AnIdentifiedDataSerializable) ReadData(input serialization.DataInput) {
@@ -193,6 +248,16 @@ func readDataFromInput(inp serialization.DataInput) iserialization.Data {
 	return nil
 }
 
+func writeDataToOutput(out serialization.DataOutput, data iserialization.Data) {
+	var payload []byte
+	if data.Type() != iserialization.TypeNil {
+		payload = data.ToByteArray()
+	} else {
+		payload = nil
+	}
+	out.WriteByteArray(payload)
+}
+
 type IdentifiedFactory struct{}
 
 func (f IdentifiedFactory) FactoryID() int32 {
@@ -204,68 +269,6 @@ func (f IdentifiedFactory) Create(classID int32) serialization.IdentifiedDataSer
 		return &AnIdentifiedDataSerializable{}
 	}
 	return nil
-}
-
-type CustomStreamSerializable struct {
-	I int32
-	F float32
-}
-
-type CustomStreamSerializer struct{}
-
-func (e CustomStreamSerializer) ID() (id int32) {
-	return CustomStreamSerializableId
-}
-func (e CustomStreamSerializer) Read(input serialization.DataInput) interface{} {
-	i := input.ReadInt32()
-	f := input.ReadFloat32()
-	return CustomStreamSerializable{I: i, F: f}
-}
-
-func (e CustomStreamSerializer) Write(out serialization.DataOutput, object interface{}) {
-	css, ok := object.(CustomStreamSerializable)
-	if !ok {
-		panic("can serialize only CustomStreamSerializable")
-	}
-	out.WriteInt32(css.I)
-	out.WriteFloat32(css.F)
-}
-
-type CustomByteArraySerializable struct {
-	I int32
-	F float32
-}
-
-type CustomByteArraySerializer struct {
-}
-
-func (e CustomByteArraySerializer) ID() (id int32) {
-	return CustomByteArraySerializableId
-}
-func (e CustomByteArraySerializer) Read(input serialization.DataInput) interface{} {
-	buf := pacbytes.NewBuffer(input.ReadByteArray())
-	var i int32
-	var f float32
-	err := binary.Read(buf, binary.BigEndian, &i)
-	if err != nil {
-		return nil
-	}
-	err = binary.Read(buf, binary.BigEndian, &f)
-	if err != nil {
-		return nil
-	}
-	return CustomByteArraySerializable{I: i, F: f}
-}
-
-func (e CustomByteArraySerializer) Write(output serialization.DataOutput, object interface{}) {
-	cba, ok := object.(CustomByteArraySerializable)
-	if !ok {
-		panic("can serialize only CustomByteArraySerializable")
-	}
-	buf := make([]byte, 10)
-	binary.BigEndian.PutUint32(buf, uint32(cba.I))
-	binary.BigEndian.PutUint32(buf[4:], math.Float32bits(cba.F))
-	output.WriteByteArray(buf)
 }
 
 type AnInnerPortable struct {
@@ -341,10 +344,10 @@ type APortable struct {
 	unsignedByte  uint8
 	unsignedShort uint16
 
-	portableObject                    pactypes.Object
-	identifiedDataSerializableObject  pactypes.Object
-	customStreamSerializableObject    pactypes.Object
-	customByteArraySerializableObject pactypes.Object
+	portableObject                    serialization.Portable
+	identifiedDataSerializableObject  *AnIdentifiedDataSerializable
+	customStreamSerializableObject    CustomStreamSerializable
+	customByteArraySerializableObject CustomByteArraySerializable
 	data                              iserialization.Data
 }
 
@@ -436,12 +439,14 @@ func (p APortable) WritePortable(writer serialization.PortableWriter) {
 
 	byteSize := byte(len(p.bytes))
 	out.WriteByte(byteSize)
-	out.WriteByteArray(p.bytes)
+	writeRawBytes(out, p.bytes)
 	out.WriteByte(p.bytes[1])
 	out.WriteByte(p.bytes[2])
 	out.WriteInt32(int32(len(p.str)))
+	for _, r := range p.str {
+		out.WriteUInt16(uint16(r))
+	}
 	out.WriteStringBytes(p.str)
-	out.WriteByteArray([]byte(p.str))
 	out.WriteByte(p.unsignedByte)
 	out.WriteUInt16(p.unsignedShort)
 
@@ -450,16 +455,10 @@ func (p APortable) WritePortable(writer serialization.PortableWriter) {
 	out.WriteObject(p.customByteArraySerializableObject)
 	out.WriteObject(p.customStreamSerializableObject)
 
-	var payload []byte
-	if p.data.Type() != iserialization.TypeNil {
-		payload = nil
-	} else {
-		payload = p.data.ToByteArray()
-	}
-	out.WriteByteArray(payload)
+	writeDataToOutput(out, p.data)
 }
 
-func (p APortable) ReadPortable(reader serialization.PortableReader) {
+func (p *APortable) ReadPortable(reader serialization.PortableReader) {
 	p.boolean = reader.ReadBool("bool")
 	p.b = reader.ReadByte("b")
 	p.c = reader.ReadUInt16("c")
@@ -533,29 +532,37 @@ func (p APortable) ReadPortable(reader serialization.PortableReader) {
 	p.intsNil = dataInput.ReadInt32Array()
 	p.longsNil = dataInput.ReadInt64Array()
 	p.stringsNil = dataInput.ReadStringArray()
-	/*
-		byteSize := dataInput.ReadByte()
-		bytesFully =  make([]byte, byteSize);
-		dataInput.();
-		bytesOffset = new byte[2];
-		dataInput.readFully(bytesOffset, 0, 2);
-		strSize := int(dataInput.ReadInt32())
-		strChars :=  make([]uint16, strSize)
-		for i := 0; i < strSize; i++{
-			strChars[i] = dataInput.ReadUInt16();
-		}
-		p.strBytes = make([]byte, strSize)
-		dataInput.Read(strBytes);
-		p.unsignedByte = dataInput.readUnsignedByte()
-		p.unsignedShort = dataInput.readUnsignedShort()
 
-		p.portableObject = dataInput.ReadObject()
-		p.identifiedDataSerializableObject = dataInput.ReadObject()
-		p.customByteArraySerializableObject = dataInput.ReadObject()
-		p.customStreamSerializableObject = dataInput.ReadObject()
-			p.data = readData(dataInput);
-	*/
+	p.byteSize = dataInput.ReadByte()
+	p.bytesFully = readRawBytes(dataInput, int(p.byteSize))
+	p.bytesOffset = readRawBytes(dataInput, 2)
 
+	strSize := dataInput.ReadInt32()
+	p.strChars = make([]uint16, strSize)
+	for j := 0; j < int(strSize); j++ {
+		p.strChars[j] = dataInput.ReadUInt16()
+	}
+	p.strBytes = readRawBytes(dataInput, int(strSize))
+	p.unsignedByte = dataInput.ReadByte()
+	p.unsignedShort = dataInput.ReadUInt16()
+
+	portableObject := dataInput.ReadObject()
+	if portableObject != nil {
+		p.portableObject = portableObject.(*AnInnerPortable)
+	}
+	identifiedDataSerializableObject := dataInput.ReadObject()
+	if identifiedDataSerializableObject != nil {
+		p.identifiedDataSerializableObject = identifiedDataSerializableObject.(*AnIdentifiedDataSerializable)
+	}
+	customByteArraySerializableObject := dataInput.ReadObject()
+	if customByteArraySerializableObject != nil {
+		p.customByteArraySerializableObject = customByteArraySerializableObject.(CustomByteArraySerializable)
+	}
+	customStreamSerializableObject := dataInput.ReadObject()
+	if customStreamSerializableObject != nil {
+		p.customStreamSerializableObject = customStreamSerializableObject.(CustomStreamSerializable)
+	}
+	p.data = readDataFromInput(dataInput)
 }
 
 type PortableFactory struct{}

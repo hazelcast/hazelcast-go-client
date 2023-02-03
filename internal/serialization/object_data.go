@@ -665,6 +665,10 @@ func NewPositionalObjectDataOutput(length int, service *Service, bigEndian bool)
 	return &PositionalObjectDataOutput{NewObjectDataOutput(length, service, bigEndian)}
 }
 
+func (p *PositionalObjectDataOutput) WriteObject(object interface{}) {
+	p.service.WriteObject(p, object)
+}
+
 func (p *PositionalObjectDataOutput) PWriteByte(pos int32, v byte) {
 	p.buffer[pos] = v
 }
