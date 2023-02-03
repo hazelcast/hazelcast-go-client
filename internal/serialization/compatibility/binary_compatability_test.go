@@ -3,13 +3,15 @@ package compatibility
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	serialization2 "github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"reflect"
 	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 var (
@@ -21,33 +23,30 @@ var (
 func TestBinaryCompatibility(t *testing.T) {
 	initializeVariables()
 	readBinaryFile(t)
-	for key, obj := range allTestObjects {
+	for objName, obj := range allTestObjects {
 		for _, order := range byteOrders {
 			for _, version := range versions {
-				keyStr := createObjectKey(key, order, version)
-				t.Run(keyStr+"-testDeserialize", func(t *testing.T) {
-					// testDeserialize
-					if skipOnDeserialize(key) {
+				key := createObjectKey(objName, order, version)
+				t.Run(key+"-testDeserialize", func(t *testing.T) {
+					if skipOnDeserialize(objName) {
 						t.SkipNow()
 					}
 					service := createSerializationService(t, order)
-					readObject, err := service.ToObject(dataMap[keyStr])
+					toObj, err := service.ToObject(dataMap[key])
 					require.NoError(t, err)
-					require.Equal(t, obj, readObject)
+					require.Equal(t, obj, toObj)
 				})
-				t.Run(keyStr+"-testSerialize", func(t *testing.T) {
-					// testSerialize
-					if skipOnSerialize(key) {
+				t.Run(key+"-testSerialize", func(t *testing.T) {
+					if skipOnSerialize(objName) {
 						t.SkipNow()
 					}
 					service := createSerializationService(t, order)
 					data, err := service.ToData(obj)
 					require.NoError(t, err)
-					require.Equal(t, dataMap[keyStr], data)
+					require.Equal(t, dataMap[key], data)
 				})
-				t.Run(keyStr+"-testSerializeDeserialize", func(t *testing.T) {
-					// testSerializeDeserialize
-					if skipOnDeserialize(key) || skipOnSerialize(key) {
+				t.Run(key+"-testSerializeDeserialize", func(t *testing.T) {
+					if skipOnDeserialize(objName) || skipOnSerialize(objName) {
 						t.SkipNow()
 					}
 					service := createSerializationService(t, order)
@@ -69,29 +68,29 @@ func readBinaryFile(t *testing.T) {
 		i := serialization.NewObjectDataInput(b, 0, nil, true)
 		for i.Available() != 0 {
 			buf := i.ReadUInt16()
-			objectKey := string(readRawBytes(i, int(buf)))
+			key := string(readRawBytes(i, int(buf)))
 			n := i.ReadInt32()
 			if n != -1 {
 				bytes = make([]byte, n)
 				for j := int32(0); j < n; j++ {
 					bytes[j] = i.ReadByte()
 				}
-				dataMap[objectKey] = bytes
+				dataMap[key] = bytes
 			} else {
-				dataMap[objectKey] = nil
+				dataMap[key] = nil
 			}
 		}
 	}
 }
 
-func createSerializationService(t *testing.T, byteOrder binary.ByteOrder) *serialization.Service {
-	cfg := serialization2.Config{}
+func createSerializationService(t *testing.T, bo binary.ByteOrder) *serialization.Service {
+	cfg := pubserialization.Config{}
 	err := cfg.SetCustomSerializer(reflect.TypeOf(CustomByteArraySerializable{}), &CustomByteArraySerializer{})
 	require.NoError(t, err)
 	err = cfg.SetCustomSerializer(reflect.TypeOf(CustomStreamSerializable{}), &CustomStreamSerializer{})
 	require.NoError(t, err)
 	cfg.PortableVersion = 0
-	cd := serialization2.NewClassDefinition(PortableFactoryId, InnerPortableClassId, 0)
+	cd := pubserialization.NewClassDefinition(PortableFactoryId, InnerPortableClassId, 0)
 	err = cd.AddInt32Field("i")
 	require.NoError(t, err)
 	err = cd.AddFloat32Field("f")
@@ -99,7 +98,7 @@ func createSerializationService(t *testing.T, byteOrder binary.ByteOrder) *seria
 	cfg.SetClassDefinitions(cd)
 	cfg.SetPortableFactories(&PortableFactory{})
 	cfg.SetIdentifiedDataSerializableFactories(&IdentifiedFactory{})
-	if byteOrder == binary.LittleEndian {
+	if bo == binary.LittleEndian {
 		cfg.LittleEndian = true
 	}
 	s, err := serialization.NewService(&cfg)

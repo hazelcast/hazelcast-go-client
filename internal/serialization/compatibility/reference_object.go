@@ -3,15 +3,16 @@ package compatibility
 import (
 	pacbytes "bytes"
 	"encoding/binary"
+	pactypes "go/types"
+	"math"
+	"math/big"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/aggregate"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/predicate"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
-	pactypes "go/types"
-	"math"
-	"math/big"
-	"time"
 )
 
 const (
@@ -58,12 +59,12 @@ type CustomByteArraySerializable struct {
 	F float32
 }
 
-type CustomByteArraySerializer struct {
-}
+type CustomByteArraySerializer struct{}
 
 func (e CustomByteArraySerializer) ID() (id int32) {
 	return CustomByteArraySerializableId
 }
+
 func (e CustomByteArraySerializer) Read(input serialization.DataInput) interface{} {
 	buf := pacbytes.NewBuffer(input.ReadByteArray())
 	var i int32
@@ -637,29 +638,33 @@ var (
 	floats  = []float32{900.5678, 1.0, 2.1, 3.4}
 	ints    = []int32{56789, 2, 3}
 	longs   = []int64{-50992225, 1231232141, 2, 3}
-
 	strings = []string{
 		"Pijamalı hasta, yağız şoföre çabucak güvendi.",
 		"イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム",
 		"The quick brown fox jumps over the lazy dog",
 	}
-	aData iserialization.Data = []byte{49, 49, 49, 51, 49, 51, 49, 50, 51, 49, 51, 49, 51, 49, 51, 49, 51, 49}
+	aData           iserialization.Data = []byte{49, 49, 49, 51, 49, 51, 49, 50, 51, 49, 51, 49, 51, 49, 51, 49, 51, 49}
+	anInnerPortable *AnInnerPortable    = &AnInnerPortable{i: anInt, f: aFloat}
+	portables                           = []serialization.Portable{anInnerPortable, anInnerPortable, anInnerPortable}
 
-	anInnerPortable           *AnInnerPortable         = &AnInnerPortable{i: anInt, f: aFloat}
-	aCustomStreamSerializable CustomStreamSerializable = CustomStreamSerializable{I: anInt, F: aFloat}
-
-	aCustomByteArraySerializable CustomByteArraySerializable = CustomByteArraySerializable{I: anInt, F: aFloat}
-	portables                                                = []serialization.Portable{anInnerPortable, anInnerPortable, anInnerPortable}
-
+	aCustomStreamSerializable    CustomStreamSerializable     = CustomStreamSerializable{I: anInt, F: aFloat}
+	aCustomByteArraySerializable CustomByteArraySerializable  = CustomByteArraySerializable{I: anInt, F: aFloat}
 	anIdentifiedDataSerializable AnIdentifiedDataSerializable = AnIdentifiedDataSerializable{bool: aBoolean, b: aByte,
 		c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong, str: anSqlString, booleans: booleans,
 		bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
 		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
 		unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: nil, customStreamSerializableObject: aCustomStreamSerializable,
 		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData}
+	aPortable *APortable = &APortable{boolean: aBoolean, b: aByte, c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong,
+		str: anSqlString, bd: aBigDecimal, ld: aLocalDate, lt: aLocalTime, ldt: aLocalDateTime, odt: anOffsetDateTime, p: anInnerPortable,
+		booleans: booleans, bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
+		decimals: decimals, dates: localDates, times: localTimes, dateTimes: localDataTimes, offsetDateTimes: offsetDataTimes, portables: portables,
+		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
+		unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: &anIdentifiedDataSerializable, customStreamSerializableObject: aCustomStreamSerializable,
+		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData,
+	}
 
-	aDate = time.Date(1990, 2, 1, 0, 0, 0, 0, time.UTC)
-
+	aDate            = time.Date(1990, 2, 1, 0, 0, 0, 0, time.UTC)
 	aLocalDate       = (types.LocalDate)(time.Date(2021, 6, 28, 0, 0, 0, 0, time.Local))
 	aLocalTime       = (types.LocalTime)(time.Date(0, 1, 1, 11, 22, 41, 123456789, time.Local))
 	aLocalDateTime   = (types.LocalDateTime)(time.Date(2021, 6, 28, 11, 22, 41, 123456789, time.Local))
@@ -675,7 +680,6 @@ var (
 		(types.LocalTime)(time.Date(0, 1, 1, 18, 30, 55, 567891234, time.Local)),
 		(types.LocalTime)(time.Date(0, 1, 1, 15, 44, 39, 192837465, time.Local)),
 	}
-	dasa           = types.LocalTime{}
 	localDataTimes = []types.LocalDateTime{
 		(types.LocalDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.Local)),
 		(types.LocalDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.Local)),
@@ -688,21 +692,10 @@ var (
 	}
 
 	aBigInteger = big.NewInt(1314432323232411)
-
-	aClass = "java.math.BigDecimal"
-
+	aClass      = "java.math.BigDecimal"
 	aBigDecimal = types.NewDecimal(big.NewInt(31231), 0)
 	decimals    = []types.Decimal{aBigDecimal, aBigDecimal, aBigDecimal}
 
-	aPortable *APortable = &APortable{boolean: aBoolean, b: aByte, c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong,
-		str: anSqlString, bd: aBigDecimal, ld: aLocalDate, lt: aLocalTime, ldt: aLocalDateTime, odt: anOffsetDateTime, p: anInnerPortable,
-		booleans: booleans, bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
-		decimals: decimals, dates: localDates, times: localTimes, dateTimes: localDataTimes, offsetDateTimes: offsetDataTimes, portables: portables,
-		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
-		unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: &anIdentifiedDataSerializable, customStreamSerializableObject: aCustomStreamSerializable,
-		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData,
-	}
-	//anIdentifiedDataSerializable, aCustomStreamSerializable, aCustomByteArraySerializable,
 	nonNilList = []interface{}{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString,
 		anInnerPortable, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings, aCustomStreamSerializable,
 		aCustomByteArraySerializable, anIdentifiedDataSerializable, aPortable, aDate, aLocalDate, aLocalTime, aLocalDateTime,
@@ -726,11 +719,7 @@ func initializeVariables() {
 	for i, r := range aPortable.str {
 		aPortable.strBytes[i] = byte(r)
 	}
-
 	allTestObjects = map[string]interface{}{
-		"APortable":                    aPortable,
-		"AnIdentifiedDataSerializable": &anIdentifiedDataSerializable,
-
 		"NULL":            aNullObject,
 		"Boolean":         aBoolean,
 		"Byte":            aByte,
@@ -744,17 +733,20 @@ func initializeVariables() {
 		"UUID":            aUUID,
 		"AnInnerPortable": anInnerPortable,
 
-		"boolean[]":                   booleans,
-		"byte[]":                      bytes,
-		"char[]":                      chars,
-		"double[]":                    doubles,
-		"short[]":                     shorts,
-		"float[]":                     floats,
-		"int[]":                       ints,
-		"long[]":                      longs,
-		"String[]":                    strings,
-		"CustomStreamSerializable":    aCustomStreamSerializable,
-		"CustomByteArraySerializable": aCustomByteArraySerializable,
+		"boolean[]": booleans,
+		"byte[]":    bytes,
+		"char[]":    chars,
+		"double[]":  doubles,
+		"short[]":   shorts,
+		"float[]":   floats,
+		"int[]":     ints,
+		"long[]":    longs,
+		"String[]":  strings,
+
+		"CustomStreamSerializable":     aCustomStreamSerializable,
+		"CustomByteArraySerializable":  aCustomByteArraySerializable,
+		"APortable":                    aPortable,
+		"AnIdentifiedDataSerializable": &anIdentifiedDataSerializable,
 
 		"LocalDate":      aLocalDate,
 		"LocalTime":      aLocalTime,
@@ -801,5 +793,4 @@ func initializeVariables() {
 		"IntegerAverageAggregator": aggregate.IntAverage(anSqlString),
 		"LongAverageAggregator":    aggregate.LongAverage(anSqlString),
 	}
-
 }
