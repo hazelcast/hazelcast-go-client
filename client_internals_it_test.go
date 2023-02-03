@@ -58,7 +58,7 @@ func TestClientInternal(t *testing.T) {
 		{name: "ClusterID_2", f: clientInternalClusterID_2Test},
 		{name: "ConnectedToMember", f: clientInternalConnectedToMemberTest},
 		{name: "EncodeData", f: clientInternalEncodeDataTest},
-		{name: "InfiniteRestart", f: infiniteRestartTest},
+		{name: "InfiniteRestart", f: infiniteReconnectTest},
 		{name: "InternalInvokeOnKey", f: clientInternalInvokeOnKeyTest},
 		{name: "InternalListenersAfterClientDisconnected", f: clientInternalListenersAfterClientDisconnectedTest},
 		{name: "InvokeOnMember", f: clientInternalInvokeOnMemberTest},
@@ -490,7 +490,7 @@ func proxyManagerShutdownTest(t *testing.T) {
 	require.True(t, ok)
 }
 
-func infiniteRestartTest(t *testing.T) {
+func infiniteReconnectTest(t *testing.T) {
 	skip.If(t, "enterprise")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
