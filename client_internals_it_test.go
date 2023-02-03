@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	"github.com/hazelcast/hazelcast-go-client/logger"
@@ -453,6 +454,7 @@ func clientClusterConnectionConfigRetryTimeTest(t *testing.T) {
 }
 
 func proxyManagerShutdownTest(t *testing.T) {
+	skip.If(t, "enterprise")
 	ctx := context.Background()
 	tc := it.StartNewClusterWithOptions(it.NewUniqueObjectName(t.Name()), it.NextPort(), 1)
 	defer tc.Shutdown()

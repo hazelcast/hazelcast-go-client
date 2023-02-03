@@ -69,7 +69,7 @@ func readBinaryFile(t *testing.T) {
 		i := serialization.NewObjectDataInput(b, 0, nil, true)
 		for i.Available() != 0 {
 			buf := i.ReadUInt16()
-			objectKey := string(i.ReadRawBytes(int32(buf)))
+			objectKey := string(readRawBytes(i, int(buf)))
 			n := i.ReadInt32()
 			if n != -1 {
 				bytes = make([]byte, n)
