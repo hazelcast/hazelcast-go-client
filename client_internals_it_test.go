@@ -58,11 +58,13 @@ func TestClientInternal(t *testing.T) {
 		{name: "ClusterID_2", f: clientInternalClusterID_2Test},
 		{name: "ConnectedToMember", f: clientInternalConnectedToMemberTest},
 		{name: "EncodeData", f: clientInternalEncodeDataTest},
+		{name: "InfiniteRestart", f: infiniteReconnectTest},
 		{name: "InternalInvokeOnKey", f: clientInternalInvokeOnKeyTest},
 		{name: "InternalListenersAfterClientDisconnected", f: clientInternalListenersAfterClientDisconnectedTest},
 		{name: "InvokeOnMember", f: clientInternalInvokeOnMemberTest},
 		{name: "InvokeOnPartition", f: clientInternalInvokeOnPartitionTest},
 		{name: "InvokeOnRandomTarget", f: clientInternalInvokeOnRandomTargetTest},
+		{name: "NoReconnect", f: noReconnectTest},
 		{name: "NotReceivedInvocation", f: clientInternalNotReceivedInvocationTest},
 		{name: "OrderedMembers", f: clientInternalOrderedMembersTest},
 		{name: "ProxyManagerShutdown", f: proxyManagerShutdownTest},
@@ -486,6 +488,71 @@ func proxyManagerShutdownTest(t *testing.T) {
 		}
 	}
 	require.True(t, ok)
+}
+
+func infiniteReconnectTest(t *testing.T) {
+	skip.If(t, "enterprise")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	tc := it.StartNewClusterWithOptions(it.NewUniqueObjectName(t.Name()), it.NextPort(), 1)
+	defer tc.Shutdown()
+	config := tc.DefaultConfigWithNoSSL()
+	config.Cluster.ConnectionStrategy.ReconnectMode = cluster.ReconnectModeOn
+	config.Cluster.ConnectionStrategy.Timeout = types.Duration(1 * time.Second)
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	defer client.Shutdown(ctx)
+	require.True(t, client.Running())
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	sid := it.MustValue(client.AddLifecycleListener(func(ev hz.LifecycleStateChanged) {
+		if ev.State == hz.LifecycleStateDisconnected {
+			wg.Done()
+		}
+	})).(types.UUID)
+	for _, mem := range tc.MemberUUIDs {
+		it.MustValue(tc.RC.TerminateMember(ctx, tc.ClusterID, mem))
+	}
+	// wait for disconnection to the cluster
+	wg.Wait()
+	it.Must(client.RemoveLifecycleListener(sid))
+	require.True(t, client.Running())
+	wg = &sync.WaitGroup{}
+	wg.Add(1)
+	// make sure the client can connect back.
+	sid = it.MustValue(client.AddLifecycleListener(func(ev hz.LifecycleStateChanged) {
+		if ev.State == hz.LifecycleStateConnected {
+			wg.Done()
+		}
+	})).(types.UUID)
+	it.MustValue(tc.RC.StartMember(ctx, tc.ClusterID))
+	wg.Wait()
+}
+
+func noReconnectTest(t *testing.T) {
+	skip.If(t, "enterprise")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	tc := it.StartNewClusterWithOptions(it.NewUniqueObjectName(t.Name()), it.NextPort(), 1)
+	defer tc.Shutdown()
+	config := tc.DefaultConfigWithNoSSL()
+	config.Cluster.ConnectionStrategy.ReconnectMode = cluster.ReconnectModeOff
+	config.Cluster.ConnectionStrategy.Timeout = types.Duration(1 * time.Second)
+	client := it.MustClient(hz.StartNewClientWithConfig(ctx, config))
+	defer client.Shutdown(ctx)
+	require.True(t, client.Running())
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	it.MustValue(client.AddLifecycleListener(func(ev hz.LifecycleStateChanged) {
+		if ev.State == hz.LifecycleStateDisconnected {
+			wg.Done()
+		}
+	}))
+	for _, mem := range tc.MemberUUIDs {
+		it.MustValue(tc.RC.TerminateMember(ctx, tc.ClusterID, mem))
+	}
+	// wait for disconnection to the cluster
+	wg.Wait()
+	require.False(t, client.Running())
 }
 
 type invokeFilter func(inv invocation.Invocation) (ok bool)
