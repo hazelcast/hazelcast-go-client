@@ -46,13 +46,13 @@ func (a aggDistinct) ClassID() (classID int32) {
 func (a aggDistinct) WriteData(output serialization.DataOutput) {
 	writeAttrPath(output, a.attrPath)
 	// member side field, not used in client
-	output.WriteInt64(0)
+	output.WriteInt32(0)
 }
 
 func (a *aggDistinct) ReadData(input serialization.DataInput) {
 	a.attrPath = input.ReadString()
 	// member side field, not used in client
-	input.ReadInt64()
+	input.ReadInt32()
 }
 
 func (a aggDistinct) String() string {
