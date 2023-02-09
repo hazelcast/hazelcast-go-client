@@ -16,17 +16,13 @@ import (
 )
 
 const (
-	IdentifiedDataSerializableFactoryId = 1
-	PortableFactoryId                   = 1
-	PortableClassId                     = 1
-	InnerPortableClassId                = 2
-	IdentifiedDataSerializableClassId   = 1
-	CustomStreamSerializableId          = 1
-	CustomByteArraySerializableId       = 2
-)
-
-var (
-	allTestObjects map[string]interface{} = nil
+	identifiedDataSerializableFactoryId = 1
+	portableFactoryId                   = 1
+	portableClassId                     = 1
+	innerPortableClassId                = 2
+	identifiedDataSerializableClassId   = 1
+	customStreamSerializableId          = 1
+	customByteArraySerializableId       = 2
 )
 
 type CustomStreamSerializable struct {
@@ -37,8 +33,9 @@ type CustomStreamSerializable struct {
 type CustomStreamSerializer struct{}
 
 func (e CustomStreamSerializer) ID() (id int32) {
-	return CustomStreamSerializableId
+	return customStreamSerializableId
 }
+
 func (e CustomStreamSerializer) Read(input serialization.DataInput) interface{} {
 	i := input.ReadInt32()
 	f := input.ReadFloat32()
@@ -62,7 +59,7 @@ type CustomByteArraySerializable struct {
 type CustomByteArraySerializer struct{}
 
 func (e CustomByteArraySerializer) ID() (id int32) {
-	return CustomByteArraySerializableId
+	return customByteArraySerializableId
 }
 
 func (e CustomByteArraySerializer) Read(input serialization.DataInput) interface{} {
@@ -139,10 +136,11 @@ type AnIdentifiedDataSerializable struct {
 }
 
 func (i AnIdentifiedDataSerializable) FactoryID() int32 {
-	return IdentifiedDataSerializableFactoryId
+	return identifiedDataSerializableFactoryId
 }
+
 func (i AnIdentifiedDataSerializable) ClassID() int32 {
-	return IdentifiedDataSerializableClassId
+	return identifiedDataSerializableClassId
 }
 
 func (i AnIdentifiedDataSerializable) WriteData(output serialization.DataOutput) {
@@ -281,11 +279,11 @@ func writeDataToOutput(out serialization.DataOutput, data iserialization.Data) {
 type IdentifiedFactory struct{}
 
 func (f IdentifiedFactory) FactoryID() int32 {
-	return IdentifiedDataSerializableFactoryId
+	return identifiedDataSerializableFactoryId
 }
 
 func (f IdentifiedFactory) Create(classID int32) serialization.IdentifiedDataSerializable {
-	if classID == IdentifiedDataSerializableClassId {
+	if classID == identifiedDataSerializableClassId {
 		return &AnIdentifiedDataSerializable{}
 	}
 	return nil
@@ -297,11 +295,11 @@ type AnInnerPortable struct {
 }
 
 func (p AnInnerPortable) FactoryID() int32 {
-	return PortableFactoryId
+	return portableFactoryId
 }
 
 func (p AnInnerPortable) ClassID() int32 {
-	return InnerPortableClassId
+	return innerPortableClassId
 }
 
 func (p AnInnerPortable) WritePortable(out serialization.PortableWriter) {
@@ -372,11 +370,11 @@ type APortable struct {
 }
 
 func (p APortable) FactoryID() int32 {
-	return PortableFactoryId
+	return portableFactoryId
 }
 
 func (p APortable) ClassID() int32 {
-	return PortableClassId
+	return portableClassId
 }
 
 func (p APortable) WritePortable(writer serialization.PortableWriter) {
@@ -397,7 +395,7 @@ func (p APortable) WritePortable(writer serialization.PortableWriter) {
 	if p.p != nil {
 		writer.WritePortable("p", p.p)
 	} else {
-		writer.WriteNilPortable("p", PortableFactoryId, PortableClassId)
+		writer.WriteNilPortable("p", portableFactoryId, portableClassId)
 	}
 	writer.WriteBoolArray("booleans", p.booleans)
 	writer.WriteByteArray("bs", p.bytes)
@@ -588,13 +586,14 @@ func (p *APortable) ReadPortable(reader serialization.PortableReader) {
 type PortableFactory struct{}
 
 func (p PortableFactory) FactoryID() int32 {
-	return PortableFactoryId
+	return portableFactoryId
 }
 
 func (p PortableFactory) Create(classID int32) serialization.Portable {
-	if classID == InnerPortableClassId {
+	if classID == innerPortableClassId {
 		return &AnInnerPortable{}
-	} else if classID == PortableClassId {
+	}
+	if classID == portableClassId {
 		return &APortable{}
 	}
 	return nil
@@ -614,95 +613,89 @@ func readRawBytes(i serialization.DataInput, size int) []byte {
 	return a
 }
 
-var (
-	aNullObject  pactypes.Object = nil
-	aBoolean     bool            = true
-	aByte        byte            = 113
-	aChar        uint16          = 'x'
-	aDouble      float64         = -897543.3678909
-	aShort       int16           = -500
-	aFloat       float32         = 900.5678
-	anInt        int32           = 56789
-	aLong        int64           = -50992225
-	anSqlString  string          = "this > 5 AND this < 100"
-	aString      string          = anSqlString
-	aUUID        types.UUID      = types.NewUUIDWith(uint64(aLong), uint64(anInt))
-	aSmallString string          = "😊 Hello Приве́т नमस्ते שָׁלוֹם"
+func makeTestObjects() map[string]interface{} {
+	var (
+		allTestObjects map[string]interface{} = nil
+		aNullObject    pactypes.Object        = nil
+		aBoolean       bool                   = true
+		aByte          byte                   = 113
+		aChar          uint16                 = 'x'
+		aDouble        float64                = -897543.3678909
+		aShort         int16                  = -500
+		aFloat         float32                = 900.5678
+		anInt          int32                  = 56789
+		aLong          int64                  = -50992225
+		anSqlString    string                 = "this > 5 AND this < 100"
+		aUUID          types.UUID             = types.NewUUIDWith(uint64(aLong), uint64(anInt))
 
-	booleans = []bool{true, false, true}
-	// byte is signed in Java but unsigned in Go!
-	bytes   = []byte{112, 4, 1, 4, 112, 35, 43}
-	chars   = []uint16{'a', 'b', 'c'}
-	doubles = []float64{-897543.3678909, 11.1, 22.2, 33.3}
-	shorts  = []int16{-500, 2, 3}
-	floats  = []float32{900.5678, 1.0, 2.1, 3.4}
-	ints    = []int32{56789, 2, 3}
-	longs   = []int64{-50992225, 1231232141, 2, 3}
-	strings = []string{
-		"Pijamalı hasta, yağız şoföre çabucak güvendi.",
-		"イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム",
-		"The quick brown fox jumps over the lazy dog",
-	}
-	aData           iserialization.Data = []byte{49, 49, 49, 51, 49, 51, 49, 50, 51, 49, 51, 49, 51, 49, 51, 49, 51, 49}
-	anInnerPortable *AnInnerPortable    = &AnInnerPortable{i: anInt, f: aFloat}
-	portables                           = []serialization.Portable{anInnerPortable, anInnerPortable, anInnerPortable}
+		booleans = []bool{true, false, true}
+		// byte is signed in Java but unsigned in Go!
+		bytes   = []byte{112, 4, 1, 4, 112, 35, 43}
+		chars   = []uint16{'a', 'b', 'c'}
+		doubles = []float64{-897543.3678909, 11.1, 22.2, 33.3}
+		shorts  = []int16{-500, 2, 3}
+		floats  = []float32{900.5678, 1.0, 2.1, 3.4}
+		ints    = []int32{56789, 2, 3}
+		longs   = []int64{-50992225, 1231232141, 2, 3}
+		strings = []string{
+			"Pijamalı hasta, yağız şoföre çabucak güvendi.",
+			"イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム",
+			"The quick brown fox jumps over the lazy dog",
+		}
+		aData           iserialization.Data = []byte{49, 49, 49, 51, 49, 51, 49, 50, 51, 49, 51, 49, 51, 49, 51, 49, 51, 49}
+		anInnerPortable *AnInnerPortable    = &AnInnerPortable{i: anInt, f: aFloat}
+		portables                           = []serialization.Portable{anInnerPortable, anInnerPortable, anInnerPortable}
 
-	aCustomStreamSerializable    CustomStreamSerializable     = CustomStreamSerializable{I: anInt, F: aFloat}
-	aCustomByteArraySerializable CustomByteArraySerializable  = CustomByteArraySerializable{I: anInt, F: aFloat}
-	anIdentifiedDataSerializable AnIdentifiedDataSerializable = AnIdentifiedDataSerializable{bool: aBoolean, b: aByte,
-		c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong, str: anSqlString, booleans: booleans,
-		bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
-		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
-		unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: nil, customStreamSerializableObject: aCustomStreamSerializable,
-		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData}
-	aPortable *APortable = &APortable{boolean: aBoolean, b: aByte, c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong,
-		str: anSqlString, bd: aBigDecimal, ld: aLocalDate, lt: aLocalTime, ldt: aLocalDateTime, odt: anOffsetDateTime, p: anInnerPortable,
-		booleans: booleans, bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
-		decimals: decimals, dates: localDates, times: localTimes, dateTimes: localDataTimes, offsetDateTimes: offsetDataTimes, portables: portables,
-		byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
-		unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: &anIdentifiedDataSerializable, customStreamSerializableObject: aCustomStreamSerializable,
-		customByteArraySerializableObject: aCustomByteArraySerializable, data: aData,
-	}
+		aCustomStreamSerializable    CustomStreamSerializable    = CustomStreamSerializable{I: anInt, F: aFloat}
+		aCustomByteArraySerializable CustomByteArraySerializable = CustomByteArraySerializable{I: anInt, F: aFloat}
 
-	aDate            = time.Date(1990, 2, 1, 0, 0, 0, 0, time.UTC)
-	aLocalDate       = (types.LocalDate)(time.Date(2021, 6, 28, 0, 0, 0, 0, time.Local))
-	aLocalTime       = (types.LocalTime)(time.Date(0, 1, 1, 11, 22, 41, 123456789, time.Local))
-	aLocalDateTime   = (types.LocalDateTime)(time.Date(2021, 6, 28, 11, 22, 41, 123456789, time.Local))
-	anOffsetDateTime = (types.OffsetDateTime)(time.Date(2021, 6, 28, 11, 22, 41, 123456789, time.FixedZone("", 18*60*60)))
+		aLocalDate       = (types.LocalDate)(time.Date(2021, 6, 28, 0, 0, 0, 0, time.Local))
+		aLocalTime       = (types.LocalTime)(time.Date(0, 1, 1, 11, 22, 41, 123456789, time.Local))
+		aLocalDateTime   = (types.LocalDateTime)(time.Date(2021, 6, 28, 11, 22, 41, 123456789, time.Local))
+		anOffsetDateTime = (types.OffsetDateTime)(time.Date(2021, 6, 28, 11, 22, 41, 123456789, time.FixedZone("", 18*60*60)))
 
-	localDates = []types.LocalDate{
-		(types.LocalDate)(time.Date(2021, 6, 28, 0, 0, 0, 0, time.Local)),
-		(types.LocalDate)(time.Date(1923, 4, 23, 0, 0, 0, 0, time.Local)),
-		(types.LocalDate)(time.Date(1938, 11, 10, 0, 0, 0, 0, time.Local)),
-	}
-	localTimes = []types.LocalTime{
-		(types.LocalTime)(time.Date(0, 1, 1, 9, 5, 10, 123456789, time.Local)),
-		(types.LocalTime)(time.Date(0, 1, 1, 18, 30, 55, 567891234, time.Local)),
-		(types.LocalTime)(time.Date(0, 1, 1, 15, 44, 39, 192837465, time.Local)),
-	}
-	localDataTimes = []types.LocalDateTime{
-		(types.LocalDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.Local)),
-		(types.LocalDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.Local)),
-		(types.LocalDateTime)(time.Date(2021, 6, 28, 18, 30, 55, 567891234, time.Local)),
-	}
-	offsetDataTimes = []types.OffsetDateTime{
-		(types.OffsetDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.FixedZone("", 18*60*60))),
-		(types.OffsetDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.FixedZone("", 5*60*60))),
-		(types.OffsetDateTime)(time.Date(2021, 6, 28, 18, 30, 55, 567891234, time.FixedZone("", -10*60*60))),
-	}
+		localDates = []types.LocalDate{
+			(types.LocalDate)(time.Date(2021, 6, 28, 0, 0, 0, 0, time.Local)),
+			(types.LocalDate)(time.Date(1923, 4, 23, 0, 0, 0, 0, time.Local)),
+			(types.LocalDate)(time.Date(1938, 11, 10, 0, 0, 0, 0, time.Local)),
+		}
+		localTimes = []types.LocalTime{
+			(types.LocalTime)(time.Date(0, 1, 1, 9, 5, 10, 123456789, time.Local)),
+			(types.LocalTime)(time.Date(0, 1, 1, 18, 30, 55, 567891234, time.Local)),
+			(types.LocalTime)(time.Date(0, 1, 1, 15, 44, 39, 192837465, time.Local)),
+		}
+		localDataTimes = []types.LocalDateTime{
+			(types.LocalDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.Local)),
+			(types.LocalDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.Local)),
+			(types.LocalDateTime)(time.Date(2021, 6, 28, 18, 30, 55, 567891234, time.Local)),
+		}
+		offsetDataTimes = []types.OffsetDateTime{
+			(types.OffsetDateTime)(time.Date(1938, 11, 10, 9, 5, 10, 123456789, time.FixedZone("", 18*60*60))),
+			(types.OffsetDateTime)(time.Date(1923, 4, 23, 15, 44, 39, 192837465, time.FixedZone("", 5*60*60))),
+			(types.OffsetDateTime)(time.Date(2021, 6, 28, 18, 30, 55, 567891234, time.FixedZone("", -10*60*60))),
+		}
 
-	aBigInteger = big.NewInt(1314432323232411)
-	aClass      = "java.math.BigDecimal"
-	aBigDecimal = types.NewDecimal(big.NewInt(31231), 0)
-	decimals    = []types.Decimal{aBigDecimal, aBigDecimal, aBigDecimal}
+		aBigInteger = big.NewInt(1314432323232411)
+		aClass      = "java.math.BigDecimal"
+		aBigDecimal = types.NewDecimal(big.NewInt(31231), 0)
+		decimals    = []types.Decimal{aBigDecimal, aBigDecimal, aBigDecimal}
 
-	nonNilList = []interface{}{aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString,
-		anInnerPortable, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings, aCustomStreamSerializable,
-		aCustomByteArraySerializable, anIdentifiedDataSerializable, aPortable, aDate, aLocalDate, aLocalTime, aLocalDateTime,
-		anOffsetDateTime, aBigInteger, aBigDecimal, aClass}
-)
+		anIdentifiedDataSerializable = AnIdentifiedDataSerializable{bool: aBoolean, b: aByte,
+			c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong, str: anSqlString, booleans: booleans,
+			bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
+			byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
+			unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: nil, customStreamSerializableObject: aCustomStreamSerializable,
+			customByteArraySerializableObject: aCustomByteArraySerializable, data: aData}
 
-func initializeVariables() {
+		aPortable = &APortable{boolean: aBoolean, b: aByte, c: aChar, d: aDouble, s: aShort, f: aFloat, i: anInt, l: aLong,
+			str: anSqlString, bd: aBigDecimal, ld: aLocalDate, lt: aLocalTime, ldt: aLocalDateTime, odt: anOffsetDateTime, p: anInnerPortable,
+			booleans: booleans, bytes: bytes, chars: chars, doubles: doubles, shorts: shorts, floats: floats, ints: ints, longs: longs, strings: strings,
+			decimals: decimals, dates: localDates, times: localTimes, dateTimes: localDataTimes, offsetDateTimes: offsetDataTimes, portables: portables,
+			byteSize: byte(len(bytes)), bytesFully: bytes, bytesOffset: []byte{bytes[1], bytes[2]}, strBytes: nil, strChars: nil,
+			unsignedByte: 227, unsignedShort: 32867, portableObject: anInnerPortable, identifiedDataSerializableObject: &anIdentifiedDataSerializable, customStreamSerializableObject: aCustomStreamSerializable,
+			customByteArraySerializableObject: aCustomByteArraySerializable, data: aData,
+		}
+	)
 	anIdentifiedDataSerializable.strChars = make([]uint16, len(anIdentifiedDataSerializable.str))
 	for i, r := range anIdentifiedDataSerializable.str {
 		anIdentifiedDataSerializable.strChars[i] = uint16(r)
@@ -793,4 +786,5 @@ func initializeVariables() {
 		"IntegerAverageAggregator": aggregate.IntAverage(anSqlString),
 		"LongAverageAggregator":    aggregate.LongAverage(anSqlString),
 	}
+	return allTestObjects
 }

@@ -3,7 +3,7 @@ package compatibility
 import (
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"regexp"
 	"testing"
@@ -15,20 +15,19 @@ import (
 )
 
 var (
-	dataMap    = make(map[string]serialization.Data)
 	byteOrders = []binary.ByteOrder{binary.BigEndian, binary.LittleEndian}
 	versions   = []int{1}
 )
 
 func TestBinaryCompatibility(t *testing.T) {
-	initializeVariables()
-	readBinaryFile(t)
+	allTestObjects := makeTestObjects()
+	dataMap := readBinaryFile(t)
 	for objName, obj := range allTestObjects {
 		for _, order := range byteOrders {
 			for _, version := range versions {
 				key := createObjectKey(objName, order, version)
 				t.Run(key+"-testDeserialize", func(t *testing.T) {
-					if skipOnDeserialize(objName) {
+					if skipOnDeserialize(t, objName) {
 						t.SkipNow()
 					}
 					service := createSerializationService(t, order)
@@ -46,7 +45,7 @@ func TestBinaryCompatibility(t *testing.T) {
 					require.Equal(t, dataMap[key], data)
 				})
 				t.Run(key+"-testSerializeDeserialize", func(t *testing.T) {
-					if skipOnDeserialize(objName) || skipOnSerialize(objName) {
+					if skipOnDeserialize(t, objName) || skipOnSerialize(objName) {
 						t.SkipNow()
 					}
 					service := createSerializationService(t, order)
@@ -61,26 +60,27 @@ func TestBinaryCompatibility(t *testing.T) {
 	}
 }
 
-func readBinaryFile(t *testing.T) {
+func readBinaryFile(t *testing.T) map[string]serialization.Data {
+	dataMap := make(map[string]serialization.Data)
 	for _, v := range versions {
-		b, err := ioutil.ReadFile(createFileName(v))
+		b, err := os.ReadFile(createFileName(v))
 		require.NoErrorf(t, err, "Could not locate file "+createFileName(v)+". Follow the instructions in BinaryCompatibilityFileGenerator to generate the file.")
 		i := serialization.NewObjectDataInput(b, 0, nil, true)
 		for i.Available() != 0 {
 			buf := i.ReadUInt16()
 			key := string(readRawBytes(i, int(buf)))
 			n := i.ReadInt32()
+			dataMap[key] = nil
 			if n != -1 {
-				bytes = make([]byte, n)
+				bytes := make([]byte, n)
 				for j := int32(0); j < n; j++ {
 					bytes[j] = i.ReadByte()
 				}
 				dataMap[key] = bytes
-			} else {
-				dataMap[key] = nil
 			}
 		}
 	}
+	return dataMap
 }
 
 func createSerializationService(t *testing.T, bo binary.ByteOrder) *serialization.Service {
@@ -90,7 +90,7 @@ func createSerializationService(t *testing.T, bo binary.ByteOrder) *serializatio
 	err = cfg.SetCustomSerializer(reflect.TypeOf(CustomStreamSerializable{}), &CustomStreamSerializer{})
 	require.NoError(t, err)
 	cfg.PortableVersion = 0
-	cd := pubserialization.NewClassDefinition(PortableFactoryId, InnerPortableClassId, 0)
+	cd := pubserialization.NewClassDefinition(portableFactoryId, innerPortableClassId, 0)
 	err = cd.AddInt32Field("i")
 	require.NoError(t, err)
 	err = cd.AddFloat32Field("f")
@@ -98,9 +98,7 @@ func createSerializationService(t *testing.T, bo binary.ByteOrder) *serializatio
 	cfg.SetClassDefinitions(cd)
 	cfg.SetPortableFactories(&PortableFactory{})
 	cfg.SetIdentifiedDataSerializableFactories(&IdentifiedFactory{})
-	if bo == binary.LittleEndian {
-		cfg.LittleEndian = true
-	}
+	cfg.LittleEndian = bo == binary.LittleEndian
 	s, err := serialization.NewService(&cfg)
 	require.NoError(t, err)
 	return s
@@ -108,10 +106,9 @@ func createSerializationService(t *testing.T, bo binary.ByteOrder) *serializatio
 
 func createObjectKey(name string, byteOrder binary.ByteOrder, version int) string {
 	byteOrderString := ""
+	byteOrderString = "LITTLE_ENDIAN"
 	if byteOrder == binary.BigEndian {
 		byteOrderString = "BIG_ENDIAN"
-	} else {
-		byteOrderString = "LITTLE_ENDIAN"
 	}
 	return fmt.Sprintf("%d-%s-%s", version, name, byteOrderString)
 }
@@ -120,19 +117,12 @@ func createFileName(version int) string {
 	return fmt.Sprintf("%d.serialization.compatibility.binary", version)
 }
 
-func skipOnDeserialize(objType string) bool {
-	p, _ := regexp.Compile("^.*(Predicate|Aggregator|Projection)$")
+func skipOnDeserialize(t *testing.T, objType string) bool {
+	p, err := regexp.Compile("^.*(Predicate|Aggregator|Projection)$")
+	require.NoError(t, err)
 	return p.MatchString(objType)
 }
 
 func skipOnSerialize(objType string) bool {
-	s := []string{
-		"Class",
-	}
-	for _, v := range s {
-		if v == objType {
-			return true
-		}
-	}
-	return false
+	return objType == "Class"
 }
