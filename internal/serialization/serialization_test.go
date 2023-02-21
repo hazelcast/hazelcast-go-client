@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -40,10 +41,7 @@ const (
 
 func TestSerializationService_LookUpDefaultSerializer(t *testing.T) {
 	var a int32 = 5
-	service, err := iserialization.NewService(&serialization.Config{}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	service := mustSerializationService(iserialization.NewService(&serialization.Config{}, nil))
 	id := service.LookUpDefaultSerializer(a).ID()
 	var expectedID int32 = -7
 	require.Equal(t, expectedID, id)
@@ -69,6 +67,8 @@ func TestSerializationService_ToData_LittleEndianTrue(t *testing.T) {
 }
 
 type CustomArtistSerializer struct {
+	readerCalled bool
+	writerCalled bool
 }
 
 func (*CustomArtistSerializer) ID() int32 {
@@ -76,6 +76,7 @@ func (*CustomArtistSerializer) ID() int32 {
 }
 
 func (s *CustomArtistSerializer) Read(input serialization.DataInput) interface{} {
+	s.readerCalled = true
 	var network bytes.Buffer
 	typ := input.ReadInt32()
 	data := input.ReadByteArray()
@@ -94,6 +95,7 @@ func (s *CustomArtistSerializer) Read(input serialization.DataInput) interface{}
 }
 
 func (s *CustomArtistSerializer) Write(output serialization.DataOutput, obj interface{}) {
+	s.writerCalled = true
 	var network bytes.Buffer
 	enc := gob.NewEncoder(&network)
 	if err := enc.Encode(obj); err != nil {
@@ -162,19 +164,15 @@ func (*painter) Type() int32 {
 
 func TestCustomSerializer(t *testing.T) {
 	m := &musician{"Furkan", "Şenharputlu"}
-	p := &painter{"Leonardo", "da Vinci"}
-	customSerializer := &CustomArtistSerializer{}
+	ser := &CustomArtistSerializer{}
 	config := &serialization.Config{}
-	config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), customSerializer)
+	it.Must(config.SetCustomSerializer(reflect.TypeOf((*artist)(nil)).Elem(), ser))
 	service := mustSerializationService(iserialization.NewService(config, nil))
-	data := it.MustValue(service.ToData(m)).(iserialization.Data)
+	data := mustData(service.ToData(m))
 	ret := it.MustValue(service.ToObject(data))
-	data2 := it.MustValue(service.ToData(p)).(iserialization.Data)
-	ret2 := it.MustValue(service.ToObject(data2))
-
-	if !reflect.DeepEqual(m, ret) || !reflect.DeepEqual(p, ret2) {
-		t.Error("custom serialization failed")
-	}
+	require.Equal(t, m, ret)
+	assert.True(t, ser.readerCalled)
+	assert.True(t, ser.writerCalled)
 }
 
 func TestGlobalSerializer(t *testing.T) {

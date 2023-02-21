@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -300,15 +300,20 @@ func (c *Client) handleClusterEvent(event event.Event) {
 		return
 	}
 	c.Logger.Debug(func() string { return "cluster disconnected, rebooting" })
-	// try to reboot cluster connection
-	c.ConnectionManager.Stop()
-	c.ClusterService.Reset()
-	c.PartitionService.Reset()
-	if err := c.ConnectionManager.Start(ctx); err != nil {
-		c.Logger.Errorf("cannot reconnect to cluster, shutting down: %w", err)
-		// Shutdown is blocking operation which will make sure all the event goroutines are closed.
-		// If we wait here blocking, it will be a deadlock
-		go c.Shutdown(ctx)
+	for {
+		if c.State() != Ready {
+			break
+		}
+		// try to reboot cluster connection
+		c.ConnectionManager.Stop()
+		c.ClusterService.Reset()
+		c.PartitionService.Reset()
+		if err := c.ConnectionManager.Start(ctx); err != nil {
+			c.Logger.Errorf("cannot reconnect to cluster: %w", err)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
 	}
 }
 

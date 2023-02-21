@@ -184,16 +184,16 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if c.ic.State() != client.Ready {
 		return nil, hzerrors.ErrClientNotActive
 	}
-	m, err := c.proxyManager.getMap(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-	ncc, ok, err := c.cfg.GetNearCache(name)
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		// there is a near cache config for this map
+	return c.proxyManager.getMap(ctx, name, func(p *proxy) (interface{}, error) {
+		m := newMap(p)
+		ncc, ok, err := c.cfg.GetNearCache(name)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			// there is no near cache config for this map
+			return m, nil
+		}
 		ncmgr := c.getNearCacheManager(ServiceNameMap)
 		nc := ncmgr.GetOrCreateNearCache(name, ncc)
 		ss := c.ic.SerializationService
@@ -203,8 +203,8 @@ func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 			return nil, err
 		}
 		m.hasNearCache = true
-	}
-	return m, nil
+		return m, nil
+	})
 }
 
 // GetReplicatedMap returns a replicated map instance.
