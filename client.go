@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -140,18 +140,16 @@ func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
 	})
 	for {
 		select {
-		case msg, ok := <-ch:
-			if ok {
-				req := codec.EncodeClientFetchSchemaRequest(msg.ID)
-				resp, err := c.ic.Invoker.InvokeOnRandomTarget(ctx, req, nil)
-				if err != nil {
-					c.ic.Logger.Errorf("invoking ClientFetchSchema with schema ID: %d: %s", msg.ID, err)
-					msg.ResponseCh <- nil
-					continue
-				}
-				schema := codec.DecodeClientFetchSchemaResponse(resp)
-				msg.ResponseCh <- schema
+		case msg := <-ch:
+			req := codec.EncodeClientFetchSchemaRequest(msg.ID)
+			resp, err := c.ic.Invoker.InvokeOnRandomTarget(ctx, req, nil)
+			if err != nil {
+				c.ic.Logger.Errorf("invoking ClientFetchSchema with schema ID: %d: %s", msg.ID, err)
+				msg.ResponseCh <- nil
+				continue
 			}
+			schema := codec.DecodeClientFetchSchemaResponse(resp)
+			msg.ResponseCh <- schema
 		case <-ctx.Done():
 			c.ic.Logger.Debug(func() string {
 				return "Stopped the schema invoker"
