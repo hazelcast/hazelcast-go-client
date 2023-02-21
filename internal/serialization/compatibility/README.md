@@ -5,17 +5,13 @@ https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/test/java/com/h
 **ReferenceObjects.java**
 ```java
 package com.hazelcast.nio.serialization.compatibility;
-
 import static java.util.Arrays.asList;
-
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Portable;
-
 import com.hazelcast.query.Predicates;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -29,28 +25,23 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
-
 class ReferenceObjects {
-
     /**
      * PORTABLE IDS
      **/
     static int PORTABLE_FACTORY_ID = 1;
     static int PORTABLE_CLASS_ID = 1;
     static int INNER_PORTABLE_CLASS_ID = 2;
-
     /**
      * IDENTIFIED DATA SERIALIZABLE IDS
      **/
     static int IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID = 1;
     static int DATA_SERIALIZABLE_CLASS_ID = 1;
-
     /**
      * CUSTOM SERIALIZER IDS
      */
     static int CUSTOM_STREAM_SERIALIZABLE_ID = 1;
     static int CUSTOM_BYTE_ARRAY_SERIALIZABLE_ID = 2;
-
     /**
      * OBJECTS
      */
@@ -63,16 +54,11 @@ class ReferenceObjects {
     static float aFloat = 900.5678f;
     static int anInt = 56789;
     static long aLong = -50992225L;
-
     static String anSqlString = "this > 5 AND this < 100";
-
     static String aString = anSqlString;
     static UUID aUUID = new UUID(aLong, anInt);
     static String aSmallString = "😊 Hello Приве́т नमस्ते שָׁלוֹם";
-
-
     static boolean[] booleans = {true, false, true};
-
     static byte[] bytes = {112, 4, 1, 4, 112, 35, 43};
     static char[] chars = {'a', 'b', 'c'};
     static double[] doubles = {-897543.3678909d, 11.1d, 22.2d, 33.3d};
@@ -85,27 +71,21 @@ class ReferenceObjects {
             "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム",
             "The quick brown fox jumps over the lazy dog",
     };
-
     static Data aData = new HeapData("111313123131313131".getBytes());
-
     static AnInnerPortable anInnerPortable = new AnInnerPortable(anInt, aFloat);
     static CustomStreamSerializable aCustomStreamSerializable = new CustomStreamSerializable(anInt, aFloat);
     static CustomByteArraySerializable aCustomByteArraySerializable = new CustomByteArraySerializable(anInt, aFloat);
     static Portable[] portables = {anInnerPortable, anInnerPortable, anInnerPortable};
-
     static AbstractMap.SimpleEntry aSimpleMapEntry = new AbstractMap.SimpleEntry(aSmallString, anInnerPortable);
     static AbstractMap.SimpleImmutableEntry aSimpleImmutableMapEntry = new AbstractMap.SimpleImmutableEntry(aSmallString,
             anInnerPortable);
-
     static AnIdentifiedDataSerializable anIdentifiedDataSerializable = new AnIdentifiedDataSerializable(
             aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, anSqlString,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             anInnerPortable, null,
             aCustomStreamSerializable,
             aCustomByteArraySerializable, aData);
-
     static Date aDate;
-
     static LocalDate aLocalDate;
     static LocalTime aLocalTime;
     static LocalDateTime aLocalDateTime;
@@ -114,7 +94,6 @@ class ReferenceObjects {
     static LocalTime[] localTimes;
     static LocalDateTime[] localDateTimes;
     static OffsetDateTime[] offsetDateTimes;
-
     static {
         Calendar calendar = Calendar.getInstance();
         calendar.set(1990, Calendar.FEBRUARY, 1, 0, 0, 0);
@@ -146,7 +125,6 @@ class ReferenceObjects {
                 OffsetDateTime.of(LocalDateTime.of(LocalDate.of(2021, 6, 28), LocalTime.of(18, 30, 55, 567891234)),
                         ZoneOffset.ofHours(-10))};
     }
-
     static BigInteger aBigInteger = new BigInteger("1314432323232411");
     static BigDecimal aBigDecimal = new BigDecimal(31231);
     static BigDecimal[] decimals = {aBigDecimal, aBigDecimal ,aBigDecimal};
@@ -162,8 +140,6 @@ class ReferenceObjects {
     static Optional<String> aFullOptional = Optional.of("SERIALIZEDSTRING");
     static Optional<String> anEmptyOptional = Optional.empty();
     static Enum anEnum = EntryEventType.ADDED;
-
-
     static ArrayList nonNullList = new ArrayList(asList(
             aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aSmallString, anInnerPortable,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
@@ -172,8 +148,6 @@ class ReferenceObjects {
             aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
             anEmptyOptional, aFullOptional, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry
             ));
-
-
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
@@ -181,7 +155,6 @@ class ReferenceObjects {
             anIdentifiedDataSerializable, aPortable,
             aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
             aFullOptional, anEnum,
-
             // predicates
             Predicates.alwaysTrue(),
             Predicates.alwaysFalse(),
@@ -205,7 +178,6 @@ class ReferenceObjects {
                     Predicates.greaterThan(anSqlString, anInt),
                     Predicates.greaterEqual(anSqlString, anInt)),
             Predicates.instanceOf(aCustomStreamSerializable.getClass()),
-
             // Aggregators
             Aggregators.count(anSqlString),
             Aggregators.distinct(anSqlString),
