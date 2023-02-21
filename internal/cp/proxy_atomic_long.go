@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package cp
 
 import (
 	"context"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 )
@@ -27,20 +28,25 @@ const (
 	alterValueTypeNewValue = 1
 )
 
-// AtomicLong is a redundant and highly available distributed counter for 64-bit integers (“long“ type in Java).
-// It works on top of the Raft consensus algorithm.
-// It offers linearizability during crash failures and network partitions.
-// It is CP with respect to the CAP principle.
-// If a network partition occurs, it remains available on at most one side of the partition.
-// AtomicLong implementation does not offer exactly-once / effectively-once execution semantics.
-// It goes with at-least-once execution semantics by default and can cause an API call to be committed multiple times in case of CP member failures.
-// It can be tuned to offer at-most-once execution semantics.
-// Please see `fail-on-indeterminate-operation-state` server-side setting.
-// AtomicLong implementation is type aliased in the public API so all the exported fields and methods are directly accessible by users.
-// Be aware of that while editing the fields and methods of both proxy and AtomicLong structs.
+/*
+AtomicLong is a redundant and highly available distributed counter for 64-bit integers (“long“ type in Java).
+It works on top of the Raft consensus algorithm.
+It offers linearizability during crash failures and network partitions.
+It is CP with respect to the CAP principle.
+If a network partition occurs, it remains available on at most one side of the partition.
+AtomicLong implementation does not offer exactly-once / effectively-once execution semantics.
+It goes with at-least-once execution semantics by default and can cause an API call to be committed multiple times in case of CP member failures.
+It can be tuned to offer at-most-once execution semantics.
+See fail-on-indeterminate-operation-state server-side setting: https://docs.hazelcast.com/hazelcast/5.2/cp-subsystem/configuration#global-configuration-options
+*/
 type AtomicLong struct {
 	*proxy
 }
+
+/*
+AtomicLong implementation is type aliased in the public API so all the exported fields and methods are directly accessible by users.
+Be aware of that while editing the fields and methods of both proxy and AtomicLong structs.
+*/
 
 // AddAndGet atomically adds the given value to the current value.
 func (a *AtomicLong) AddAndGet(ctx context.Context, delta int64) (int64, error) {
@@ -48,9 +54,8 @@ func (a *AtomicLong) AddAndGet(ctx context.Context, delta int64) (int64, error) 
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return 0, err
-	} else {
-		return codec.DecodeAtomicLongAddAndGetResponse(response), nil
 	}
+	return codec.DecodeAtomicLongAddAndGetResponse(response), nil
 }
 
 // CompareAndSet Atomically sets the value to the given updated value only if the current value equals the expected value.
@@ -59,9 +64,8 @@ func (a *AtomicLong) CompareAndSet(ctx context.Context, expect int64, update int
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return false, err
-	} else {
-		return codec.DecodeAtomicLongCompareAndSetResponse(response), nil
 	}
+	return codec.DecodeAtomicLongCompareAndSetResponse(response), nil
 }
 
 // Get gets the current value.
@@ -70,9 +74,9 @@ func (a *AtomicLong) Get(ctx context.Context) (int64, error) {
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return 0, err
-	} else {
-		return codec.DecodeAtomicLongGetResponse(response), nil
 	}
+	return codec.DecodeAtomicLongGetResponse(response), nil
+
 }
 
 // GetAndAdd atomically adds the given value to the current value.
@@ -81,9 +85,9 @@ func (a *AtomicLong) GetAndAdd(ctx context.Context, delta int64) (int64, error) 
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return 0, err
-	} else {
-		return codec.DecodeAtomicLongGetAndAddResponse(response), nil
 	}
+	return codec.DecodeAtomicLongGetAndAddResponse(response), nil
+
 }
 
 // GetAndSet atomically sets the given value and returns the old value.
@@ -92,9 +96,8 @@ func (a *AtomicLong) GetAndSet(ctx context.Context, value int64) (int64, error) 
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return 0, err
-	} else {
-		return codec.DecodeAtomicLongGetAndSetResponse(response), nil
 	}
+	return codec.DecodeAtomicLongGetAndSetResponse(response), nil
 }
 
 // Set atomically sets the given value.
@@ -114,14 +117,12 @@ func (a *AtomicLong) Apply(ctx context.Context, function interface{}) (interface
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return nil, err
-	} else {
-		obj, err := a.ss.ToObject(codec.DecodeAtomicLongApplyResponse(response))
-		if err != nil {
-			return nil, err
-		} else {
-			return obj, nil
-		}
 	}
+	obj, err := a.ss.ToObject(codec.DecodeAtomicLongApplyResponse(response))
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 func (a *AtomicLong) alter(ctx context.Context, function interface{}, valueType int32) (*proto.ClientMessage, error) {
@@ -131,7 +132,18 @@ func (a *AtomicLong) alter(ctx context.Context, function interface{}, valueType 
 	}
 	request := codec.EncodeAtomicLongAlterRequest(a.groupID, a.object, data, valueType)
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
+	if err != nil {
+		return nil, err
+	}
 	return response, nil
+}
+
+func (a *AtomicLong) alterAndReturn(ctx context.Context, function interface{}, alterValue int32) (int64, error) {
+	response, err := a.alter(ctx, function, alterValue)
+	if err != nil {
+		return 0, err
+	}
+	return codec.DecodeAtomicLongAlterResponse(response), nil
 }
 
 // Alter alters the currently stored value by applying a function on it.
@@ -142,22 +154,12 @@ func (a *AtomicLong) Alter(ctx context.Context, function interface{}) error {
 
 // GetAndAlter alters the currently stored value by applying a function on it and gets the old value.
 func (a *AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int64, error) {
-	response, err := a.alter(ctx, function, alterValueTypeOldValue)
-	if err != nil {
-		return 0, err
-	} else {
-		return codec.DecodeAtomicLongAlterResponse(response), nil
-	}
+	return a.alterAndReturn(ctx, function, alterValueTypeOldValue)
 }
 
 // AlterAndGet alters the currently stored value by applying a function on it and gets the result.
 func (a *AtomicLong) AlterAndGet(ctx context.Context, function interface{}) (int64, error) {
-	response, err := a.alter(ctx, function, alterValueTypeNewValue)
-	if err != nil {
-		return 0, err
-	} else {
-		return codec.DecodeAtomicLongAlterResponse(response), nil
-	}
+	return a.alterAndReturn(ctx, function, alterValueTypeNewValue)
 }
 
 // IncrementAndGet atomically increments the current value by one.

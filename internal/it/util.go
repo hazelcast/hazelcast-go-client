@@ -484,21 +484,6 @@ func xmlCPConfig(clusterName string, port int) string {
             <network>
                <port>%d</port>
             </network>
-			<map name="test-map">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<map name="test-map-smart">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<map name="test-map-unisocket">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
 			<serialization>
 				<data-serializable-factories>
 					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
@@ -583,7 +568,6 @@ func Eventually(t *testing.T, condition func() bool, msgAndArgs ...interface{}) 
 
 // Never asserts that the given condition doesn't satisfy in 3 seconds,
 // checking target function every 200 milliseconds.
-//
 func Never(t *testing.T, condition func() bool, msgAndArgs ...interface{}) {
 	if !assert.Never(t, condition, time.Second*3, time.Millisecond*200, msgAndArgs) {
 		t.FailNow()

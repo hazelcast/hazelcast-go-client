@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -10,7 +11,7 @@ import (
 /*
 To use CP Subsystem, you need to have at least three member in your cluster.
 Member count which will be used by CP Subsystem has to be specified in the Hazelcast config file.
-The default zero member means CP Subsystem is disabled.
+Default member count is 0 which disables the CP Subsystem.
 
 	<cp-subsystem>
 		<cp-member-count>3</cp-member-count>
@@ -20,7 +21,7 @@ The default zero member means CP Subsystem is disabled.
 
 func main() {
 	ctx := context.Background()
-	cfg := hazelcast.NewConfig()
+	cfg := hazelcast.Config{}
 	cfg.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
@@ -32,7 +33,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("counter:", val)
+	fmt.Println("counter after Get:", val)
 	err = counter.Set(ctx, 10)
 	if err != nil {
 		panic(err)
@@ -41,32 +42,32 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("counter:", val)
+	fmt.Println("counter after Set:", val)
 	val, err = counter.AddAndGet(ctx, 50)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("counter:", val)
+	fmt.Println("counter after AddAndGet:", val)
 	val, err = counter.IncrementAndGet(ctx)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("counter:", val)
+	fmt.Println("counter after IncrementAndGet:", val)
 	res, err := counter.CompareAndSet(ctx, 61, 62)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("CompareAndSet() operation result:", res)
+	fmt.Println("CompareAndSet operation result:", res)
 	val, err = counter.DecrementAndGet(ctx)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("counter:", val)
+	fmt.Println("counter after DecrementAndGet:", val)
 	val, err = counter.AlterAndGet(ctx, &Multiplication{2})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("counter:", val)
+	fmt.Println("counter after AlterAndGet:", val)
 	modified, err := counter.Apply(ctx, &Multiplication{3})
 	fmt.Println(": ", modified)
 

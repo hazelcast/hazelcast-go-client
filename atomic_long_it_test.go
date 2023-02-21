@@ -1,14 +1,32 @@
+/*
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package hazelcast_test
 
 import (
 	"context"
 	"fmt"
+	"sort"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/stretchr/testify/require"
-	"sort"
-	"testing"
 )
 
 func TestAtomicLong(t *testing.T) {
@@ -17,21 +35,21 @@ func TestAtomicLong(t *testing.T) {
 		f          func(t *testing.T)
 		noParallel bool
 	}{
-		{name: "AtomicLongAddAndGet", f: atomicLongAddAndGet},
-		{name: "AtomicLongAlter", f: atomicLongAlter},
-		{name: "AtomicLongAlterAndGet", f: atomicLongAlterAndGet},
-		{name: "AtomicLongApply", f: atomicLongApply},
-		{name: "AtomicLongCompareAndSet_Fail", f: atomicLongCompareAndSetFail},
-		{name: "AtomicLongCompareAndSet_Success", f: atomicLongCompareAndSet},
-		{name: "AtomicLongDecrementAndGet", f: atomicLongDecrementAndGet},
-		{name: "AtomicLongGet", f: atomicLongGet},
-		{name: "AtomicLongGetAndAdd", f: atomicLongGetAndAdd},
-		{name: "AtomicLongGetAndAlter", f: atomicLongGetAndAlter},
-		{name: "AtomicLongGetAndDecrement", f: atomicLongGetAndDecrement},
-		{name: "AtomicLongGetAndIncrement", f: atomicLongGetAndIncrement},
-		{name: "AtomicLongGetAndSet", f: atomicLongGetAndSet},
-		{name: "AtomicLongIncrementAndGet", f: atomicLongIncrementAndGet},
-		{name: "AtomicLongSet", f: atomicLongSet},
+		{name: "AtomicLongAddAndGet", f: atomicLongAddAndGetTest},
+		{name: "AtomicLongAlter", f: atomicLongAlterTest},
+		{name: "AtomicLongAlterAndGet", f: atomicLongAlterAndGetTest},
+		{name: "AtomicLongApply", f: atomicLongApplyTest},
+		{name: "AtomicLongCompareAndSet_Fail", f: atomicLongCompareAndSetFailTest},
+		{name: "AtomicLongCompareAndSet_Success", f: atomicLongCompareAndSetSuccessTest},
+		{name: "AtomicLongDecrementAndGet", f: atomicLongDecrementAndGetTest},
+		{name: "AtomicLongGet", f: atomicLongGetTest},
+		{name: "AtomicLongGetAndAdd", f: atomicLongGetAndAddTest},
+		{name: "AtomicLongGetAndAlter", f: atomicLongGetAndAlterTest},
+		{name: "AtomicLongGetAndDecrement", f: atomicLongGetAndDecrementTest},
+		{name: "AtomicLongGetAndIncrement", f: atomicLongGetAndIncrementTest},
+		{name: "AtomicLongGetAndSet", f: atomicLongGetAndSetTest},
+		{name: "AtomicLongIncrementAndGet", f: atomicLongIncrementAndGetTest},
+		{name: "AtomicLongSet", f: atomicLongSetTest},
 	}
 	// run no-parallel test first
 	sort.Slice(testCases, func(i, j int) bool {
@@ -48,7 +66,8 @@ func TestAtomicLong(t *testing.T) {
 	}
 }
 
-func atomicLongSet(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testSet
+func atomicLongSetTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		err := a.Set(context.Background(), 271)
 		require.NoError(t, err)
@@ -58,7 +77,8 @@ func atomicLongSet(t *testing.T) {
 	})
 }
 
-func atomicLongGet(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGet
+func atomicLongGetTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.Get(context.Background())
 		require.NoError(t, err)
@@ -66,7 +86,8 @@ func atomicLongGet(t *testing.T) {
 	})
 }
 
-func atomicLongAddAndGet(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testAddAndGet
+func atomicLongAddAndGetTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.AddAndGet(context.Background(), 271)
 		require.NoError(t, err)
@@ -77,7 +98,8 @@ func atomicLongAddAndGet(t *testing.T) {
 	})
 }
 
-func atomicLongCompareAndSet(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testCompareAndSet_whenSuccess
+func atomicLongCompareAndSetSuccessTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.CompareAndSet(context.Background(), 0, 271)
 		require.NoError(t, err)
@@ -88,7 +110,8 @@ func atomicLongCompareAndSet(t *testing.T) {
 	})
 }
 
-func atomicLongCompareAndSetFail(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testCompareAndSet_whenNotSuccess
+func atomicLongCompareAndSetFailTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.CompareAndSet(context.Background(), 172, 0)
 		require.NoError(t, err)
@@ -99,7 +122,8 @@ func atomicLongCompareAndSetFail(t *testing.T) {
 	})
 }
 
-func atomicLongDecrementAndGet(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testDecrementAndGet
+func atomicLongDecrementAndGetTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.DecrementAndGet(context.Background())
 		require.NoError(t, err)
@@ -110,7 +134,8 @@ func atomicLongDecrementAndGet(t *testing.T) {
 	})
 }
 
-func atomicLongGetAndSet(t *testing.T) {
+// ported from com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndSet
+func atomicLongGetAndSetTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndSet(context.Background(), 271)
 		require.NoError(t, err)
@@ -121,7 +146,8 @@ func atomicLongGetAndSet(t *testing.T) {
 	})
 }
 
-func atomicLongGetAndIncrement(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndIncrement
+func atomicLongGetAndIncrementTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndIncrement(context.Background())
 		require.NoError(t, err)
@@ -132,7 +158,8 @@ func atomicLongGetAndIncrement(t *testing.T) {
 	})
 }
 
-func atomicLongIncrementAndGet(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testIncrementAndGet
+func atomicLongIncrementAndGetTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.IncrementAndGet(context.Background())
 		require.NoError(t, err)
@@ -143,7 +170,8 @@ func atomicLongIncrementAndGet(t *testing.T) {
 	})
 }
 
-func atomicLongGetAndAdd(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndAdd
+func atomicLongGetAndAddTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndAdd(context.Background(), 271)
 		require.NoError(t, err)
@@ -154,7 +182,8 @@ func atomicLongGetAndAdd(t *testing.T) {
 	})
 }
 
-func atomicLongGetAndDecrement(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndDecrement
+func atomicLongGetAndDecrementTest(t *testing.T) {
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndDecrement(context.Background())
 		require.NoError(t, err)
@@ -165,7 +194,8 @@ func atomicLongGetAndDecrement(t *testing.T) {
 	})
 }
 
-func atomicLongApply(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testApply
+func atomicLongApplyTest(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
@@ -181,7 +211,8 @@ func atomicLongApply(t *testing.T) {
 	})
 }
 
-func atomicLongAlter(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testAlter
+func atomicLongAlterTest(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
@@ -197,7 +228,8 @@ func atomicLongAlter(t *testing.T) {
 	})
 }
 
-func atomicLongGetAndAlter(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndAlter
+func atomicLongGetAndAlterTest(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
@@ -213,7 +245,8 @@ func atomicLongGetAndAlter(t *testing.T) {
 	})
 }
 
-func atomicLongAlterAndGet(t *testing.T) {
+// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testAlterAndGet
+func atomicLongAlterAndGetTest(t *testing.T) {
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}

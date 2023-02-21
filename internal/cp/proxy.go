@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package cp
 
 import (
 	"context"
+	"math"
+	"time"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/cb"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/cp/types"
@@ -26,14 +29,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-	"math"
-	"time"
 )
 
 /*
 proxy is the parent struct of CP Subsystem data structures.
-It's exported fields and methods are in public API so directly accessible by users.
-Be careful while adding new methods/fields to proxy.
 */
 type proxy struct {
 	cb         *cb.CircuitBreaker
@@ -46,6 +45,11 @@ type proxy struct {
 	service    string
 	ss         *iserialization.Service
 }
+
+/*
+The exported fields and methods of proxy are in public API so directly accessible by users.
+Be aware of that while editing the fields and methods of proxy struct.
+*/
 
 func newProxy(ss *iserialization.Service, invFactory *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor, svc string, pxy string, obj string) *proxy {
 	circuitBreaker := cb.NewCircuitBreaker(
@@ -98,7 +102,7 @@ func (p *proxy) invokeOnRandomTarget(ctx context.Context, request *proto.ClientM
 	})
 	if err != nil {
 		return nil, err
-	} else {
-		return response.(*proto.ClientMessage), nil
 	}
+	return response.(*proto.ClientMessage), nil
+
 }

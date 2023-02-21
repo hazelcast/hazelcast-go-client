@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,42 @@
 package cp
 
 import (
+	"sort"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-func TestObjectNameForProxy(t *testing.T) {
+func TestProxyFactory(t *testing.T) {
+	tests := []struct {
+		name       string
+		f          func(t *testing.T)
+		noParallel bool
+	}{
+		{name: "ObjectNameForProxy", f: objectNameForProxyTest, noParallel: false},
+		{name: "ObjectNameForProxy_WithEmptyObjectName", f: objectNameForProxyWithEmptyObjectNameTest, noParallel: false},
+		{name: "ObjectNameForProxy_WithEmptyProxyName", f: objectNameForProxyWithEmptyProxyNameTest, noParallel: false},
+		{name: "WithoutDefaultGroupName", f: withoutDefaultGroupNameTest, noParallel: false},
+		{name: "WithoutDefaultGroupName_WithMultipleGroupNames", f: withoutDefaultGroupNameWithMultipleGroupNamesTest, noParallel: false},
+		{name: "WithoutDefaultGroupName_WithMetadataGroupName", f: withoutDefaultGroupNameWithMetadataGroupNameTest, noParallel: false},
+	}
+	// run no-parallel test first
+	sort.Slice(tests, func(i, j int) bool {
+		return tests[i].noParallel && !tests[j].noParallel
+	})
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if !tc.noParallel {
+				t.Parallel()
+			}
+			tc.f(t)
+		})
+	}
+}
+
+func objectNameForProxyTest(t *testing.T) {
 	n, err := objectNameForProxy("test@default")
 	require.NoError(t, err)
 	require.Equal(t, "test", n)
@@ -30,21 +60,21 @@ func TestObjectNameForProxy(t *testing.T) {
 	require.Equal(t, "test", n)
 }
 
-func TestObjectNameForProxyWithEmptyObjectName(t *testing.T) {
+func objectNameForProxyWithEmptyObjectNameTest(t *testing.T) {
 	_, err := objectNameForProxy("@default")
 	assert.Error(t, err, "Object name cannot be empty string")
 	_, err = objectNameForProxy("     @default")
 	assert.Error(t, err, "Object name cannot be empty string")
 }
 
-func TestObjectNameForProxyWithEmptyProxyName(t *testing.T) {
+func objectNameForProxyWithEmptyProxyNameTest(t *testing.T) {
 	_, err := objectNameForProxy("test@")
 	assert.Error(t, err, "Custom CP group name cannot be empty string")
 	_, err = objectNameForProxy("test@    ")
 	assert.Error(t, err, "Custom CP group name cannot be empty string")
 }
 
-func TestWithoutDefaultGroupName(t *testing.T) {
+func withoutDefaultGroupNameTest(t *testing.T) {
 	n, err := withoutDefaultGroupName("test@default")
 	require.NoError(t, err)
 	require.Equal(t, n, "test")
@@ -56,12 +86,12 @@ func TestWithoutDefaultGroupName(t *testing.T) {
 	require.Equal(t, n, "test@custom")
 }
 
-func TestWithoutDefaultGroupName_WithMultipleGroupNames(t *testing.T) {
+func withoutDefaultGroupNameWithMultipleGroupNamesTest(t *testing.T) {
 	_, err := withoutDefaultGroupName("test@default@@default")
 	require.Error(t, err, "Custom group name must be specified at most once")
 }
 
-func TestWithoutDefaultGroupName_WithMetadataGroupName(t *testing.T) {
+func withoutDefaultGroupNameWithMetadataGroupNameTest(t *testing.T) {
 	_, err := withoutDefaultGroupName("test@METADATA")
 	require.Error(t, err, "CP data structures cannot run on the METADATA CP group!")
 	_, err = withoutDefaultGroupName("test@metadata")
