@@ -108,6 +108,8 @@ func (a *AtomicLong) Set(ctx context.Context, value int64) error {
 }
 
 // Apply applies a function on the value, the actual stored value will not change.
+// function must be an instance of Hazelcast serializable type.
+// It must have a counterpart registered in the server-side that implements the "com.hazelcast.core.IFunction" interface with the actual logic of the function to be applied.
 func (a *AtomicLong) Apply(ctx context.Context, function interface{}) (interface{}, error) {
 	data, err := a.ss.ToData(function)
 	if err != nil {
@@ -147,17 +149,23 @@ func (a *AtomicLong) alterAndReturn(ctx context.Context, function interface{}, a
 }
 
 // Alter alters the currently stored value by applying a function on it.
+// function must be an instance of Hazelcast serializable type.
+// It must have a counterpart registered in the server-side that implements the "com.hazelcast.core.IFunction" interface with the actual logic of the function to be applied.
 func (a *AtomicLong) Alter(ctx context.Context, function interface{}) error {
 	_, err := a.alter(ctx, function, alterValueTypeNewValue)
 	return err
 }
 
 // GetAndAlter alters the currently stored value by applying a function on it and gets the old value.
+// function must be an instance of Hazelcast serializable type.
+// It must have a counterpart registered in the server-side that implements the "com.hazelcast.core.IFunction" interface with the actual logic of the function to be applied.
 func (a *AtomicLong) GetAndAlter(ctx context.Context, function interface{}) (int64, error) {
 	return a.alterAndReturn(ctx, function, alterValueTypeOldValue)
 }
 
 // AlterAndGet alters the currently stored value by applying a function on it and gets the result.
+// function must be an instance of Hazelcast serializable type.
+// It must have a counterpart registered in the server-side that implements the "com.hazelcast.core.IFunction" interface with the actual logic of the function to be applied.
 func (a *AtomicLong) AlterAndGet(ctx context.Context, function interface{}) (int64, error) {
 	return a.alterAndReturn(ctx, function, alterValueTypeNewValue)
 }

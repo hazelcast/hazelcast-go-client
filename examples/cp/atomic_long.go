@@ -75,8 +75,8 @@ func main() {
 
 /*
 Multiplication is a function for multiplying the data by given multiplier.
-This function is present on server side by default.
-Identified serialization method is used to call it on Alter and Apply methods of AtomicLong.
+It must have a counterpart registered in the server-side that implements the “com.hazelcast.core.IFunction“ interface.
+Identified serialization method is used for serializing the function to call it on Alter() and Apply() methods.
 */
 const multiplicationFactoryID = 66
 const multiplicationProcessorClassID = 16
