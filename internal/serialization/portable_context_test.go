@@ -14,17 +14,28 @@
  * limitations under the License.
  */
 
-package internal
+package serialization_test
 
-const (
-	AggregateFactoryID = -29
-	// CurrentClientVersion should be manually set
-	CurrentClientVersion = "1.3.2"
+import (
+	"sync"
+	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-// ClientType is used in the Management Center
-var ClientType = "GOO"
-
-// ClientVersion is the effective client version.
-// It is sent to the member during authentication.
-var ClientVersion = CurrentClientVersion
+func TestPortableContext_RegisterClassDefinition_Race(t *testing.T) {
+	pc := serialization.NewPortableContext(nil, 0)
+	const c = 10_000
+	wg := &sync.WaitGroup{}
+	wg.Add(c)
+	for i := 0; i < c; i++ {
+		go func() {
+			cd := pubserialization.NewClassDefinition(1, 1, 0)
+			it.Must(pc.RegisterClassDefinition(cd))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -269,7 +269,7 @@ func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
 		pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
 		pw.raw = true
 	}
-	return pw.output.ObjectDataOutput
+	return pw.output
 }
 
 func (pw *DefaultPortableWriter) End() {

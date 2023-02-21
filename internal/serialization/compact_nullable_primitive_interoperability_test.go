@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,18 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestWritePrimitiveReadNullable(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWritePrimitiveReadNullableSerializer{})
-	ss := mustSerializationService(iserialization.NewService(&config))
+	ss := it.MustSerializationService(iserialization.NewService(&config))
 	data := it.MustValue(ss.ToData(test)).(iserialization.Data)
 	obj := it.MustValue(ss.ToObject(data))
 	if !reflect.DeepEqual(test, obj) {
@@ -42,7 +43,7 @@ func TestWriteNullableReadPrimitive(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWriteNullableReadPrimitiveSerializer{})
-	ss := mustSerializationService(iserialization.NewService(&config))
+	ss := it.MustSerializationService(iserialization.NewService(&config))
 	data := it.MustValue(ss.ToData(test)).(iserialization.Data)
 	obj := it.MustValue(ss.ToObject(data))
 	if !reflect.DeepEqual(test, obj) {
@@ -54,7 +55,7 @@ func TestWriteNullReadPrimitiveThrowsException(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWriteNullReadPrimitiveSerializer{})
-	ss := mustSerializationService(iserialization.NewService(&config))
+	ss := it.MustSerializationService(iserialization.NewService(&config))
 	data := it.MustValue(ss.ToData(test)).(iserialization.Data)
 	_, err := ss.ToObject(data)
 	// TODO: think how to test all Read() methods, not just boolean. When generic records implemented change this test to do that.
