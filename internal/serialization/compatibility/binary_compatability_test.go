@@ -105,8 +105,7 @@ func createSerializationService(t *testing.T, bo binary.ByteOrder) *serializatio
 }
 
 func createObjectKey(name string, byteOrder binary.ByteOrder, version int) string {
-	byteOrderString := ""
-	byteOrderString = "LITTLE_ENDIAN"
+	byteOrderString := "LITTLE_ENDIAN"
 	if byteOrder == binary.BigEndian {
 		byteOrderString = "BIG_ENDIAN"
 	}

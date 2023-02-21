@@ -89,50 +89,45 @@ func (e CustomByteArraySerializer) Write(output serialization.DataOutput, object
 }
 
 type AnIdentifiedDataSerializable struct {
-	bool bool
-	b    byte
-	c    uint16
-	d    float64
-	s    int16
-	f    float32
-	i    int32
-	l    int64
-	str  string
-
-	booleans []bool
-	bytes    []byte
-	chars    []uint16
-	doubles  []float64
-	shorts   []int16
-	floats   []float32
-	ints     []int32
-	longs    []int64
-	strings  []string
-
-	booleansNil []bool
-	bytesNil    []byte
-	charsNil    []uint16
-	doublesNil  []float64
-	shortsNil   []int16
-	floatsNil   []float32
-	intsNil     []int32
-	longsNil    []int64
-	stringsNil  []string
-
-	byteSize      byte
-	bytesFully    []byte
-	bytesOffset   []byte
-	strChars      []uint16
-	strBytes      []byte
-	unsignedByte  uint8
-	unsignedShort uint16
-
-	portableObject                    *AnInnerPortable
 	identifiedDataSerializableObject  serialization.IdentifiedDataSerializable
-	customStreamSerializableObject    CustomStreamSerializable
+	portableObject                    *AnInnerPortable
+	str                               string
+	booleansNil                       []bool
+	bytesFully                        []byte
+	bytesNil                          []byte
+	charsNil                          []uint16
+	data                              iserialization.Data
+	strBytes                          []byte
+	booleans                          []bool
+	bytes                             []byte
+	chars                             []uint16
+	doubles                           []float64
+	shorts                            []int16
+	floats                            []float32
+	ints                              []int32
+	longs                             []int64
+	strings                           []string
+	strChars                          []uint16
+	bytesOffset                       []byte
+	doublesNil                        []float64
+	stringsNil                        []string
+	shortsNil                         []int16
+	floatsNil                         []float32
+	intsNil                           []int32
+	longsNil                          []int64
+	d                                 float64
+	l                                 int64
 	customByteArraySerializableObject CustomByteArraySerializable
-
-	data iserialization.Data
+	customStreamSerializableObject    CustomStreamSerializable
+	f                                 float32
+	i                                 int32
+	s                                 int16
+	c                                 uint16
+	unsignedShort                     uint16
+	bool                              bool
+	b                                 byte
+	unsignedByte                      uint8
+	byteSize                          byte
 }
 
 func (i AnIdentifiedDataSerializable) FactoryID() int32 {
@@ -313,60 +308,57 @@ func (p *AnInnerPortable) ReadPortable(reader serialization.PortableReader) {
 }
 
 type APortable struct {
-	boolean         bool
-	b               byte
-	c               uint16
-	d               float64
-	s               int16
-	f               float32
-	i               int32
-	l               int64
-	str             string
-	bd              types.Decimal
-	ld              types.LocalDate
-	lt              types.LocalTime
-	ldt             types.LocalDateTime
-	odt             types.OffsetDateTime
-	p               serialization.Portable
-	booleans        []bool
-	bytes           []byte
-	chars           []uint16
-	doubles         []float64
-	shorts          []int16
-	floats          []float32
-	ints            []int32
-	longs           []int64
-	strings         []string
-	decimals        []types.Decimal
-	dates           []types.LocalDate
-	times           []types.LocalTime
-	dateTimes       []types.LocalDateTime
-	offsetDateTimes []types.OffsetDateTime
-	portables       []serialization.Portable
-
-	booleansNil []bool
-	bytesNil    []byte
-	charsNil    []uint16
-	doublesNil  []float64
-	shortsNil   []int16
-	floatsNil   []float32
-	intsNil     []int32
-	longsNil    []int64
-	stringsNil  []string
-
-	byteSize      byte
-	bytesFully    []byte
-	bytesOffset   []byte
-	strChars      []uint16
-	strBytes      []byte
-	unsignedByte  uint8
-	unsignedShort uint16
-
+	ld                                types.LocalDate
+	lt                                types.LocalTime
+	ldt                               types.LocalDateTime
+	odt                               types.OffsetDateTime
+	p                                 serialization.Portable
 	portableObject                    serialization.Portable
 	identifiedDataSerializableObject  *AnIdentifiedDataSerializable
-	customStreamSerializableObject    CustomStreamSerializable
-	customByteArraySerializableObject CustomByteArraySerializable
+	str                               string
+	bd                                types.Decimal
+	portables                         []serialization.Portable
+	floatsNil                         []float32
+	bytes                             []byte
+	chars                             []uint16
+	doubles                           []float64
+	shorts                            []int16
+	floats                            []float32
+	ints                              []int32
+	longs                             []int64
+	strings                           []string
+	decimals                          []types.Decimal
+	dates                             []types.LocalDate
+	times                             []types.LocalTime
+	dateTimes                         []types.LocalDateTime
+	offsetDateTimes                   []types.OffsetDateTime
 	data                              iserialization.Data
+	booleansNil                       []bool
+	bytesNil                          []byte
+	charsNil                          []uint16
+	doublesNil                        []float64
+	shortsNil                         []int16
+	booleans                          []bool
+	intsNil                           []int32
+	longsNil                          []int64
+	stringsNil                        []string
+	strBytes                          []byte
+	strChars                          []uint16
+	bytesOffset                       []byte
+	bytesFully                        []byte
+	d                                 float64
+	l                                 int64
+	customByteArraySerializableObject CustomByteArraySerializable
+	customStreamSerializableObject    CustomStreamSerializable
+	f                                 float32
+	i                                 int32
+	s                                 int16
+	unsignedShort                     uint16
+	c                                 uint16
+	unsignedByte                      uint8
+	b                                 byte
+	boolean                           bool
+	byteSize                          byte
 }
 
 func (p APortable) FactoryID() int32 {
@@ -599,18 +591,18 @@ func (p PortableFactory) Create(classID int32) serialization.Portable {
 	return nil
 }
 
-func writeRawBytes(o serialization.DataOutput, a []byte) {
-	for _, i := range a {
+func writeRawBytes(o serialization.DataOutput, b []byte) {
+	for _, i := range b {
 		o.WriteByte(i)
 	}
 }
 
 func readRawBytes(i serialization.DataInput, size int) []byte {
-	a := make([]byte, size)
-	for idx, _ := range a {
-		a[idx] = i.ReadByte()
+	b := make([]byte, size)
+	for idx := range b {
+		b[idx] = i.ReadByte()
 	}
-	return a
+	return b
 }
 
 func makeTestObjects() map[string]interface{} {
