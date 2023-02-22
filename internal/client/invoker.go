@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -89,13 +89,27 @@ func (iv *Invoker) InvokeOnPartitionAsync(ctx context.Context, request *proto.Cl
 }
 
 func (iv *Invoker) InvokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	return iv.invokeOnRandomTarget(ctx, request, handler, false)
+}
+
+func (iv *Invoker) InvokeUrgentOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	return iv.invokeOnRandomTarget(ctx, request, handler, true)
+}
+
+func (iv *Invoker) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler, urgent bool) (*proto.ClientMessage, error) {
 	now := time.Now()
 	return iv.TryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
 		}
 		inv := iv.factory.NewInvocationOnRandomTarget(request, handler, now)
-		if err := iv.SendInvocation(ctx, inv); err != nil {
+		var err error
+		if urgent {
+			err = iv.svc.SendUrgentRequest(ctx, inv)
+		} else {
+			err = iv.svc.SendRequest(ctx, inv)
+		}
+		if err != nil {
 			return nil, err
 		}
 		return inv.GetWithContext(ctx)

@@ -281,6 +281,7 @@ func (c *Client) createComponents(config *Config) {
 	c.ConnectionManager.SetInvocationService(invocationService)
 	c.ClusterService.SetInvocationService(invocationService)
 	c.Invoker = NewInvoker(c.InvocationFactory, c.InvocationService, &c.Logger)
+	c.ConnectionManager.SetInvoker(c.Invoker)
 }
 
 func (c *Client) handleClusterEvent(event event.Event) {

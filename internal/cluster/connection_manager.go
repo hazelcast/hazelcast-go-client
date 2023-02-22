@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,10 @@ const (
 var connectionManagerSubID = event.NextSubscriptionID()
 
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address, networkCfg *pubcluster.NetworkConfig) (pubcluster.Address, error)
+
+type RandomTargetInvoker interface {
+	InvokeUrgentOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error)
+}
 
 type ConnectionManagerCreationBundle struct {
 	Logger               logger.LogAdaptor
@@ -134,6 +138,7 @@ type ConnectionManager struct {
 	prevClusterID        *types.UUID
 	failoverService      *FailoverService
 	randGen              *rand.Rand
+	invoker              RandomTargetInvoker
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
@@ -174,6 +179,10 @@ func (m *ConnectionManager) Start(ctx context.Context) error {
 // This method should be called before Start.
 func (m *ConnectionManager) SetInvocationService(s *invocation.Service) {
 	m.invocationService = s
+}
+
+func (m *ConnectionManager) SetInvoker(iv RandomTargetInvoker) {
+	m.invoker = iv
 }
 
 func (m *ConnectionManager) ClientUUID() types.UUID {
@@ -697,14 +706,8 @@ func (m *ConnectionManager) sendAllSchemas(ctx context.Context, schemas []*iseri
 		return nil
 	}
 	req := codec.EncodeClientSendAllSchemasRequest(schemas)
-	inv := m.invocationFactory.NewInvocationOnRandomTarget(req, nil, time.Now())
-	if err := m.invocationService.SendUrgentRequest(ctx, inv); err != nil {
-		return err
-	}
-	if _, err := inv.GetWithContext(ctx); err != nil {
-		return err
-	}
-	return nil
+	_, err := m.invoker.InvokeUrgentOnRandomTarget(ctx, req, nil)
+	return err
 }
 
 type connectionMap struct {
