@@ -17,13 +17,10 @@
 package types
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 	"strconv"
 	"strings"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/check"
 )
 
 // Decimal is a wrapper for Hazelcast Decimal.
@@ -33,11 +30,7 @@ type Decimal struct {
 }
 
 // NewDecimal creates and returns a Decimal value with the given big int and scale.
-// Scale must be in the range of [math.MinInt32, math.MaxInt32]. otherwise NewDecimal panics.
 func NewDecimal(unscaledValue *big.Int, scale int) Decimal {
-	if err := check.WithinRangeInt32(int32(scale), math.MinInt32, math.MaxInt32); err != nil {
-		panic(fmt.Errorf("creating decimal: %w", err))
-	}
 	return Decimal{
 		unscaledValue: unscaledValue,
 		scale:         int32(scale),
@@ -62,52 +55,44 @@ func (d Decimal) Float64() float64 {
 
 // String returns the string representation of the decimal, using scientific notation if an exponent is needed.
 func (d Decimal) String() string {
+	// This implementation is ported from: java.math.BigDecimal#layoutChars
 	bigStr := d.unscaledValue.String()
 	if d.scale == 0 {
 		return bigStr
 	}
-	negative := false
-	point := int32(len(bigStr)) - d.scale
+	buf := strings.Builder{}
 	if bigStr[0] == '-' {
-		negative = true
-		point -= 1
+		bigStr = bigStr[1:]
+		buf.WriteByte('-')
 	}
-	var val strings.Builder
-	if d.scale >= 0 && point-1 >= -6 {
-		if point <= 0 {
-			if negative {
-				val.WriteByte('-')
+	adjusted := len(bigStr) - int(d.scale) - 1
+	if d.scale >= 0 && adjusted >= -6 {
+		// plain number
+		pad := int(d.scale) - len(bigStr)
+		if pad >= 0 {
+			// 0.xxx form
+			buf.WriteString("0.")
+			for pad > 0 {
+				buf.WriteByte('0')
+				pad--
 			}
-			val.WriteString("0.")
-			for point < 0 {
-				val.WriteByte('0')
-				point++
-			}
-			if negative {
-				point++
-			}
-			val.WriteString(bigStr[point:])
+			buf.WriteString(bigStr)
 		} else {
-			if negative {
-				point++
-			}
-			val.WriteString(bigStr[0:point] + "." + bigStr[point:])
+			// xx.xx form
+			pad *= -1
+			buf.WriteString(bigStr[0:pad] + "." + bigStr[pad:])
 		}
 	} else {
+		// E-notation is needed
+		buf.WriteByte(bigStr[0])
 		if len(bigStr) > 1 {
-			if negative {
-				val.WriteString(bigStr[0:2] + "." + bigStr[2:])
-			} else {
-				val.WriteString(bigStr[0:1] + "." + bigStr[1:])
-			}
-		} else {
-			val.WriteString(bigStr)
+			buf.WriteString("." + bigStr[1:])
 		}
-		val.WriteByte('E')
-		if point-1 >= 0 {
-			val.WriteByte('+')
+		buf.WriteByte('E')
+		if adjusted > 0 {
+			buf.WriteByte('+')
 		}
-		val.WriteString(strconv.FormatInt(int64(point-1), 10))
+		buf.WriteString(strconv.FormatInt(int64(adjusted), 10))
 	}
-	return val.String()
+	return buf.String()
 }
