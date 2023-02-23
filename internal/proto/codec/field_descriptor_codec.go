@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ func EncodeFieldDescriptor(clientMessage *proto.ClientMessage, fieldDescriptor *
 	EncodeInt(initialFrame.Content, FieldDescriptorCodecKindFieldOffset, int32(fieldDescriptor.Kind))
 	clientMessage.AddFrame(initialFrame)
 
-	EncodeString(clientMessage, fieldDescriptor.FieldName)
+	EncodeString(clientMessage, fieldDescriptor.Name)
 
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
@@ -48,7 +48,7 @@ func DecodeFieldDescriptor(frameIterator *proto.ForwardFrameIterator) iserializa
 	FastForwardToEndFrame(frameIterator)
 
 	return iserialization.FieldDescriptor{
-		FieldName: fieldName,
-		Kind:      pubserialization.FieldKind(kind),
+		Name: fieldName,
+		Kind: pubserialization.FieldKind(kind),
 	}
 }

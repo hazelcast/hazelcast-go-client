@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ func (r rabinFingerPrint) OfSchema(schema *Schema) int64 {
 	fp := r.ofString(rabinFingerPrintInit, schema.TypeName)
 	fp = r.ofInt32(fp, int32(schema.FieldCount()))
 	for _, descriptor := range schema.fieldDefinitions {
-		fp = r.ofString(fp, descriptor.FieldName)
+		fp = r.ofString(fp, descriptor.Name)
 		fp = r.ofInt32(fp, int32(descriptor.Kind))
 	}
 	return fp

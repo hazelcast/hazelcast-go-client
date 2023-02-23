@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ func NewSchemaWriter(typeName string) SchemaWriter {
 }
 
 func (s SchemaWriter) addField(fd FieldDescriptor) {
-	s.fieldDefinitionMap[fd.FieldName] = &fd
+	s.fieldDefinitionMap[fd.Name] = &fd
 }
 
 func (s SchemaWriter) Build() *Schema {

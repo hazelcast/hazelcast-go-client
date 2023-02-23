@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package serialization
 import pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type FieldDescriptor struct {
-	FieldName string
+	Name      string
 	Kind      pubserialization.FieldKind
 	index     int32
 	offset    int32
@@ -28,7 +28,7 @@ type FieldDescriptor struct {
 
 func NewFieldDescriptor(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
 	return FieldDescriptor{
-		FieldName: fieldName,
+		Name:      fieldName,
 		Kind:      fieldKind,
 		index:     -1,
 		offset:    -1,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -709,7 +709,7 @@ func (d *DefaultCompactReader) readVariableSizeSlice(fd FieldDescriptor, r Reade
 func (d *DefaultCompactReader) readVariableSizeAsNonNull(fd FieldDescriptor, r Reader, methodSuffix string) interface{} {
 	value := d.readVariableSizeField(fd, r)
 	if value == nil {
-		panic(d.unexpectedNullValue(fd.FieldName, methodSuffix))
+		panic(d.unexpectedNullValue(fd.Name, methodSuffix))
 	}
 	return value
 }
@@ -786,7 +786,7 @@ func (d *DefaultCompactReader) readNullableArrayAsPrimitiveArray(fd FieldDescrip
 	for i := int32(0); i < itemCount; i += 1 {
 		offset := offsetReader.getOffset(d.in, offsetsPosition, i)
 		if offset == nilArrayLength {
-			panic(d.unexpectedNullValueInArray(fd.FieldName, methodSuffix))
+			panic(d.unexpectedNullValueInArray(fd.Name, methodSuffix))
 		}
 	}
 	d.in.SetPosition(dataStartPosition - Int32SizeInBytes)

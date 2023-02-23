@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor) 
 	}
 	// Sort according to field name
 	sort.SliceStable(fds, func(i, j int) bool {
-		return fds[i].FieldName < fds[j].FieldName
+		return fds[i].Name < fds[j].Name
 	})
 	schema := &Schema{
 		TypeName:         typeName,
