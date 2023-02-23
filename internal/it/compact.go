@@ -44,14 +44,15 @@ func MakeCompactClusterConfig(clusterName, mapName, inMemoryFormat string, port 
 }
 
 type CompactTestContext struct {
-	T           *testing.T
-	M           *hazelcast.Map
-	Cluster     *TestCluster
-	Client1     *hazelcast.Client
-	Client2     *hazelcast.Client
-	MapName     string
-	InMemFmt    string
-	Serializers []serialization.CompactSerializer
+	T            *testing.T
+	M            *hazelcast.Map
+	Cluster      *TestCluster
+	Client1      *hazelcast.Client
+	Client2      *hazelcast.Client
+	MapName      string
+	InMemFmt     string
+	Serializers1 []serialization.CompactSerializer
+	Serializers2 []serialization.CompactSerializer
 }
 
 func (tcx CompactTestContext) Tester(f func(CompactTestContext)) {
@@ -66,15 +67,17 @@ func (tcx CompactTestContext) Tester(f func(CompactTestContext)) {
 			cfg := MakeCompactClusterConfig(cn, tcx.MapName, tcx.InMemFmt, port)
 			tcx.Cluster = StartNewClusterWithConfig(2, cfg, port)
 		}
-		cfg := tcx.Cluster.DefaultConfig()
-		cfg.Serialization.Compact.SetSerializers(tcx.Serializers...)
+		cfg1 := tcx.Cluster.DefaultConfig()
+		cfg1.Serialization.Compact.SetSerializers(tcx.Serializers1...)
 		tcx.T.Logf("map name: %s", tcx.MapName)
-		tcx.T.Logf("cluster address: %s", cfg.Cluster.Network.Addresses[0])
+		tcx.T.Logf("cluster address: %s", cfg1.Cluster.Network.Addresses[0])
 		if tcx.Client1 == nil {
-			tcx.Client1 = getDefaultClient(&cfg)
+			tcx.Client1 = getDefaultClient(&cfg1)
 		}
+		cfg2 := tcx.Cluster.DefaultConfig()
+		cfg2.Serialization.Compact.SetSerializers(tcx.Serializers1...)
 		if tcx.Client2 == nil {
-			tcx.Client2 = getDefaultClient(&cfg)
+			tcx.Client2 = getDefaultClient(&cfg2)
 		}
 		if tcx.M == nil {
 			m, err := tcx.Client1.GetMap(context.Background(), tcx.MapName)

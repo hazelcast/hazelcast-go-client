@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -54,8 +54,9 @@ func TestCompact(t *testing.T) {
 func compactBasicTest(t *testing.T) {
 	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testBasic
 	tcx := it.CompactTestContext{
-		T:           t,
-		Serializers: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
+		T:            t,
+		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
+		Serializers2: []serialization.CompactSerializer{EmployeeDTOCompactSerializerV2{}},
 	}
 	tcx.Tester(func(tcx it.CompactTestContext) {
 		ctx := context.Background()
@@ -70,8 +71,9 @@ func compactBasicTest(t *testing.T) {
 func basicQueryTest(t *testing.T) {
 	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testBasicQuery
 	tcx := it.CompactTestContext{
-		T:           t,
-		Serializers: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
+		T:            t,
+		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
+		Serializers2: []serialization.CompactSerializer{EmployeeDTOCompactSerializerV2{}},
 	}
 	tcx.Tester(func(tcx it.CompactTestContext) {
 		ctx := context.Background()
@@ -88,8 +90,8 @@ func basicQueryTest(t *testing.T) {
 func joinedMemberQueryTest(t *testing.T) {
 	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testJoinedMemberQuery
 	tcx := it.CompactTestContext{
-		T:           t,
-		Serializers: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
+		T:            t,
+		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
 	}
 	tcx.Tester(func(tcx it.CompactTestContext) {
 		ctx := context.Background()
@@ -111,8 +113,8 @@ func joinedMemberQueryTest(t *testing.T) {
 func clusterRestartTest(t *testing.T) {
 	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testJoinedMemberQuery
 	tcx := it.CompactTestContext{
-		T:           t,
-		Serializers: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
+		T:            t,
+		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
 	}
 	tcx.Tester(func(tcx it.CompactTestContext) {
 		ctx := context.Background()
