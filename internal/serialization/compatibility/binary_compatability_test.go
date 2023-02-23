@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ func TestBinaryCompatibility(t *testing.T) {
 			for _, version := range versions {
 				key := createObjectKey(objName, order, version)
 				t.Run(key+"-testDeserialize", func(t *testing.T) {
-					if skipOnDeserialize(t, objName) {
+					if skipOnDeserialize(objName) {
 						t.SkipNow()
 					}
 					service := createSerializationService(t, order)
@@ -45,7 +45,7 @@ func TestBinaryCompatibility(t *testing.T) {
 					require.Equal(t, dataMap[key], data)
 				})
 				t.Run(key+"-testSerializeDeserialize", func(t *testing.T) {
-					if skipOnDeserialize(t, objName) || skipOnSerialize(objName) {
+					if skipOnDeserialize(objName) || skipOnSerialize(objName) {
 						t.SkipNow()
 					}
 					service := createSerializationService(t, order)
@@ -116,10 +116,8 @@ func createFileName(version int) string {
 	return fmt.Sprintf("%d.serialization.compatibility.binary", version)
 }
 
-func skipOnDeserialize(t *testing.T, objType string) bool {
-	p, err := regexp.Compile("^.*(Predicate|Aggregator|Projection)$")
-	require.NoError(t, err)
-	return p.MatchString(objType)
+func skipOnDeserialize(o string) bool {
+	return strings.HasSuffix(o, "Predicate") || strings.HasSuffix(o, "Aggregator") || strings.HasSuffix(o, "Projection")
 }
 
 func skipOnSerialize(objType string) bool {
