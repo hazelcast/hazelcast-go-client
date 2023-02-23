@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -28,18 +28,18 @@ import (
 
 func MakeCompactClusterConfig(clusterName, mapName, inMemoryFormat string, port int) string {
 	return fmt.Sprintf(`
-        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
-            <cluster-name>%s</cluster-name>
-            <map name="%s">
+		<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+			xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			xsi:schemaLocation="http://www.hazelcast.com/schema/config
+			http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+			<cluster-name>%s</cluster-name>
+			<map name="%s">
 				<in-memory-format>%s</in-memory-format>
 			</map>
 			<network>
-               <port>%d</port>
-            </network>
-        </hazelcast>
+			   <port>%d</port>
+			</network>
+		</hazelcast>
 	`, clusterName, mapName, inMemoryFormat, port)
 }
 
