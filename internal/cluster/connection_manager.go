@@ -66,6 +66,7 @@ type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubc
 
 type RandomTargetInvoker interface {
 	InvokeUrgentOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error)
+	CB() *cb.CircuitBreaker
 }
 
 type ConnectionManagerCreationBundle struct {
@@ -201,14 +202,15 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	} else if addr, err = m.startUnisocket(ctx); err != nil {
 		return err
 	}
+	m.eventDispatcher.Subscribe(EventConnection, connectionManagerSubID, m.handleConnectionEvent)
 	if err = m.sendStateToCluster(ctx); err != nil {
 		return err
 	}
 	m.checkClusterIDChanged()
 	m.eventDispatcher.Publish(NewConnected(addr))
+	m.eventDispatcher.Publish(invocation.NewInvocationStateChanged(true))
 	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateConnected))
 	atomic.StoreInt32(&m.state, ready)
-	m.eventDispatcher.Subscribe(EventConnection, connectionManagerSubID, m.handleConnectionEvent)
 	return nil
 }
 
@@ -395,7 +397,7 @@ func (m *ConnectionManager) handleMembersRemoved(e *MembersStateChangedEvent) {
 }
 
 func (m *ConnectionManager) handleConnectionEvent(event event.Event) {
-	if atomic.LoadInt32(&m.state) != ready {
+	if atomic.LoadInt32(&m.state) == stopped {
 		return
 	}
 	e := event.(*ConnectionStateChangedEvent)
@@ -409,6 +411,7 @@ func (m *ConnectionManager) removeConnection(conn *Connection) int {
 	remaining := m.connMap.RemoveConnection(conn)
 	if remaining == 0 {
 		m.eventDispatcher.Publish(NewDisconnected())
+		m.eventDispatcher.Publish(invocation.NewInvocationStateChanged(false))
 		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateDisconnected))
 	}
 	return remaining
@@ -521,7 +524,7 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	m.logger.Debug(func() string {
 		return fmt.Sprintf("authentication correlation ID: %d", inv.Request().CorrelationID())
 	})
-	if err := m.invocationService.SendRequest(ctx, inv); err != nil {
+	if err := m.invocationService.SendUrgentRequest(ctx, inv); err != nil {
 		return fmt.Errorf("authenticating: %w", err)
 	}
 	result, err := inv.GetWithContext(ctx)
@@ -695,6 +698,9 @@ func (m *ConnectionManager) tryConnectMember(ctx context.Context, member *pubclu
 }
 
 func (m *ConnectionManager) sendStateToCluster(ctx context.Context) error {
+	m.logger.Trace(func() string {
+		return "cluster.ConnectionManager.sendStateToCluster"
+	})
 	if err := m.sendAllSchemas(ctx, m.serializationService.SchemaService().Schemas()); err != nil {
 		return err
 	}

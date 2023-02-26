@@ -38,7 +38,7 @@ type CRDTOperationTargetFn func(excluded map[types.UUID]struct{}) (*pubcluster.M
 type Invoker struct {
 	factory *cluster.ConnectionInvocationFactory
 	svc     *invocation.Service
-	CB      *cb.CircuitBreaker
+	cb      *cb.CircuitBreaker
 	lg      *logger.LogAdaptor
 }
 
@@ -52,18 +52,30 @@ func NewInvoker(factory *cluster.ConnectionInvocationFactory, svc *invocation.Se
 	return &Invoker{
 		factory: factory,
 		svc:     svc,
-		CB:      cbr,
+		cb:      cbr,
 		lg:      lg,
 	}
 }
 
+func (iv *Invoker) CB() *cb.CircuitBreaker {
+	return iv.cb
+}
+
 func (iv *Invoker) InvokeOnConnection(ctx context.Context, req *proto.ClientMessage, conn *cluster.Connection) (*proto.ClientMessage, error) {
+	return iv.invokeOnConnection(ctx, req, conn, nil)
+}
+
+func (iv *Invoker) InvokeOnConnectionWithHandler(ctx context.Context, req *proto.ClientMessage, conn *cluster.Connection, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
+	return iv.invokeOnConnection(ctx, req, conn, handler)
+}
+
+func (iv *Invoker) invokeOnConnection(ctx context.Context, req *proto.ClientMessage, conn *cluster.Connection, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
 	now := time.Now()
 	return iv.TryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			req = req.Copy()
 		}
-		inv := iv.factory.NewConnectionBoundInvocation(req, conn, nil, now)
+		inv := iv.factory.NewConnectionBoundInvocation(req, conn, handler, now)
 		if err := iv.svc.SendRequest(ctx, inv); err != nil {
 			return nil, err
 		}
@@ -162,7 +174,7 @@ func (iv *Invoker) TryInvoke(ctx context.Context, f cb.TryHandler) (*proto.Clien
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	res, err := iv.CB.TryContext(ctx, f)
+	res, err := iv.cb.TryContext(ctx, f)
 	if err != nil {
 		return nil, err
 	}

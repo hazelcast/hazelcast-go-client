@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package invocation
 
 const (
 	// EventGroupLost is dispatched if an invocation group is lost, e.g., a connection closed
-	EventGroupLost = "internal.invocation.grouplost"
+	EventGroupLost              = "internal.invocation.grouplost"
+	EventInvocationStateChanged = "internal.invocation.statechanged"
 )
 
 type GroupLostEvent struct {
@@ -35,4 +36,18 @@ func NewGroupLost(groupID int64, err error) *GroupLostEvent {
 
 func (e *GroupLostEvent) EventName() string {
 	return EventGroupLost
+}
+
+type InvocationStateChanged struct {
+	Enabled bool
+}
+
+func NewInvocationStateChanged(enabled bool) *InvocationStateChanged {
+	return &InvocationStateChanged{
+		Enabled: enabled,
+	}
+}
+
+func (e *InvocationStateChanged) EventName() string {
+	return EventInvocationStateChanged
 }

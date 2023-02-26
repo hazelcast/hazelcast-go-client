@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -589,7 +589,7 @@ func (m *Map) getAllFromRemote(ctx context.Context, keyCount int, partitionToKey
 	futures := make([]cb.Future, 0, len(partitionToKeys))
 	for pid, ks := range partitionToKeys {
 		request := codec.EncodeMapGetAllRequest(m.name, ks)
-		fut := m.invoker.CB.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		fut := m.invoker.CB().TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 			if attempt > 0 {
 				request = request.Copy()
 			}
@@ -641,7 +641,7 @@ func (m *Map) putAllFromRemote(ctx context.Context, entries []types.Entry) error
 	f := func(partitionID int32, entries []proto.Pair) cb.Future {
 		request := codec.EncodeMapPutAllRequest(m.name, entries, true)
 		now := time.Now()
-		return m.invoker.CB.TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		return m.invoker.CB().TryContextFuture(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 			if attempt > 0 {
 				request = request.Copy()
 			}
