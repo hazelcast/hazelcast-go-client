@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package cluster_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -109,7 +110,7 @@ type mockAddrProvider struct {
 	addrs []pubcluster.Address
 }
 
-func (m mockAddrProvider) Addresses() ([]pubcluster.Address, error) {
+func (m mockAddrProvider) Addresses(ctx context.Context) ([]pubcluster.Address, error) {
 	return m.addrs, m.err
 }
 
@@ -146,7 +147,7 @@ func TestUniqueAddrs(t *testing.T) {
 				mockErr = errors.New("test error")
 			}
 			ap := mockAddrProvider{addrs: tc.addresses, err: mockErr}
-			addrs, err := cluster.UniqueAddrs(ap)
+			addrs, err := cluster.UniqueAddrs(context.Background(), ap)
 			if tc.returnErr {
 				require.Error(t, err)
 			}

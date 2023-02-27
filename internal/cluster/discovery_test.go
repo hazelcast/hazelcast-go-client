@@ -15,16 +15,3 @@
  */
 
 package cluster
-
-type DiscoveryConfig struct {
-	UsePublicIP bool `json:",omitempty"`
-	Strategy    DiscoveryStrategy
-}
-
-func (c DiscoveryConfig) Clone() DiscoveryConfig {
-	return c
-}
-
-func (c DiscoveryConfig) Validate() error {
-	return nil
-}

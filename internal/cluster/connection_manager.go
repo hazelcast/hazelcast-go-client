@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -452,7 +452,7 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 }
 
 func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *CandidateCluster) (pubcluster.Address, error) {
-	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(cluster)
+	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(ctx, cluster)
 	if err != nil {
 		return "", fmt.Errorf("failed to refresh seed addresses: %w", err)
 	}
