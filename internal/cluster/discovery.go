@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/cluster/discovery"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	ilogger "github.com/hazelcast/hazelcast-go-client/internal/logger"
 )
@@ -32,10 +33,10 @@ const (
 )
 
 type DiscoveryStrategyAdapter struct {
-	strategy    pubcluster.DiscoveryStrategy
+	strategy    discovery.Strategy
 	translator  map[pubcluster.Address]pubcluster.Address
 	mu          *sync.RWMutex
-	opts        pubcluster.DiscoveryStrategyOptions
+	opts        discovery.StrategyOptions
 	lg          ilogger.LogAdaptor
 	usePublicIP bool
 	started     int32
@@ -47,9 +48,11 @@ func NewDiscoveryStrategyAdapter(cfg pubcluster.DiscoveryConfig, lg ilogger.LogA
 	}
 	return &DiscoveryStrategyAdapter{
 		strategy:    cfg.Strategy,
+		translator:  map[pubcluster.Address]pubcluster.Address{},
 		usePublicIP: cfg.UsePublicIP,
 		mu:          &sync.RWMutex{},
-		opts: pubcluster.DiscoveryStrategyOptions{
+		lg:          lg,
+		opts: discovery.StrategyOptions{
 			Logger:      lg,
 			UsePublicIP: cfg.UsePublicIP,
 		},
@@ -73,18 +76,18 @@ func (d *DiscoveryStrategyAdapter) Addresses(ctx context.Context) ([]pubcluster.
 			continue
 		}
 		if node.PrivateAddr == "" {
-			res = append(res, node.PublicAddr)
+			res = append(res, (pubcluster.Address)(node.PublicAddr))
 			continue
 		}
 		if node.PublicAddr == "" {
-			res = append(res, node.PrivateAddr)
+			res = append(res, (pubcluster.Address)(node.PrivateAddr))
 			continue
 		}
 		if d.usePublicIP {
-			res = append(res, node.PublicAddr)
+			res = append(res, (pubcluster.Address)(node.PublicAddr))
 			continue
 		}
-		res = append(res, node.PrivateAddr)
+		res = append(res, (pubcluster.Address)(node.PrivateAddr))
 	}
 	return res, nil
 }
@@ -129,7 +132,7 @@ func (d *DiscoveryStrategyAdapter) start(ctx context.Context) error {
 		return nil
 	}
 	// run strategy's Start method if it implements that.
-	if starter, ok := d.strategy.(pubcluster.DiscoveryStrategyStarter); ok {
+	if starter, ok := d.strategy.(discovery.StrategyStarter); ok {
 		d.lg.Debug(func() string {
 			return "Starting discovery strategy"
 		})
@@ -148,7 +151,7 @@ func (d *DiscoveryStrategyAdapter) translate(addr pubcluster.Address) (pubcluste
 	return addr, ok
 }
 
-func (d *DiscoveryStrategyAdapter) updateTranslation(nodes []pubcluster.DiscoveryNode) {
+func (d *DiscoveryStrategyAdapter) updateTranslation(nodes []discovery.Node) {
 	translator := make(map[pubcluster.Address]pubcluster.Address, len(nodes))
 	for _, node := range nodes {
 		// map private addresses to public, if usePublicIP
@@ -157,17 +160,17 @@ func (d *DiscoveryStrategyAdapter) updateTranslation(nodes []pubcluster.Discover
 			continue
 		}
 		if node.PublicAddr == "" {
-			translator[node.PrivateAddr] = node.PrivateAddr
+			translator[pubcluster.Address(node.PrivateAddr)] = pubcluster.Address(node.PrivateAddr)
 			continue
 		}
-		translator[node.PublicAddr] = node.PublicAddr
+		translator[pubcluster.Address(node.PublicAddr)] = pubcluster.Address(node.PublicAddr)
 		if node.PrivateAddr == "" {
 			continue
 		}
 		if d.usePublicIP {
-			translator[node.PrivateAddr] = node.PublicAddr
+			translator[pubcluster.Address(node.PrivateAddr)] = pubcluster.Address(node.PublicAddr)
 		} else {
-			translator[node.PrivateAddr] = node.PrivateAddr
+			translator[pubcluster.Address(node.PrivateAddr)] = pubcluster.Address(node.PrivateAddr)
 		}
 	}
 	d.mu.Lock()

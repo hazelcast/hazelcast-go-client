@@ -15,31 +15,3 @@
  */
 
 package cluster
-
-import (
-	"context"
-
-	"github.com/hazelcast/hazelcast-go-client/logger"
-)
-
-type DiscoveryNode struct {
-	PublicAddr  Address
-	PrivateAddr Address
-}
-
-type DiscoveryStrategyOptions struct {
-	Logger      logger.Logger
-	UsePublicIP bool
-}
-
-type DiscoveryStrategyStarter interface {
-	Start(ctx context.Context, opts DiscoveryStrategyOptions) error
-}
-
-type DiscoveryStrategyDestroyer interface {
-	Destroy(ctx context.Context) error
-}
-
-type DiscoveryStrategy interface {
-	DiscoverNodes(ctx context.Context) ([]DiscoveryNode, error)
-}

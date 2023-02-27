@@ -14,19 +14,32 @@
  * limitations under the License.
  */
 
-package cluster
+package discovery
 
-import "github.com/hazelcast/hazelcast-go-client/cluster/discovery"
+import (
+	"context"
 
-type DiscoveryConfig struct {
-	UsePublicIP bool `json:",omitempty"`
-	Strategy    discovery.Strategy
+	"github.com/hazelcast/hazelcast-go-client/logger"
+)
+
+type Node struct {
+	PublicAddr  string
+	PrivateAddr string
 }
 
-func (c DiscoveryConfig) Clone() DiscoveryConfig {
-	return c
+type StrategyOptions struct {
+	Logger      logger.Logger
+	UsePublicIP bool
 }
 
-func (c DiscoveryConfig) Validate() error {
-	return nil
+type StrategyStarter interface {
+	Start(ctx context.Context, opts StrategyOptions) error
+}
+
+type StrategyDestroyer interface {
+	Destroy(ctx context.Context) error
+}
+
+type Strategy interface {
+	DiscoverNodes(ctx context.Context) ([]Node, error)
 }

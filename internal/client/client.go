@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/cluster/discovery"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -319,7 +320,7 @@ func (c *Client) handleClusterEvent(event event.Event) {
 func (c *Client) addDiscoveryDestroyer() {
 	if c.clusterConfig.Discovery.Strategy != nil {
 		c.AddAfterShutdownHandler(func(ctx context.Context) {
-			if destroyer, ok := c.clusterConfig.Discovery.Strategy.(cluster.DiscoveryStrategyDestroyer); ok {
+			if destroyer, ok := c.clusterConfig.Discovery.Strategy.(discovery.StrategyDestroyer); ok {
 				c.Logger.Debug(func() string {
 					return "Destroying discovery strategy"
 				})
