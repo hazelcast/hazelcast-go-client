@@ -197,14 +197,6 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Contex
 		return nil
 	}
 	now := time.Now()
-	if len(conns) == 1 {
-		inv, err := b.sendRemoveListenerRequest(ctx, request, conns[0], now)
-		if err != nil {
-			return err
-		}
-		_, err = inv.GetWithContext(ctx)
-		return err
-	}
 	invs := make([]invocation.Invocation, len(conns))
 	for i, conn := range conns {
 		inv, err := b.sendRemoveListenerRequest(ctx, request, conn, now)
@@ -226,7 +218,14 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 		return fmt.Sprintf("%d: removing listener", conn.connectionID)
 	})
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, nil, start)
-	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
+	req := inv.Request()
+	_, err := b.connectionManager.invoker.CB().TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			req = req.Copy()
+		}
+		return nil, b.invocationService.SendRequest(ctx, inv)
+	})
+	if err != nil {
 		return nil, err
 	}
 	return inv, nil
