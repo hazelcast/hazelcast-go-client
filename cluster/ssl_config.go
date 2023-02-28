@@ -51,6 +51,8 @@ func (c *SSLConfig) Validate() error {
 }
 
 // SetTLSConfig overrides the internal TLS configuration.
+// Use this method only when you want to replace the internal TLS configuration.
+// It should be called before calling any other methods or setting any fields.
 func (c *SSLConfig) SetTLSConfig(tlsConfig *tls.Config) {
 	c.tlsConfig = tlsConfig.Clone()
 }
