@@ -14,6 +14,8 @@
 - [Docker](https://www.docker.com/get-started/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
+Rename `go.mod.txt` to `go.mod` and `go.sum.txt` to `go.sum` before starting to use the example. 
+
 <a name="deployment"></a>
 ## Deployment
 The guide assumes that Docker Engine is ready and running properly. You can run it on other container and virtual machine environments, but it is not tested.

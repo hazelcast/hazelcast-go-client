@@ -1,4 +1,4 @@
-module github.com/nevzatseferoglu/hz-go-service
+module github.com/hazelcast/hz-go-service
 
 go 1.17
 
