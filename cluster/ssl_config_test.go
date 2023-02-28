@@ -17,7 +17,6 @@
 package cluster_test
 
 import (
-	"crypto/tls"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,8 +30,8 @@ func TestSSLConfig_Clone(t *testing.T) {
 		ServerName: "myserver.com",
 		Enabled:    true,
 	}
-	cfg1.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 	cfg2 := cfg1.Clone()
+	assert.Equal(t, "myserver.com", cfg2.TLSConfig().ServerName)
 	assert.Equal(t, cfg1, cfg2)
 }
 
