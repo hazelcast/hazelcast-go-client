@@ -32,8 +32,8 @@ import (
 type SSLConfig struct {
 	tlsConfig *tls.Config
 	// ServerName sets the host name of the server.
-	ServerName string
-	Enabled    bool `json:",omitempty"`
+	ServerName string `json:",omitempty"`
+	Enabled    bool   `json:",omitempty"`
 }
 
 func (c *SSLConfig) Clone() SSLConfig {
