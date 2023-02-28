@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,24 @@
 package cluster_test
 
 import (
+	"crypto/tls"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 )
+
+func TestSSLConfig_Clone(t *testing.T) {
+	cfg1 := cluster.SSLConfig{
+		ServerName: "myserver.com",
+		Enabled:    true,
+	}
+	cfg1.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+	cfg2 := cfg1.Clone()
+	assert.Equal(t, cfg1, cfg2)
+}
 
 func TestSSLConfig_SetCAPath(t *testing.T) {
 	sslConfig := cluster.SSLConfig{
