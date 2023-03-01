@@ -92,7 +92,7 @@ func (d Decimal) String() string {
 		if adjusted > 0 {
 			buf.WriteByte('+')
 		}
-		buf.WriteString(strconv.FormatInt(int64(adjusted), 10))
+		buf.WriteString(strconv.Itoa(adjusted))
 	}
 	return buf.String()
 }
