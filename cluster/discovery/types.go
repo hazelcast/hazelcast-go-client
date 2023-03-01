@@ -22,24 +22,33 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
+// Node is a public-private address pair.
 type Node struct {
 	PublicAddr  string
 	PrivateAddr string
 }
 
+// StrategyOptions are passed to the Strategy's Start method.
 type StrategyOptions struct {
 	Logger      logger.Logger
 	UsePublicIP bool
 }
 
+// StrategyStarter is an optional interface for a discovery strategy.
+// If implemented, Start will be called before DiscoverNodes method.
+// Note that it may be called more than once if the previous start was not successful.
 type StrategyStarter interface {
 	Start(ctx context.Context, opts StrategyOptions) error
 }
 
+// StrategyDestroyer is an optional interface for a discovery strategy.
+// If implemented, Destroy method will be called once during client shutdown.
 type StrategyDestroyer interface {
 	Destroy(ctx context.Context) error
 }
 
+// Strategy is the discovery strategy interface.
+// DiscoverNodes may be called several times.
 type Strategy interface {
 	DiscoverNodes(ctx context.Context) ([]Node, error)
 }
