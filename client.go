@@ -19,6 +19,7 @@ package hazelcast
 import (
 	"context"
 	"fmt"
+	icp "github.com/hazelcast/hazelcast-go-client/internal/cp"
 	"sync"
 	"time"
 
@@ -41,6 +42,9 @@ const (
 	// ClientVersion is the semantic versioning compatible client version.
 	ClientVersion = internal.CurrentClientVersion
 )
+
+type AtomicLong = icp.AtomicLong
+type CPSubsystem = icp.Subsystem
 
 // StartNewClient creates and starts a new client with the default configuration.
 // The default configuration is tuned connect to an Hazelcast cluster running on the same computer with the client.
@@ -70,6 +74,7 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
+	cpSubsystem             CPSubsystem
 	nearCacheMgrsMu         *sync.RWMutex
 	nearCacheMgrs           map[string]*inearcache.Manager
 	cfg                     *Config
@@ -329,6 +334,11 @@ func (c *Client) SQL() sql.Service {
 	return c.sqlService
 }
 
+// CPSubsystem returns a service to offer a set of in-memory linearizable data structures.
+func (c *Client) CPSubsystem() CPSubsystem {
+	return c.cpSubsystem
+}
+
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
@@ -425,6 +435,7 @@ func (c *Client) createComponents(config *Config) {
 	}
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
+	c.cpSubsystem = icp.NewSubsystem(c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
 }
 

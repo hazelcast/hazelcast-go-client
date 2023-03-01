@@ -56,6 +56,7 @@ const (
 )
 
 const DefaultClusterName = "integration-test"
+const ClusterNameCPEnabled = "integration-test-cp"
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
@@ -65,6 +66,10 @@ var defaultTestCluster = NewSingletonTestCluster("default", func() *TestCluster 
 		return rc.startNewCluster(MemberCount(), xmlSSLConfig(DefaultClusterName, port), port)
 	}
 	return rc.startNewCluster(MemberCount(), xmlConfig(DefaultClusterName, port), port)
+})
+var cpEnabledTestCluster = NewSingletonTestCluster("default", func() *TestCluster {
+	port := NextPort()
+	return rc.startNewCluster(3, xmlCPConfig(ClusterNameCPEnabled, port), port)
 })
 var idGen = proxy.ReferenceIDGenerator{}
 
@@ -491,6 +496,30 @@ func xmlSSLConfig(clusterName string, port int) string {
     		</ringbuffer>
 		</hazelcast>
 			`, clusterName, port, RingbufferCapacity)
+}
+
+func xmlCPConfig(clusterName string, port int) string {
+	return fmt.Sprintf(`
+        <hazelcast xmlns="http://www.hazelcast.com/schema/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.hazelcast.com/schema/config
+            http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
+            <cluster-name>%s</cluster-name>
+            <network>
+               <port>%d</port>
+            </network>
+			<serialization>
+				<data-serializable-factories>
+					<data-serializable-factory factory-id="66">com.hazelcast.client.test.IdentifiedFactory</data-serializable-factory>
+					<data-serializable-factory factory-id="666">com.hazelcast.client.test.IdentifiedDataSerializableFactory</data-serializable-factory>
+				</data-serializable-factories>
+			</serialization>
+			<cp-subsystem>
+				<cp-member-count>3</cp-member-count>
+				<group-size>3</group-size>
+			</cp-subsystem>
+        </hazelcast>
+			`, clusterName, port)
 }
 
 func xmlSSLMutualAuthenticationConfig(clusterName string, port int) string {
