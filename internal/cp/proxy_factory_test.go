@@ -25,8 +25,8 @@ import (
 
 func TestProxyFactory(t *testing.T) {
 	tests := []struct {
-		name       string
 		f          func(t *testing.T)
+		name       string
 		noParallel bool
 	}{
 		{name: "ObjectNameForProxy", f: objectNameForProxyTest, noParallel: false},

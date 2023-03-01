@@ -36,14 +36,14 @@ proxy is the parent struct of CP Subsystem data structures.
 */
 type proxy struct {
 	cb         *cb.CircuitBreaker
-	groupID    types.RaftGroupId
 	invFactory *cluster.ConnectionInvocationFactory
 	is         *invocation.Service
 	lg         *logger.LogAdaptor
+	ss         *iserialization.Service
 	name       string
 	object     string
 	service    string
-	ss         *iserialization.Service
+	groupID    types.RaftGroupId
 }
 
 /*

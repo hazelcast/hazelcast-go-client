@@ -81,8 +81,8 @@ func (m *proxyFactory) createGroupID(ctx context.Context, p *proxy, proxyName st
 	return codec.DecodeCPGroupCreateCPGroupResponse(response), nil
 }
 
-// ported from: com.hazelcast.cp.internal.RaftService#getObjectNameForProxy
 func objectNameForProxy(name string) (string, error) {
+	// ported from: com.hazelcast.cp.internal.RaftService#getObjectNameForProxy
 	idx := strings.Index(name, "@")
 	if idx == -1 {
 		return name, nil
@@ -98,8 +98,8 @@ func objectNameForProxy(name string) (string, error) {
 	return obj, nil
 }
 
-// ported from: com.hazelcast.cp.internal.RaftService#withoutDefaultGroupName
 func withoutDefaultGroupName(proxyName string) (string, error) {
+	// ported from: com.hazelcast.cp.internal.RaftService#withoutDefaultGroupName
 	name := strings.TrimSpace(proxyName)
 	idx := strings.Index(name, "@")
 	if idx == -1 {
