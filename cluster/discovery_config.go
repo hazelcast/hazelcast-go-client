@@ -19,8 +19,8 @@ package cluster
 import "github.com/hazelcast/hazelcast-go-client/cluster/discovery"
 
 type DiscoveryConfig struct {
-	UsePublicIP bool               `json:",omitempty"`
 	Strategy    discovery.Strategy `json:",omitempty"`
+	UsePublicIP bool               `json:",omitempty"`
 }
 
 func (c DiscoveryConfig) Clone() DiscoveryConfig {

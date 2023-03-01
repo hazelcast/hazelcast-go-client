@@ -34,12 +34,12 @@ const (
 
 type DiscoveryStrategyAdapter struct {
 	strategy    discovery.Strategy
+	lg          ilogger.LogAdaptor
 	translator  map[pubcluster.Address]pubcluster.Address
 	mu          *sync.RWMutex
 	opts        discovery.StrategyOptions
-	lg          ilogger.LogAdaptor
-	usePublicIP bool
 	started     int32
+	usePublicIP bool
 }
 
 func NewDiscoveryStrategyAdapter(cfg pubcluster.DiscoveryConfig, lg ilogger.LogAdaptor) *DiscoveryStrategyAdapter {

@@ -29,9 +29,7 @@ import (
 )
 
 type dummyDiscoverStrategy struct {
-	nodes     []discovery.Node
-	started   bool
-	destroyed bool
+	nodes []discovery.Node
 }
 
 func (d dummyDiscoverStrategy) DiscoverNodes(ctx context.Context) ([]discovery.Node, error) {
@@ -41,9 +39,9 @@ func (d dummyDiscoverStrategy) DiscoverNodes(ctx context.Context) ([]discovery.N
 func TestDiscoveryStrategyAdapter_Addresses(t *testing.T) {
 	testCases := []struct {
 		name     string
-		publicIP bool
 		nodes    []discovery.Node
 		target   []pubcluster.Address
+		publicIP bool
 	}{
 		{
 			name: "no public or private addreses",
