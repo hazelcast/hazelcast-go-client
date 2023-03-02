@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -16,6 +17,7 @@ func TestDecimal(t *testing.T) {
 		name string
 	}{
 		{name: "TestDecimalToString", f: decimalStringTest},
+		{name: "TestDecimalToStringOverflow", f: decimalStringOverflowTest},
 		{name: "TestDecimalToFloat64", f: decimalFloat64Test},
 	}
 	for _, tc := range testCases {
@@ -43,14 +45,29 @@ func decimalStringTest(t *testing.T) {
 		{dec: types.NewDecimal(big.NewInt(0), -1), str: "0E+1"},
 		{dec: types.NewDecimal(big.NewInt(0), 1), str: "0.0"},
 		{dec: types.NewDecimal(big.NewInt(0), 0), str: "0"},
+	}
+	for _, tc := range testCases {
+		require.Equal(t, tc.str, tc.dec.String())
+	}
+}
+
+func decimalStringOverflowTest(t *testing.T) {
+	skip.If(t, "arch ~ 32bit")
+	testCases := []struct {
+		dec types.Decimal
+		str string
+	}{
 		{dec: types.NewDecimal(big.NewInt(123_456_789), math.MinInt32), str: "1.23456789E+2147483656"},
 		{dec: types.NewDecimal(big.NewInt(123_456_789), math.MaxInt32), str: "1.23456789E-2147483639"},
-		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MaxInt32), str: "1.11111111E+2147483656"},
+		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MaxInt32+1), str: "1.11111111E+2147483656"},
 		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MinInt32-1), str: "1.11111111E-2147483639"},
 		{dec: types.NewDecimal(big.NewInt(math.MaxInt32), math.MinInt32), str: "2.147483647E+2147483657"},
 		{dec: types.NewDecimal(big.NewInt(math.MaxInt32), math.MaxInt32), str: "2.147483647E-2147483638"},
 		{dec: types.NewDecimal(big.NewInt(math.MinInt32), math.MinInt32), str: "-2.147483648E+2147483657"},
 		{dec: types.NewDecimal(big.NewInt(math.MinInt32), math.MaxInt32), str: "-2.147483648E-2147483638"},
+		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MinInt32-1), str: "9.223372036854775807E-2147483629"},
+		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MaxInt32+1), str: "9.223372036854775807E+2147483666"},
+		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MaxInt32+100), str: "9.223372036854775807E+2147483567"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.dec.String())
