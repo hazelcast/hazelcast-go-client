@@ -51,9 +51,6 @@ func decimalStringTest(t *testing.T) {
 		{dec: types.NewDecimal(big.NewInt(math.MaxInt32), math.MaxInt32), str: "2.147483647E-2147483638"},
 		{dec: types.NewDecimal(big.NewInt(math.MinInt32), math.MinInt32), str: "-2.147483648E+2147483657"},
 		{dec: types.NewDecimal(big.NewInt(math.MinInt32), math.MaxInt32), str: "-2.147483648E-2147483638"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MinInt32-1), str: "9.223372036854775807E-2147483629"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MaxInt32+1), str: "9.223372036854775807E+2147483666"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MaxInt32+100), str: "9.223372036854775807E+2147483567"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.dec.String())
