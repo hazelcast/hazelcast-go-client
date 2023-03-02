@@ -45,7 +45,7 @@ func decimalStringTest(t *testing.T) {
 		{dec: types.NewDecimal(big.NewInt(0), 0), str: "0"},
 		{dec: types.NewDecimal(big.NewInt(123_456_789), math.MinInt32), str: "1.23456789E+2147483656"},
 		{dec: types.NewDecimal(big.NewInt(123_456_789), math.MaxInt32), str: "1.23456789E-2147483639"},
-		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MaxInt32+1), str: "1.11111111E+2147483656"},
+		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MaxInt32), str: "1.11111111E+2147483656"},
 		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MinInt32-1), str: "1.11111111E-2147483639"},
 		{dec: types.NewDecimal(big.NewInt(math.MaxInt32), math.MinInt32), str: "2.147483647E+2147483657"},
 		{dec: types.NewDecimal(big.NewInt(math.MaxInt32), math.MaxInt32), str: "2.147483647E-2147483638"},
