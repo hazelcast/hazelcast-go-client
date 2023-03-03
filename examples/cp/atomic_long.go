@@ -70,7 +70,6 @@ func main() {
 	fmt.Println("counter after AlterAndGet:", val)
 	modified, err := counter.Apply(ctx, &Multiplication{3})
 	fmt.Println(": ", modified)
-
 }
 
 /*
