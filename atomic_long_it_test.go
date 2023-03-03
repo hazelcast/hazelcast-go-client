@@ -26,10 +26,12 @@ import (
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
 func TestAtomicLong(t *testing.T) {
+	skip.If(t, "enterprise")
 	testCases := []struct {
 		name       string
 		f          func(t *testing.T)
