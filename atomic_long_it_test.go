@@ -31,6 +31,7 @@ import (
 )
 
 func TestAtomicLong(t *testing.T) {
+	skip.If(t, "enterprise")
 	testCases := []struct {
 		name       string
 		f          func(t *testing.T)
@@ -69,7 +70,6 @@ func TestAtomicLong(t *testing.T) {
 
 func atomicLongSetTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testSet
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		err := a.Set(context.Background(), 271)
 		require.NoError(t, err)
@@ -81,7 +81,6 @@ func atomicLongSetTest(t *testing.T) {
 
 func atomicLongGetTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGet
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.Get(context.Background())
 		require.NoError(t, err)
@@ -91,7 +90,6 @@ func atomicLongGetTest(t *testing.T) {
 
 func atomicLongAddAndGetTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testAddAndGet
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.AddAndGet(context.Background(), 271)
 		require.NoError(t, err)
@@ -104,7 +102,6 @@ func atomicLongAddAndGetTest(t *testing.T) {
 
 func atomicLongCompareAndSetSuccessTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testCompareAndSet_whenSuccess
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.CompareAndSet(context.Background(), 0, 271)
 		require.NoError(t, err)
@@ -117,7 +114,6 @@ func atomicLongCompareAndSetSuccessTest(t *testing.T) {
 
 func atomicLongCompareAndSetFailTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testCompareAndSet_whenNotSuccess
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.CompareAndSet(context.Background(), 172, 0)
 		require.NoError(t, err)
@@ -130,7 +126,6 @@ func atomicLongCompareAndSetFailTest(t *testing.T) {
 
 func atomicLongDecrementAndGetTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testDecrementAndGet
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.DecrementAndGet(context.Background())
 		require.NoError(t, err)
@@ -143,7 +138,6 @@ func atomicLongDecrementAndGetTest(t *testing.T) {
 
 func atomicLongGetAndSetTest(t *testing.T) {
 	// ported from com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndSet
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndSet(context.Background(), 271)
 		require.NoError(t, err)
@@ -156,7 +150,6 @@ func atomicLongGetAndSetTest(t *testing.T) {
 
 func atomicLongGetAndIncrementTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndIncrement
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndIncrement(context.Background())
 		require.NoError(t, err)
@@ -169,7 +162,6 @@ func atomicLongGetAndIncrementTest(t *testing.T) {
 
 func atomicLongIncrementAndGetTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testIncrementAndGet
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.IncrementAndGet(context.Background())
 		require.NoError(t, err)
@@ -182,7 +174,6 @@ func atomicLongIncrementAndGetTest(t *testing.T) {
 
 func atomicLongGetAndAddTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndAdd
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndAdd(context.Background(), 271)
 		require.NoError(t, err)
@@ -195,7 +186,6 @@ func atomicLongGetAndAddTest(t *testing.T) {
 
 func atomicLongGetAndDecrementTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndDecrement
-	skip.If(t, "enterprise")
 	it.AtomicLongTester(t, func(t *testing.T, a *hz.AtomicLong) {
 		v, err := a.GetAndDecrement(context.Background())
 		require.NoError(t, err)
@@ -208,7 +198,6 @@ func atomicLongGetAndDecrementTest(t *testing.T) {
 
 func atomicLongApplyTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testApply
-	skip.If(t, "enterprise")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
@@ -226,7 +215,6 @@ func atomicLongApplyTest(t *testing.T) {
 
 func atomicLongAlterTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testAlter
-	skip.If(t, "enterprise")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
@@ -244,7 +232,6 @@ func atomicLongAlterTest(t *testing.T) {
 
 func atomicLongGetAndAlterTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testGetAndAlter
-	skip.If(t, "enterprise")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
@@ -262,7 +249,6 @@ func atomicLongGetAndAlterTest(t *testing.T) {
 
 func atomicLongAlterAndGetTest(t *testing.T) {
 	// ported from: com.hazelcast.cp.internal.datastructures.atomiclong.AbstractAtomicLongBasicTest#testAlterAndGet
-	skip.If(t, "enterprise")
 	cb := func(c *hz.Config) {
 		c.Serialization.SetIdentifiedDataSerializableFactories(&MultiplicationFactory{})
 	}
