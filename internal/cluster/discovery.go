@@ -60,9 +60,7 @@ func NewDiscoveryStrategyAdapter(cfg pubcluster.DiscoveryConfig, lg ilogger.LogA
 }
 
 func (d *DiscoveryStrategyAdapter) Addresses(ctx context.Context) ([]pubcluster.Address, error) {
-	d.lg.Trace(func() string {
-		return "cluster.DiscoveryStrategyAdapter.Addresses"
-	})
+	d.lg.TraceHere()
 	if err := d.ensureStarted(ctx); err != nil {
 		return nil, err
 	}
@@ -93,7 +91,8 @@ func (d *DiscoveryStrategyAdapter) Addresses(ctx context.Context) ([]pubcluster.
 }
 
 func (d *DiscoveryStrategyAdapter) TranslateMember(ctx context.Context, member *pubcluster.MemberInfo) (addr pubcluster.Address, err error) {
-	d.lg.Trace(func() string {
+	d.lg.TraceHere()
+	d.lg.Debug(func() string {
 		return fmt.Sprintf("cluster.DiscoveryStrategyAdapter.TranslateMember: %s %s", member.UUID.String(), member.Address)
 	})
 	if err = d.ensureStarted(ctx); err != nil {
