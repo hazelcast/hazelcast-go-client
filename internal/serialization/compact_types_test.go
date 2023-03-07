@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -1048,8 +1048,10 @@ func (s EmployeeDTOCompactSerializerV2) TypeName() string {
 }
 
 func (s EmployeeDTOCompactSerializerV2) Read(reader serialization.CompactReader) interface{} {
-	// The serializer won't be used for reading
-	return nil
+	return EmployeeDTO{
+		age: reader.ReadInt32("age"),
+		id:  reader.ReadInt64("id"),
+	}
 }
 
 func (s EmployeeDTOCompactSerializerV2) Write(writer serialization.CompactWriter, value interface{}) {

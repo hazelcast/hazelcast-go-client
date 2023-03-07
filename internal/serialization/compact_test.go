@@ -64,7 +64,7 @@ func compactBasicTest(t *testing.T) {
 		map1 := it.MustValue(tcx.Client1.GetMap(ctx, tcx.MapName)).(*hz.Map)
 		it.Must(map1.Set(ctx, 1, v))
 		map2 := it.MustValue(tcx.Client2.GetMap(ctx, tcx.MapName)).(*hz.Map)
-		it.AssertEquals(t, it.MustValue(map2.Get(ctx, 1)), v)
+		it.AssertEquals(t, v, it.MustValue(map2.Get(ctx, 1)))
 	})
 }
 

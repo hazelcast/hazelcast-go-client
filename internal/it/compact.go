@@ -75,7 +75,7 @@ func (tcx CompactTestContext) Tester(f func(CompactTestContext)) {
 			tcx.Client1 = getDefaultClient(&cfg1)
 		}
 		cfg2 := tcx.Cluster.DefaultConfig()
-		cfg2.Serialization.Compact.SetSerializers(tcx.Serializers1...)
+		cfg2.Serialization.Compact.SetSerializers(tcx.Serializers2...)
 		if tcx.Client2 == nil {
 			tcx.Client2 = getDefaultClient(&cfg2)
 		}
