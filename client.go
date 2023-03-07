@@ -74,6 +74,7 @@ type Client struct {
 	nearCacheMgrsMu         *sync.RWMutex
 	nearCacheMgrs           map[string]*inearcache.Manager
 	cfg                     *Config
+	doneCh                  chan struct{}
 }
 
 func newClient(config Config) (*Client, error) {
@@ -107,6 +108,7 @@ func newClient(config Config) (*Client, error) {
 		nearCacheMgrsMu:         &sync.RWMutex{},
 		nearCacheMgrs:           map[string]*inearcache.Manager{},
 		cfg:                     &config,
+		doneCh:                  make(chan struct{}),
 	}
 	if c.ic.StatsService != nil {
 		c.ic.StatsService.SetNCStatsGetter(func(service string) stats.NearCacheStatsGetter {
@@ -121,6 +123,9 @@ func newClient(config Config) (*Client, error) {
 	c.createComponents(&config)
 	c.ic.AddBeforeShutdownHandler(c.destroyProxies)
 	c.ic.AddAfterShutdownHandler(c.stopNearCacheManagers)
+	c.ic.AddAfterShutdownHandler(func(ctx context.Context) {
+		close(c.doneCh)
+	})
 	go c.schemaInvoker(schemaCh)
 	return c, nil
 }
@@ -131,15 +136,6 @@ func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	sid := event.NextSubscriptionID()
-	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, sid, func(ev event.Event) {
-		e := ev.(*lifecycle.StateChangedEvent)
-		if e.State == lifecycle.StateShuttingDown {
-			cancel()
-		}
-	})
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
 	for {
 		select {
 		case msg := <-ch:
@@ -157,10 +153,8 @@ func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
 				return "Stopped the schema invoker"
 			})
 			return
-		case <-ticker.C:
-			if !c.Running() {
-				cancel()
-			}
+		case <-c.doneCh:
+			cancel()
 		}
 	}
 }
