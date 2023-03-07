@@ -208,7 +208,7 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	}
 	m.checkClusterIDChanged()
 	m.eventDispatcher.Publish(NewConnected(addr))
-	m.eventDispatcher.Publish(invocation.NewInvocationStateChanged(true))
+	m.invocationService.Pause(false)
 	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateConnected))
 	atomic.StoreInt32(&m.state, ready)
 	return nil
@@ -410,8 +410,8 @@ func (m *ConnectionManager) handleConnectionEvent(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) int {
 	remaining := m.connMap.RemoveConnection(conn)
 	if remaining == 0 {
+		m.invocationService.Pause(true)
 		m.eventDispatcher.Publish(NewDisconnected())
-		m.eventDispatcher.Publish(invocation.NewInvocationStateChanged(false))
 		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateDisconnected))
 	}
 	return remaining

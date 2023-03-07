@@ -83,20 +83,6 @@ func NewService(handler Handler, ed *event.DispatchService, lg logger.LogAdaptor
 			}
 		}()
 	})
-	s.eventDispatcher.Subscribe(EventInvocationStateChanged, stateSubID, func(event event.Event) {
-		e := event.(*InvocationStateChanged)
-		if !e.Enabled {
-			atomic.CompareAndSwapInt32(&s.paused, 0, 1)
-			s.logger.Debug(func() string {
-				return "invocation.Service: disabled non-urgent invocations"
-			})
-			return
-		}
-		atomic.CompareAndSwapInt32(&s.paused, 1, 0)
-		s.logger.Debug(func() string {
-			return "invocation.Service: enabled non-urgent invocations"
-		})
-	})
 	s.executor.start()
 	go s.processIncoming()
 	return s
@@ -162,6 +148,29 @@ func (s *Service) Remove(correlationID int64) error {
 	case s.removeCh <- correlationID:
 		return nil
 	}
+}
+
+// Pause stops invoking non-urgent invocations.
+func (s *Service) Pause(paused bool) {
+	var p int32
+	if paused {
+		p = 1
+	}
+	s.stateMu.Lock()
+	if !s.running {
+		return
+	}
+	atomic.StoreInt32(&s.paused, p)
+	if p == 1 {
+		s.logger.Debug(func() string {
+			return "invocation.Service: disabled non-urgent invocations"
+		})
+	} else {
+		s.logger.Debug(func() string {
+			return "invocation.Service: enabled non-urgent invocations"
+		})
+	}
+	s.stateMu.Unlock()
 }
 
 func (s *Service) processIncoming() {

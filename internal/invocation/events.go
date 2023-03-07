@@ -18,8 +18,7 @@ package invocation
 
 const (
 	// EventGroupLost is dispatched if an invocation group is lost, e.g., a connection closed
-	EventGroupLost              = "internal.invocation.grouplost"
-	EventInvocationStateChanged = "internal.invocation.statechanged"
+	EventGroupLost = "internal.invocation.grouplost"
 )
 
 type GroupLostEvent struct {
@@ -36,18 +35,4 @@ func NewGroupLost(groupID int64, err error) *GroupLostEvent {
 
 func (e *GroupLostEvent) EventName() string {
 	return EventGroupLost
-}
-
-type InvocationStateChanged struct {
-	Enabled bool
-}
-
-func NewInvocationStateChanged(enabled bool) *InvocationStateChanged {
-	return &InvocationStateChanged{
-		Enabled: enabled,
-	}
-}
-
-func (e *InvocationStateChanged) EventName() string {
-	return EventInvocationStateChanged
 }
