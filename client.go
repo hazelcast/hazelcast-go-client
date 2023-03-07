@@ -138,6 +138,8 @@ func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
 			cancel()
 		}
 	})
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
 	for {
 		select {
 		case msg := <-ch:
@@ -155,6 +157,10 @@ func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
 				return "Stopped the schema invoker"
 			})
 			return
+		case <-ticker.C:
+			if !c.Running() {
+				cancel()
+			}
 		}
 	}
 }
