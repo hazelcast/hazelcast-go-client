@@ -81,7 +81,7 @@ func (s *Schema) init() {
 
 	for _, fd := range s.fieldDefinitions {
 		fieldKind := fd.Kind
-		if FieldOperations(fieldKind).KindSizeInBytes() == variableKindSize {
+		if FieldKindSize[fieldKind] == variableKindSize {
 			varSizeFields = append(varSizeFields, fd)
 		} else {
 			if fieldKind == serialization.FieldKindBoolean {
@@ -92,14 +92,14 @@ func (s *Schema) init() {
 		}
 	}
 	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
-		kindSize1 := FieldOperations(fixedSizeFields[j].Kind).KindSizeInBytes()
-		kindSize2 := FieldOperations(fixedSizeFields[i].Kind).KindSizeInBytes()
+		kindSize1 := FieldKindSize[fixedSizeFields[j].Kind]
+		kindSize2 := FieldKindSize[fixedSizeFields[i].Kind]
 		return kindSize1 < kindSize2
 	})
 	var offset int32
 	for _, fd := range fixedSizeFields {
 		fd.offset = offset
-		offset += FieldOperations(fd.Kind).KindSizeInBytes()
+		offset += FieldKindSize[fd.Kind]
 	}
 
 	bitOffset := 0
