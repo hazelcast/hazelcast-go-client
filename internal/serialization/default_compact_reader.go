@@ -649,19 +649,19 @@ func (d *DefaultCompactReader) ReadArrayOfNullableFloat64(fieldName string) []*f
 }
 
 func (d *DefaultCompactReader) GetFieldKind(fieldName string) pubserialization.FieldKind {
-	field := d.schema.GetField(fieldName)
-	if field == nil {
+	field, ok := d.schema.GetField(fieldName)
+	if !ok {
 		return pubserialization.FieldKindNotAvailable
 	}
 	return field.Kind
 }
 
 func (d *DefaultCompactReader) getFieldDefinition(fieldName string) FieldDescriptor {
-	fd := d.schema.GetField(fieldName)
-	if fd == nil {
+	fd, ok := d.schema.GetField(fieldName)
+	if !ok {
 		panic(newUnknownField(fieldName, d.schema))
 	}
-	return *fd
+	return fd
 }
 
 func (d *DefaultCompactReader) getFieldDefinitionChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {

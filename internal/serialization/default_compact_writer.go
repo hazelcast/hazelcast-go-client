@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -318,14 +318,14 @@ func (r *DefaultCompactWriter) End() {
 }
 
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
-	fd := r.schema.GetField(fieldName)
-	if fd == nil {
+	fd, ok := r.schema.GetField(fieldName)
+	if !ok {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field name: '%s' for %v", fieldName, r.schema), nil))
 	}
 	if fd.Kind != fieldKind {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field type: '%s' for %v", fieldName, r.schema), nil))
 	}
-	return *fd
+	return fd
 }
 
 func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pubserialization.FieldKind) int32 {

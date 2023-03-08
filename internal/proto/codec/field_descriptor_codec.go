@@ -27,7 +27,7 @@ const (
 	FieldDescriptorCodecKindInitialFrameSize = FieldDescriptorCodecKindFieldOffset + proto.IntSizeInBytes
 )
 
-func EncodeFieldDescriptor(clientMessage *proto.ClientMessage, fieldDescriptor *iserialization.FieldDescriptor) {
+func EncodeFieldDescriptor(clientMessage *proto.ClientMessage, fieldDescriptor iserialization.FieldDescriptor) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, FieldDescriptorCodecKindInitialFrameSize))
 	EncodeInt(initialFrame.Content, FieldDescriptorCodecKindFieldOffset, int32(fieldDescriptor.Kind))

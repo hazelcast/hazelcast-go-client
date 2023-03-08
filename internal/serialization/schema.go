@@ -23,21 +23,24 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+type fieldDescriptorIndex struct {
+	index int
+	fd    FieldDescriptor
+}
+
 type Schema struct {
-	Fields                map[string]*FieldDescriptor
+	Fields                map[string]FieldDescriptor
 	TypeName              string
-	fieldDefinitions      []*FieldDescriptor
+	fieldDefinitions      []FieldDescriptor
 	id                    int64
 	numberOfVarSizeFields int32
 	fixedSizeFieldsLength int32
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor) *Schema {
-	fds := make([]*FieldDescriptor, len(fieldDefinitionMap))
-	c := 0
+func NewSchema(typeName string, fieldDefinitionMap map[string]FieldDescriptor) *Schema {
+	fds := make([]FieldDescriptor, 0, len(fieldDefinitionMap))
 	for _, fd := range fieldDefinitionMap {
-		fds[c] = fd
-		c += 1
+		fds = append(fds, fd)
 	}
 	// Sort according to field name
 	sort.SliceStable(fds, func(i, j int) bool {
@@ -45,18 +48,16 @@ func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor) 
 	})
 	schema := &Schema{
 		TypeName:         typeName,
-		Fields:           fieldDefinitionMap,
+		Fields:           make(map[string]FieldDescriptor, len(fieldDefinitionMap)),
 		fieldDefinitions: fds,
 	}
 	schema.init()
 	return schema
 }
 
-func (s *Schema) GetField(fieldName string) *FieldDescriptor {
-	if fd, ok := s.Fields[fieldName]; ok {
-		return fd
-	}
-	return nil
+func (s *Schema) GetField(fieldName string) (FieldDescriptor, bool) {
+	fd, ok := s.Fields[fieldName]
+	return fd, ok
 }
 
 func (s *Schema) ID() int64 {
@@ -67,7 +68,7 @@ func (s *Schema) FieldCount() int {
 	return len(s.fieldDefinitions)
 }
 
-func (s *Schema) FieldDefinitions() []*FieldDescriptor {
+func (s *Schema) FieldDefinitions() []FieldDescriptor {
 	return s.fieldDefinitions
 }
 
@@ -77,48 +78,57 @@ func (s Schema) String() string {
 }
 
 func (s *Schema) init() {
-	var fixedSizeFields, varSizeFields, booleanFields []*FieldDescriptor
-
-	for _, fd := range s.fieldDefinitions {
-		fieldKind := fd.Kind
-		if FieldKindSize[fieldKind] == variableKindSize {
-			varSizeFields = append(varSizeFields, fd)
+	var fixedSizeFields, varSizeFields, booleanFields []fieldDescriptorIndex
+	// since FieldDescriptors are copied, it is mandatory to put them back to s.FieldDefinitions and s.Fields
+	fdis := make([]fieldDescriptorIndex, len(s.fieldDefinitions))
+	for i, fd := range s.fieldDefinitions {
+		fdi := fieldDescriptorIndex{
+			index: i,
+			fd:    fd,
+		}
+		k := fd.Kind
+		if FieldKindSize[k] == variableKindSize {
+			varSizeFields = append(varSizeFields, fdi)
 		} else {
-			if fieldKind == serialization.FieldKindBoolean {
-				booleanFields = append(booleanFields, fd)
+			if k == serialization.FieldKindBoolean {
+				booleanFields = append(booleanFields, fdi)
 			} else {
-				fixedSizeFields = append(fixedSizeFields, fd)
+				fixedSizeFields = append(fixedSizeFields, fdi)
 			}
 		}
+		fdis[i] = fdi
 	}
 	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
-		kindSize1 := FieldKindSize[fixedSizeFields[j].Kind]
-		kindSize2 := FieldKindSize[fixedSizeFields[i].Kind]
-		return kindSize1 < kindSize2
+		s1 := FieldKindSize[fixedSizeFields[j].fd.Kind]
+		s2 := FieldKindSize[fixedSizeFields[i].fd.Kind]
+		return s1 < s2
 	})
 	var offset int32
-	for _, fd := range fixedSizeFields {
-		fd.offset = offset
-		offset += FieldKindSize[fd.Kind]
+	for _, fdi := range fixedSizeFields {
+		fdi.fd.offset = offset
+		offset += FieldKindSize[fdi.fd.Kind]
+		s.fieldDefinitions[fdi.index] = fdi.fd
+		s.Fields[fdi.fd.Name] = fdi.fd
 	}
-
 	bitOffset := 0
-	for _, fd := range booleanFields {
-		fd.offset = offset
-		fd.bitOffset = int8(bitOffset % BitsInAByte)
+	for _, fdi := range booleanFields {
+		fdi.fd.offset = offset
+		fdi.fd.bitOffset = int8(bitOffset % BitsInAByte)
 		bitOffset += 1
 		if bitOffset%BitsInAByte == 0 {
 			offset += 1
 		}
+		s.fieldDefinitions[fdi.index] = fdi.fd
+		s.Fields[fdi.fd.Name] = fdi.fd
 	}
-
 	if bitOffset%BitsInAByte != 0 {
 		offset += 1
 	}
-
 	s.fixedSizeFieldsLength = offset
-	for i, fd := range varSizeFields {
-		fd.index = int32(i)
+	for i, fdi := range varSizeFields {
+		fdi.fd.index = int32(i)
+		s.fieldDefinitions[fdi.index] = fdi.fd
+		s.Fields[fdi.fd.Name] = fdi.fd
 	}
 	s.numberOfVarSizeFields = int32(len(varSizeFields))
 	s.id = RabinFingerPrint.OfSchema(s)

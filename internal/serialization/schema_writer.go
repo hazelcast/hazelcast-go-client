@@ -22,19 +22,19 @@ import (
 )
 
 type SchemaWriter struct {
-	fieldDefinitionMap map[string]*FieldDescriptor
+	fieldDefinitionMap map[string]FieldDescriptor
 	typeName           string
 }
 
 func NewSchemaWriter(typeName string) SchemaWriter {
 	return SchemaWriter{
 		typeName:           typeName,
-		fieldDefinitionMap: make(map[string]*FieldDescriptor),
+		fieldDefinitionMap: make(map[string]FieldDescriptor),
 	}
 }
 
 func (s SchemaWriter) addField(fd FieldDescriptor) {
-	s.fieldDefinitionMap[fd.Name] = &fd
+	s.fieldDefinitionMap[fd.Name] = fd
 }
 
 func (s SchemaWriter) Build() *Schema {

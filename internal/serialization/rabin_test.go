@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import (
 )
 
 func TestRabinFingerprintIsConsistentWithWrittenData(t *testing.T) {
-	fieldDefinitionMap := make(map[string]*serialization.FieldDescriptor)
+	fieldDefinitionMap := make(map[string]serialization.FieldDescriptor)
 	ageField := serialization.NewFieldDescriptor("age", pserialization.FieldKindInt32)
 	nameField := serialization.NewFieldDescriptor("name", pserialization.FieldKindString)
-	fieldDefinitionMap["age"] = &ageField
-	fieldDefinitionMap["name"] = &nameField
+	fieldDefinitionMap["age"] = ageField
+	fieldDefinitionMap["name"] = nameField
 	schema := serialization.NewSchema("student", fieldDefinitionMap)
 	schemaId := schema.ID()
 	/*
