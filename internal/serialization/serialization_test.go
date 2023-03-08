@@ -605,7 +605,7 @@ func TestWithExplicitSerializerNested(t *testing.T) {
 func TestSchemaEvolution_fieldAdded(t *testing.T) {
 	var cc serialization.CompactConfig
 	cc.SetSerializers(EmployeeDTOCompactSerializerV2{})
-	ss := iserialization.NewSchemaService(cc, nil)
+	ss := it.MustValue(iserialization.NewSchemaService(cc, nil)).(*iserialization.SchemaService)
 	c := &serialization.Config{Compact: cc}
 	service := mustSerializationService(iserialization.NewService(c, nil))
 	service.SetSchemaService(ss)
@@ -626,7 +626,7 @@ func TestSchemaEvolution_fieldAdded(t *testing.T) {
 func TestSchemaEvolution_fieldRemoved(t *testing.T) {
 	var cc serialization.CompactConfig
 	cc.SetSerializers(EmployeeDTOCompactSerializerV3{})
-	schemaService := iserialization.NewSchemaService(cc, nil)
+	schemaService := it.MustValue(iserialization.NewSchemaService(cc, nil)).(*iserialization.SchemaService)
 	cfg := &serialization.Config{Compact: cc}
 	service := mustSerializationService(iserialization.NewService(cfg, nil))
 	service.SetSchemaService(schemaService)

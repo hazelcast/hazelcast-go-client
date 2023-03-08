@@ -17,6 +17,9 @@
 package serialization
 
 import (
+	"fmt"
+
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -29,11 +32,14 @@ type SchemaWriter struct {
 func NewSchemaWriter(typeName string) SchemaWriter {
 	return SchemaWriter{
 		typeName:           typeName,
-		fieldDefinitionMap: make(map[string]FieldDescriptor),
+		fieldDefinitionMap: map[string]FieldDescriptor{},
 	}
 }
 
 func (s SchemaWriter) addField(fd FieldDescriptor) {
+	if _, ok := s.fieldDefinitionMap[fd.Name]; ok {
+		panic(ihzerrors.NewIllegalArgumentError(fmt.Sprintf("field %s already exists", fd.Name), nil))
+	}
 	s.fieldDefinitionMap[fd.Name] = fd
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,16 @@ type SchemaService struct {
 	ch        chan<- SchemaMsg
 }
 
-func NewSchemaService(cfg pubserialization.CompactConfig, ch chan<- SchemaMsg) *SchemaService {
+func NewSchemaService(cfg pubserialization.CompactConfig, ch chan<- SchemaMsg) (*SchemaService, error) {
+	sm, err := MakeSchemasFromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
 	return &SchemaService{
-		schemaMap: MakeSchemasFromConfig(cfg),
+		schemaMap: sm,
 		mu:        &sync.RWMutex{},
 		ch:        ch,
-	}
+	}, nil
 }
 
 func (s *SchemaService) Schemas() []*Schema {

@@ -42,11 +42,15 @@ type Service struct {
 
 func NewService(config *pubserialization.Config, schemaCh chan SchemaMsg) (*Service, error) {
 	var err error
+	cs, err := NewCompactStreamSerializer(config.Compact, schemaCh)
+	if err != nil {
+		return nil, err
+	}
 	s := &Service{
 		SerializationConfig: config,
 		registry:            make(map[int32]pubserialization.Serializer),
 		customSerializers:   config.CustomSerializers(),
-		compactSerializer:   NewCompactStreamSerializer(config.Compact, schemaCh),
+		compactSerializer:   cs,
 	}
 	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
 	if err != nil {

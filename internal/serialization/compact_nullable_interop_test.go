@@ -27,7 +27,25 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func TestWritePrimitiveReadNullable(t *testing.T) {
+func TestNullableInteroperability(t *testing.T) {
+	testCases := []struct {
+		name string
+		f    func(t *testing.T)
+	}{
+		{name: "WriteNullableReadPrimitive", f: writeNullableReadPrimitiveTest},
+		{name: "WriteNullReadPrimitiveThrowsException", f: writeNullReadPrimitiveThrowsExceptionTest},
+		{name: "WritePrimitiveReadNullable", f: writePrimitiveReadNullableTest},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.f(t)
+		})
+	}
+}
+
+func writePrimitiveReadNullableTest(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWritePrimitiveReadNullableSerializer{})
@@ -39,7 +57,7 @@ func TestWritePrimitiveReadNullable(t *testing.T) {
 	}
 }
 
-func TestWriteNullableReadPrimitive(t *testing.T) {
+func writeNullableReadPrimitiveTest(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWriteNullableReadPrimitiveSerializer{})
@@ -51,7 +69,7 @@ func TestWriteNullableReadPrimitive(t *testing.T) {
 	}
 }
 
-func TestWriteNullReadPrimitiveThrowsException(t *testing.T) {
+func writeNullReadPrimitiveThrowsExceptionTest(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWriteNullReadPrimitiveSerializer{})
