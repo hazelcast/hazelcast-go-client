@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ func TestIdentifiedDataSerializableSerializer_Write(t *testing.T) {
 	var employee1 = &employee{age: 22, name: "Furkan Şenharputlu"}
 	c := &serialization.Config{}
 	c.SetIdentifiedDataSerializableFactories(&factory{})
-	service, err := iserialization.NewService(c)
+	service, err := iserialization.NewService(c, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func TestIdentifiedDataSerializableSerializer_NoInstanceCreated(t *testing.T) {
 	e := &employee{age: 38, name: "Jack"}
 	c := &serialization.Config{}
 	c.SetIdentifiedDataSerializableFactories(&nullFactory{})
-	service, err := iserialization.NewService(c)
+	service, err := iserialization.NewService(c, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

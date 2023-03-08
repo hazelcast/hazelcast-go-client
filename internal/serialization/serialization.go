@@ -40,13 +40,13 @@ type Service struct {
 	compactSerializer    *CompactStreamSerializer
 }
 
-func NewService(config *pubserialization.Config) (*Service, error) {
+func NewService(config *pubserialization.Config, schemaCh chan SchemaMsg) (*Service, error) {
 	var err error
 	s := &Service{
 		SerializationConfig: config,
 		registry:            make(map[int32]pubserialization.Serializer),
 		customSerializers:   config.CustomSerializers(),
-		compactSerializer:   NewCompactStreamSerializer(config.Compact),
+		compactSerializer:   NewCompactStreamSerializer(config.Compact, schemaCh),
 	}
 	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
 	if err != nil {
@@ -61,7 +61,11 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 	return s, nil
 }
 
-// Used in tests
+func (s *Service) SchemaService() *SchemaService {
+	return s.compactSerializer.ss
+}
+
+// SetSchemaService is used in tests
 func (s *Service) SetSchemaService(ss *SchemaService) {
 	s.compactSerializer.ss = ss
 }

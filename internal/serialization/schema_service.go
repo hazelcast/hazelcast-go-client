@@ -1,6 +1,3 @@
-//go:build !race
-// +build !race
-
 /*
  * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
@@ -19,21 +16,69 @@
 
 package serialization
 
-type SchemaService struct {
-	schemaMap map[int64]Schema
+import (
+	"context"
+	"sync"
+
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+)
+
+type SchemaMsg struct {
+	ID         int64
+	ResponseCh chan *Schema
 }
 
-func NewSchemaService() *SchemaService {
+type SchemaService struct {
+	schemaMap map[int64]*Schema
+	mu        *sync.RWMutex
+	ch        chan<- SchemaMsg
+}
+
+func NewSchemaService(cfg pubserialization.CompactConfig, ch chan<- SchemaMsg) *SchemaService {
 	return &SchemaService{
-		schemaMap: make(map[int64]Schema),
+		schemaMap: MakeSchemasFromConfig(cfg),
+		mu:        &sync.RWMutex{},
+		ch:        ch,
 	}
 }
 
-func (s *SchemaService) Get(schemaId int64) (Schema, bool) {
-	schema, ok := s.schemaMap[schemaId]
+func (s *SchemaService) Schemas() []*Schema {
+	s.mu.RLock()
+	schemas := make([]*Schema, 0, len(s.schemaMap))
+	for _, v := range s.schemaMap {
+		schemas = append(schemas, v)
+	}
+	s.mu.RUnlock()
+	return schemas
+}
+
+func (s *SchemaService) Get(ctx context.Context, schemaId int64) (schema *Schema, ok bool) {
+	// TODO: return error
+	s.mu.RLock()
+	schema, ok = s.schemaMap[schemaId]
+	s.mu.RUnlock()
+	if !ok {
+		rch := make(chan *Schema)
+		s.ch <- SchemaMsg{ID: schemaId, ResponseCh: rch}
+		select {
+		case schema = <-rch:
+			ok = schema != nil
+			if ok {
+				s.putLocal(schema)
+			}
+		case <-ctx.Done():
+			if ctx.Err() != nil {
+				return nil, false
+			}
+		}
+	}
 	return schema, ok
 }
 
-func (s *SchemaService) PutLocal(schema Schema) {
-	s.schemaMap[schema.ID()] = schema
+func (s *SchemaService) putLocal(schema *Schema) {
+	s.mu.Lock()
+	if _, ok := s.schemaMap[schema.ID()]; !ok {
+		s.schemaMap[schema.ID()] = schema
+	}
+	s.mu.Unlock()
 }

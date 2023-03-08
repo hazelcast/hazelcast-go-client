@@ -31,7 +31,7 @@ func TestWritePrimitiveReadNullable(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWritePrimitiveReadNullableSerializer{})
-	ss := it.MustSerializationService(iserialization.NewService(&config))
+	ss := mustSerializationService(iserialization.NewService(&config, nil))
 	data := it.MustValue(ss.ToData(test)).(iserialization.Data)
 	obj := it.MustValue(ss.ToObject(data))
 	if !reflect.DeepEqual(test, obj) {
@@ -43,7 +43,7 @@ func TestWriteNullableReadPrimitive(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWriteNullableReadPrimitiveSerializer{})
-	ss := it.MustSerializationService(iserialization.NewService(&config))
+	ss := mustSerializationService(iserialization.NewService(&config, nil))
 	data := it.MustValue(ss.ToData(test)).(iserialization.Data)
 	obj := it.MustValue(ss.ToObject(data))
 	if !reflect.DeepEqual(test, obj) {
@@ -55,7 +55,7 @@ func TestWriteNullReadPrimitiveThrowsException(t *testing.T) {
 	test := NewCompactTestObj()
 	config := serialization.Config{}
 	config.Compact.SetSerializers(CompactTestWriteNullReadPrimitiveSerializer{})
-	ss := it.MustSerializationService(iserialization.NewService(&config))
+	ss := mustSerializationService(iserialization.NewService(&config, nil))
 	data := it.MustValue(ss.ToData(test)).(iserialization.Data)
 	_, err := ss.ToObject(data)
 	// TODO: think how to test all Read() methods, not just boolean. When generic records implemented change this test to do that.

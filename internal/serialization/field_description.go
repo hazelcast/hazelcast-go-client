@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,20 @@
 
 package serialization
 
-import pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
+import pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 
 type FieldDescriptor struct {
-	fieldName string
-	fieldKind pserialization.FieldKind
+	Name      string
+	Kind      pubserialization.FieldKind
 	index     int32
 	offset    int32
 	bitOffset int8
 }
 
-func NewFieldDescriptor(fieldName string, fieldKind pserialization.FieldKind) FieldDescriptor {
+func NewFieldDescriptor(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
 	return FieldDescriptor{
-		fieldName: fieldName,
-		fieldKind: fieldKind,
+		Name:      fieldName,
+		Kind:      fieldKind,
 		index:     -1,
 		offset:    -1,
 		bitOffset: -1,

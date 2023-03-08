@@ -37,7 +37,7 @@ func TestDefaultSerializer(t *testing.T) {
 	}
 	sc := &serialization.Config{}
 	sc.SetGlobalSerializer(&PanicingGlobalSerializer{})
-	service, err := NewService(sc)
+	service, err := NewService(sc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

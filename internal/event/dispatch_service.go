@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -114,8 +114,10 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 		s.subscriptions[eventName] = handlers
 	}
 	if _, exists := handlers[subscriptionID]; exists {
-		//TODO we need to make sure that this can never happen
-		panic("subscriptionID already exists ")
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("event.DispatchService.Subscribe: another handler already subscribed to ID: %d", subscriptionID)
+		})
+		return
 	}
 	handlers[subscriptionID] = sbs
 }

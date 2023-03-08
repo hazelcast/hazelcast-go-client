@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -29,7 +30,10 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
-var serviceSubID = event.NextSubscriptionID()
+var (
+	serviceSubID = event.NextSubscriptionID()
+	stateSubID   = event.NextSubscriptionID()
+)
 
 type Handler interface {
 	Invoke(invocation Invocation) (groupID int64, err error)
@@ -50,6 +54,7 @@ type Service struct {
 	logger   logger.LogAdaptor
 	stateMu  *sync.RWMutex
 	running  bool
+	paused   int32
 }
 
 func NewService(handler Handler, ed *event.DispatchService, lg logger.LogAdaptor) *Service {
@@ -99,9 +104,16 @@ func (s *Service) SetHandler(handler Handler) {
 }
 
 func (s *Service) SendRequest(ctx context.Context, inv Invocation) error {
+	if atomic.LoadInt32(&s.paused) == 1 {
+		err := fmt.Errorf("non-urgent invocations are paused: %w", hzerrors.ErrRetryableIO)
+		if time.Now().After(inv.Deadline()) {
+			return cb.WrapNonRetryableError(err)
+		}
+		return err
+	}
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("sending invocation: %w", ctx.Err())
+		return cb.WrapNonRetryableError(fmt.Errorf("sending invocation: %w", ctx.Err()))
 	case <-s.doneCh:
 		return cb.WrapNonRetryableError(fmt.Errorf("sending invocation: %w", hzerrors.ErrClientNotActive))
 	case s.requestCh <- inv:
@@ -136,6 +148,29 @@ func (s *Service) Remove(correlationID int64) error {
 	case s.removeCh <- correlationID:
 		return nil
 	}
+}
+
+// Pause stops invoking non-urgent invocations.
+func (s *Service) Pause(paused bool) {
+	var p int32
+	if paused {
+		p = 1
+	}
+	s.stateMu.Lock()
+	if !s.running {
+		return
+	}
+	atomic.StoreInt32(&s.paused, p)
+	if p == 1 {
+		s.logger.Debug(func() string {
+			return "invocation.Service: disabled non-urgent invocations"
+		})
+	} else {
+		s.logger.Debug(func() string {
+			return "invocation.Service: enabled non-urgent invocations"
+		})
+	}
+	s.stateMu.Unlock()
 }
 
 func (s *Service) processIncoming() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
+
+// ported from: com.hazelcast.internal.serialization.impl.compact.CompactTestUtil
 
 type NamedDTO struct {
 	name  *string
@@ -135,68 +137,49 @@ type MainDTO struct {
 
 func NewInnerDTO() InnerDTO {
 	now := time.Now()
-
 	testStr := "test"
-
 	nowLocalTime := types.LocalTime(time.Date(0, 1, 1, now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.Local))
 	nowLocalTime2 := types.LocalTime(time.Date(0, 1, 1, now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.Local))
-
 	nowLocalDate := types.LocalDate(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local))
 	nowLocalDate2 := types.LocalDate(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local))
-
 	nowLocalDateTime := types.LocalDateTime(time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), now.Second(), now.Nanosecond(), time.Local))
 	nowOffsetDateTime := types.OffsetDateTime(time.Now())
-
-	aBool := true
-	aBool2 := false
-
-	aSignedByte := int8(0)
-	aSignedByte2 := int8(1)
-	aSignedByte3 := int8(2)
-
-	aShort := int16(3)
-	aShort2 := int16(4)
-	aShort3 := int16(5)
-
-	anInt := int32(9)
-	anInt2 := int32(8)
-	anInt3 := int32(7)
-	anInt4 := int32(6)
-
-	aLong := int64(0)
-	aLong2 := int64(1)
-	aLong3 := int64(5)
-	aLong4 := int64(7)
-	aLong5 := int64(9)
-	aLong6 := int64(11)
-
-	aFloat := float32(0.6543)
-	aFloat2 := float32(-3.56)
-	aFloat3 := float32(45.67)
-
-	aDouble := float64(456.456)
-	aDouble2 := float64(789.789)
-	aDouble3 := float64(321.321)
-
+	bools := []bool{true, false}
+	bytes := []int8{0, 1, 2}
+	shorts := []int16{3, 4, 5}
+	ints := []int32{9, 8, 7, 6}
+	longs := []int64{0, 1, 5, 7, 9, 11}
+	floats := []float32{0.6543, -3.56, 45.67}
+	doubles := []float64{456.456, 789.789, 321.321}
 	bigDec1 := types.NewDecimal(big.NewInt(12345), 0)
 	bigDec2 := types.NewDecimal(big.NewInt(123456), 0)
-
 	nn := make([]*NamedDTO, 2)
 	nameStr := "name"
 	nameStr2 := "name"
 	nn[0] = &NamedDTO{name: &nameStr, myint: 123}
 	nn[1] = &NamedDTO{name: &nameStr2, myint: 123}
-
 	return InnerDTO{
-		bools: []bool{true, false}, bytes: []int8{0, 1, 2}, shorts: []int16{3, 4, 5},
-		ints: []int32{9, 8, 7, 6}, longs: []int64{0, 1, 5, 7, 9, 11}, floats: []float32{0.6543, -3.56, 45.67},
-		doubles: []float64{456.456, 789.789, 321.321}, strings: []*string{&testStr, nil}, nn: nn,
-		bigDecimals: []*types.Decimal{&bigDec1, &bigDec2}, localTimes: []*types.LocalTime{&nowLocalTime, nil, &nowLocalTime2},
-		localDates: []*types.LocalDate{&nowLocalDate, nil, &nowLocalDate2}, localDateTimes: []*types.LocalDateTime{&nowLocalDateTime, nil},
-		offsetDateTimes: []*types.OffsetDateTime{&nowOffsetDateTime}, nullableBools: []*bool{&aBool, &aBool2, nil},
-		nullableBytes: []*int8{&aSignedByte, &aSignedByte2, &aSignedByte3, nil}, nullableShorts: []*int16{&aShort, &aShort2, &aShort3, nil},
-		nullableIntegers: []*int32{&anInt, &anInt2, &anInt3, &anInt4, nil}, nullableLongs: []*int64{&aLong, &aLong2, &aLong3, &aLong4, &aLong5, &aLong6},
-		nullableFloats: []*float32{&aFloat, &aFloat2, &aFloat3}, nullableDoubles: []*float64{&aDouble, &aDouble2, &aDouble3},
+		bools:            bools,
+		bytes:            bytes,
+		shorts:           shorts,
+		ints:             ints,
+		longs:            longs,
+		floats:           floats,
+		doubles:          doubles,
+		strings:          []*string{&testStr, nil},
+		nn:               nn,
+		bigDecimals:      []*types.Decimal{&bigDec1, &bigDec2},
+		localTimes:       []*types.LocalTime{&nowLocalTime, nil, &nowLocalTime2},
+		localDates:       []*types.LocalDate{&nowLocalDate, nil, &nowLocalDate2},
+		localDateTimes:   []*types.LocalDateTime{&nowLocalDateTime, nil},
+		offsetDateTimes:  []*types.OffsetDateTime{&nowOffsetDateTime},
+		nullableBools:    nullableBoolSlice(bools...),
+		nullableBytes:    nullableInt8Slice(bytes...),
+		nullableShorts:   nullableInt16Slice(shorts...),
+		nullableIntegers: nullableInt32Slice(ints...),
+		nullableLongs:    nullableInt64Slice(longs...),
+		nullableFloats:   nullableFloat32Slice(floats...),
+		nullableDoubles:  nullableFloat64Slice(doubles...),
 	}
 }
 
@@ -1065,8 +1048,10 @@ func (s EmployeeDTOCompactSerializerV2) TypeName() string {
 }
 
 func (s EmployeeDTOCompactSerializerV2) Read(reader serialization.CompactReader) interface{} {
-	// The serializer won't be used for reading
-	return nil
+	return EmployeeDTO{
+		age: reader.ReadInt32("age"),
+		id:  reader.ReadInt64("id"),
+	}
 }
 
 func (s EmployeeDTOCompactSerializerV2) Write(writer serialization.CompactWriter, value interface{}) {
@@ -1101,4 +1086,67 @@ func (s EmployeeDTOCompactSerializerV3) Write(writer serialization.CompactWriter
 		panic("not an EmployeeDTO")
 	}
 	writer.WriteInt32("age", c.age)
+}
+
+// TODO: refactor the functions below to use generics when Go version requirement is raised to 1.18 --YT
+
+func nullableBoolSlice(values ...bool) []*bool {
+	r := make([]*bool, len(values)+1)
+	for i, v := range values {
+		r[i] = &v
+	}
+	r[len(values)-1] = nil
+	return r
+}
+
+func nullableInt8Slice(values ...int8) []*int8 {
+	r := make([]*int8, len(values)+1)
+	for i, v := range values {
+		r[i] = &v
+	}
+	r[len(values)-1] = nil
+	return r
+}
+
+func nullableInt16Slice(values ...int16) []*int16 {
+	r := make([]*int16, len(values)+1)
+	for i, v := range values {
+		r[i] = &v
+	}
+	r[len(values)-1] = nil
+	return r
+}
+
+func nullableInt32Slice(values ...int32) []*int32 {
+	r := make([]*int32, len(values)+1)
+	for i, v := range values {
+		r[i] = &v
+	}
+	r[len(values)-1] = nil
+	return r
+}
+
+func nullableInt64Slice(values ...int64) []*int64 {
+	r := make([]*int64, len(values)+1)
+	for i, v := range values {
+		r[i] = &v
+	}
+	r[len(values)-1] = nil
+	return r
+}
+
+func nullableFloat32Slice(values ...float32) []*float32 {
+	r := make([]*float32, len(values))
+	for i, v := range values {
+		r[i] = &v
+	}
+	return r
+}
+
+func nullableFloat64Slice(values ...float64) []*float64 {
+	r := make([]*float64, len(values))
+	for i, v := range values {
+		r[i] = &v
+	}
+	return r
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,15 @@ import (
 )
 
 type Schema struct {
-	fieldDefinitionMap    map[string]*FieldDescriptor
-	typeName              string
+	Fields                map[string]*FieldDescriptor
+	TypeName              string
 	fieldDefinitions      []*FieldDescriptor
 	id                    int64
 	numberOfVarSizeFields int32
 	fixedSizeFieldsLength int32
 }
 
-func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, rabin RabinFingerPrint) Schema {
+func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor) *Schema {
 	fds := make([]*FieldDescriptor, len(fieldDefinitionMap))
 	c := 0
 	for _, fd := range fieldDefinitionMap {
@@ -41,19 +41,19 @@ func NewSchema(typeName string, fieldDefinitionMap map[string]*FieldDescriptor, 
 	}
 	// Sort according to field name
 	sort.SliceStable(fds, func(i, j int) bool {
-		return fds[i].fieldName < fds[j].fieldName
+		return fds[i].Name < fds[j].Name
 	})
-	schema := Schema{
-		typeName:           typeName,
-		fieldDefinitionMap: fieldDefinitionMap,
-		fieldDefinitions:   fds,
+	schema := &Schema{
+		TypeName:         typeName,
+		Fields:           fieldDefinitionMap,
+		fieldDefinitions: fds,
 	}
-	schema.init(rabin)
+	schema.init()
 	return schema
 }
 
 func (s *Schema) GetField(fieldName string) *FieldDescriptor {
-	if fd, ok := s.fieldDefinitionMap[fieldName]; ok {
+	if fd, ok := s.Fields[fieldName]; ok {
 		return fd
 	}
 	return nil
@@ -67,20 +67,20 @@ func (s *Schema) FieldCount() int {
 	return len(s.fieldDefinitions)
 }
 
+func (s *Schema) FieldDefinitions() []*FieldDescriptor {
+	return s.fieldDefinitions
+}
+
 func (s Schema) String() string {
-	return fmt.Sprintf("Schema{typeName=%s, numberOfComplexFields=%d, primitivesLength=%d, fieldDefinitionMap=%v}",
-		s.typeName, s.numberOfVarSizeFields, s.fixedSizeFieldsLength, s.fieldDefinitionMap)
+	return fmt.Sprintf("Schema{TypeName=%s, numberOfComplexFields=%d, primitivesLength=%d, Fields=%v}",
+		s.TypeName, s.numberOfVarSizeFields, s.fixedSizeFieldsLength, s.Fields)
 }
 
-func (s *Schema) TypeName() string {
-	return s.typeName
-}
-
-func (s *Schema) init(rabin RabinFingerPrint) {
+func (s *Schema) init() {
 	var fixedSizeFields, varSizeFields, booleanFields []*FieldDescriptor
 
 	for _, fd := range s.fieldDefinitions {
-		fieldKind := fd.fieldKind
+		fieldKind := fd.Kind
 		if FieldOperations(fieldKind).KindSizeInBytes() == variableKindSize {
 			varSizeFields = append(varSizeFields, fd)
 		} else {
@@ -92,14 +92,14 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		}
 	}
 	sort.SliceStable(fixedSizeFields, func(i, j int) bool {
-		kindSize1 := FieldOperations(fixedSizeFields[j].fieldKind).KindSizeInBytes()
-		kindSize2 := FieldOperations(fixedSizeFields[i].fieldKind).KindSizeInBytes()
+		kindSize1 := FieldOperations(fixedSizeFields[j].Kind).KindSizeInBytes()
+		kindSize2 := FieldOperations(fixedSizeFields[i].Kind).KindSizeInBytes()
 		return kindSize1 < kindSize2
 	})
 	var offset int32
 	for _, fd := range fixedSizeFields {
 		fd.offset = offset
-		offset += FieldOperations(fd.fieldKind).KindSizeInBytes()
+		offset += FieldOperations(fd.Kind).KindSizeInBytes()
 	}
 
 	bitOffset := 0
@@ -121,5 +121,5 @@ func (s *Schema) init(rabin RabinFingerPrint) {
 		fd.index = int32(i)
 	}
 	s.numberOfVarSizeFields = int32(len(varSizeFields))
-	s.id = rabin.OfSchema(s)
+	s.id = RabinFingerPrint.OfSchema(s)
 }

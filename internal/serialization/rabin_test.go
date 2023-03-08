@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,19 @@ package serialization_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	pserialization "github.com/hazelcast/hazelcast-go-client/serialization"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRabinFingerprintIsConsistentWithWrittenData(t *testing.T) {
-	rabin := serialization.NewRabinFingerPrint()
 	fieldDefinitionMap := make(map[string]*serialization.FieldDescriptor)
 	ageField := serialization.NewFieldDescriptor("age", pserialization.FieldKindInt32)
 	nameField := serialization.NewFieldDescriptor("name", pserialization.FieldKindString)
 	fieldDefinitionMap["age"] = &ageField
 	fieldDefinitionMap["name"] = &nameField
-
-	schema := serialization.NewSchema("student", fieldDefinitionMap, rabin)
+	schema := serialization.NewSchema("student", fieldDefinitionMap)
 	schemaId := schema.ID()
 	/*
 		The magic number is generated using the following code snippet:
@@ -43,5 +42,5 @@ func TestRabinFingerprintIsConsistentWithWrittenData(t *testing.T) {
 		Schema schema = writer.build();
 		System.out.println(schema.getSchemaId());
 	*/
-	assert.Equal(t, int64(6299127804903769351), schemaId)
+	assert.Equal(t, int64(5500194539746463554), schemaId)
 }

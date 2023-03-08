@@ -34,8 +34,6 @@ import (
 	"testing"
 	"time"
 
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
-
 	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/goleak"
@@ -56,7 +54,10 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultClusterName = "integration-test"
+const (
+	DefaultClusterName = "integration-test"
+	RingbufferCapacity = 10
+)
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
@@ -202,27 +203,12 @@ func MustBool(value bool, err error) bool {
 	return value
 }
 
-// MustData returns data if err is nil, otherwise it panics.
-func MustData(value interface{}, err error) iserialization.Data {
-	if err != nil {
-		panic(err)
-	}
-	return value.(iserialization.Data)
-}
-
 // MustClient returns client if err is nil, otherwise it panics.
 func MustClient(client *hz.Client, err error) *hz.Client {
 	if err != nil {
 		panic(err)
 	}
 	return client
-}
-
-func MustSerializationService(ss *iserialization.Service, err error) *iserialization.Service {
-	if err != nil {
-		panic(err)
-	}
-	return ss
 }
 
 func NewUniqueObjectName(service string, labels ...string) string {
@@ -415,7 +401,9 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
-const RingbufferCapacity = 10
+func (c TestCluster) StartMember(ctx context.Context) (*Member, error) {
+	return c.RC.StartMember(ctx, c.ClusterID)
+}
 
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`

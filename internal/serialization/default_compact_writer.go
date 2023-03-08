@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,12 @@ import (
 type DefaultCompactWriter struct {
 	out          *PositionalObjectDataOutput
 	fieldOffsets []int32
-	schema       Schema
+	schema       *Schema
 	serializer   CompactStreamSerializer
 	dataStartPos int32
 }
 
-func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *PositionalObjectDataOutput, schema Schema) *DefaultCompactWriter {
+func NewDefaultCompactWriter(serializer CompactStreamSerializer, out *PositionalObjectDataOutput, schema *Schema) *DefaultCompactWriter {
 	var fieldOffsets []int32
 	var dataStartPosition int32
 	if schema.numberOfVarSizeFields != 0 {
@@ -320,10 +320,10 @@ func (r *DefaultCompactWriter) End() {
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
 	fd := r.schema.GetField(fieldName)
 	if fd == nil {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field name: '%s' for %v", fieldName, r.schema), nil))
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field name: '%s' for %v", fieldName, r.schema), nil))
 	}
-	if fd.fieldKind != fieldKind {
-		panic(ihzerrors.NewSerializationError(fmt.Sprintf("Invalid field type: '%s' for %v", fieldName, r.schema), nil))
+	if fd.Kind != fieldKind {
+		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field type: '%s' for %v", fieldName, r.schema), nil))
 	}
 	return *fd
 }
