@@ -38,8 +38,8 @@ func TestCompact(t *testing.T) {
 	}{
 		{name: "Basic", f: compactBasicTest},
 		{name: "BasicQuery", f: basicQueryTest},
-		{name: "JoinedMemberQuery", f: joinedMemberQueryTest},
 		{name: "ClusterRestart", f: clusterRestartTest},
+		{name: "JoinedMemberQuery", f: joinedMemberQueryTest},
 		// TODO: add testEntryProcessor when generic record is supported
 		// TODO: add testSchemaReplication when generic record is supported
 	}
