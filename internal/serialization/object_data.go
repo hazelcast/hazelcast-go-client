@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import (
 )
 
 const (
+	BitsInAByte        = 8
 	ByteSizeInBytes    = 1
 	BoolSizeInBytes    = 1
 	Uint8SizeInBytes   = 1
@@ -101,8 +102,18 @@ func (o *ObjectDataOutput) WriteByte(v byte) {
 	o.writeByte(v)
 }
 
+func (o *ObjectDataOutput) WriteSignedByte(v int8) {
+	o.EnsureAvailable(ByteSizeInBytes)
+	o.writeSignedByte(v)
+}
+
 func (o *ObjectDataOutput) writeByte(v byte) {
 	o.buffer[o.position] = v
+	o.position += ByteSizeInBytes
+}
+
+func (o *ObjectDataOutput) writeSignedByte(v int8) {
+	o.buffer[o.position] = byte(v)
 	o.position += ByteSizeInBytes
 }
 
@@ -170,6 +181,19 @@ func (o *ObjectDataOutput) WriteString(v string) {
 
 func (o *ObjectDataOutput) WriteObject(object interface{}) {
 	o.service.WriteObject(o, object)
+}
+
+func (o *ObjectDataOutput) WriteInt8Array(signedByteArray []int8) {
+	if signedByteArray == nil {
+		o.WriteInt32(nilArrayLength)
+		return
+	}
+	length := len(signedByteArray)
+	o.WriteInt32(int32(length))
+	o.EnsureAvailable(length)
+	for _, signedByte := range signedByteArray {
+		o.writeSignedByte(signedByte)
+	}
 }
 
 func (o *ObjectDataOutput) WriteByteArray(v []byte) {
@@ -353,14 +377,30 @@ func (i *ObjectDataInput) ReadByte() byte {
 	return i.readByte()
 }
 
+func (i *ObjectDataInput) ReadSignedByte() int8 {
+	i.AssertAvailable(ByteSizeInBytes)
+	return i.readSignedByte()
+}
+
 func (i *ObjectDataInput) readByte() byte {
 	ret := i.buffer[i.position]
 	i.position += ByteSizeInBytes
 	return ret
 }
 
+func (i *ObjectDataInput) readSignedByte() int8 {
+	ret := i.buffer[i.position]
+	i.position += ByteSizeInBytes
+	return int8(ret)
+}
+
 func (i *ObjectDataInput) ReadByteAtPosition(pos int32) byte {
 	return i.buffer[pos]
+}
+
+func (i *ObjectDataInput) ReadSignedByteAtPosition(pos int32) int8 {
+	ret := i.buffer[pos]
+	return int8(ret)
 }
 
 func (i *ObjectDataInput) ReadBool() bool {
@@ -480,6 +520,18 @@ func (i *ObjectDataInput) ReadByteArray() []byte {
 	}
 	arr := i.buffer[i.position : i.position+length]
 	i.position += length
+	return arr
+}
+
+func (i *ObjectDataInput) ReadInt8Array() []int8 {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
+		return nil
+	}
+	arr := make([]int8, length)
+	for j := 0; j < length; j++ {
+		arr[j] = i.ReadSignedByte()
+	}
 	return arr
 }
 
@@ -669,6 +721,16 @@ func (p *PositionalObjectDataOutput) PWriteByte(pos int32, v byte) {
 
 func (p *PositionalObjectDataOutput) PWriteBool(pos int32, v bool) {
 	WriteBool(p.buffer, pos, v)
+}
+
+func (p *PositionalObjectDataOutput) PWriteBoolBit(pos int32, bitIndex int32, v bool) {
+	b := p.buffer[pos]
+	if v {
+		b = b | (1 << bitIndex)
+	} else {
+		b = b & ^(1 << bitIndex)
+	}
+	p.buffer[pos] = b
 }
 
 func (p *PositionalObjectDataOutput) PWriteUInt16(pos int32, v uint16) {

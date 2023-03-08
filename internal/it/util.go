@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"math/rand"
 	"net"
 	"os"
@@ -55,8 +54,11 @@ const (
 	EnvHzVersion          = "HZ_VERSION"
 )
 
-const DefaultClusterName = "integration-test"
-const ClusterNameCPEnabled = "integration-test-cp"
+const (
+	DefaultClusterName   = "integration-test"
+	RingbufferCapacity   = 10
+	ClusterNameCPEnabled = "integration-test-cp"
+)
 
 var rc *RemoteControllerClientWrapper
 var rcMu = &sync.RWMutex{}
@@ -206,27 +208,12 @@ func MustBool(value bool, err error) bool {
 	return value
 }
 
-// MustData returns data if err is nil, otherwise it panics.
-func MustData(value interface{}, err error) iserialization.Data {
-	if err != nil {
-		panic(err)
-	}
-	return value.(iserialization.Data)
-}
-
 // MustClient returns client if err is nil, otherwise it panics.
 func MustClient(client *hz.Client, err error) *hz.Client {
 	if err != nil {
 		panic(err)
 	}
 	return client
-}
-
-func MustSerializationService(ss *iserialization.Service, err error) *iserialization.Service {
-	if err != nil {
-		panic(err)
-	}
-	return ss
 }
 
 func NewUniqueObjectName(service string, labels ...string) string {
@@ -419,7 +406,9 @@ func (c TestCluster) DefaultConfigWithNoSSL() hz.Config {
 	return config
 }
 
-const RingbufferCapacity = 10
+func (c TestCluster) StartMember(ctx context.Context) (*Member, error) {
+	return c.RC.StartMember(ctx, c.ClusterID)
+}
 
 func xmlConfig(clusterName string, port int) string {
 	return fmt.Sprintf(`

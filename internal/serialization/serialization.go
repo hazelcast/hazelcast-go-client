@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,16 @@ type Service struct {
 	portableSerializer   *PortableSerializer
 	identifiedSerializer *IdentifiedDataSerializableSerializer
 	customSerializers    map[reflect.Type]pubserialization.Serializer
+	compactSerializer    *CompactStreamSerializer
 }
 
-func NewService(config *pubserialization.Config) (*Service, error) {
+func NewService(config *pubserialization.Config, schemaCh chan SchemaMsg) (*Service, error) {
 	var err error
 	s := &Service{
 		SerializationConfig: config,
 		registry:            make(map[int32]pubserialization.Serializer),
 		customSerializers:   config.CustomSerializers(),
+		compactSerializer:   NewCompactStreamSerializer(config.Compact, schemaCh),
 	}
 	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
 	if err != nil {
@@ -57,6 +59,15 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+func (s *Service) SchemaService() *SchemaService {
+	return s.compactSerializer.ss
+}
+
+// SetSchemaService is used in tests
+func (s *Service) SetSchemaService(ss *SchemaService) {
+	s.compactSerializer.ss = ss
 }
 
 // ToData serializes an object to a Data.
@@ -149,6 +160,9 @@ func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Seri
 	if serializer != (pubserialization.Serializer)(nil) {
 		return serializer
 	}
+	if s.compactSerializer.IsRegisteredAsCompact(reflect.TypeOf(obj)) {
+		return s.compactSerializer
+	}
 	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
 		return s.identifiedSerializer
 	}
@@ -162,6 +176,8 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 	switch typeID {
 	case TypeNil:
 		return nilSerializer
+	case TypeCompact:
+		return s.compactSerializer
 	case TypePortable:
 		return s.portableSerializer
 	case TypeDataSerializable:
