@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ func TestConfig(t *testing.T) {
 		{name: "AddExistingFlakeIDGenerator", f: configAddExistingFlakeIDGeneratorTest},
 		{name: "AddNearCache", f: configAddNearCacheTest},
 		{name: "ValidateNearCacheFails", f: configValidateNearCacheFailsTest},
+		{name: "ServerNameIsAutomaticallySetForViridian", f: configServerNameIsAutomaticallySetForViridian},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -521,6 +522,13 @@ func configValidateNearCacheFailsTest(t *testing.T) {
 	if !errors.Is(err, hzerrors.ErrInvalidConfiguration) {
 		t.Fatalf("expected ErrInvalidConfiguration")
 	}
+}
+
+func configServerNameIsAutomaticallySetForViridian(t *testing.T) {
+	config := hazelcast.Config{}
+	config.Cluster.Cloud.Enabled = true
+	it.Must(config.Validate())
+	assert.Equal(t, "hazelcast.cloud", config.Cluster.Network.SSL.TLSConfig().ServerName)
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {

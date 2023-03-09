@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,16 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/logger"
 )
 
-const clusterName = "PUT-YOUR-CLUSTER-NAME-HERE!"
-const token = "PUT-YOUR-TOKEN-HERE!"
+const (
+	clusterName     = "PUT-YOUR-CLUSTER-NAME-HERE!"
+	token           = "PUT-YOUR-VIRIIDAN-HERE!"
+	caFilePath      = "/PATH/ca.pem"
+	certFilePath    = "/PATH/cert.pem"
+	keyFilePath     = "/PATH/key.pem"
+	keyFilePassword = "PUT-YOUR-KEY-FILE-PASSWORD-HERE!"
+)
 
-var loggingLevel = logger.WarnLevel
+var loggingLevel = logger.DebugLevel
 
 func makeKeyValue(i int) (key string, value string) {
 	key = fmt.Sprintf("key-%d", i)
@@ -44,6 +50,14 @@ func getClient(ctx context.Context) *hazelcast.Client {
 	cc := &config.Cluster.Cloud
 	cc.Enabled = true
 	cc.Token = token
+	ssl := &config.Cluster.Network.SSL
+	ssl.Enabled = true
+	if err := ssl.SetCAPath(caFilePath); err != nil {
+		panic(fmt.Errorf("loading CA certificate: %w", err))
+	}
+	if err := ssl.AddClientCertAndEncryptedKeyPath(certFilePath, keyFilePath, keyFilePassword); err != nil {
+		panic(fmt.Errorf("loading certificate and key: %w", err))
+	}
 	client, err := hazelcast.StartNewClientWithConfig(ctx, config)
 	if err != nil {
 		log.Fatal(err)

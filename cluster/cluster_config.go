@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,9 @@ func (c *Config) Validate() error {
 	if c.ConnectionStrategy.Timeout == 0 {
 		// infinity
 		c.ConnectionStrategy.Timeout = types.Duration(internal.DefaultConnectionTimeoutWithoutFailover)
+	}
+	if c.Cloud.Enabled && c.Network.SSL.tlsConfig.ServerName == "" {
+		c.Network.SSL.tlsConfig.ServerName = "hazelcast.cloud"
 	}
 	return nil
 }
