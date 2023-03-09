@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,10 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"math"
-	"time"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/cb"
+	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	"github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/internal/invocation"
 	"github.com/hazelcast/hazelcast-go-client/internal/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
@@ -44,25 +41,15 @@ const (
 type SQLService struct {
 	connectionManager    *cluster.ConnectionManager
 	serializationService *iserialization.Service
-	invFactory           *cluster.ConnectionInvocationFactory
-	invService           *invocation.Service
-	cb                   *cb.CircuitBreaker
 	lg                   *logger.LogAdaptor
+	invoker              *client.Invoker
 }
 
-func NewSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, fac *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor) *SQLService {
-	cbr := cb.NewCircuitBreaker(
-		cb.MaxRetries(math.MaxInt32),
-		cb.RetryPolicy(func(attempt int) time.Duration {
-			return time.Duration((attempt+1)*100) * time.Millisecond
-		}),
-	)
+func NewSQLService(cm *cluster.ConnectionManager, ss *iserialization.Service, invoker *client.Invoker, lg *logger.LogAdaptor) *SQLService {
 	return &SQLService{
 		connectionManager:    cm,
 		serializationService: ss,
-		invFactory:           fac,
-		invService:           is,
-		cb:                   cbr,
+		invoker:              invoker,
 		lg:                   lg,
 	}
 }
@@ -143,7 +130,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 	if err != nil {
 		return nil, err
 	}
-	metadata, page, updateCount, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
+	metadata, page, updateCount, infiniteRows, err := codec.DecodeSqlExecuteResponse(resp, s.serializationService)
 	if err != (*sql.Error)(nil) {
 		return nil, ihzerrors.NewSQLError("decoding SQL execute response", err)
 	}
@@ -151,7 +138,7 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return &ExecResult{UpdateCount: updateCount}, nil
 	}
 	md := itypes.NewRowMetadata(metadata)
-	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize)
+	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize, infiniteRows)
 }
 
 func (s *SQLService) serializeParams(params []driver.Value) ([]iserialization.Data, error) {
@@ -167,28 +154,7 @@ func (s *SQLService) serializeParams(params []driver.Value) ([]iserialization.Da
 }
 
 func (s *SQLService) invokeOnConnection(ctx context.Context, req *proto.ClientMessage, conn *cluster.Connection) (*proto.ClientMessage, error) {
-	now := time.Now()
-	return s.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if attempt > 0 {
-			req = req.Copy()
-		}
-		inv := s.invFactory.NewConnectionBoundInvocation(req, conn, nil, now)
-		if err := s.invService.SendRequest(ctx, inv); err != nil {
-			return nil, err
-		}
-		return inv.GetWithContext(ctx)
-	})
-}
-
-func (s *SQLService) tryInvoke(ctx context.Context, f cb.TryHandler) (*proto.ClientMessage, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	res, err := s.cb.TryContext(ctx, f)
-	if err != nil {
-		return nil, err
-	}
-	return res.(*proto.ClientMessage), nil
+	return s.invoker.InvokeOnConnection(ctx, req, conn)
 }
 
 func ExtractCursorBufferSize(ctx context.Context) int32 {

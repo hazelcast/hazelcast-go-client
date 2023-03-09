@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ func TestDefaultPortableReader_ReadPortable(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID, classDef.ClassID, 0))
 
@@ -216,7 +216,7 @@ func TestDefaultPortableReader_ReadNilPortable(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, service, false)
@@ -403,7 +403,7 @@ func TestDefaultPortableReader_ReadPortableArray(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID, classDef.ClassID, 0))
 	o := NewPositionalObjectDataOutput(0, nil, false)
@@ -428,7 +428,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID, classDef.ClassID, 3))
 	classDef.AddField(NewFieldDefinition(1, "name", serialization.TypeString,
@@ -490,7 +490,7 @@ func TestDefaultPortableReader_NilObjects(t *testing.T) {
 
 func TestDefaultPortableReader_ReadString_NonASCIIFieldName(t *testing.T) {
 	// See: https://github.com/hazelcast/hazelcast/issues/17955#issuecomment-778152424
-	service, err := NewService(&serialization.Config{})
+	service, err := NewService(&serialization.Config{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,7 +592,7 @@ func (*rawPortableFactory) FactoryID() int32 {
 func TestNewPortableSerializer_RawData(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&rawPortableFactory{})
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

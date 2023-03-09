@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/it"
 	"github.com/hazelcast/hazelcast-go-client/internal/sql/driver"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -53,6 +54,7 @@ func TestSetSSLConfig(t *testing.T) {
 
 func TestSetSerializationConfig(t *testing.T) {
 	config := &serialization.Config{PortableVersion: 2}
+	it.Must(config.Validate())
 	if err := SetSerializationConfig(config); err != nil {
 		t.Fatal(err)
 	}

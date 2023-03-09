@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package serialization
 
 import (
-	"github.com/hazelcast/hazelcast-go-client/types"
 	"reflect"
 	"testing"
+
+	"github.com/hazelcast/hazelcast-go-client/types"
 
 	"github.com/stretchr/testify/assert"
 
@@ -36,7 +37,7 @@ func TestDefaultSerializer(t *testing.T) {
 	}
 	sc := &serialization.Config{}
 	sc.SetGlobalSerializer(&PanicingGlobalSerializer{})
-	service, err := NewService(sc)
+	service, err := NewService(sc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

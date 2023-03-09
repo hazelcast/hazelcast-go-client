@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -315,7 +315,7 @@ func configMarshalDefaultConfigTest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"NearCacheInvalidation":{},"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
+	target := `{"NearCacheInvalidation":{},"Logger":{},"Failover":{},"Serialization":{"Compact":{}},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	if !it.EqualStringContent([]byte(target), b) {
 		t.Logf("expected: %s", target)
 		t.Logf("got     : %s", string(b))
@@ -340,7 +340,7 @@ func configMarshalWithNearCacheConfigTest(t *testing.T) {
 			],
 			"Logger":{},
 			"Failover":{},
-			"Serialization":{},
+			"Serialization":{"Compact":{}},
 			"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},
 			"Stats":{},
 			"NearCacheInvalidation":{"MaxToleratedMissCount":100,"ReconciliationIntervalSeconds":50}

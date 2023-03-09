@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ func TestGetRecordStorageMemoryCost_64bit(t *testing.T) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := serialization.NewService(&cfg)
+	ss, err := serialization.NewService(&cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestGetRecordStorageMemoryCost_32bit(t *testing.T) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	ss, err := serialization.NewService(&cfg)
+	ss, err := serialization.NewService(&cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

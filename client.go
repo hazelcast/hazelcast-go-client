@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	icp "github.com/hazelcast/hazelcast-go-client/internal/cp"
+
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
@@ -31,6 +33,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/sql"
@@ -41,6 +44,9 @@ const (
 	// ClientVersion is the semantic versioning compatible client version.
 	ClientVersion = internal.CurrentClientVersion
 )
+
+type AtomicLong = icp.AtomicLong
+type CPSubsystem = icp.Subsystem
 
 // StartNewClient creates and starts a new client with the default configuration.
 // The default configuration is tuned connect to an Hazelcast cluster running on the same computer with the client.
@@ -70,9 +76,11 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
+	cpSubsystem             CPSubsystem
 	nearCacheMgrsMu         *sync.RWMutex
 	nearCacheMgrs           map[string]*inearcache.Manager
 	cfg                     *Config
+	doneCh                  chan struct{}
 }
 
 func newClient(config Config) (*Client, error) {
@@ -91,7 +99,9 @@ func newClient(config Config) (*Client, error) {
 		StatsEnabled:  config.Stats.Enabled,
 		StatsPeriod:   time.Duration(config.Stats.Period),
 	}
-	ic, err := client.New(icc)
+	// TODO: size of the channel
+	schemaCh := make(chan serialization.SchemaMsg)
+	ic, err := client.New(icc, schemaCh)
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +114,7 @@ func newClient(config Config) (*Client, error) {
 		nearCacheMgrsMu:         &sync.RWMutex{},
 		nearCacheMgrs:           map[string]*inearcache.Manager{},
 		cfg:                     &config,
+		doneCh:                  make(chan struct{}),
 	}
 	if c.ic.StatsService != nil {
 		c.ic.StatsService.SetNCStatsGetter(func(service string) stats.NearCacheStatsGetter {
@@ -118,7 +129,40 @@ func newClient(config Config) (*Client, error) {
 	c.createComponents(&config)
 	c.ic.AddBeforeShutdownHandler(c.destroyProxies)
 	c.ic.AddAfterShutdownHandler(c.stopNearCacheManagers)
+	c.ic.AddAfterShutdownHandler(func(ctx context.Context) {
+		close(c.doneCh)
+	})
+	go c.schemaInvoker(schemaCh)
 	return c, nil
+}
+
+func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
+	c.ic.Logger.Debug(func() string {
+		return "Started the schema invoker"
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	for {
+		select {
+		case msg := <-ch:
+			req := codec.EncodeClientFetchSchemaRequest(msg.ID)
+			resp, err := c.ic.Invoker.InvokeOnRandomTarget(ctx, req, nil)
+			if err != nil {
+				c.ic.Logger.Errorf("invoking ClientFetchSchema with schema ID: %d: %s", msg.ID, err)
+				msg.ResponseCh <- nil
+				continue
+			}
+			schema := codec.DecodeClientFetchSchemaResponse(resp)
+			msg.ResponseCh <- schema
+		case <-ctx.Done():
+			c.ic.Logger.Debug(func() string {
+				return "Stopped the schema invoker"
+			})
+			return
+		case <-c.doneCh:
+			cancel()
+		}
+	}
 }
 
 // Name returns client's name
@@ -329,6 +373,11 @@ func (c *Client) SQL() sql.Service {
 	return c.sqlService
 }
 
+// CPSubsystem returns a service to offer a set of in-memory linearizable data structures.
+func (c *Client) CPSubsystem() CPSubsystem {
+	return c.cpSubsystem
+}
+
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
@@ -413,6 +462,7 @@ func (c *Client) createComponents(config *Config) {
 		InvocationFactory:    c.ic.InvocationFactory,
 		ListenerBinder:       listenerBinder,
 		Logger:               c.ic.Logger,
+		Invoker:              c.ic.Invoker,
 	}
 	destroyNearCacheFun := func(service, object string) {
 		c.nearCacheMgrsMu.RLock()
@@ -425,7 +475,8 @@ func (c *Client) createComponents(config *Config) {
 	}
 	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
-	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.cpSubsystem = icp.NewSubsystem(c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.Invoker, &c.ic.Logger)
 }
 
 func (c *Client) getNearCacheManager(service string) *inearcache.Manager {

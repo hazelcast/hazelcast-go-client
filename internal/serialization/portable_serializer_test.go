@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ func TestPortableSerializer(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestPortableSerializer(t *testing.T) {
 
 func TestPortableSerializer_NoFactory(t *testing.T) {
 	config := &serialization.Config{}
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestPortableSerializerDuplicateFactory(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	config.SetPortableFactories(&portableFactory1{})
-	if _, err := NewService(config); err == nil {
+	if _, err := NewService(config, nil); err == nil {
 		t.Fatalf("should have failed")
 	}
 }
@@ -183,7 +183,7 @@ func TestPortableSerializerDuplicateFactory(t *testing.T) {
 func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +197,7 @@ func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
 
 func TestPortableSerializer_NilPortable(t *testing.T) {
 	config := &serialization.Config{}
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	expectedRet := &student2{}
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
@@ -324,7 +324,7 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) {
 func TestPortableSerializer2(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,8 +379,8 @@ func TestPortableSerializer2(t *testing.T) {
 func TestPortableSerializer3(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
-	service, _ := NewService(config)
-	service2, _ := NewService(config)
+	service, _ := NewService(config, nil)
+	service2, _ := NewService(config, nil)
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service2.ToObject(data)
@@ -398,7 +398,7 @@ func TestPortableSerializer4(t *testing.T) {
 	def.AddInt32Field("age")
 	def.AddStringField("name")
 	config1.SetClassDefinitions(def)
-	service, err := NewService(config1)
+	service, err := NewService(config1, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -512,8 +512,8 @@ func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
 	sc := &serialization.Config{}
 	sc.SetPortableFactories(&portableFactory{})
 	sc.PortableVersion = 6
-	ss1, _ := NewService(sc)
-	ss2, _ := NewService(sc)
+	ss1, _ := NewService(sc, nil)
+	ss2, _ := NewService(sc, nil)
 
 	// make sure ss2 cached class definition of child
 	if _, err := ss2.ToData(&child{"Furkan"}); err != nil {
@@ -617,7 +617,7 @@ func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
 	config.SetClassDefinitions(myPortable1Def, myPortable2Def)
 	// set config with portable factories
 	config.SetPortableFactories(&MyPortableFactory1{}, &MyPortableFactory2{})
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	require.NoError(t, err)
 	// serialize MyPortable1
 	object := &MyPortable1{stringField: "test"}
@@ -656,6 +656,6 @@ func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
 	err = p1.AddInt32Field("intField")
 	require.NoError(t, err)
 	config.SetClassDefinitions(p1, p2)
-	_, err = NewService(config)
+	_, err = NewService(config, nil)
 	require.NoError(t, err)
 }

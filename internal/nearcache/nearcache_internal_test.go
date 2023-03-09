@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -195,7 +195,7 @@ func TestFilterDataMembers(t *testing.T) {
 
 func TestRecordStore_sample(t *testing.T) {
 	sc := &serialization.Config{}
-	ss, err := iserialization.NewService(sc)
+	ss, err := iserialization.NewService(sc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
