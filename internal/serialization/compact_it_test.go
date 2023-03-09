@@ -111,7 +111,7 @@ func joinedMemberQueryTest(t *testing.T) {
 }
 
 func clusterRestartTest(t *testing.T) {
-	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testJoinedMemberQuery
+	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.ClientCompactClusterChangeTest#testClusterRestart
 	tcx := it.CompactTestContext{
 		T:            t,
 		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
