@@ -529,6 +529,7 @@ func configServerNameIsAutomaticallySetForViridian(t *testing.T) {
 	config.Cluster.Cloud.Enabled = true
 	it.Must(config.Validate())
 	assert.Equal(t, "hazelcast.cloud", config.Cluster.Network.SSL.TLSConfig().ServerName)
+	assert.True(t, config.Cluster.Network.SSL.Enabled)
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {
