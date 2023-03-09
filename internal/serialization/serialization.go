@@ -404,6 +404,9 @@ func makeError(rec interface{}) error {
 	}
 }
 
+// make sure to update checkNoDefaultSerializer in serialization/compact_config.go
+// if you update the list of default serializers.
+
 var nilSerializer = &NilSerializer{}
 var boolSerializer = &BoolSerializer{}
 var stringSerializer = &StringSerializer{}

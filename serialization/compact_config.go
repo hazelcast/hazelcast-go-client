@@ -66,7 +66,7 @@ func (cc *CompactConfig) ensureSerializers() {
 
 func (cc *CompactConfig) checkNoDefaultSerializer() error {
 	// note that the check we are doing is just information.
-	// the default serializers are looked uo before the compact serializer,
+	// the default serializers are looked up before the compact serializer,
 	// so the user cannot override any default serializer.
 	var cr CompactReader
 	var cw CompactWriter
