@@ -35,7 +35,7 @@ const (
 	keyFilePassword = "PUT-YOUR-KEY-FILE-PASSWORD-HERE!"
 )
 
-var loggingLevel = logger.DebugLevel
+var loggingLevel = logger.InfoLevel
 
 func makeKeyValue(i int) (key string, value string) {
 	key = fmt.Sprintf("key-%d", i)
