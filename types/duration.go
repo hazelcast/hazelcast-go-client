@@ -22,6 +22,13 @@ import (
 
 type Duration time.Duration
 
+func (d *Duration) ToDuration() time.Duration {
+	if d == nil {
+		return time.Duration(0)
+	}
+	return (time.Duration)(*d)
+}
+
 func (d Duration) String() string {
 	return time.Duration(d).String()
 }
