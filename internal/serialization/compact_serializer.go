@@ -123,7 +123,7 @@ func makeSchemaFromSerializer(ser pubserialization.CompactSerializer) (schema *S
 	// create the zero value for the type in the serializer and build the schema
 	st := ser.Type()
 	var v interface{}
-	if st.Kind() == reflect.Pointer {
+	if st.Kind() == reflect.Ptr {
 		v = reflect.New(st.Elem()).Interface()
 	} else {
 		v = reflect.Zero(st).Interface()
