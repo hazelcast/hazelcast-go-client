@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package serialization
 
 import (
+	"reflect"
+
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -407,4 +409,154 @@ type PortableReader interface {
 	ReadDecimal(fieldName string) (d *types.Decimal)
 	// ReadDecimalArray a decimal array.
 	ReadDecimalArray(fieldName string) (ds []types.Decimal)
+}
+
+type FieldKind int32
+
+const (
+	FieldKindNotAvailable                 FieldKind = 0
+	FieldKindBoolean                      FieldKind = 1
+	FieldKindArrayOfBoolean               FieldKind = 2
+	FieldKindInt8                         FieldKind = 3
+	FieldKindArrayOfInt8                  FieldKind = 4
+	FieldKindChar                         FieldKind = 5
+	FieldKindArrayOfChar                  FieldKind = 6
+	FieldKindInt16                        FieldKind = 7
+	FieldKindArrayOfInt16                 FieldKind = 8
+	FieldKindInt32                        FieldKind = 9
+	FieldKindArrayOfInt32                 FieldKind = 10
+	FieldKindInt64                        FieldKind = 11
+	FieldKindArrayOfInt64                 FieldKind = 12
+	FieldKindFloat32                      FieldKind = 13
+	FieldKindArrayOfFloat32               FieldKind = 14
+	FieldKindFloat64                      FieldKind = 15
+	FieldKindArrayOfFloat64               FieldKind = 16
+	FieldKindString                       FieldKind = 17
+	FieldKindArrayOfString                FieldKind = 18
+	FieldKindDecimal                      FieldKind = 19
+	FieldKindArrayOfDecimal               FieldKind = 20
+	FieldKindTime                         FieldKind = 21
+	FieldKindArrayOfTime                  FieldKind = 22
+	FieldKindDate                         FieldKind = 23
+	FieldKindArrayOfDate                  FieldKind = 24
+	FieldKindTimestamp                    FieldKind = 25
+	FieldKindArrayOfTimestamp             FieldKind = 26
+	FieldKindTimestampWithTimezone        FieldKind = 27
+	FieldKindArrayOfTimestampWithTimezone FieldKind = 28
+	FieldKindCompact                      FieldKind = 29
+	FieldKindArrayOfCompact               FieldKind = 30
+	FieldKindPortable                     FieldKind = 31
+	FieldKindArrayOfPortable              FieldKind = 32
+	FieldKindNullableBoolean              FieldKind = 33
+	FieldKindArrayOfNullableBoolean       FieldKind = 34
+	FieldKindNullableInt8                 FieldKind = 35
+	FieldKindArrayOfNullableInt8          FieldKind = 36
+	FieldKindNullableInt16                FieldKind = 37
+	FieldKindArrayOfNullableInt16         FieldKind = 38
+	FieldKindNullableInt32                FieldKind = 39
+	FieldKindArrayOfNullableInt32         FieldKind = 40
+	FieldKindNullableInt64                FieldKind = 41
+	FieldKindArrayOfNullableInt64         FieldKind = 42
+	FieldKindNullableFloat32              FieldKind = 43
+	FieldKindArrayOfNullableFloat32       FieldKind = 44
+	FieldKindNullableFloat64              FieldKind = 45
+	FieldKindArrayOfNullableFloat64       FieldKind = 46
+)
+
+type CompactSerializer interface {
+	Type() reflect.Type
+	TypeName() string
+	Read(reader CompactReader) interface{}
+	Write(writer CompactWriter, value interface{})
+}
+
+type CompactReader interface {
+	ReadBoolean(fieldName string) bool
+	ReadInt8(fieldName string) int8
+	ReadInt16(fieldName string) int16
+	ReadInt32(fieldName string) int32
+	ReadInt64(fieldName string) int64
+	ReadFloat32(fieldName string) float32
+	ReadFloat64(fieldName string) float64
+	ReadString(fieldName string) *string
+	ReadDecimal(fieldName string) *types.Decimal
+	ReadTime(fieldName string) *types.LocalTime
+	ReadDate(fieldName string) *types.LocalDate
+	ReadTimestamp(fieldName string) *types.LocalDateTime
+	ReadTimestampWithTimezone(fieldName string) *types.OffsetDateTime
+	ReadCompact(fieldName string) interface{}
+	ReadArrayOfBoolean(fieldName string) []bool
+	ReadArrayOfInt8(fieldName string) []int8
+	ReadArrayOfInt16(fieldName string) []int16
+	ReadArrayOfInt32(fieldName string) []int32
+	ReadArrayOfInt64(fieldName string) []int64
+	ReadArrayOfFloat32(fieldName string) []float32
+	ReadArrayOfFloat64(fieldName string) []float64
+	ReadArrayOfString(fieldName string) []*string
+	ReadArrayOfDecimal(fieldName string) []*types.Decimal
+	ReadArrayOfTime(fieldName string) []*types.LocalTime
+	ReadArrayOfDate(fieldName string) []*types.LocalDate
+	ReadArrayOfTimestamp(fieldName string) []*types.LocalDateTime
+	ReadArrayOfTimestampWithTimezone(fieldName string) []*types.OffsetDateTime
+	ReadArrayOfCompact(fieldName string) []interface{}
+	ReadNullableBoolean(fieldName string) *bool
+	ReadNullableInt8(fieldName string) *int8
+	ReadNullableInt16(fieldName string) *int16
+	ReadNullableInt32(fieldName string) *int32
+	ReadNullableInt64(fieldName string) *int64
+	ReadNullableFloat32(fieldName string) *float32
+	ReadNullableFloat64(fieldName string) *float64
+	ReadArrayOfNullableBoolean(fieldName string) []*bool
+	ReadArrayOfNullableInt8(fieldName string) []*int8
+	ReadArrayOfNullableInt16(fieldName string) []*int16
+	ReadArrayOfNullableInt32(fieldName string) []*int32
+	ReadArrayOfNullableInt64(fieldName string) []*int64
+	ReadArrayOfNullableFloat32(fieldName string) []*float32
+	ReadArrayOfNullableFloat64(fieldName string) []*float64
+	GetFieldKind(fieldName string) FieldKind
+}
+
+type CompactWriter interface {
+	WriteBoolean(fieldName string, value bool)
+	WriteInt8(fieldName string, value int8)
+	WriteInt16(fieldName string, value int16)
+	WriteInt32(fieldName string, value int32)
+	WriteInt64(fieldName string, value int64)
+	WriteFloat32(fieldName string, value float32)
+	WriteFloat64(fieldName string, value float64)
+	WriteString(fieldName string, value *string)
+	WriteDecimal(fieldName string, value *types.Decimal)
+	WriteTime(fieldName string, value *types.LocalTime)
+	WriteDate(fieldName string, value *types.LocalDate)
+	WriteTimestamp(fieldName string, value *types.LocalDateTime)
+	WriteTimestampWithTimezone(fieldName string, value *types.OffsetDateTime)
+	WriteCompact(fieldName string, value interface{})
+	WriteArrayOfBoolean(fieldName string, value []bool)
+	WriteArrayOfInt8(fieldName string, value []int8)
+	WriteArrayOfInt16(fieldName string, value []int16)
+	WriteArrayOfInt32(fieldName string, value []int32)
+	WriteArrayOfInt64(fieldName string, value []int64)
+	WriteArrayOfFloat32(fieldName string, value []float32)
+	WriteArrayOfFloat64(fieldName string, value []float64)
+	WriteArrayOfString(fieldName string, value []*string)
+	WriteArrayOfDecimal(fieldName string, value []*types.Decimal)
+	WriteArrayOfTime(fieldName string, value []*types.LocalTime)
+	WriteArrayOfDate(fieldName string, value []*types.LocalDate)
+	WriteArrayOfTimestamp(fieldName string, value []*types.LocalDateTime)
+	WriteArrayOfTimestampWithTimezone(fieldName string, value []*types.OffsetDateTime)
+	WriteArrayOfCompact(fieldName string, value []interface{})
+	WriteNullableBoolean(fieldName string, value *bool)
+	WriteNullableInt8(fieldName string, value *int8)
+	WriteNullableInt16(fieldName string, value *int16)
+	WriteNullableInt32(fieldName string, value *int32)
+	WriteNullableInt64(fieldName string, value *int64)
+	WriteNullableFloat32(fieldName string, value *float32)
+	WriteNullableFloat64(fieldName string, value *float64)
+	WriteArrayOfNullableBoolean(fieldName string, value []*bool)
+	WriteArrayOfNullableInt8(fieldName string, value []*int8)
+	WriteArrayOfNullableInt16(fieldName string, value []*int16)
+	WriteArrayOfNullableInt32(fieldName string, value []*int32)
+	WriteArrayOfNullableInt64(fieldName string, value []*int64)
+	WriteArrayOfNullableFloat32(fieldName string, value []*float32)
+	WriteArrayOfNullableFloat64(fieldName string, value []*float64)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -37,14 +37,20 @@ type Service struct {
 	portableSerializer   *PortableSerializer
 	identifiedSerializer *IdentifiedDataSerializableSerializer
 	customSerializers    map[reflect.Type]pubserialization.Serializer
+	compactSerializer    *CompactStreamSerializer
 }
 
-func NewService(config *pubserialization.Config) (*Service, error) {
+func NewService(config *pubserialization.Config, schemaCh chan SchemaMsg) (*Service, error) {
 	var err error
+	cs, err := NewCompactStreamSerializer(config.Compact, schemaCh)
+	if err != nil {
+		return nil, err
+	}
 	s := &Service{
 		SerializationConfig: config,
 		registry:            make(map[int32]pubserialization.Serializer),
 		customSerializers:   config.CustomSerializers(),
+		compactSerializer:   cs,
 	}
 	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
 	if err != nil {
@@ -59,6 +65,15 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 	return s, nil
 }
 
+func (s *Service) SchemaService() *SchemaService {
+	return s.compactSerializer.ss
+}
+
+// SetSchemaService is used in tests
+func (s *Service) SetSchemaService(ss *SchemaService) {
+	s.compactSerializer.ss = ss
+}
+
 // ToData serializes an object to a Data.
 // It can safely be called with a Data. In that case, that instance is returned.
 // If it is called with nil, nil is returned.
@@ -68,6 +83,9 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 			err = makeError(rec)
 		}
 	}()
+	if object == nil {
+		return nil, nil
+	}
 	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
@@ -146,6 +164,9 @@ func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Seri
 	if serializer != (pubserialization.Serializer)(nil) {
 		return serializer
 	}
+	if s.compactSerializer.IsRegisteredAsCompact(reflect.TypeOf(obj)) {
+		return s.compactSerializer
+	}
 	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
 		return s.identifiedSerializer
 	}
@@ -159,6 +180,8 @@ func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Seria
 	switch typeID {
 	case TypeNil:
 		return nilSerializer
+	case TypeCompact:
+		return s.compactSerializer
 	case TypePortable:
 		return s.portableSerializer
 	case TypeDataSerializable:
@@ -380,6 +403,9 @@ func makeError(rec interface{}) error {
 		return fmt.Errorf("%v", rec)
 	}
 }
+
+// make sure to update checkNoDefaultSerializer in serialization/compact_config.go
+// if you update the list of default serializers.
 
 var nilSerializer = &NilSerializer{}
 var boolSerializer = &BoolSerializer{}

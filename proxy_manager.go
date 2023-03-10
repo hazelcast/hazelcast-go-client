@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package hazelcast
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
+	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
 	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
@@ -28,46 +28,35 @@ import (
 )
 
 type proxyManager struct {
-	mu              *sync.RWMutex
-	proxies         map[string]interface{}
-	invocationProxy *proxy
-	serviceBundle   creationBundle
-	refIDGenerator  *iproxy.ReferenceIDGenerator
-	ncmDestroyFn    func(service, object string)
+	proxies        *sync.Map
+	invoker        *client.Invoker
+	serviceBundle  creationBundle
+	refIDGenerator *iproxy.ReferenceIDGenerator
+	ncmDestroyFn   func(service, object string)
 }
 
 func newProxyManager(bundle creationBundle) *proxyManager {
 	bundle.Check()
-	pm := &proxyManager{
-		mu:             &sync.RWMutex{},
-		proxies:        map[string]interface{}{},
+	return &proxyManager{
+		proxies:        &sync.Map{},
 		serviceBundle:  bundle,
 		refIDGenerator: iproxy.NewReferenceIDGenerator(1),
 		ncmDestroyFn:   bundle.NCMDestroyFn,
+		invoker:        bundle.Invoker,
 	}
-	p, err := newProxy(context.Background(), pm.serviceBundle, "", "", pm.refIDGenerator, func(ctx context.Context) bool { return false }, false)
-	if err != nil {
-		// It actually never panics since the proxy is local.
-		panic(err)
-	}
-	pm.invocationProxy = p
-	return pm
 }
 
 func (m *proxyManager) Proxies() map[string]interface{} {
-	cp := make(map[string]interface{}, len(m.proxies))
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	for k, p := range m.proxies {
-		cp[k] = p
-	}
+	cp := map[string]interface{}{}
+	m.proxies.Range(func(key, value interface{}) bool {
+		cp[key.(string)] = value
+		return true
+	})
 	return cp
 }
 
-func (m *proxyManager) getMap(ctx context.Context, name string) (*Map, error) {
-	p, err := m.proxyFor(ctx, ServiceNameMap, name, func(p *proxy) (interface{}, error) {
-		return newMap(p), nil
-	})
+func (m *proxyManager) getMap(ctx context.Context, name string, fn func(p *proxy) (interface{}, error)) (*Map, error) {
+	p, err := m.proxyFor(ctx, ServiceNameMap, name, fn)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +154,7 @@ func (m *proxyManager) getFlakeIDGenerator(ctx context.Context, name string) (*F
 }
 
 func (m *proxyManager) invokeOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error) {
-	return m.invocationProxy.invokeOnRandomTarget(ctx, request, handler)
+	return m.invoker.InvokeOnRandomTarget(ctx, request, handler)
 }
 
 func (m *proxyManager) addDistributedObjectEventListener(ctx context.Context, handler DistributedObjectNotifiedHandler) (types.UUID, error) {
@@ -189,9 +178,7 @@ func (m *proxyManager) removeDistributedObjectEventListener(ctx context.Context,
 
 func (m *proxyManager) remove(ctx context.Context, serviceName string, objectName string) bool {
 	name := makeProxyName(serviceName, objectName)
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	p, ok := m.proxies[name]
+	p, ok := m.proxies.Load(name)
 	if !ok {
 		return false
 	}
@@ -201,27 +188,14 @@ func (m *proxyManager) remove(ctx context.Context, serviceName string, objectNam
 		mp.destroyLocally(ctx)
 		m.ncmDestroyFn(serviceName, objectName)
 	}
-	delete(m.proxies, name)
+	m.proxies.Delete(name)
 	return true
 }
 
-func (m *proxyManager) proxyFor(
-	ctx context.Context,
-	serviceName string,
-	objectName string,
-	wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
-
+func (m *proxyManager) proxyFor(ctx context.Context, serviceName string, objectName string, wrapProxyFn func(p *proxy) (interface{}, error)) (interface{}, error) {
 	name := makeProxyName(serviceName, objectName)
-	m.mu.RLock()
-	wrapper, ok := m.proxies[name]
-	m.mu.RUnlock()
+	wrapper, ok := m.proxies.Load(name)
 	if ok {
-		return wrapper, nil
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if wrapper, ok := m.proxies[name]; ok {
-		// someone has already created the proxy
 		return wrapper, nil
 	}
 	p, err := newProxy(ctx, m.serviceBundle, serviceName, objectName, m.refIDGenerator, func(ctx context.Context) bool {
@@ -234,7 +208,7 @@ func (m *proxyManager) proxyFor(
 	if err != nil {
 		return nil, err
 	}
-	m.proxies[name] = wrapper
+	m.proxies.Store(name, wrapper)
 	return wrapper, nil
 }
 
@@ -249,7 +223,7 @@ func (m *proxyManager) getFlakeIDGeneratorConfig(name string) FlakeIDGeneratorCo
 }
 
 func makeProxyName(serviceName string, objectName string) string {
-	return fmt.Sprintf("%s%s", serviceName, objectName)
+	return serviceName + objectName
 }
 
 type proxyDestroyer interface {

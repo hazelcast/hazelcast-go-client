@@ -315,7 +315,7 @@ func configMarshalDefaultConfigTest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := `{"NearCacheInvalidation":{},"Logger":{},"Failover":{},"Serialization":{},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
+	target := `{"NearCacheInvalidation":{},"Logger":{},"Failover":{},"Serialization":{"Compact":{}},"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},"Stats":{}}`
 	if !it.EqualStringContent([]byte(target), b) {
 		t.Logf("expected: %s", target)
 		t.Logf("got     : %s", string(b))
@@ -340,7 +340,7 @@ func configMarshalWithNearCacheConfigTest(t *testing.T) {
 			],
 			"Logger":{},
 			"Failover":{},
-			"Serialization":{},
+			"Serialization":{"Compact":{}},
 			"Cluster":{"Security":{"Credentials":{}},"Cloud":{},"Network":{"SSL":{},"PortRange":{}},"ConnectionStrategy":{"Retry":{}},"Discovery":{}},
 			"Stats":{},
 			"NearCacheInvalidation":{"MaxToleratedMissCount":100,"ReconciliationIntervalSeconds":50}

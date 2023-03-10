@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ const (
 	SqlExecuteCodecRequestSkipUpdateStatisticsOffset = SqlExecuteCodecRequestExpectedResultTypeOffset + proto.ByteSizeInBytes
 	SqlExecuteCodecRequestInitialFrameSize           = SqlExecuteCodecRequestSkipUpdateStatisticsOffset + proto.BooleanSizeInBytes
 
-	SqlExecuteResponseUpdateCountOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	SqlExecuteResponseUpdateCountOffset    = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	SqlExecuteResponseIsInfiniteRowsOffset = SqlExecuteResponseUpdateCountOffset + proto.LongSizeInBytes
 )
 
 // Starts execution of an SQL query (as of 4.2).
@@ -59,17 +60,20 @@ func EncodeSqlExecuteRequest(sql string, parameters []iserialization.Data, timeo
 	return clientMessage
 }
 
-func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage, ss *iserialization.Service) (rowMetadata []sql.ColumnMetadata, rowPage *itype.Page, updateCount int64, err error) {
+func DecodeSqlExecuteResponse(clientMessage *proto.ClientMessage, ss *iserialization.Service) (rowMetadata []sql.ColumnMetadata, rowPage *itype.Page, updateCount int64, isInfiniteRows bool, err error) {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
-
 	updateCount = FixSizedTypesCodec.DecodeLong(initialFrame.Content, SqlExecuteResponseUpdateCountOffset)
+	isInfiniteRows = false
+	if len(initialFrame.Content) > SqlExecuteResponseIsInfiniteRowsOffset+proto.BooleanSizeInBytes {
+		isInfiniteRows = FixSizedTypesCodec.DecodeBoolean(initialFrame.Content, SqlExecuteResponseIsInfiniteRowsOffset)
+	}
 	rowMetadata = DecodeNullableListMultiFrameForSqlColumnMetadata(frameIterator)
 	rowPage, err = DecodeNullableForSQLPage(frameIterator, ss)
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, nil, 0, false, err
 	}
 	err = DecodeNullableForSQLError(frameIterator)
 
-	return rowMetadata, rowPage, updateCount, err
+	return rowMetadata, rowPage, updateCount, isInfiniteRows, err
 }

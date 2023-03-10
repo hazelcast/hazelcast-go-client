@@ -47,6 +47,7 @@ type QueryResult struct {
 	cursorBufferSize int32
 	index            int32
 	state            int32
+	infiniteRows     bool
 }
 
 func (r *QueryResult) Metadata() sql.RowMetadata {
@@ -54,7 +55,7 @@ func (r *QueryResult) Metadata() sql.RowMetadata {
 }
 
 // NewQueryResult creates a new QueryResult.
-func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page *itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
+func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page *itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32, infiniteRows bool) (*QueryResult, error) {
 	doneCh := make(chan struct{})
 	qr := &QueryResult{
 		queryID:          qid,
@@ -65,6 +66,7 @@ func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata
 		doneCh:           doneCh,
 		cursorBufferSize: cbs,
 		index:            0,
+		infiniteRows:     infiniteRows,
 	}
 	// the following goroutine cancels the query when the context is canceled.
 	go func() {
@@ -92,6 +94,10 @@ func (r *QueryResult) Columns() []string {
 
 func (r *QueryResult) Len() int {
 	return r.metadata.ColumnCount()
+}
+
+func (r *QueryResult) InfiniteRows() bool {
+	return r.infiniteRows
 }
 
 // Close notifies the member to release resources for the corresponding query.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -123,6 +123,8 @@ func (codecUtil) NextFrameIsDataStructureEndFrame(frameIterator *proto.ForwardFr
 	return frameIterator.PeekNext().IsEndFrame()
 }
 
+// NextFrameIsNullFrame
+// Deprecated: Use NextFrameIsNullFrame function instead.
 func (codecUtil) NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator) bool {
 	isNullFrame := frameIterator.PeekNext().IsNullFrame()
 	if isNullFrame {
@@ -381,14 +383,20 @@ func (fixSizedTypesCodec) DecodeShort(buffer []byte, offset int32) int16 {
 	return int16(binary.LittleEndian.Uint16(buffer[offset:]))
 }
 
+// EncodeInt
+// Deprecated: Use EncodeInt function instead.
 func (fixSizedTypesCodec) EncodeInt(buffer []byte, offset, value int32) {
 	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
 }
 
+// DecodeInt
+// Deprecated: Use DecodeInt function instead.
 func (fixSizedTypesCodec) DecodeInt(buffer []byte, offset int32) int32 {
 	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
 }
 
+// EncodeLong
+// Deprecated: Use EncodeLong function instead.
 func (fixSizedTypesCodec) EncodeLong(buffer []byte, offset int32, value int64) {
 	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
 }
@@ -523,6 +531,14 @@ func EncodeListMultiFrameForString(message *proto.ClientMessage, values []string
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(values); i++ {
 		EncodeString(message, values[i])
+	}
+	message.AddFrame(proto.NewEndFrame())
+}
+
+func EncodeListMultiFrameForSchema(message *proto.ClientMessage, values []*iserialization.Schema) {
+	message.AddFrame(proto.NewBeginFrame())
+	for i := 0; i < len(values); i++ {
+		EncodeSchema(message, values[i])
 	}
 	message.AddFrame(proto.NewEndFrame())
 }
@@ -1118,4 +1134,62 @@ func decodeLocalTime(buffer []byte, offset int32) (h, m, s, nanos int) {
 	offset += proto.ByteSizeInBytes
 	nanos = int(FixSizedTypesCodec.DecodeInt(buffer, offset))
 	return h, m, s, nanos
+}
+
+func EncodeInt(buffer []byte, offset, value int32) {
+	binary.LittleEndian.PutUint32(buffer[offset:], uint32(value))
+}
+
+func DecodeInt(buffer []byte, offset int32) int32 {
+	return int32(binary.LittleEndian.Uint32(buffer[offset:]))
+}
+
+func EncodeLong(buffer []byte, offset int32, value int64) {
+	binary.LittleEndian.PutUint64(buffer[offset:], uint64(value))
+}
+
+func FastForwardToEndFrame(frameIterator *proto.ForwardFrameIterator) {
+	expectedEndFrames := 1
+	for expectedEndFrames != 0 {
+		frame := frameIterator.Next()
+		if frame.IsEndFrame() {
+			expectedEndFrames--
+		} else if frame.IsBeginFrame() {
+			expectedEndFrames++
+		}
+	}
+}
+
+func NextFrameIsNullFrame(frameIterator *proto.ForwardFrameIterator) bool {
+	isNullFrame := frameIterator.PeekNext().IsNullFrame()
+	if isNullFrame {
+		frameIterator.Next()
+	}
+	return isNullFrame
+}
+
+func DecodeNullableForSchema(frameIterator *proto.ForwardFrameIterator) *iserialization.Schema {
+	if NextFrameIsNullFrame(frameIterator) {
+		return nil
+	}
+	return DecodeSchema(frameIterator)
+}
+
+func EncodeListMultiFrameForFieldDescriptor(message *proto.ClientMessage, fields []iserialization.FieldDescriptor) {
+	message.AddFrame(proto.NewBeginFrame())
+	for i := 0; i < len(fields); i++ {
+		EncodeFieldDescriptor(message, fields[i])
+	}
+	message.AddFrame(proto.NewEndFrame())
+}
+
+func DecodeListMultiFrameForFieldDescriptor(frameIterator *proto.ForwardFrameIterator) map[string]iserialization.FieldDescriptor {
+	result := map[string]iserialization.FieldDescriptor{}
+	frameIterator.Next()
+	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
+		fd := DecodeFieldDescriptor(frameIterator)
+		result[fd.Name] = fd
+	}
+	frameIterator.Next()
+	return result
 }

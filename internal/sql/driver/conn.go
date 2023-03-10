@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 var (
@@ -51,7 +52,9 @@ func newConn(name string) (*Conn, error) {
 }
 
 func NewConnWithConfig(ctx context.Context, config *client.Config) (*Conn, error) {
-	ic, err := client.New(config)
+	// TODO: channel size
+	schemaCh := make(chan serialization.SchemaMsg)
+	ic, err := client.New(config, schemaCh)
 	if err != nil {
 		return nil, fmt.Errorf("starting Hazelcast client: %w", err)
 	}
@@ -62,7 +65,7 @@ func NewConnWithConfig(ctx context.Context, config *client.Config) (*Conn, error
 }
 
 func NewConnWithClient(ic *client.Client) *Conn {
-	ss := NewSQLService(ic.ConnectionManager, ic.SerializationService, ic.InvocationFactory, ic.InvocationService, &ic.Logger)
+	ss := NewSQLService(ic.ConnectionManager, ic.SerializationService, ic.Invoker, &ic.Logger)
 	return &Conn{
 		ic: ic,
 		ss: ss,
