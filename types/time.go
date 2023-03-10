@@ -31,3 +31,59 @@ type LocalDateTime time.Time
 
 // OffsetDateTime is the date and time with a timezone.
 type OffsetDateTime time.Time
+
+func (ld *LocalDate) ToTime() time.Time {
+	if ld == nil {
+		return time.Time{}
+	}
+	return *(*time.Time)(ld)
+}
+
+func (ld *LocalDate) String() string {
+	if ld == nil {
+		return ""
+	}
+	return (*time.Time)(ld).String()
+}
+
+func (lt *LocalTime) ToTime() time.Time {
+	if lt == nil {
+		return time.Time{}
+	}
+	return *(*time.Time)(lt)
+}
+
+func (lt *LocalTime) String() string {
+	if lt == nil {
+		return ""
+	}
+	return (*time.Time)(lt).String()
+}
+
+func (ldt *LocalDateTime) ToTime() time.Time {
+	if ldt == nil {
+		return time.Time{}
+	}
+	return *(*time.Time)(ldt)
+}
+
+func (ldt *LocalDateTime) String() string {
+	if ldt == nil {
+		return ""
+	}
+	return (*time.Time)(ldt).String()
+}
+
+func (odt *OffsetDateTime) ToTime() time.Time {
+	if odt == nil {
+		return time.Time{}
+	}
+	return *(*time.Time)(odt)
+}
+
+func (odt *OffsetDateTime) String() string {
+	if odt == nil {
+		return ""
+	}
+	return (*time.Time)(odt).String()
+}
