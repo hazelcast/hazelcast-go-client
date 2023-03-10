@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package types
 
 import (
-	"fmt"
 	"math"
 	"math/big"
-
-	"github.com/hazelcast/hazelcast-go-client/internal/check"
+	"strconv"
+	"strings"
 )
 
 // Decimal is a wrapper for Hazelcast Decimal.
@@ -31,11 +30,7 @@ type Decimal struct {
 }
 
 // NewDecimal creates and returns a Decimal value with the given big int and scale.
-// Scale must be nonnegative and must be less or equal to math.MaxInt32. otherwise NewDecimal panics.
 func NewDecimal(unscaledValue *big.Int, scale int) Decimal {
-	if err := check.WithinRangeInt32(int32(scale), 0, math.MaxInt32); err != nil {
-		panic(fmt.Errorf("creating decumal: %w", err))
-	}
 	return Decimal{
 		unscaledValue: unscaledValue,
 		scale:         int32(scale),
@@ -48,9 +43,56 @@ func (d Decimal) UnscaledValue() *big.Int {
 }
 
 // Scale returns the scale of the decimal.
-// The returned value is nonnegative and less or equal to math.MaxInt32.
 func (d Decimal) Scale() int {
 	return int(d.scale)
 }
 
-// TODO: String method
+// Float64 converts the decimal to a float64 and returns it.
+// Note that this conversion can lose information about the precision of the decimal value.
+func (d Decimal) Float64() float64 {
+	return float64(d.UnscaledValue().Int64()) / math.Pow10(d.Scale())
+}
+
+// String returns the string representation of the decimal, using scientific notation if an exponent is needed.
+func (d Decimal) String() string {
+	// This implementation is ported from: java.math.BigDecimal#layoutChars
+	bigStr := d.unscaledValue.String()
+	if d.scale == 0 {
+		return bigStr
+	}
+	buf := strings.Builder{}
+	if bigStr[0] == '-' {
+		bigStr = bigStr[1:]
+		buf.WriteByte('-')
+	}
+	adjusted := len(bigStr) - int(d.scale) - 1
+	if d.scale >= 0 && adjusted >= -6 {
+		// plain number
+		pad := int(d.scale) - len(bigStr)
+		if pad >= 0 {
+			// 0.xxx form
+			buf.WriteString("0.")
+			for pad > 0 {
+				buf.WriteByte('0')
+				pad--
+			}
+			buf.WriteString(bigStr)
+		} else {
+			// xx.xx form
+			pad *= -1
+			buf.WriteString(bigStr[0:pad] + "." + bigStr[pad:])
+		}
+	} else {
+		// E-notation is needed
+		buf.WriteByte(bigStr[0])
+		if len(bigStr) > 1 {
+			buf.WriteString("." + bigStr[1:])
+		}
+		buf.WriteByte('E')
+		if adjusted > 0 {
+			buf.WriteByte('+')
+		}
+		buf.WriteString(strconv.Itoa(adjusted))
+	}
+	return buf.String()
+}
