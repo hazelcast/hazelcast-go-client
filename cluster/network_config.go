@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,9 @@ func (c *NetworkConfig) Validate() error {
 		}
 	}
 	if err := check.EnsureNonNegativeDuration((*time.Duration)(&c.ConnectionTimeout), 5*time.Second, "invalid connection timeout"); err != nil {
+		return err
+	}
+	if err := c.SSL.Validate(); err != nil {
 		return err
 	}
 	return nil
