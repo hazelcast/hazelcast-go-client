@@ -14,12 +14,12 @@ func TestTime(t *testing.T) {
 		f    func(t *testing.T)
 		name string
 	}{
-		{name: "TestLocalDateToTime", f: localDateToTimeTest},
-		{name: "TestLocalDateString", f: localDateStringTest},
-		{name: "TestLocalTimeToTime", f: localTimeToTimeTest},
-		{name: "TestLocalTimeString", f: localTimeStringTest},
-		{name: "TestLocalDateTimeToTime", f: localDateTimeToTimeTest},
-		{name: "TestLocalDateTimeString", f: localDateTimeStringTest},
+		{name: "LocalDateToTime", f: localDateToTimeTest},
+		{name: "LocalDateString", f: localDateStringTest},
+		{name: "LocalTimeToTime", f: localTimeToTimeTest},
+		{name: "LocalTimeString", f: localTimeStringTest},
+		{name: "LocalDateTimeToTime", f: localDateTimeToTimeTest},
+		{name: "LocalDateTimeString", f: localDateTimeStringTest},
 		{name: "OffsetDateTimeToTime", f: offsetDateTimeToTimeTest},
 		{name: "OffsetDateTimeString", f: offsetDateTimeStringTest},
 	}

@@ -31,9 +31,9 @@ func TestDuration(t *testing.T) {
 		f    func(t *testing.T)
 		name string
 	}{
-		{name: "TestDuration_String", f: durationStringTest},
-		{name: "TestDuration_MarshalText", f: durationMarshalTextTest},
-		{name: "TestLocalTimeToTime", f: durationToDurationTest},
+		{name: "DurationString", f: durationStringTest},
+		{name: "DurationMarshalText", f: durationMarshalTextTest},
+		{name: "DurationToDuration", f: durationToDurationTest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
