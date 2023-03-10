@@ -20,13 +20,6 @@ import (
 	"time"
 )
 
-const (
-	dateFormat           = "2006-01-02"
-	timeFormat           = "15:04:05.999999999"
-	dateTimeFormat       = "2006-01-02T15:04:05.999999999"
-	offsetDateTimeFormat = "2006-01-02T15:04:05.999999999Z07:00"
-)
-
 // LocalDate is the date part of time.Time.
 type LocalDate time.Time
 
@@ -50,7 +43,7 @@ func (ld *LocalDate) String() string {
 	if ld == nil {
 		return ""
 	}
-	return (*time.Time)(ld).Format(dateFormat)
+	return (*time.Time)(ld).String()
 }
 
 func (lt *LocalTime) ToTime() time.Time {
@@ -64,7 +57,7 @@ func (lt *LocalTime) String() string {
 	if lt == nil {
 		return ""
 	}
-	return (*time.Time)(lt).Format(timeFormat)
+	return (*time.Time)(lt).String()
 }
 
 func (ldt *LocalDateTime) ToTime() time.Time {
@@ -78,7 +71,7 @@ func (ldt *LocalDateTime) String() string {
 	if ldt == nil {
 		return ""
 	}
-	return (*time.Time)(ldt).Format(dateTimeFormat)
+	return (*time.Time)(ldt).String()
 }
 
 func (odt *OffsetDateTime) ToTime() time.Time {
@@ -92,5 +85,5 @@ func (odt *OffsetDateTime) String() string {
 	if odt == nil {
 		return ""
 	}
-	return (*time.Time)(odt).Format(offsetDateTimeFormat)
+	return (*time.Time)(odt).String()
 }

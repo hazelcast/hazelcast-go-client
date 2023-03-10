@@ -47,9 +47,9 @@ func localDateStringTest(t *testing.T) {
 		ld  types.LocalDate
 		str string
 	}{
-		{ld: types.LocalDate(time.Date(2021, 12, 21, 0, 0, 0, 0, time.Local)), str: "2021-12-21"},
-		{ld: types.LocalDate(time.Date(1914, 7, 28, 0, 0, 0, 0, time.Local)), str: "1914-07-28"},
-		{ld: types.LocalDate(time.Date(1923, 4, 23, 0, 0, 0, 0, time.Local)), str: "1923-04-23"},
+		{ld: types.LocalDate(time.Date(2021, 12, 21, 0, 0, 0, 0, time.UTC)), str: "2021-12-21 00:00:00 +0000 UTC"},
+		{ld: types.LocalDate(time.Date(1914, 7, 28, 0, 0, 0, 0, time.UTC)), str: "1914-07-28 00:00:00 +0000 UTC"},
+		{ld: types.LocalDate(time.Date(1923, 4, 23, 0, 0, 0, 0, time.UTC)), str: "1923-04-23 00:00:00 +0000 UTC"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.ld.String())
@@ -75,9 +75,9 @@ func localTimeStringTest(t *testing.T) {
 		ld  types.LocalTime
 		str string
 	}{
-		{ld: types.LocalTime(time.Date(0, 1, 1, 14, 15, 16, 200, time.Local)), str: "14:15:16.0000002"},
-		{ld: types.LocalTime(time.Date(0, 1, 1, 9, 5, 20, 400, time.Local)), str: "09:05:20.0000004"},
-		{ld: types.LocalTime(time.Date(0, 1, 1, 23, 59, 59, 999, time.Local)), str: "23:59:59.000000999"},
+		{ld: types.LocalTime(time.Date(0, 1, 1, 14, 15, 16, 200, time.UTC)), str: "0000-01-01 14:15:16.0000002 +0000 UTC"},
+		{ld: types.LocalTime(time.Date(0, 1, 1, 9, 5, 20, 400, time.UTC)), str: "0000-01-01 09:05:20.0000004 +0000 UTC"},
+		{ld: types.LocalTime(time.Date(0, 1, 1, 23, 59, 59, 999, time.UTC)), str: "0000-01-01 23:59:59.000000999 +0000 UTC"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.ld.String())
@@ -103,9 +103,9 @@ func localDateTimeStringTest(t *testing.T) {
 		ldt types.LocalDateTime
 		str string
 	}{
-		{ldt: types.LocalDateTime(time.Date(2021, 12, 21, 14, 15, 16, 200, time.Local)), str: "2021-12-21T14:15:16.0000002"},
-		{ldt: types.LocalDateTime(time.Date(1914, 7, 28, 9, 5, 20, 400, time.Local)), str: "1914-07-28T09:05:20.0000004"},
-		{ldt: types.LocalDateTime(time.Date(1923, 4, 23, 23, 59, 59, 999, time.Local)), str: "1923-04-23T23:59:59.000000999"},
+		{ldt: types.LocalDateTime(time.Date(2021, 12, 21, 14, 15, 16, 200, time.UTC)), str: "2021-12-21 14:15:16.0000002 +0000 UTC"},
+		{ldt: types.LocalDateTime(time.Date(1914, 7, 28, 9, 5, 20, 400, time.UTC)), str: "1914-07-28 09:05:20.0000004 +0000 UTC"},
+		{ldt: types.LocalDateTime(time.Date(1923, 4, 23, 23, 59, 59, 999, time.UTC)), str: "1923-04-23 23:59:59.000000999 +0000 UTC"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.ldt.String())
@@ -132,9 +132,9 @@ func offsetDateTimeStringTest(t *testing.T) {
 		odt types.OffsetDateTime
 		str string
 	}{
-		{odt: types.OffsetDateTime(time.Date(2021, 12, 21, 14, 15, 16, 200, time.UTC)), str: "2021-12-21T14:15:16.0000002Z"},
-		{odt: types.OffsetDateTime(time.Date(1923, 4, 23, 23, 59, 59, 999, time.FixedZone("UTC+3", 3*60*60))), str: "1923-04-23T23:59:59.000000999+03:00"},
-		{odt: types.OffsetDateTime(time.Date(2025, 2, 6, 4, 07, 15, 500, time.FixedZone("UTC-5", -5*60*60))), str: "2025-02-06T04:07:15.0000005-05:00"},
+		{odt: types.OffsetDateTime(time.Date(2021, 12, 21, 14, 15, 16, 200, time.UTC)), str: "2021-12-21 14:15:16.0000002 +0000 UTC"},
+		{odt: types.OffsetDateTime(time.Date(1923, 4, 23, 23, 59, 59, 999, time.FixedZone("UTC+3", 3*60*60))), str: "1923-04-23 23:59:59.000000999 +0300 UTC+3"},
+		{odt: types.OffsetDateTime(time.Date(2025, 2, 6, 4, 07, 15, 50000, time.FixedZone("UTC-5", -5*60*60))), str: "2025-02-06 04:07:15.00005 -0500 UTC-5"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.odt.String())
