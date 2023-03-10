@@ -26,6 +26,8 @@ func TestDecimal(t *testing.T) {
 }
 
 func decimalStringTest(t *testing.T) {
+	max := math.MaxInt32
+	min := math.MinInt32
 	testCases := []struct {
 		dec types.Decimal
 		str string
@@ -45,6 +47,12 @@ func decimalStringTest(t *testing.T) {
 		{dec: types.NewDecimal(big.NewInt(0), -1), str: "0E+1"},
 		{dec: types.NewDecimal(big.NewInt(0), 1), str: "0.0"},
 		{dec: types.NewDecimal(big.NewInt(0), 0), str: "0"},
+		{dec: types.NewDecimal(big.NewInt(123_456_789), min), str: "1.23456789E+2147483656"},
+		{dec: types.NewDecimal(big.NewInt(123_456_789), max), str: "1.23456789E-2147483639"},
+		{dec: types.NewDecimal(big.NewInt(int64(max)), min), str: "2.147483647E+2147483657"},
+		{dec: types.NewDecimal(big.NewInt(int64(max)), max), str: "2.147483647E-2147483638"},
+		{dec: types.NewDecimal(big.NewInt(int64(min)), min), str: "-2.147483648E+2147483657"},
+		{dec: types.NewDecimal(big.NewInt(int64(min)), max), str: "-2.147483648E-2147483638"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.dec.String())
@@ -53,21 +61,26 @@ func decimalStringTest(t *testing.T) {
 
 func decimalStringOverflowTest(t *testing.T) {
 	skip.If(t, "arch ~ 32bit")
+	max32 := math.MaxInt32
+	min32 := math.MinInt32
+	max64 := math.MaxInt64
+	min64 := math.MinInt64
+	overflowMax := max32 + 1
+	overflowMin := min32 - 1
 	testCases := []struct {
 		dec types.Decimal
 		str string
 	}{
-		{dec: types.NewDecimal(big.NewInt(123_456_789), math.MinInt32), str: "1.23456789E+2147483656"},
-		{dec: types.NewDecimal(big.NewInt(123_456_789), math.MaxInt32), str: "1.23456789E-2147483639"},
-		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MaxInt32+1), str: "1.11111111E+2147483656"},
-		{dec: types.NewDecimal(big.NewInt(111_111_111), math.MinInt32-1), str: "1.11111111E-2147483639"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt32), math.MinInt32), str: "2.147483647E+2147483657"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt32), math.MaxInt32), str: "2.147483647E-2147483638"},
-		{dec: types.NewDecimal(big.NewInt(math.MinInt32), math.MinInt32), str: "-2.147483648E+2147483657"},
-		{dec: types.NewDecimal(big.NewInt(math.MinInt32), math.MaxInt32), str: "-2.147483648E-2147483638"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MinInt32-1), str: "9.223372036854775807E-2147483629"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MaxInt32+1), str: "9.223372036854775807E+2147483666"},
-		{dec: types.NewDecimal(big.NewInt(math.MaxInt64), math.MaxInt32+100), str: "9.223372036854775807E+2147483567"},
+		{dec: types.NewDecimal(big.NewInt(111_111_111), overflowMax), str: "1.11111111E+2147483656"},
+		{dec: types.NewDecimal(big.NewInt(111_111_111), overflowMin), str: "1.11111111E-2147483639"},
+		{dec: types.NewDecimal(big.NewInt(int64(max32)), overflowMin), str: "2.147483647E-2147483638"},
+		{dec: types.NewDecimal(big.NewInt(int64(max32)), overflowMax), str: "2.147483647E+2147483657"},
+		{dec: types.NewDecimal(big.NewInt(int64(min32)), overflowMin), str: "-2.147483648E-2147483638"},
+		{dec: types.NewDecimal(big.NewInt(int64(min32)), overflowMax), str: "-2.147483648E+2147483657"},
+		{dec: types.NewDecimal(big.NewInt(int64(max64)), overflowMin), str: "9.223372036854775807E-2147483629"},
+		{dec: types.NewDecimal(big.NewInt(int64(max64)), overflowMax), str: "9.223372036854775807E+2147483666"},
+		{dec: types.NewDecimal(big.NewInt(int64(min64)), overflowMin), str: "-9.223372036854775808E-2147483629"},
+		{dec: types.NewDecimal(big.NewInt(int64(min64)), overflowMax), str: "-9.223372036854775808E+2147483666"},
 	}
 	for _, tc := range testCases {
 		require.Equal(t, tc.str, tc.dec.String())
