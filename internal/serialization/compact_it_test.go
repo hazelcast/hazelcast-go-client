@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
@@ -36,7 +37,9 @@ func TestCompact(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "Basic", f: compactBasicTest},
+		{name: "CompactBasic", f: compactBasicTest},
+		{name: "CompactBasicPointer", f: compactBasicPointerTest},
+		{name: "CompactBasicPointerArrayTest", f: compactBasicPointerArrayTest},
 		{name: "BasicQuery", f: basicQueryTest},
 		{name: "ClusterRestart", f: clusterRestartTest},
 		{name: "JoinedMemberQuery", f: joinedMemberQueryTest},
@@ -65,6 +68,39 @@ func compactBasicTest(t *testing.T) {
 		it.Must(map1.Set(ctx, 1, v))
 		map2 := it.MustValue(tcx.Client2.GetMap(ctx, tcx.MapName)).(*hz.Map)
 		it.AssertEquals(t, v, it.MustValue(map2.Get(ctx, 1)))
+	})
+}
+
+func compactBasicPointerTest(t *testing.T) {
+	tcx := it.CompactTestContext{
+		T:            t,
+		Serializers1: []serialization.CompactSerializer{&EmployeeDTOPointerCompactSerializer{}},
+	}
+	tcx.Tester(func(tcx it.CompactTestContext) {
+		ctx := context.Background()
+		v1 := &EmployeeDTO{age: 30, id: 102310312}
+		map1 := it.MustValue(tcx.Client1.GetMap(ctx, tcx.MapName)).(*hz.Map)
+		it.Must(map1.Set(ctx, 1, v1))
+		v2 := it.MustValue(map1.Get(ctx, 1)).(*EmployeeDTO)
+		require.Equal(t, v1, v2)
+	})
+}
+
+func compactBasicPointerArrayTest(t *testing.T) {
+	tcx := it.CompactTestContext{
+		T:            t,
+		Serializers1: []serialization.CompactSerializer{&StructWithArray{}, &EmployeeDTOPointerCompactSerializer{}},
+	}
+	tcx.Tester(func(tcx it.CompactTestContext) {
+		ctx := context.Background()
+		v1 := []interface{}{
+			&EmployeeDTO{age: 30, id: 102310312},
+			&EmployeeDTO{age: 33, id: 102310313},
+		}
+		map1 := it.MustValue(tcx.Client1.GetMap(ctx, tcx.MapName)).(*hz.Map)
+		it.Must(map1.Set(ctx, 1, v1))
+		v2 := it.MustValue(map1.Get(ctx, 1)).([]interface{})
+		require.Equal(t, v1, v2)
 	})
 }
 

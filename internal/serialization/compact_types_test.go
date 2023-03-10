@@ -41,7 +41,7 @@ type InnerDTO struct {
 	floats           []float32
 	doubles          []float64
 	strings          []*string
-	nn               []*NamedDTO
+	nn               []NamedDTO
 	bigDecimals      []*types.Decimal
 	localTimes       []*types.LocalTime
 	localDates       []*types.LocalDate
@@ -120,7 +120,7 @@ type MainDTO struct {
 	nullableBool   *bool
 	nullableB      *int8
 	str            *string
-	p              *InnerDTO
+	p              InnerDTO
 	bigDecimal     *types.Decimal
 	localTime      *types.LocalTime
 	localDate      *types.LocalDate
@@ -153,11 +153,11 @@ func NewInnerDTO() InnerDTO {
 	doubles := []float64{456.456, 789.789, 321.321}
 	bigDec1 := types.NewDecimal(big.NewInt(12345), 0)
 	bigDec2 := types.NewDecimal(big.NewInt(123456), 0)
-	nn := make([]*NamedDTO, 2)
+	nn := make([]NamedDTO, 2)
 	nameStr := "name"
 	nameStr2 := "name"
-	nn[0] = &NamedDTO{name: &nameStr, myint: 123}
-	nn[1] = &NamedDTO{name: &nameStr2, myint: 123}
+	nn[0] = NamedDTO{name: &nameStr, myint: 123}
+	nn[1] = NamedDTO{name: &nameStr2, myint: 123}
 	return InnerDTO{
 		bools:            bools,
 		bytes:            bytes,
@@ -203,7 +203,7 @@ func NewMainDTO() MainDTO {
 	nullableD := float64(-897543.3678909)
 
 	return MainDTO{b: 113, boolean: true, s: -500, i: 56789, l: -50992225, f: 900.5678, d: -897543.3678909,
-		str: &str, p: &inner, bigDecimal: &bigDecimal, localTime: &localTime, localDate: &localDate, localDateTime: &localDateTime,
+		str: &str, p: inner, bigDecimal: &bigDecimal, localTime: &localTime, localDate: &localDate, localDateTime: &localDateTime,
 		offsetDateTime: &offsetDateTime, nullableB: &nullableB, nullableBool: &nullableBool, nullableS: &nullableS, nullableI: &nullableI,
 		nullableL: &nullableL, nullableF: &nullableF, nullableD: &nullableD,
 	}
@@ -259,16 +259,16 @@ func readMainDTO(reader serialization.CompactReader) MainDTO {
 	} else {
 		str = reader.ReadString("str")
 	}
-	var p *InnerDTO
+	var p InnerDTO
 	if reader.GetFieldKind("p") == serialization.FieldKindNotAvailable {
-		p = nil
+		p = InnerDTO{}
 	} else {
 		compact := reader.ReadCompact("p")
 		if compact == nil {
-			p = nil
+			p = InnerDTO{}
 		} else {
 			innerDTO := compact.(InnerDTO)
-			p = &innerDTO
+			p = innerDTO
 		}
 	}
 	var bigDecimal *types.Decimal
@@ -413,18 +413,18 @@ func readInnerDTO(reader serialization.CompactReader) InnerDTO {
 	} else {
 		strings = reader.ReadArrayOfString("strings")
 	}
-	var namedDTOs []*NamedDTO
+	var namedDTOs []NamedDTO
 	if reader.GetFieldKind("nn") == serialization.FieldKindNotAvailable {
-		namedDTOs = make([]*NamedDTO, 0)
+		namedDTOs = make([]NamedDTO, 0)
 	} else {
 		nn := reader.ReadArrayOfCompact("nn")
-		namedDTOs = make([]*NamedDTO, len(nn))
+		namedDTOs = make([]NamedDTO, len(nn))
 		for i, n := range nn {
 			if n == nil {
-				namedDTOs[i] = nil
+				namedDTOs[i] = NamedDTO{}
 			} else {
 				np := n.(NamedDTO)
-				namedDTOs[i] = &np
+				namedDTOs[i] = np
 			}
 		}
 	}
@@ -943,9 +943,9 @@ func (NamedDTOSerializer) Write(writer serialization.CompactWriter, value interf
 type EmployerDTO struct {
 	name           *string
 	hiringStatus   *string
-	singleEmployee *EmployeeDTO
+	singleEmployee EmployeeDTO
 	ids            []int64
-	otherEmployees []*EmployeeDTO
+	otherEmployees []EmployeeDTO
 	zcode          int32
 }
 
@@ -961,18 +961,18 @@ func (s EmployerDTOCompactSerializer) TypeName() string {
 
 func (s EmployerDTOCompactSerializer) Read(reader serialization.CompactReader) interface{} {
 	singleEmployee := reader.ReadCompact("singleEmployee").(EmployeeDTO)
-	var otherEmployees []*EmployeeDTO
+	var otherEmployees []EmployeeDTO
 	readOtherEmployees := reader.ReadArrayOfCompact("otherEmployees")
 	for _, v := range readOtherEmployees {
 		employeeDTO := v.(EmployeeDTO)
-		otherEmployees = append(otherEmployees, &employeeDTO)
+		otherEmployees = append(otherEmployees, employeeDTO)
 	}
 	return EmployerDTO{
 		name:           reader.ReadString("name"),
 		zcode:          reader.ReadInt32("zcode"),
 		ids:            reader.ReadArrayOfInt64("ids"),
 		hiringStatus:   reader.ReadString("hiringStatus"),
-		singleEmployee: &singleEmployee,
+		singleEmployee: singleEmployee,
 		otherEmployees: otherEmployees,
 	}
 }
@@ -1032,6 +1032,44 @@ func (s EmployeeDTOCompactSerializer) Write(writer serialization.CompactWriter, 
 	c, ok := value.(EmployeeDTO)
 	if !ok {
 		panic("not an EmployeeDTO")
+	}
+	writer.WriteInt32("age", c.age)
+	writer.WriteInt64("id", c.id)
+}
+
+type EmployeeDTOPointerCompactSerializer struct{}
+
+func (EmployeeDTOPointerCompactSerializer) Type() reflect.Type {
+	return reflect.TypeOf(&EmployeeDTO{})
+}
+
+func (s EmployeeDTOPointerCompactSerializer) TypeName() string {
+	return "*EmployeeDTO"
+}
+
+func (s EmployeeDTOPointerCompactSerializer) Read(reader serialization.CompactReader) interface{} {
+	var age int32
+	if reader.GetFieldKind("age") == serialization.FieldKindNotAvailable {
+		age = 0
+	} else {
+		age = reader.ReadInt32("age")
+	}
+	var id int64
+	if reader.GetFieldKind("id") == serialization.FieldKindNotAvailable {
+		id = 0
+	} else {
+		id = reader.ReadInt64("id")
+	}
+	return &EmployeeDTO{
+		age: age,
+		id:  id,
+	}
+}
+
+func (s EmployeeDTOPointerCompactSerializer) Write(writer serialization.CompactWriter, value interface{}) {
+	c, ok := value.(*EmployeeDTO)
+	if !ok {
+		panic("not an *EmployeeDTO")
 	}
 	writer.WriteInt32("age", c.age)
 	writer.WriteInt64("id", c.id)
@@ -1149,4 +1187,34 @@ func nullableFloat64Slice(values ...float64) []*float64 {
 		r[i] = &v
 	}
 	return r
+}
+
+type StructWithArray struct {
+	items []*EmployeeDTO
+}
+
+func (s StructWithArray) Type() reflect.Type {
+	return reflect.TypeOf(StructWithArray{})
+}
+
+func (s StructWithArray) TypeName() string {
+	return "StructWithArray"
+}
+
+func (s StructWithArray) Read(reader serialization.CompactReader) interface{} {
+	v1 := reader.ReadArrayOfCompact("items")
+	v2 := make([]*EmployeeDTO, len(v1))
+	for i, v := range v1 {
+		v2[i] = v.(*EmployeeDTO)
+	}
+	return StructWithArray{items: v2}
+}
+
+func (s StructWithArray) Write(writer serialization.CompactWriter, value interface{}) {
+	v := value.(StructWithArray)
+	arr := make([]interface{}, len(v.items))
+	for i, item := range v.items {
+		arr[i] = item
+	}
+	writer.WriteArrayOfCompact("items", arr)
 }

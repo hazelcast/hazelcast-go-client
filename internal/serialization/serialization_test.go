@@ -512,7 +512,7 @@ func TestReaderReturnsDefaultValues_whenDataIsMissing(t *testing.T) {
 	assert.Equal(t, returnedInnerDTO.floats, []float32{})
 	assert.Equal(t, returnedInnerDTO.doubles, []float64{})
 	assert.Equal(t, returnedInnerDTO.strings, []*string{})
-	assert.Equal(t, returnedInnerDTO.nn, []*NamedDTO{})
+	assert.Equal(t, returnedInnerDTO.nn, []NamedDTO{})
 	assert.Equal(t, returnedInnerDTO.bigDecimals, []*types.Decimal{})
 	assert.Equal(t, returnedInnerDTO.localTimes, []*types.LocalTime{})
 	assert.Equal(t, returnedInnerDTO.localDates, []*types.LocalDate{})
@@ -572,9 +572,9 @@ func TestWithExplicitSerializerNested(t *testing.T) {
 	ids := make([]int64, 2)
 	ids[0] = 22
 	ids[1] = 44
-	employeeDTOs := make([]*EmployeeDTO, 5)
+	employeeDTOs := make([]EmployeeDTO, 5)
 	for i := 0; i < len(employeeDTOs); i++ {
-		employeeDTOs[i] = &EmployeeDTO{
+		employeeDTOs[i] = EmployeeDTO{
 			age: int32(20 + i),
 			id:  int64(i * 100),
 		}
@@ -586,7 +586,7 @@ func TestWithExplicitSerializerNested(t *testing.T) {
 		zcode:          40,
 		hiringStatus:   &hiringStatus,
 		ids:            ids,
-		singleEmployee: &employeeDTO,
+		singleEmployee: employeeDTO,
 		otherEmployees: employeeDTOs,
 	}
 	data, err := service.ToData(employerDTO)

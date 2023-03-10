@@ -121,6 +121,13 @@ func makeSchemaFromSerializer(ser pubserialization.CompactSerializer) (schema *S
 	}()
 	sw := NewSchemaWriter(ser.TypeName())
 	// create the zero value for the type in the serializer and build the schema
-	ser.Write(sw, reflect.Zero(ser.Type()).Interface())
+	st := ser.Type()
+	var v interface{}
+	if st.Kind() == reflect.Ptr {
+		v = reflect.New(st.Elem()).Interface()
+	} else {
+		v = reflect.Zero(st).Interface()
+	}
+	ser.Write(sw, v)
 	return sw.Build(), nil
 }

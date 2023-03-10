@@ -17,11 +17,13 @@
 package serialization_test
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -32,6 +34,7 @@ func TestCompactSerializer(t *testing.T) {
 		f    func(t *testing.T)
 	}{
 		{name: "AddDuplicateField", f: addDuplicateFieldTest},
+		{name: "SliceWithDifferentTypes", f: sliceWithDifferentTypesTest},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -45,6 +48,16 @@ func addDuplicateFieldTest(t *testing.T) {
 	cfg.Compact.SetSerializers(&duplicateWritingSerializer{})
 	_, err := serialization.NewService(&cfg, nil)
 	require.Error(t, err)
+}
+
+func sliceWithDifferentTypesTest(t *testing.T) {
+	// ported from: testWritingArrayOfCompactGenericField_withDifferentItemTypes
+	var cfg pubserialization.Config
+	cfg.Compact.SetSerializers(&sliceWithDifferentTypesSerializer{}, &BitsDTOSerializer{}, &InnerDTOSerializer{})
+	ss, err := serialization.NewService(&cfg, nil)
+	require.NoError(t, err)
+	_, err = ss.ToData(sliceWithDifferentTypes([]interface{}{BitsDTO{}, InnerDTO{}}))
+	require.True(t, errors.Is(err, hzerrors.ErrHazelcastSerialization))
 }
 
 type duplicatedType struct{}
@@ -66,4 +79,25 @@ func (d duplicateWritingSerializer) Read(reader pubserialization.CompactReader) 
 func (d duplicateWritingSerializer) Write(writer pubserialization.CompactWriter, value interface{}) {
 	writer.WriteInt32("bar", 1)
 	writer.WriteInt32("bar", 1)
+}
+
+type sliceWithDifferentTypes []interface{}
+
+type sliceWithDifferentTypesSerializer struct{}
+
+func (s sliceWithDifferentTypesSerializer) Type() reflect.Type {
+	return reflect.TypeOf(sliceWithDifferentTypes{})
+}
+
+func (s sliceWithDifferentTypesSerializer) TypeName() string {
+	return "sliceWithDifferentTypes"
+}
+
+func (s sliceWithDifferentTypesSerializer) Read(reader pubserialization.CompactReader) interface{} {
+	panic("not implemented")
+}
+
+func (s sliceWithDifferentTypesSerializer) Write(writer pubserialization.CompactWriter, value interface{}) {
+	v := []interface{}(value.(sliceWithDifferentTypes))
+	writer.WriteArrayOfCompact("f", v)
 }
