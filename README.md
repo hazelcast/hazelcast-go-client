@@ -53,7 +53,7 @@ func main() {
 * Additional data structures and simple messaging constructs such as Replicated Map, MultiMap, Queue, List, PNCounter, Set, Topic and others.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
 * Go context support for all distributed data structures.
-* Hazelcast Cloud integration.
+* [Viridian](https://viridian.hazelcast.com/) integration.
 * SQL support (only on Hazelcast 5.x).
 * External smart client discovery.
 * Hazelcast Management Center integration.
@@ -65,7 +65,7 @@ func main() {
 Requirements:
 
 * Hazelcast Go client is compatible only with Hazelcast 4.x and 5.x.
-* We support two most recent releases of Go, currently 1.17 and 1.18.
+* We support two most recent releases of Go, currently 1.17 and up.
 
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
@@ -79,20 +79,12 @@ Hazelcast Go client requires a working Hazelcast cluster.
 
 Check out our [Get Started](https://hazelcast.com/get-started/) page for options.
 
-### Starting the Client with Hazelcast Cloud
+### Starting the Client with Viridian
 
-You only need the cluster name and Hazelcast cloud token to start the client.
-If you haven't already, you can [sign up](http://cloud.hazelcast.com/sign-up) for a free Hazelcast Cloud account.
+You only need the cluster name and Viridian token to start the client.
+If you haven't already, you can [sign up](https://viridian.hazelcast.com/) for a free Viridian account.
 
-```go
-config := hazelcast.Config{}
-cc := &config.Cluster
-cc.Name = "YOUR HAZELCAST CLOUD CLUSTER NAME"
-cc.Cloud.Enabled = true
-cc.Cloud.Token = "YOUR HAZELCAST CLOUD TOKEN"
-client, err := hazelcast.StartNewClientWithConfig(ctx, config)
-// handle the error
-```
+Check out our [Viridian sample](https://github.com/hazelcast/hazelcast-go-client/blob/master/examples/cloud/main.go)
 
 ### Starting the Default Client
 

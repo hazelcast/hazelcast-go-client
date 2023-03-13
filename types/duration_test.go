@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,31 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
-func TestDuration_String(t *testing.T) {
+func TestDuration(t *testing.T) {
+	testCases := []struct {
+		f    func(t *testing.T)
+		name string
+	}{
+		{name: "DurationString", f: durationStringTest},
+		{name: "DurationMarshalText", f: durationMarshalTextTest},
+		{name: "DurationToDuration", f: durationToDurationTest},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, tc.f)
+	}
+}
+
+func durationStringTest(t *testing.T) {
 	dr := types.Duration(time.Minute)
 	assert.Equal(t, time.Minute.String(), dr.String())
 }
 
-func TestDuration_MarshalText(t *testing.T) {
+func durationMarshalTextTest(t *testing.T) {
 	dr := types.Duration(time.Minute)
 	want := `1m0s`
 	text, err := dr.MarshalText()
@@ -38,4 +53,18 @@ func TestDuration_MarshalText(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, want, string(text))
+}
+
+func durationToDurationTest(t *testing.T) {
+	testCases := []struct {
+		tyd types.Duration
+		tid time.Duration
+	}{
+		{tyd: types.Duration(time.Second), tid: time.Second},
+		{tyd: types.Duration(time.Minute), tid: time.Minute},
+		{tyd: types.Duration(time.Hour), tid: time.Hour},
+	}
+	for _, tc := range testCases {
+		require.Equal(t, tc.tid, tc.tyd.ToDuration())
+	}
 }

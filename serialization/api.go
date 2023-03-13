@@ -414,13 +414,13 @@ type PortableReader interface {
 type FieldKind int32
 
 const (
-	FieldKindNotAvailable   FieldKind = 0
-	FieldKindBoolean        FieldKind = 1
-	FieldKindArrayOfBoolean FieldKind = 2
-	FieldKindInt8           FieldKind = 3
-	FieldKindArrayOfInt8    FieldKind = 4
-	// FieldKindChar                      FieldKind = 5
-	// FieldKindArrayOfChar               FieldKind = 6
+	FieldKindNotAvailable                 FieldKind = 0
+	FieldKindBoolean                      FieldKind = 1
+	FieldKindArrayOfBoolean               FieldKind = 2
+	FieldKindInt8                         FieldKind = 3
+	FieldKindArrayOfInt8                  FieldKind = 4
+	FieldKindChar                         FieldKind = 5
+	FieldKindArrayOfChar                  FieldKind = 6
 	FieldKindInt16                        FieldKind = 7
 	FieldKindArrayOfInt16                 FieldKind = 8
 	FieldKindInt32                        FieldKind = 9
@@ -445,22 +445,22 @@ const (
 	FieldKindArrayOfTimestampWithTimezone FieldKind = 28
 	FieldKindCompact                      FieldKind = 29
 	FieldKindArrayOfCompact               FieldKind = 30
-	// FieldKindPortable                  FieldKind = 31
-	// FieldKindArrayOfPortable           FieldKind = 32
-	FieldKindNullableBoolean        FieldKind = 33
-	FieldKindArrayOfNullableBoolean FieldKind = 34
-	FieldKindNullableInt8           FieldKind = 35
-	FieldKindArrayOfNullableInt8    FieldKind = 36
-	FieldKindNullableInt16          FieldKind = 37
-	FieldKindArrayOfNullableInt16   FieldKind = 38
-	FieldKindNullableInt32          FieldKind = 39
-	FieldKindArrayOfNullableInt32   FieldKind = 40
-	FieldKindNullableInt64          FieldKind = 41
-	FieldKindArrayOfNullableInt64   FieldKind = 42
-	FieldKindNullableFloat32        FieldKind = 43
-	FieldKindArrayOfNullableFloat32 FieldKind = 44
-	FieldKindNullableFloat64        FieldKind = 45
-	FieldKindArrayOfNullableFloat64 FieldKind = 46
+	FieldKindPortable                     FieldKind = 31
+	FieldKindArrayOfPortable              FieldKind = 32
+	FieldKindNullableBoolean              FieldKind = 33
+	FieldKindArrayOfNullableBoolean       FieldKind = 34
+	FieldKindNullableInt8                 FieldKind = 35
+	FieldKindArrayOfNullableInt8          FieldKind = 36
+	FieldKindNullableInt16                FieldKind = 37
+	FieldKindArrayOfNullableInt16         FieldKind = 38
+	FieldKindNullableInt32                FieldKind = 39
+	FieldKindArrayOfNullableInt32         FieldKind = 40
+	FieldKindNullableInt64                FieldKind = 41
+	FieldKindArrayOfNullableInt64         FieldKind = 42
+	FieldKindNullableFloat32              FieldKind = 43
+	FieldKindArrayOfNullableFloat32       FieldKind = 44
+	FieldKindNullableFloat64              FieldKind = 45
+	FieldKindArrayOfNullableFloat64       FieldKind = 46
 )
 
 type CompactSerializer interface {

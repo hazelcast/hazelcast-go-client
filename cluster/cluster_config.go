@@ -108,6 +108,12 @@ func (c *Config) Validate() error {
 		// infinity
 		c.ConnectionStrategy.Timeout = types.Duration(internal.DefaultConnectionTimeoutWithoutFailover)
 	}
+	if c.Cloud.Enabled {
+		c.Network.SSL.Enabled = true
+		if c.Network.SSL.tlsConfig.ServerName == "" {
+			c.Network.SSL.tlsConfig.ServerName = "hazelcast.cloud"
+		}
+	}
 	return nil
 }
 

@@ -34,12 +34,16 @@ type SchemaService struct {
 	ch        chan<- SchemaMsg
 }
 
-func NewSchemaService(cfg pubserialization.CompactConfig, ch chan<- SchemaMsg) *SchemaService {
+func NewSchemaService(cfg pubserialization.CompactConfig, ch chan<- SchemaMsg) (*SchemaService, error) {
+	sm, err := MakeSchemasFromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
 	return &SchemaService{
-		schemaMap: MakeSchemasFromConfig(cfg),
+		schemaMap: sm,
 		mu:        &sync.RWMutex{},
 		ch:        ch,
-	}
+	}, nil
 }
 
 func (s *SchemaService) Schemas() []*Schema {

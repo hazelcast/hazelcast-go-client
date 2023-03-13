@@ -1175,7 +1175,7 @@ func DecodeNullableForSchema(frameIterator *proto.ForwardFrameIterator) *iserial
 	return DecodeSchema(frameIterator)
 }
 
-func EncodeListMultiFrameForFieldDescriptor(message *proto.ClientMessage, fields []*iserialization.FieldDescriptor) {
+func EncodeListMultiFrameForFieldDescriptor(message *proto.ClientMessage, fields []iserialization.FieldDescriptor) {
 	message.AddFrame(proto.NewBeginFrame())
 	for i := 0; i < len(fields); i++ {
 		EncodeFieldDescriptor(message, fields[i])
@@ -1183,12 +1183,12 @@ func EncodeListMultiFrameForFieldDescriptor(message *proto.ClientMessage, fields
 	message.AddFrame(proto.NewEndFrame())
 }
 
-func DecodeListMultiFrameForFieldDescriptor(frameIterator *proto.ForwardFrameIterator) map[string]*iserialization.FieldDescriptor {
-	result := map[string]*iserialization.FieldDescriptor{}
+func DecodeListMultiFrameForFieldDescriptor(frameIterator *proto.ForwardFrameIterator) map[string]iserialization.FieldDescriptor {
+	result := map[string]iserialization.FieldDescriptor{}
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		fd := DecodeFieldDescriptor(frameIterator)
-		result[fd.Name] = &fd
+		result[fd.Name] = fd
 	}
 	frameIterator.Next()
 	return result

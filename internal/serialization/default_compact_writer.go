@@ -134,7 +134,7 @@ func (r *DefaultCompactWriter) WriteTimestampWithTimezone(fieldName string, valu
 
 func (r *DefaultCompactWriter) WriteCompact(fieldName string, value interface{}) {
 	r.writeVariableSizeField(fieldName, pubserialization.FieldKindCompact, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		r.serializer.Write(out, reflect.ValueOf(v).Elem().Interface())
+		r.serializer.Write(out, reflect.ValueOf(v).Interface())
 	})
 }
 
@@ -217,8 +217,14 @@ func (r *DefaultCompactWriter) WriteArrayOfTimestampWithTimezone(fieldName strin
 }
 
 func (r *DefaultCompactWriter) WriteArrayOfCompact(fieldName string, value []interface{}) {
+	var t reflect.Type
 	r.writeArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfCompact, value, func(out *PositionalObjectDataOutput, v interface{}) {
-		r.serializer.Write(out, reflect.ValueOf(v).Elem().Interface())
+		if t == nil {
+			t = reflect.TypeOf(v)
+		} else if reflect.TypeOf(v) != t {
+			panic(ihzerrors.NewSerializationError("method WriteArrayOfCompact expects all parameters to be of the same type", nil))
+		}
+		r.serializer.Write(out, reflect.ValueOf(v).Interface())
 	})
 }
 
@@ -318,14 +324,14 @@ func (r *DefaultCompactWriter) End() {
 }
 
 func (r *DefaultCompactWriter) getFieldDescriptorChecked(fieldName string, fieldKind pubserialization.FieldKind) FieldDescriptor {
-	fd := r.schema.GetField(fieldName)
-	if fd == nil {
+	fd, ok := r.schema.GetField(fieldName)
+	if !ok {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field name: '%s' for %v", fieldName, r.schema), nil))
 	}
 	if fd.Kind != fieldKind {
 		panic(ihzerrors.NewSerializationError(fmt.Sprintf("invalid field type: '%s' for %v", fieldName, r.schema), nil))
 	}
-	return *fd
+	return fd
 }
 
 func (r *DefaultCompactWriter) getFixedSizeFieldPosition(fieldName string, fieldKind pubserialization.FieldKind) int32 {

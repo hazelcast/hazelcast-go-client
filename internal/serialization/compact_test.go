@@ -17,115 +17,87 @@
 package serialization_test
 
 import (
-	"context"
-	"fmt"
+	"errors"
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	hz "github.com/hazelcast/hazelcast-go-client"
-	"github.com/hazelcast/hazelcast-go-client/internal/it"
-	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
-	"github.com/hazelcast/hazelcast-go-client/predicate"
-	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-func TestCompact(t *testing.T) {
-	skip.If(t, "hz < 5.2")
+func TestCompactSerializer(t *testing.T) {
 	testCases := []struct {
 		name string
 		f    func(t *testing.T)
 	}{
-		{name: "Basic", f: compactBasicTest},
-		{name: "BasicQuery", f: basicQueryTest},
-		{name: "JoinedMemberQuery", f: joinedMemberQueryTest},
-		{name: "ClusterRestart", f: clusterRestartTest},
-		// TODO: add testEntryProcessor when generic record is supported
-		// TODO: add testSchemaReplication when generic record is supported
+		{name: "AddDuplicateField", f: addDuplicateFieldTest},
+		{name: "SliceWithDifferentTypes", f: sliceWithDifferentTypesTest},
 	}
 	for _, tc := range testCases {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			tc.f(t)
-		})
+		t.Run(tc.name, tc.f)
 	}
 }
 
-func compactBasicTest(t *testing.T) {
-	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testBasic
-	tcx := it.CompactTestContext{
-		T:            t,
-		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
-		Serializers2: []serialization.CompactSerializer{EmployeeDTOCompactSerializerV2{}},
-	}
-	tcx.Tester(func(tcx it.CompactTestContext) {
-		ctx := context.Background()
-		v := EmployeeDTO{age: 30, id: 102310312}
-		map1 := it.MustValue(tcx.Client1.GetMap(ctx, tcx.MapName)).(*hz.Map)
-		it.Must(map1.Set(ctx, 1, v))
-		map2 := it.MustValue(tcx.Client2.GetMap(ctx, tcx.MapName)).(*hz.Map)
-		it.AssertEquals(t, v, it.MustValue(map2.Get(ctx, 1)))
-	})
+func addDuplicateFieldTest(t *testing.T) {
+	// ported from: com.hazelcast.internal.serialization.impl.compact.CompactSerializationTest#testSerializer_withDuplicateFieldNames
+	var cfg pubserialization.Config
+	cfg.Compact.SetSerializers(&duplicateWritingSerializer{})
+	_, err := serialization.NewService(&cfg, nil)
+	require.Error(t, err)
 }
 
-func basicQueryTest(t *testing.T) {
-	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testBasicQuery
-	tcx := it.CompactTestContext{
-		T:            t,
-		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
-		Serializers2: []serialization.CompactSerializer{EmployeeDTOCompactSerializerV2{}},
-	}
-	tcx.Tester(func(tcx it.CompactTestContext) {
-		ctx := context.Background()
-		map1 := it.MustValue(tcx.Client1.GetMap(ctx, tcx.MapName)).(*hz.Map)
-		for i := int32(0); i < 100; i++ {
-			it.MustValue(map1.Put(ctx, i, EmployeeDTO{age: i, id: 102310312}))
-		}
-		map2 := it.MustValue(tcx.Client2.GetMap(ctx, tcx.MapName)).(*hz.Map)
-		ks := it.MustValue(map2.GetKeySetWithPredicate(ctx, predicate.SQL("age > 19"))).([]interface{})
-		assert.Equal(t, 80, len(ks))
-	})
+func sliceWithDifferentTypesTest(t *testing.T) {
+	// ported from: testWritingArrayOfCompactGenericField_withDifferentItemTypes
+	var cfg pubserialization.Config
+	cfg.Compact.SetSerializers(&sliceWithDifferentTypesSerializer{}, &BitsDTOSerializer{}, &InnerDTOSerializer{})
+	ss, err := serialization.NewService(&cfg, nil)
+	require.NoError(t, err)
+	_, err = ss.ToData(sliceWithDifferentTypes([]interface{}{BitsDTO{}, InnerDTO{}}))
+	require.True(t, errors.Is(err, hzerrors.ErrHazelcastSerialization))
 }
 
-func joinedMemberQueryTest(t *testing.T) {
-	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testJoinedMemberQuery
-	tcx := it.CompactTestContext{
-		T:            t,
-		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
-	}
-	tcx.Tester(func(tcx it.CompactTestContext) {
-		ctx := context.Background()
-		for i := int32(0); i < 100; i++ {
-			it.MustValue(tcx.M.Put(ctx, i, EmployeeDTO{age: i, id: 102310312}))
-		}
-		it.MustValue(tcx.Cluster.StartMember(ctx))
-		err := tcx.ExecuteScript(ctx, fmt.Sprintf(`
-			var m = instance_2.getMap("%s");
-			var size = m.keySet(com.hazelcast.query.Predicates.sql("age > 19")).size();
-			if (size != 80) {
-				throw new Error("size is " + size);
-			}			
-		`, tcx.MapName))
-		assert.NoError(t, err)
-	})
+type duplicatedType struct{}
+
+type duplicateWritingSerializer struct{}
+
+func (d duplicateWritingSerializer) Type() reflect.Type {
+	return reflect.TypeOf(duplicatedType{})
 }
 
-func clusterRestartTest(t *testing.T) {
-	// ported from: com.hazelcast.internal.serialization.impl.compact.integration.CompactFormatIntegrationTest#testJoinedMemberQuery
-	tcx := it.CompactTestContext{
-		T:            t,
-		Serializers1: []serialization.CompactSerializer{EmployeeDTOCompactSerializer{}},
-	}
-	tcx.Tester(func(tcx it.CompactTestContext) {
-		ctx := context.Background()
-		v := EmployeeDTO{age: 30, id: 102310312}
-		k := int64(1)
-		it.MustValue(tcx.M.Put(ctx, k, v))
-		// changeCluster
-		tcx.Cluster.Shutdown()
-		it.MustValue(tcx.Cluster.StartMember(ctx))
-		it.MustValue(tcx.M.Put(ctx, k, v))
-		v2 := it.MustValue(tcx.M.Get(ctx, k))
-		assert.Equal(t, v, v2)
-	})
+func (d duplicateWritingSerializer) TypeName() string {
+	return "duplicated"
+}
+
+func (d duplicateWritingSerializer) Read(reader pubserialization.CompactReader) interface{} {
+	return duplicatedType{}
+}
+
+func (d duplicateWritingSerializer) Write(writer pubserialization.CompactWriter, value interface{}) {
+	writer.WriteInt32("bar", 1)
+	writer.WriteInt32("bar", 1)
+}
+
+type sliceWithDifferentTypes []interface{}
+
+type sliceWithDifferentTypesSerializer struct{}
+
+func (s sliceWithDifferentTypesSerializer) Type() reflect.Type {
+	return reflect.TypeOf(sliceWithDifferentTypes{})
+}
+
+func (s sliceWithDifferentTypesSerializer) TypeName() string {
+	return "sliceWithDifferentTypes"
+}
+
+func (s sliceWithDifferentTypesSerializer) Read(reader pubserialization.CompactReader) interface{} {
+	panic("not implemented")
+}
+
+func (s sliceWithDifferentTypesSerializer) Write(writer pubserialization.CompactWriter, value interface{}) {
+	v := []interface{}(value.(sliceWithDifferentTypes))
+	writer.WriteArrayOfCompact("f", v)
 }

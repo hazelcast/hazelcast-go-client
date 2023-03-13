@@ -56,6 +56,7 @@ func TestConfig(t *testing.T) {
 		{name: "AddExistingFlakeIDGenerator", f: configAddExistingFlakeIDGeneratorTest},
 		{name: "AddNearCache", f: configAddNearCacheTest},
 		{name: "ValidateNearCacheFails", f: configValidateNearCacheFailsTest},
+		{name: "ServerNameIsAutomaticallySetForViridian", f: configServerNameIsAutomaticallySetForViridian},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -521,6 +522,14 @@ func configValidateNearCacheFailsTest(t *testing.T) {
 	if !errors.Is(err, hzerrors.ErrInvalidConfiguration) {
 		t.Fatalf("expected ErrInvalidConfiguration")
 	}
+}
+
+func configServerNameIsAutomaticallySetForViridian(t *testing.T) {
+	config := hazelcast.Config{}
+	config.Cluster.Cloud.Enabled = true
+	it.Must(config.Validate())
+	assert.Equal(t, "hazelcast.cloud", config.Cluster.Network.SSL.TLSConfig().ServerName)
+	assert.True(t, config.Cluster.Network.SSL.Enabled)
 }
 
 func checkDefault(t *testing.T, c *hazelcast.Config) {
