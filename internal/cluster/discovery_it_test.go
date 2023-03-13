@@ -35,6 +35,7 @@ func TestDiscoveryStrategy(t *testing.T) {
 		ConfigCallback: func(tcx it.MapTestContext) {
 			st.addrs = tcx.Cluster.DefaultConfig().Cluster.Network.Addresses
 			tcx.Config.Cluster.Discovery.Strategy = st
+			tcx.Config.Cluster.Network.Addresses = nil
 		},
 	}
 	tcx.Tester(func(tcx it.MapTestContext) {
