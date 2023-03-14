@@ -153,12 +153,11 @@ func (d *DiscoveryStrategyAdapter) translate(addr pubcluster.Address) (pubcluste
 func (d *DiscoveryStrategyAdapter) updateTranslation(nodes []discovery.Node) {
 	translator := make(map[pubcluster.Address]pubcluster.Address, len(nodes))
 	for _, node := range nodes {
-		// map private addresses to public, if usePublicIP
-		// map public IPs to public
 		if node.PrivateAddr == "" && node.PublicAddr == "" {
 			continue
 		}
 		if node.PublicAddr == "" {
+			// usePublicIP is false
 			translator[pubcluster.Address(node.PrivateAddr)] = pubcluster.Address(node.PrivateAddr)
 			continue
 		}
@@ -166,11 +165,8 @@ func (d *DiscoveryStrategyAdapter) updateTranslation(nodes []discovery.Node) {
 		if node.PrivateAddr == "" {
 			continue
 		}
-		if d.usePublicIP {
-			translator[pubcluster.Address(node.PrivateAddr)] = pubcluster.Address(node.PublicAddr)
-		} else {
-			translator[pubcluster.Address(node.PrivateAddr)] = pubcluster.Address(node.PrivateAddr)
-		}
+		// usePublicIP is true
+		translator[pubcluster.Address(node.PrivateAddr)] = pubcluster.Address(node.PublicAddr)
 	}
 	d.mu.Lock()
 	d.translator = translator
