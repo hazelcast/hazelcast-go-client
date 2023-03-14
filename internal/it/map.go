@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,9 @@ func (tcx MapTestContext) Tester(f func(MapTestContext)) {
 			tcx.ConfigCallback(tcx)
 		}
 		tcx.T.Logf("map name: %s", tcx.MapName)
-		tcx.T.Logf("cluster address: %s", tcx.Config.Cluster.Network.Addresses[0])
+		if len(tcx.Config.Cluster.Network.Addresses) > 0 {
+			tcx.T.Logf("cluster address: %s", tcx.Config.Cluster.Network.Addresses[0])
+		}
 		tcx.Config.Cluster.Unisocket = !tcx.Smart
 		if tcx.Client == nil {
 			tcx.Client = getDefaultClient(tcx.Config)

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/cluster/discovery"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -282,6 +283,7 @@ func (c *Client) createComponents(config *Config) {
 	c.ClusterService.SetInvocationService(invocationService)
 	c.Invoker = NewInvoker(c.InvocationFactory, c.InvocationService, &c.Logger)
 	c.ConnectionManager.SetInvoker(c.Invoker)
+	c.addDiscoveryDestroyer()
 }
 
 func (c *Client) handleClusterEvent(event event.Event) {
@@ -318,10 +320,30 @@ func (c *Client) handleClusterEvent(event event.Event) {
 	}
 }
 
+func (c *Client) addDiscoveryDestroyer() {
+	if c.clusterConfig.Discovery.Strategy != nil {
+		c.AddAfterShutdownHandler(func(ctx context.Context) {
+			if destroyer, ok := c.clusterConfig.Discovery.Strategy.(discovery.StrategyDestroyer); ok {
+				c.Logger.Debug(func() string {
+					return "Destroying discovery strategy"
+				})
+				if err := destroyer.Destroy(ctx); err != nil {
+					c.Logger.Errorf("Destroying discovery strategy: %w", err)
+				}
+			}
+		})
+	}
+
+}
+
 func addrProviderTranslator(config *cluster.Config, logger ilogger.LogAdaptor) (icluster.AddressProvider, icluster.AddressTranslator) {
 	if config.Cloud.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)
+	}
+	if config.Discovery.Strategy != nil {
+		a := icluster.NewDiscoveryStrategyAdapter(config.Discovery, logger)
+		return a, a
 	}
 	pr := icluster.NewDefaultAddressProvider(&config.Network)
 	if config.Discovery.UsePublicIP {

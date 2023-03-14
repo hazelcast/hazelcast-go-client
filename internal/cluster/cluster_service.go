@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -101,9 +101,9 @@ func (s *Service) SQLMember() *pubcluster.MemberInfo {
 	return s.membersMap.SQLMember()
 }
 
-func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
+func (s *Service) RefreshedSeedAddrs(ctx context.Context, cc *CandidateCluster) ([]pubcluster.Address, error) {
 	s.membersMap.reset()
-	return UniqueAddrs(clusterCtx.AddressProvider)
+	return UniqueAddrs(ctx, cc.AddressProvider)
 }
 
 func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo) (pubcluster.Address, error) {
@@ -152,8 +152,11 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 }
 
 // UniqueAddrs return unique addresses while preserving initial order
-func UniqueAddrs(ap AddressProvider) ([]pubcluster.Address, error) {
-	addrs, err := ap.Addresses()
+func UniqueAddrs(ctx context.Context, ap AddressProvider) ([]pubcluster.Address, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	addrs, err := ap.Addresses(ctx)
 	if err != nil {
 		return nil, err
 	}

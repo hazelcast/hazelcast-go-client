@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
@@ -24,7 +25,7 @@ import (
 )
 
 type AddressProvider interface {
-	Addresses() ([]pubcluster.Address, error)
+	Addresses(ctx context.Context) ([]pubcluster.Address, error)
 }
 
 type DefaultAddressProvider struct {
@@ -50,6 +51,6 @@ func NewDefaultAddressProvider(networkConfig *pubcluster.NetworkConfig) *Default
 	return &DefaultAddressProvider{addresses: addresses}
 }
 
-func (p DefaultAddressProvider) Addresses() ([]pubcluster.Address, error) {
+func (p DefaultAddressProvider) Addresses(_ context.Context) ([]pubcluster.Address, error) {
 	return p.addresses, nil
 }

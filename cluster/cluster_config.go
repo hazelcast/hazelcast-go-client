@@ -31,6 +31,8 @@ type Config struct {
 	loadBalancer LoadBalancer
 	// Security contains security related configuration such as credentials.
 	Security SecurityConfig
+	// Discovery contains configuration related to discovery of Hazelcast members.
+	Discovery DiscoveryConfig
 	// Name is the cluster name.
 	Name string `json:",omitempty"`
 	// Cloud contains Hazelcast Cloud related configuration.
@@ -45,8 +47,6 @@ type Config struct {
 	HeartbeatInterval types.Duration `json:",omitempty"`
 	// HeartbeatTimeout is the maximum time to wait for the response of a ping before closing the connection.
 	HeartbeatTimeout types.Duration `json:",omitempty"`
-	// Discovery contains configuration related to discovery of Hazelcast members.
-	Discovery DiscoveryConfig
 	// RedoOperation enables retrying some errors even when they are not retried by default.
 	RedoOperation bool `json:",omitempty"`
 	// Unisocket disables smart routing and enables unisocket mode of operation.

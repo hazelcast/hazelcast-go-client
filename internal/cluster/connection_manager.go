@@ -467,7 +467,7 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 }
 
 func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *CandidateCluster) (pubcluster.Address, error) {
-	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(cluster)
+	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(ctx, cluster)
 	if err != nil {
 		return "", fmt.Errorf("failed to refresh seed addresses: %w", err)
 	}

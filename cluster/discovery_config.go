@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package cluster
 
+import "github.com/hazelcast/hazelcast-go-client/cluster/discovery"
+
 type DiscoveryConfig struct {
-	UsePublicIP bool `json:",omitempty"`
+	Strategy    discovery.Strategy `json:",omitempty"`
+	UsePublicIP bool               `json:",omitempty"`
 }
 
 func (c DiscoveryConfig) Clone() DiscoveryConfig {
