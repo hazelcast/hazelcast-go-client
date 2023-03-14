@@ -109,12 +109,12 @@ func (ci *ClientInternal) ConnectedToMember(uuid types.UUID) bool {
 
 // EncodeData serializes the given value and returns a Data value.
 func (ci *ClientInternal) EncodeData(obj interface{}) (Data, error) {
-	return ci.SerializationService().ToData(obj)
+	return ci.client.ic.SerializationService.ToData(obj)
 }
 
 // DecodeData deserializes the given Data and returns a value.
 func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
-	return ci.SerializationService().ToObject(data)
+	return ci.client.ic.SerializationService.ToObject(data)
 }
 
 // InvokeOnRandomTarget sends the given request to one of the members.
