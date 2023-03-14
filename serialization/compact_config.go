@@ -25,10 +25,13 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+// CompactConfig contains compact serializers.
 type CompactConfig struct {
 	serializers map[string]CompactSerializer
 }
 
+// Clone creates a copy of the CompactConfig value.
+// This method is intended for internal use.
 func (cc *CompactConfig) Clone() CompactConfig {
 	var clone CompactConfig
 	m := make(map[string]CompactSerializer, len(cc.serializers))
@@ -39,10 +42,14 @@ func (cc *CompactConfig) Clone() CompactConfig {
 	return clone
 }
 
+// Serializers returns the registered compact serializers.
+// This method is intended for internal use.
 func (cc *CompactConfig) Serializers() map[string]CompactSerializer {
 	return cc.serializers
 }
 
+// Validate validates the CompactConfig and adds default values.
+// This method is intended for internal use.
 func (cc *CompactConfig) Validate() error {
 	cc.ensureSerializers()
 	if err := cc.checkNoDefaultSerializer(); err != nil {
@@ -51,6 +58,9 @@ func (cc *CompactConfig) Validate() error {
 	return nil
 }
 
+// SetSerializers sets the compact serializers.
+// Each call overrides the previously set serializers.
+// It has no effect after hazelcast.Client.StartNewClientWithConfig is called.
 func (cc *CompactConfig) SetSerializers(serializers ...CompactSerializer) {
 	cc.ensureSerializers()
 	for _, ser := range serializers {

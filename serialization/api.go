@@ -463,10 +463,20 @@ const (
 	FieldKindArrayOfNullableFloat64       FieldKind = 46
 )
 
+// CompactSerializer must be implemented to serialize a value with compact serialization.
 type CompactSerializer interface {
+	// Type returns the target type for this serializer.
 	Type() reflect.Type
+	/*
+		TypeName returns a string which uniquely identifies this serializers.
+		Choosing a type name will associate that name with the schema and will make the polyglot use cases, where there are multiple clients from different languages, possible.
+		Serializers in different languages can work on the same data, provided that their read and write methods are compatible, and they have the same type name.
+		If you evolve your class in the later versions of your application, by adding or removing fields, you should continue using the same type name for that class.
+	*/
 	TypeName() string
+	// Read reads the fields from reader and creates a value of the type returned from Type()
 	Read(reader CompactReader) interface{}
+	// Write writes the fields of value using the writer.
 	Write(writer CompactWriter, value interface{})
 }
 
