@@ -682,8 +682,8 @@ type CompactWriter interface {
 	// WriteNullableFloat64 writes a float64 pointer.
 	// The pointer may be nil.
 	WriteNullableFloat64(fieldName string, value *float64)
-	// WriteNullableFloat64 writes a float64 pointer.
-	// The pointer may be nil.
+	// WriteArrayOfNullableBoolean writes a slice of bool pointers.
+	// The pointers may be nil.
 	WriteArrayOfNullableBoolean(fieldName string, value []*bool)
 	// WriteArrayOfNullableInt8 writes a slice of int8 pointers.
 	// The pointers may be nil.
