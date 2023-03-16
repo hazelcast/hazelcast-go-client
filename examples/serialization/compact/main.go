@@ -43,7 +43,7 @@ func (s PersonSerializer) Type() reflect.Type {
 	return reflect.TypeOf(Person{})
 }
 
-// TypeName returns and identifier for the serialized type.
+// TypeName returns an identifier for the serialized type.
 func (s PersonSerializer) TypeName() string {
 	return "Person"
 }
