@@ -69,7 +69,7 @@ func (c *SSLConfig) SetCAPath(path string) error {
 	// XXX: what happens if the path is loaded multiple times?
 	// load CA cert
 	if caCert, err := os.ReadFile(path); err != nil {
-		return ihzerrors.NewIOError("reading CA certificate: %w", err)
+		return ihzerrors.NewIOError("reading CA certificate", err)
 	} else {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {

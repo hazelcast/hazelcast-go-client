@@ -24,31 +24,38 @@ import (
 	"github.com/hazelcast/hazelcast-go-client"
 )
 
+// For this code sample, use the provided hazelcast.xml.
+// And make sure server.keystore and server.truststore is accessible by the server,
+
 func main() {
 	// To use SSLConfig with mutual authentication, Hazelcast server should be started with SSL and mutual authentication enabled
 	ctx := context.TODO()
 	var cfg hazelcast.Config
-	cfg = hazelcast.Config{}
-	cfg.Cluster.Network.SetAddresses("foo.bar.com:8888")
+	cfg.Cluster.Network.SetAddresses("localhost:5701")
+	ssl := &cfg.Cluster.Network.SSL
 	// TLS/SSL is enabled
-	cfg.Cluster.Network.SSL.Enabled = true
+	ssl.Enabled = true
+	// we set insecureSkipVerify, since the sample certificates for this example were self-signed.
+	// do not enable it in production.
+	ssl.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+	ssl.ServerName = "test.hazelcast.com"
 	// Absolute paths of PEM files must be given
-	err := cfg.Cluster.Network.SSL.SetCAPath("/path/of/server.pem")
+	err := ssl.SetCAPath("examples/ssl/etc/ca.crt")
 	if err != nil {
-		return
+		panic(fmt.Errorf("loading CA certificate: %w", err))
 	}
 	// Add client certificate and client private key to TLS config by decrypting private key using password
-	err = cfg.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath("/path/of/cert.pem", "path/of/key.pem", "password")
+	err = ssl.AddClientCertAndKeyPath("examples/ssl/etc/client.crt", "examples/ssl/etc/client.key")
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("loading client certificate and/or key: %w", err))
 	}
-	// Set the server name and select the protocol used in SSL communication, default is TLSv1_2
-	cfg.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "foo.bar", MinVersion: tls.VersionTLS13})
 	// Start a new Hazelcast client with SSL configuration.
 	client, err := hazelcast.StartNewClientWithConfig(ctx, cfg)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("starting the client: %w", err))
 	}
 	fmt.Println("Connection Successful!")
-	client.Shutdown(ctx)
+	if err := client.Shutdown(ctx); err != nil {
+		panic(fmt.Errorf("shutting down the client: %w", err))
+	}
 }
