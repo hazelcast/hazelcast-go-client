@@ -116,7 +116,7 @@ In order to enable TLS on the client side, set config.Cluster.Network.SSl.Enable
 	var config hazelcast.Config
 	config.Cluster.Network.SSL.Enabled = true
 
-If you need to set a custom tls.Config, for example to turn off verification, you need to assign the tls.Config before any other SSL configuration:
+If you need to set a custom tls.Config, for example to turn off verification, you need to assign the tls.Config before any other SSL configuration, except Enabled:
 Check out this page for further details about tls.Config options: https://pkg.go.dev/crypto/tls#Config
 
 	// warning: never set InsecureSkipVerify: true on production
