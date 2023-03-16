@@ -117,6 +117,7 @@ In order to enable TLS on the client side, set config.Cluster.Network.SSl.Enable
 	config.Cluster.Network.SSL.Enabled = true
 
 If you need to set a custom tls.Config, for example to turn off verification, you need to assign the tls.Config before any other SSL configuration:
+Check out this page for further details about tls.Config options: https://pkg.go.dev/crypto/tls#Config
 
 	// warning: never set InsecureSkipVerify: true on production
 	// config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
@@ -154,21 +155,5 @@ If the private key is encrypted using a password, third argument will be used to
 	var config hazelcast.Config
 	_ := config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath("/path/of/cert.pem", "path/of/key.pem", "password")
 	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
-
-SSLConfig has tls.Config embedded in it so that users can set any field of TLS config as they wish.
-You can set the tls.Config using the SSLConfig.SetTLSConfig() method.
-Check out this page for further details about tls.Config options: https://pkg.go.dev/crypto/tls#Config
-
-	// error handling is omitted for brevity.
-	config := hazelcast.NewConfig()
-	config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "foo.bar", MinVersion: tls.VersionTLS13})
-	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
-
-Hazelcast Go client offers the following protocols:
-
-  - TLSv1 : TLS 1.0 Protocol described in RFC 2246
-  - TLSv1_1 : TLS 1.1 Protocol described in RFC 4346
-  - TLSv1_2 : TLS 1.2 Protocol described in RFC 5246
-  - TLSv1_3 : TLS 1.3 Protocol described in RFC 8446
 */
 package cluster
