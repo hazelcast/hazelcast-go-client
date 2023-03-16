@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 /*
 Package cluster contains functions and types needed to connect to a Hazelcast cluster.
 
-Port Range
+# Port Range
 
 Port Range configuration allows you to specify the port range for cluster addresses where you did not specify any port.
 If no port range was specified and also no port was set on an address, then the default port range will be applied (5701-5703).
 If you use a port range in any way, then the client will try all the ports for a given address until it is able to connect to the right member.
 
-Load Balancer
+# Load Balancer
 
 Load balancer configuration allows you to specify which cluster address to send next operation.
 
@@ -39,7 +39,7 @@ Use config.Cluster.SetLoadBalancer to set the load balancer:
 	config := hazelcast.Config{}
 	config.Cluster.SetLoadBalancer(cluster.NewRandomLoadBalancer())
 
-Hazelcast Cloud Discovery
+# Hazelcast Cloud Discovery
 
 Hazelcast Go client can discover and connect to Hazelcast clusters running on Hazelcast Cloud https://cloud.hazelcast.com.
 In order to activate it, set the cluster name, enable Hazelcast Cloud discovery and add Hazelcast Cloud Token to the configuration.
@@ -59,7 +59,7 @@ Also check the code sample in https://github.com/hazelcast/hazelcast-go-client/t
 
 If you have enabled encryption for your cluster, you should also enable TLS/SSL configuration for the client.
 
-External Client Public Address Discovery
+# External Client Public Address Discovery
 
 When you set up a Hazelcast cluster in the Cloud (AWS, Azure, GCP, Kubernetes) and would like to use it from outside the Cloud network,
 the client needs to communicate with all cluster members via their public IP addresses.
@@ -75,7 +75,7 @@ You can enable this feature by setting config.Discovery.UsePublicIP to true and 
 
 For more details on member-side configuration, refer to the Discovery SPI section in the Hazelcast IMDG Reference Manual.
 
-Client Connection Strategy
+# Client Connection Strategy
 
 You can configure how the client reconnects to the cluster after a disconnection by setting config.Cluster.ConnectionStrategy.ReconnectMode.
 cluster.ReconnectModeOn is the default and causes the client to try to reconnect until cluster connection timeout.
@@ -102,5 +102,73 @@ You can configure the frequency of the reconnection attempts using config.Cluste
 	r.Jitter = 0.0
 	r.Multiplier = 1.05
 
+# TLS/SSL
+
+Hazelcast supports encrypted communication between the client and the server using TLS/SSL protocol with key stores and trust stores.
+This feature requires Hazelcast Enterprise.
+
+In order to use TLS encryption, the Hazelcast members should be configured.
+See https://docs.hazelcast.com/hazelcast/latest/security/tls-ssl.html#tlsssl-for-hazelcast-members for more information.
+
+In order to enable TLS on the client side, set config.Cluster.Network.SSl.Enabled to true.
+
+	// error handling is omitted for brevity.
+	var config hazelcast.Config
+	config.Cluster.Network.SSL.Enabled = true
+
+If you need to set a custom tls.Config, for example to turn off verification, you need to assign the tls.Config before any other SSL configuration:
+
+	// warning: never set InsecureSkipVerify: true on production
+	// config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
+
+You need to set the host name with:
+
+	config.Cluster.Network.SSL.ServerName = "foo.com"
+
+Certificates of the Hazelcast members can be validated against CA file.
+SSLConfig.SetCAPath()'s argument should point to the absolute path of the concatenated CA certificates in PEM format.
+When SSL is enabled and CA file path is not set, a set of default CA certificates from default locations will be used.
+
+	// error handling is omitted for brevity.
+	var config hazelcast.Config
+	_ := config.Cluster.Network.SSL.SetCAPath("/path/of/server.pem")
+	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
+
+When mutual authentication is enabled on the member side, clients or other members should also provide a certificate file that identifies themselves.
+Then, Hazelcast members can use these certificates to validate the identity of their peers.
+To enable mutual authentication, firstly, you need to set the following property on the server side in the hazelcast.xml file:
+
+	<network>
+	  <ssl enabled="true">
+	    <properties>
+	      <property name="javax.net.ssl.mutualAuthentication">REQUIRED</property>
+	    </properties>
+	  </ssl>
+	</network>
+
+Client certificate, private key and private key password can be set using the SSLConfig.AddClientCertAndEncryptedKeyPath() method.
+The arguments should point to the absolute paths of the client certificate and private key in PEM format.
+If the private key is encrypted using a password, third argument will be used to decrypt it.
+
+	// error handling is omitted for brevity.
+	var config hazelcast.Config
+	_ := config.Cluster.Network.SSL.AddClientCertAndEncryptedKeyPath("/path/of/cert.pem", "path/of/key.pem", "password")
+	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
+
+SSLConfig has tls.Config embedded in it so that users can set any field of TLS config as they wish.
+You can set the tls.Config using the SSLConfig.SetTLSConfig() method.
+Check out this page for further details about tls.Config options: https://pkg.go.dev/crypto/tls#Config
+
+	// error handling is omitted for brevity.
+	config := hazelcast.NewConfig()
+	config.Cluster.Network.SSL.SetTLSConfig(&tls.Config{ServerName: "foo.bar", MinVersion: tls.VersionTLS13})
+	client, _ := hazelcast.StartNewClientWithConfig(ctx, config)
+
+Hazelcast Go client offers the following protocols:
+
+  - TLSv1 : TLS 1.0 Protocol described in RFC 2246
+  - TLSv1_1 : TLS 1.1 Protocol described in RFC 4346
+  - TLSv1_2 : TLS 1.2 Protocol described in RFC 5246
+  - TLSv1_3 : TLS 1.3 Protocol described in RFC 8446
 */
 package cluster
