@@ -44,7 +44,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("loading CA certificate: %w", err))
 	}
-	// Add client certificate and client private key to TLS config by decrypting private key using password
+	// Add client certificate and client private key to TLS config
 	err = ssl.AddClientCertAndKeyPath("examples/ssl/etc/client.crt", "examples/ssl/etc/client.key")
 	if err != nil {
 		panic(fmt.Errorf("loading client certificate and/or key: %w", err))
