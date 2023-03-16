@@ -19,8 +19,11 @@ package cluster
 import "github.com/hazelcast/hazelcast-go-client/cluster/discovery"
 
 type DiscoveryConfig struct {
-	Strategy    discovery.Strategy `json:",omitempty"`
-	UsePublicIP bool               `json:",omitempty"`
+	// Strategy is a discovery.Strategy implementation.
+	// See the documentation in the discovery package.
+	Strategy discovery.Strategy `json:",omitempty"`
+	// UsePublicIP causes the client to use the public addresses of members instead of their private addresses, if available.
+	UsePublicIP bool `json:",omitempty"`
 }
 
 func (c DiscoveryConfig) Clone() DiscoveryConfig {
