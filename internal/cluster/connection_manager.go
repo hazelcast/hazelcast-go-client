@@ -193,6 +193,7 @@ func (m *ConnectionManager) ClientUUID() types.UUID {
 func (m *ConnectionManager) start(ctx context.Context) error {
 	atomic.StoreInt32(&m.state, starting)
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
+	m.eventDispatcher.Subscribe(EventConnection, connectionManagerSubID, m.handleConnectionEvent)
 	var addr pubcluster.Address
 	var err error
 	if m.smartRouting {
@@ -202,7 +203,6 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	} else if addr, err = m.startUnisocket(ctx); err != nil {
 		return err
 	}
-	m.eventDispatcher.Subscribe(EventConnection, connectionManagerSubID, m.handleConnectionEvent)
 	if err = m.sendStateToCluster(ctx); err != nil {
 		return err
 	}
