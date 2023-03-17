@@ -145,6 +145,8 @@ func sanitizedConfig(c Config) Config {
 	c.Network.Addresses = nil
 	c.Cloud = CloudConfig{}
 	c.ConnectionStrategy = ConnectionStrategyConfig{}
+	c.Discovery.Strategy = nil
+	c.Discovery.UsePublicIP = false
 	return c
 }
 
