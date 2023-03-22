@@ -266,7 +266,7 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 
 func TestObjectDataInput_ReadObject_UnknownTypeID(t *testing.T) {
 	defer func() {
-		const target = "unknown type ID: -120"
+		const target = "serialization.Service.ReadObject: there is no suitable de-serializer for type -120"
 		if err := recover(); err == nil {
 			t.Fatal("should have failed")
 		} else if err != target {

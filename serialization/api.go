@@ -46,22 +46,21 @@ type IdentifiedDataSerializable interface {
 	ReadData(input DataInput)
 }
 
-// Portable provides an alternative serialization method. Instead of relying on reflection, each Portable is
-// created by a registered PortableFactory.
-// Portable serialization has the following advantages:
-// * Supporting multiversion of the same object type.
-// * Fetching individual fields without having to rely on reflection.
-// * Querying and indexing support without deserialization and/or reflection.
+/*
+Portable provides an alternative serialization method.
+Instead of relying on reflection, each Portable is created by a registered PortableFactory.
+Portable serialization has the following advantages:
+  - Supporting multiversion of the same object type.
+  - Fetching individual fields without having to rely on reflection.
+  - Querying and indexing support without deserialization and/or reflection.
+*/
 type Portable interface {
 	// FactoryID returns PortableFactory ID for this portable struct.
 	FactoryID() int32
-
 	// ClassID returns type identifier for this portable struct. Class ID should be unique per PortableFactory.
 	ClassID() int32
-
 	// WritePortable serializes this portable object using PortableWriter.
 	WritePortable(writer PortableWriter)
-
 	// ReadPortable reads portable fields using PortableReader.
 	ReadPortable(reader PortableReader)
 }

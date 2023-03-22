@@ -25,14 +25,19 @@ import (
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
+type GenericCompactDeserializer interface {
+	Read(schema *Schema, reader pubserialization.CompactReader) interface{}
+}
+
 type CompactStreamSerializer struct {
 	typeToSchema         map[reflect.Type]*Schema
 	typeToSerializer     map[reflect.Type]pubserialization.CompactSerializer
 	typeNameToSerializer map[string]pubserialization.CompactSerializer
 	ss                   *SchemaService
+	defaultDeserializer  GenericCompactDeserializer
 }
 
-func NewCompactStreamSerializer(cfg pubserialization.CompactConfig, schemaCh chan SchemaMsg) (*CompactStreamSerializer, error) {
+func NewCompactStreamSerializer(cfg pubserialization.CompactConfig, schemaCh chan SchemaMsg, dds GenericCompactDeserializer) (*CompactStreamSerializer, error) {
 	typeToSerializer := make(map[reflect.Type]pubserialization.CompactSerializer)
 	typeNameToSerializer := make(map[string]pubserialization.CompactSerializer)
 	typeToSchema := map[reflect.Type]*Schema{}
@@ -54,6 +59,7 @@ func NewCompactStreamSerializer(cfg pubserialization.CompactConfig, schemaCh cha
 		typeToSchema:         typeToSchema,
 		typeToSerializer:     typeToSerializer,
 		typeNameToSerializer: typeNameToSerializer,
+		defaultDeserializer:  dds,
 	}, nil
 }
 
@@ -67,6 +73,10 @@ func (c CompactStreamSerializer) Read(input pubserialization.DataInput) interfac
 	schema := c.getOrReadSchema(ctx, input)
 	serializer, ok := c.typeNameToSerializer[schema.TypeName]
 	if !ok {
+		if c.defaultDeserializer != nil {
+			reader := NewDefaultCompactReader(c, input.(*ObjectDataInput), schema)
+			return c.defaultDeserializer.Read(schema, reader)
+		}
 		panic(fmt.Sprintf("no compact serializer found for type: %s", schema.TypeName))
 	}
 	reader := NewDefaultCompactReader(c, input.(*ObjectDataInput), schema)
