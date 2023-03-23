@@ -84,7 +84,11 @@ func defaultPortableSerializerTest(t *testing.T) {
 }
 
 func overrideBuiltinSerializerTest(t *testing.T) {
+	backup := iserialization.BuiltinDeserializers[iserialization.TypeInt32]
 	hazelcast.SetBuiltinDeserializer(Int32Deserializer{})
+	defer func() {
+		iserialization.BuiltinDeserializers[iserialization.TypeInt32] = backup
+	}()
 	var cfg serialization.Config
 	ss := mustSerializationService(iserialization.NewService(&cfg, nil))
 	data := mustData(ss.ToData(int32(100)))
