@@ -26,7 +26,7 @@ import (
 
 type GenericPortableDeserializer interface {
 	CreatePortableValue(factoryID, classID int32) serialization.Portable
-	ReadPortableWithClassDefinition(cd *serialization.ClassDefinition, reader serialization.PortableReader)
+	ReadPortableWithClassDefinition(portable serialization.Portable, cd *serialization.ClassDefinition, reader serialization.PortableReader)
 }
 
 type PortableReaderEnder interface {
@@ -91,7 +91,7 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 		reader = NewMorphingPortableReader(ps, input, classDefinition)
 	}
 	if ps.defaultDeserializer != nil {
-		ps.defaultDeserializer.ReadPortableWithClassDefinition(classDefinition, reader)
+		ps.defaultDeserializer.ReadPortableWithClassDefinition(portable, classDefinition, reader)
 	} else {
 		portable.ReadPortable(reader)
 	}

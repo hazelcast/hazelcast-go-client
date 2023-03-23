@@ -179,7 +179,7 @@ func (s DefaultPortableDeserializer) CreatePortableValue(factoryID, classID int3
 	return &FooPortableSerializer{foo: NewFoo("OK")}
 }
 
-func (s DefaultPortableDeserializer) ReadPortableWithClassDefinition(cd *serialization.ClassDefinition, reader serialization.PortableReader) {
+func (s DefaultPortableDeserializer) ReadPortableWithClassDefinition(portable serialization.Portable, cd *serialization.ClassDefinition, reader serialization.PortableReader) {
 	// pass
 }
 
