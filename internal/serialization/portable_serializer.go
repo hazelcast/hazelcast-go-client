@@ -50,10 +50,10 @@ func NewPortableSerializer(service *Service, factories []serialization.PortableF
 		pf[fid] = f
 	}
 	ser := &PortableSerializer{
-		service,
-		NewPortableContext(service, version),
-		pf,
-		ds,
+		service:             service,
+		portableContext:     NewPortableContext(service, version),
+		factories:           pf,
+		defaultDeserializer: ds,
 	}
 	return ser, nil
 }

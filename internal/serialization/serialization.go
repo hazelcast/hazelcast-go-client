@@ -30,9 +30,11 @@ import (
 )
 
 // DefaultCompactDeserializer must be set before the client is created and should not be changed afterwards.
+// DefaultCompactDeserializer is used if a compact deserializer for a type is not found.
 var DefaultCompactDeserializer GenericCompactDeserializer
 
 // DefaultPortableDeserializer must be set before the client is created and should not be changed afterwards.
+// DefaultPortableDeserializer is used if the portable factory of a value is not found.
 var DefaultPortableDeserializer GenericPortableDeserializer
 
 // BuiltinDeserializers must be set before the client is created and should not be changed afterwards.
