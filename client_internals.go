@@ -29,6 +29,7 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -44,6 +45,9 @@ type ClientMessageHandler = proto.ClientMessageHandler
 type Frame = proto.Frame
 type ForwardFrameIterator = proto.ForwardFrameIterator
 type Pair = proto.Pair
+type Schema = serialization.Schema
+type GenericCompactDeserializer = serialization.GenericCompactDeserializer
+type GenericPortableDeserializer = serialization.GenericPortableDeserializer
 
 var (
 	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
@@ -65,6 +69,18 @@ func NewFrameWith(content []byte, flags uint16) Frame {
 
 func NewPair(key, value interface{}) Pair {
 	return Pair{Key: key, Value: value}
+}
+
+func SetDefaultCompactDeserializer(ds GenericCompactDeserializer) {
+	serialization.DefaultCompactDeserializer = ds
+}
+
+func SetDefaultPortableDeserializer(ds GenericPortableDeserializer) {
+	serialization.DefaultPortableDeserializer = ds
+}
+
+func SetBuiltinDeserializer(serializer pubserialization.Serializer) {
+	serialization.BuiltinDeserializers[serializer.ID()] = serializer
 }
 
 type InvokeOptions struct {

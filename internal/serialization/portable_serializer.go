@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -24,22 +24,37 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
 
-type PortableSerializer struct {
-	service         *Service
-	portableContext *PortableContext
-	factories       map[int32]serialization.PortableFactory
+type GenericPortableDeserializer interface {
+	CreatePortableValue(factoryID, classID int32) serialization.Portable
+	ReadPortableWithClassDefinition(portable serialization.Portable, cd *serialization.ClassDefinition, reader serialization.PortableReader)
 }
 
-func NewPortableSerializer(service *Service, factories []serialization.PortableFactory, version int32) (*PortableSerializer, error) {
+type PortableReaderEnder interface {
+	End()
+}
+
+type PortableSerializer struct {
+	service             *Service
+	portableContext     *PortableContext
+	factories           map[int32]serialization.PortableFactory
+	defaultDeserializer GenericPortableDeserializer
+}
+
+func NewPortableSerializer(service *Service, factories []serialization.PortableFactory, version int32, ds GenericPortableDeserializer) (*PortableSerializer, error) {
 	pf := map[int32]serialization.PortableFactory{}
 	for _, f := range factories {
 		fid := f.FactoryID()
 		if _, ok := pf[fid]; ok {
-			return nil, ihzerrors.NewSerializationError("this serializer is already in the registry", nil)
+			return nil, ihzerrors.NewSerializationError("this portable serializer is already in the registry", nil)
 		}
 		pf[fid] = f
 	}
-	ser := &PortableSerializer{service, NewPortableContext(service, version), pf}
+	ser := &PortableSerializer{
+		service:             service,
+		portableContext:     NewPortableContext(service, version),
+		factories:           pf,
+		defaultDeserializer: ds,
+	}
 	return ser, nil
 }
 
@@ -65,31 +80,36 @@ func (ps *PortableSerializer) ReadObject(input serialization.DataInput, factoryI
 		classDefinition = ps.portableContext.ReadClassDefinitionFromInput(input, factoryID, classID, version)
 		input.SetPosition(backupPos)
 	}
+	version = ps.portableContext.portableVersion
+	if pv, ok := portable.(serialization.VersionedPortable); ok {
+		version = pv.Version()
+	}
 	var reader serialization.PortableReader
-	var isMorphing bool
-	if classDefinition.Version == ps.portableContext.ClassVersion(portable) {
+	if classDefinition.Version == version {
 		reader = NewDefaultPortableReader(ps, input, classDefinition)
-		isMorphing = false
 	} else {
 		reader = NewMorphingPortableReader(ps, input, classDefinition)
-		isMorphing = true
 	}
-	portable.ReadPortable(reader)
-	if isMorphing {
-		reader.(*MorphingPortableReader).End()
+	if ps.defaultDeserializer != nil {
+		ps.defaultDeserializer.ReadPortableWithClassDefinition(portable, classDefinition, reader)
 	} else {
-		reader.(*DefaultPortableReader).End()
+		portable.ReadPortable(reader)
+	}
+	if e, ok := reader.(PortableReaderEnder); ok {
+		e.End()
 	}
 	return portable
 }
 
-func (ps *PortableSerializer) createNewPortableInstance(factoryID int32, classID int32) (serialization.Portable, error) {
+func (ps *PortableSerializer) createNewPortableInstance(factoryID, classID int32) (serialization.Portable, error) {
 	factory := ps.factories[factoryID]
 	if factory == nil {
+		if ps.defaultDeserializer != nil {
+			return ps.defaultDeserializer.CreatePortableValue(factoryID, classID), nil
+		}
 		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable portable factory for factory id: %d",
 			factoryID), nil)
 	}
-
 	portable := factory.Create(classID)
 	if portable == nil {
 		return nil, ihzerrors.NewSerializationError(fmt.Sprintf("%v is not able to create an instance for id: %d on factory id: %d",

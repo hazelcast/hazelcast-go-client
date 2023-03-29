@@ -1370,7 +1370,7 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID, classDef.ClassID, classDef.Version))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0)
+	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1399,7 +1399,7 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID, classDef.ClassID, classDef.Version))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0)
+	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
