@@ -279,59 +279,74 @@ func (d *DefaultCompactReader) ReadCompact(fieldName string) interface{} {
 func (d *DefaultCompactReader) ReadArrayOfBoolean(fieldName string) []bool {
 	fd := d.getFieldDefinition(fieldName)
 	fieldKind := fd.Kind
+	var v interface{}
 	switch fieldKind {
 	case pubserialization.FieldKindArrayOfBoolean:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			return d.readBooleanBits(inp)
-		}).([]bool)
+		})
 	case pubserialization.FieldKindArrayOfNullableBoolean:
-		return d.readNullableArrayAsPrimitiveArray(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readNullableArrayAsPrimitiveArray(fd, func(inp *ObjectDataInput) interface{} {
 			return d.readBooleanBits(inp)
 		}, "Boolean").([]bool)
 	default:
 		panic(newUnexpectedFieldKind(fieldKind, fieldName))
 	}
+	vv, _ := v.([]bool)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfInt8(fieldName string) []int8 {
-	return d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
+	v := d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
 		return inp.ReadInt8Array()
-	}, pubserialization.FieldKindArrayOfInt8, pubserialization.FieldKindArrayOfNullableInt8, "Int8").([]int8)
+	}, pubserialization.FieldKindArrayOfInt8, pubserialization.FieldKindArrayOfNullableInt8, "Int8")
+	vv, _ := v.([]int8)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfInt16(fieldName string) []int16 {
-	return d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
+	v := d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
 		return inp.ReadInt16Array()
-	}, pubserialization.FieldKindArrayOfInt16, pubserialization.FieldKindArrayOfNullableInt16, "Int16").([]int16)
+	}, pubserialization.FieldKindArrayOfInt16, pubserialization.FieldKindArrayOfNullableInt16, "Int16")
+	vv, _ := v.([]int16)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfInt32(fieldName string) []int32 {
-	return d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
+	v := d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
 		return inp.ReadInt32Array()
-	}, pubserialization.FieldKindArrayOfInt32, pubserialization.FieldKindArrayOfNullableInt32, "Int32").([]int32)
+	}, pubserialization.FieldKindArrayOfInt32, pubserialization.FieldKindArrayOfNullableInt32, "Int32")
+	vv, _ := v.([]int32)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfInt64(fieldName string) []int64 {
-	return d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
+	v := d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
 		return inp.ReadInt64Array()
-	}, pubserialization.FieldKindArrayOfInt64, pubserialization.FieldKindArrayOfNullableInt64, "Int64").([]int64)
+	}, pubserialization.FieldKindArrayOfInt64, pubserialization.FieldKindArrayOfNullableInt64, "Int64")
+	vv, _ := v.([]int64)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfFloat32(fieldName string) []float32 {
-	return d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
+	v := d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
 		return inp.ReadFloat32Array()
-	}, pubserialization.FieldKindArrayOfFloat32, pubserialization.FieldKindArrayOfNullableFloat32, "Float32").([]float32)
+	}, pubserialization.FieldKindArrayOfFloat32, pubserialization.FieldKindArrayOfNullableFloat32, "Float32")
+	vv, _ := v.([]float32)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfFloat64(fieldName string) []float64 {
-	return d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
+	v := d.readArrayOfPrimitive(fieldName, func(inp *ObjectDataInput) interface{} {
 		return inp.ReadFloat64Array()
-	}, pubserialization.FieldKindArrayOfFloat64, pubserialization.FieldKindArrayOfNullableFloat64, "Float64").([]float64)
+	}, pubserialization.FieldKindArrayOfFloat64, pubserialization.FieldKindArrayOfNullableFloat64, "Float64")
+	vv, _ := v.([]float64)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfString(fieldName string) []*string {
 	var values []*string
-	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfString, func(inp *ObjectDataInput, i int32, isNil bool) {
+	d.readArrayOfVariableSize(fieldName, func(inp *ObjectDataInput, i int32, isNil bool) {
 		if !isNil {
 			str := inp.ReadString()
 			values[i] = &str
@@ -344,7 +359,7 @@ func (d *DefaultCompactReader) ReadArrayOfString(fieldName string) []*string {
 
 func (d *DefaultCompactReader) ReadArrayOfDecimal(fieldName string) []*types.Decimal {
 	var values []*types.Decimal
-	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfDecimal, func(inp *ObjectDataInput, i int32, isNil bool) {
+	d.readArrayOfVariableSize(fieldName, func(inp *ObjectDataInput, i int32, isNil bool) {
 		if !isNil {
 			dec := ReadDecimal(inp)
 			values[i] = &dec
@@ -357,7 +372,7 @@ func (d *DefaultCompactReader) ReadArrayOfDecimal(fieldName string) []*types.Dec
 
 func (d *DefaultCompactReader) ReadArrayOfTime(fieldName string) []*types.LocalTime {
 	var values []*types.LocalTime
-	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfTime, func(inp *ObjectDataInput, i int32, isNil bool) {
+	d.readArrayOfVariableSize(fieldName, func(inp *ObjectDataInput, i int32, isNil bool) {
 		if !isNil {
 			lt := types.LocalTime(ReadTime(inp))
 			values[i] = &lt
@@ -370,7 +385,7 @@ func (d *DefaultCompactReader) ReadArrayOfTime(fieldName string) []*types.LocalT
 
 func (d *DefaultCompactReader) ReadArrayOfDate(fieldName string) []*types.LocalDate {
 	var values []*types.LocalDate
-	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfDate, func(inp *ObjectDataInput, i int32, isNil bool) {
+	d.readArrayOfVariableSize(fieldName, func(inp *ObjectDataInput, i int32, isNil bool) {
 		if !isNil {
 			ld := types.LocalDate(ReadDate(inp))
 			values[i] = &ld
@@ -383,7 +398,7 @@ func (d *DefaultCompactReader) ReadArrayOfDate(fieldName string) []*types.LocalD
 
 func (d *DefaultCompactReader) ReadArrayOfTimestamp(fieldName string) []*types.LocalDateTime {
 	var values []*types.LocalDateTime
-	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfTimestamp, func(inp *ObjectDataInput, i int32, isNil bool) {
+	d.readArrayOfVariableSize(fieldName, func(inp *ObjectDataInput, i int32, isNil bool) {
 		if !isNil {
 			ldt := types.LocalDateTime(ReadTimestamp(inp))
 			values[i] = &ldt
@@ -396,7 +411,7 @@ func (d *DefaultCompactReader) ReadArrayOfTimestamp(fieldName string) []*types.L
 
 func (d *DefaultCompactReader) ReadArrayOfTimestampWithTimezone(fieldName string) []*types.OffsetDateTime {
 	var values []*types.OffsetDateTime
-	d.readArrayOfVariableSize(fieldName, pubserialization.FieldKindArrayOfTimestampWithTimezone, func(inp *ObjectDataInput, i int32, isNil bool) {
+	d.readArrayOfVariableSize(fieldName, func(inp *ObjectDataInput, i int32, isNil bool) {
 		if !isNil {
 			odt := types.OffsetDateTime(ReadTimestampWithTimezone(inp))
 			values[i] = &odt
@@ -442,10 +457,12 @@ func (d *DefaultCompactReader) ReadNullableBoolean(fieldName string) *bool {
 		b := d.readBoolean(fd)
 		return &b
 	case pubserialization.FieldKindNullableBoolean:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v := d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			b := inp.ReadBool()
 			return &b
-		}).(*bool)
+		})
+		vv, _ := v.(*bool)
+		return vv
 	default:
 		panic(newUnexpectedFieldKind(fd.Kind, fieldName))
 	}
@@ -453,98 +470,116 @@ func (d *DefaultCompactReader) ReadNullableBoolean(fieldName string) *bool {
 
 func (d *DefaultCompactReader) ReadNullableInt8(fieldName string) *int8 {
 	fd := d.getFieldDefinition(fieldName)
+	var v interface{}
 	switch fd.Kind {
 	case pubserialization.FieldKindInt8:
 		b := d.in.ReadSignedByteAtPosition(d.getFixedSizePosition(fd))
-		return &b
+		v = &b
 	case pubserialization.FieldKindNullableInt8:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			b := inp.ReadSignedByte()
 			return &b
-		}).(*int8)
+		})
 	default:
 		panic(newUnexpectedFieldKind(fd.Kind, fieldName))
 	}
+	vv, _ := v.(*int8)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadNullableInt16(fieldName string) *int16 {
 	fd := d.getFieldDefinition(fieldName)
+	var v interface{}
 	switch fd.Kind {
 	case pubserialization.FieldKindInt16:
 		b := d.in.ReadInt16AtPosition(d.getFixedSizePosition(fd))
-		return &b
+		v = &b
 	case pubserialization.FieldKindNullableInt16:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			short := inp.ReadInt16()
 			return &short
-		}).(*int16)
+		})
 	default:
 		panic(newUnexpectedFieldKind(fd.Kind, fieldName))
 	}
+	vv, _ := v.(*int16)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadNullableInt32(fieldName string) *int32 {
 	fd := d.getFieldDefinition(fieldName)
+	var v interface{}
 	switch fd.Kind {
 	case pubserialization.FieldKindInt32:
 		b := d.in.ReadInt32AtPosition(d.getFixedSizePosition(fd))
-		return &b
+		v = &b
 	case pubserialization.FieldKindNullableInt32:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			i := inp.readInt32()
 			return &i
-		}).(*int32)
+		})
 	default:
 		panic(newUnexpectedFieldKind(fd.Kind, fieldName))
 	}
+	vv, _ := v.(*int32)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadNullableInt64(fieldName string) *int64 {
 	fd := d.getFieldDefinition(fieldName)
+	var v interface{}
 	switch fd.Kind {
 	case pubserialization.FieldKindInt64:
 		long := d.in.ReadInt64AtPosition(d.getFixedSizePosition(fd))
-		return &long
+		v = &long
 	case pubserialization.FieldKindNullableInt64:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			long := inp.ReadInt64()
 			return &long
-		}).(*int64)
+		})
 	default:
 		panic(newUnexpectedFieldKind(fd.Kind, fieldName))
 	}
+	vv, _ := v.(*int64)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadNullableFloat32(fieldName string) *float32 {
 	fd := d.getFieldDefinition(fieldName)
+	var v interface{}
 	switch fd.Kind {
 	case pubserialization.FieldKindFloat32:
 		f := d.in.ReadFloat32AtPosition(d.getFixedSizePosition(fd))
-		return &f
+		v = &f
 	case pubserialization.FieldKindNullableFloat32:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			f := inp.ReadFloat32()
 			return &f
-		}).(*float32)
+		})
 	default:
 		panic(newUnexpectedFieldKind(fd.Kind, fieldName))
 	}
+	vv, _ := v.(*float32)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadNullableFloat64(fieldName string) *float64 {
 	fd := d.getFieldDefinition(fieldName)
+	var v interface{}
 	switch fd.Kind {
 	case pubserialization.FieldKindFloat64:
 		f := d.in.ReadFloat64AtPosition(d.getFixedSizePosition(fd))
-		return &f
+		v = &f
 	case pubserialization.FieldKindNullableFloat64:
-		return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		v = d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 			f := inp.ReadFloat64()
 			return &f
-		}).(*float64)
+		})
 	default:
 		panic(newUnexpectedFieldKind(fd.Kind, fieldName))
 	}
+	vv, _ := v.(*float64)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadArrayOfNullableBoolean(fieldName string) []*bool {
@@ -556,7 +591,7 @@ func (d *DefaultCompactReader) ReadArrayOfNullableBoolean(fieldName string) []*b
 		}).([]*bool)
 	case pubserialization.FieldKindArrayOfNullableBoolean:
 		var values []*bool
-		d.readArrayOfVariableSize(fieldName, fd.Kind, func(inp *ObjectDataInput, i int32, isNil bool) {
+		d.readArrayOfVariableSize(fieldName, func(inp *ObjectDataInput, i int32, isNil bool) {
 			if !isNil {
 				b := inp.readBool()
 				values[i] = &b
@@ -805,7 +840,7 @@ func (d *DefaultCompactReader) readArrayOfPrimitive(fieldName string, r Reader, 
 	}
 }
 
-func (d *DefaultCompactReader) readArrayOfVariableSize(fieldName string, fieldKind pubserialization.FieldKind, sr SliceReader, sc SliceConstructor) {
+func (d *DefaultCompactReader) readArrayOfVariableSize(fieldName string, sr SliceReader, sc SliceConstructor) {
 	fd := d.getFieldDefinition(fieldName)
 	currentPos := d.in.position
 	defer d.in.SetPosition(currentPos)
@@ -837,7 +872,7 @@ func (d *DefaultCompactReader) readArrayOfNullable(fieldName string, primitiveKi
 	if fieldKind == primitiveKind {
 		d.readPrimitiveArrayAsNullableArray(fd, sr, sc)
 	} else if fieldKind == nullableKind {
-		d.readArrayOfVariableSize(fieldName, fieldKind, sr, sc)
+		d.readArrayOfVariableSize(fieldName, sr, sc)
 	} else {
 		panic(newUnexpectedFieldKind(fieldKind, fieldName))
 	}
