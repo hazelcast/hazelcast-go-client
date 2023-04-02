@@ -247,13 +247,19 @@ func otherArraySerializerTest(t *testing.T) {
 }
 
 type nullables struct {
-	nilBool    *bool
-	nilInt8    *int8
-	nilInt16   *int16
-	nilInt32   *int32
-	nilInt64   *int64
-	nilFloat32 *float32
-	nilFloat64 *float64
+	nilBool           *bool
+	nilInt8           *int8
+	nilInt16          *int16
+	nilInt32          *int32
+	nilInt64          *int64
+	nilFloat32        *float32
+	nilFloat64        *float64
+	nilString         *string
+	nilDecimal        *types.Decimal
+	nilLocalTime      *types.LocalTime
+	nilLocalDate      *types.LocalDate
+	nilLocalDateTime  *types.LocalDateTime
+	nilOffsetDateTime *types.OffsetDateTime
 }
 
 type nullablesSerializer struct{}
@@ -268,13 +274,19 @@ func (s nullablesSerializer) TypeName() string {
 
 func (s nullablesSerializer) Read(r pubserialization.CompactReader) interface{} {
 	return nullables{
-		nilBool:    r.ReadNullableBoolean("nilBool"),
-		nilInt8:    r.ReadNullableInt8("nilInt8"),
-		nilInt16:   r.ReadNullableInt16("nilInt16"),
-		nilInt32:   r.ReadNullableInt32("nilInt32"),
-		nilInt64:   r.ReadNullableInt64("nilInt64"),
-		nilFloat32: r.ReadNullableFloat32("nilFloat32"),
-		nilFloat64: r.ReadNullableFloat64("nilFloat64"),
+		nilBool:           r.ReadNullableBoolean("nilBool"),
+		nilInt8:           r.ReadNullableInt8("nilInt8"),
+		nilInt16:          r.ReadNullableInt16("nilInt16"),
+		nilInt32:          r.ReadNullableInt32("nilInt32"),
+		nilInt64:          r.ReadNullableInt64("nilInt64"),
+		nilFloat32:        r.ReadNullableFloat32("nilFloat32"),
+		nilFloat64:        r.ReadNullableFloat64("nilFloat64"),
+		nilString:         r.ReadString("nilString"),
+		nilDecimal:        r.ReadDecimal("nilDecimal"),
+		nilLocalTime:      r.ReadTime("nilLocalTime"),
+		nilLocalDate:      r.ReadDate("nilLocalDate"),
+		nilLocalDateTime:  r.ReadTimestamp("nilLocalDateTime"),
+		nilOffsetDateTime: r.ReadTimestampWithTimezone("nilOffsetDateTime"),
 	}
 }
 
@@ -287,6 +299,12 @@ func (s nullablesSerializer) Write(w pubserialization.CompactWriter, v interface
 	w.WriteNullableInt64("nilInt64", vv.nilInt64)
 	w.WriteNullableFloat32("nilFloat32", vv.nilFloat32)
 	w.WriteNullableFloat64("nilFloat64", vv.nilFloat64)
+	w.WriteString("nilString", vv.nilString)
+	w.WriteDecimal("nilDecimal", vv.nilDecimal)
+	w.WriteTime("nilLocalTime", vv.nilLocalTime)
+	w.WriteDate("nilLocalDate", vv.nilLocalDate)
+	w.WriteTimestamp("nilLocalDateTime", vv.nilLocalDateTime)
+	w.WriteTimestampWithTimezone("nilOffsetDateTime", vv.nilOffsetDateTime)
 }
 
 func nullableSerializerTest(t *testing.T) {

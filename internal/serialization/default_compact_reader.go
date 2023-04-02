@@ -217,56 +217,64 @@ func (d *DefaultCompactReader) ReadFloat64(fieldName string) float64 {
 
 func (d *DefaultCompactReader) ReadString(fieldName string) *string {
 	fd := d.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindString)
-	value := d.readVariableSizeField(fd, func(in *ObjectDataInput) interface{} {
+	v := d.readVariableSizeField(fd, func(in *ObjectDataInput) interface{} {
 		str := in.ReadString()
 		return &str
 	})
-	if value == nil {
-		return nil
-	}
-	return value.(*string)
+	vv, _ := v.(*string)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadDecimal(fieldName string) *types.Decimal {
 	fd := d.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindDecimal)
-	return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+	v := d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 		dec := ReadDecimal(inp)
 		return &dec
-	}).(*types.Decimal)
+	})
+	vv, _ := v.(*types.Decimal)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadTime(fieldName string) *types.LocalTime {
 	fd := d.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindTime)
-	return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
-		time := types.LocalTime(ReadTime(inp))
-		return &time
-	}).(*types.LocalTime)
+	v := d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+		t := types.LocalTime(ReadTime(inp))
+		return &t
+	})
+	vv, _ := v.(*types.LocalTime)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadDate(fieldName string) *types.LocalDate {
 	fd := d.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindDate)
-	return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+	v := d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 		date := types.LocalDate(ReadDate(inp))
 		return &date
-	}).(*types.LocalDate)
+	})
+	vv, _ := v.(*types.LocalDate)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadTimestamp(fieldName string) *types.LocalDateTime {
 	fd := d.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindTimestamp)
-	return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+	v := d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 		timestamp := types.LocalDateTime(ReadTimestamp(inp))
 		return &timestamp
-	}).(*types.LocalDateTime)
+	})
+	vv, _ := v.(*types.LocalDateTime)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadTimestampWithTimezone(fieldName string) *types.OffsetDateTime {
 	fd := d.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindTimestampWithTimezone)
-	return d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
+	v := d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 		timestampWithTimezone := types.OffsetDateTime(ReadTimestampWithTimezone(inp))
 		a := time.Time(timestampWithTimezone).String()
 		println(a)
 		return &timestampWithTimezone
-	}).(*types.OffsetDateTime)
+	})
+	vv, _ := v.(*types.OffsetDateTime)
+	return vv
 }
 
 func (d *DefaultCompactReader) ReadCompact(fieldName string) interface{} {
