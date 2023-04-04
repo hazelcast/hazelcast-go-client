@@ -18,7 +18,6 @@ package serialization
 
 import (
 	"fmt"
-	"time"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
@@ -269,8 +268,6 @@ func (d *DefaultCompactReader) ReadTimestampWithTimezone(fieldName string) *type
 	fd := d.getFieldDefinitionChecked(fieldName, pubserialization.FieldKindTimestampWithTimezone)
 	v := d.readVariableSizeField(fd, func(inp *ObjectDataInput) interface{} {
 		timestampWithTimezone := types.OffsetDateTime(ReadTimestampWithTimezone(inp))
-		a := time.Time(timestampWithTimezone).String()
-		println(a)
 		return &timestampWithTimezone
 	})
 	vv, _ := v.(*types.OffsetDateTime)
