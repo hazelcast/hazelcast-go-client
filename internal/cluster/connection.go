@@ -89,6 +89,10 @@ func (c *Connection) SetEndpoint(addr pubcluster.Address) {
 	c.endpoint.Store(addr)
 }
 
+func (c *Connection) ServerVersion() string {
+	return c.connectedServerVersionStr
+}
+
 func (c *Connection) MemberUUID() types.UUID {
 	v := c.memberUUID.Load()
 	if v == nil {
