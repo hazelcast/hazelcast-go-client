@@ -114,6 +114,7 @@ func (r *QueryResult) Close() error {
 // InvocationTimeout field of hazelcast.Config is respected for timeout.
 func (r *QueryResult) Next(dest []driver.Value) error {
 	if len(r.page.Columns) == 0 {
+		r.close()
 		return io.EOF
 	}
 	rowCount := int32(len(r.page.Columns[0]))
@@ -129,7 +130,11 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 		}
 	}
 	for i := 0; i < len(r.page.Columns); i++ {
-		dest[i] = r.page.Columns[i][r.index]
+		col := r.page.Columns[i]
+		if len(col) <= int(r.index) {
+			break
+		}
+		dest[i] = col[r.index]
 	}
 	r.index++
 	return nil
