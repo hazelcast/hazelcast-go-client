@@ -131,8 +131,10 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 	}
 	for i := 0; i < len(r.page.Columns); i++ {
 		col := r.page.Columns[i]
+		// TODO: find out the reason for requiring the following fix
 		if len(col) <= int(r.index) {
-			break
+			r.close()
+			return io.EOF
 		}
 		dest[i] = col[r.index]
 	}
