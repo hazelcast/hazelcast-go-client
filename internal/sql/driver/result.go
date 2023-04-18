@@ -38,7 +38,7 @@ const (
 // QueryResult is not concurrency-safe, except for closing it.
 type QueryResult struct {
 	err              error
-	page             *itype.Page
+	page             itype.Page
 	ss               *SQLService
 	conn             *icluster.Connection
 	doneCh           chan struct{}
@@ -55,7 +55,7 @@ func (r *QueryResult) Metadata() sql.RowMetadata {
 }
 
 // NewQueryResult creates a new QueryResult.
-func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page *itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32, infiniteRows bool) (*QueryResult, error) {
+func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32, infiniteRows bool) (*QueryResult, error) {
 	doneCh := make(chan struct{})
 	qr := &QueryResult{
 		queryID:          qid,
@@ -113,11 +113,10 @@ func (r *QueryResult) Close() error {
 // It implements database/sql/Rows interface.
 // InvocationTimeout field of hazelcast.Config is respected for timeout.
 func (r *QueryResult) Next(dest []driver.Value) error {
-	cols := r.page.Columns
-	if len(cols) == 0 {
+	if len(r.page.Columns) == 0 {
 		return io.EOF
 	}
-	rowCount := int32(len(cols[0]))
+	rowCount := int32(len(r.page.Columns[0]))
 	if r.index >= rowCount {
 		if r.page.Last {
 			r.close()
@@ -128,11 +127,9 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 		if err := r.fetchNextPage(ctx); err != nil {
 			return err
 		}
-		// after fetching next page, the page and its cols change, so have to refresh them
-		cols = r.page.Columns
 	}
-	for i := 0; i < len(cols); i++ {
-		dest[i] = cols[i][r.index]
+	for i := 0; i < len(r.page.Columns); i++ {
+		dest[i] = r.page.Columns[i][r.index]
 	}
 	r.index++
 	return nil
