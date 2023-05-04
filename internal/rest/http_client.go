@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -65,25 +65,30 @@ func (c *HTTPClient) Get(ctx context.Context, uri string, headers ...HTTPHeader)
 		req.Header.Add(h.Name, h.Value)
 	}
 	i, err := c.cb.TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
-		if resp, err := c.httpClient.Do(req); err != nil {
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
 			var e *url.Error
 			if errors.As(err, &e) {
 				e.URL = ""
 			}
 			return nil, err
-		} else if resp.StatusCode < 300 {
-			return resp, nil
-		} else if resp.StatusCode >= 500 {
-			return nil, NewErrorFromResponse(resp)
-		} else {
-			return nil, cb.WrapNonRetryableError(NewErrorFromResponse(resp))
 		}
+		if resp.StatusCode < 300 {
+			return resp, nil
+		}
+		if resp.StatusCode >= 500 {
+			return nil, NewErrorFromResponse(resp)
+		}
+		return nil, cb.WrapNonRetryableErrorPersistent(NewErrorFromResponse(resp))
 	})
 	if err != nil {
 		return nil, err
 	}
 	resp := i.(*http.Response)
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	// error is unhandled
 	resp.Body.Close()
 	return b, err
@@ -91,9 +96,11 @@ func (c *HTTPClient) Get(ctx context.Context, uri string, headers ...HTTPHeader)
 
 func (c *HTTPClient) GetJSONObject(ctx context.Context, url string, headers ...HTTPHeader) (map[string]interface{}, error) {
 	r := map[string]interface{}{}
-	if b, err := c.Get(ctx, url, headers...); err != nil {
+	b, err := c.Get(ctx, url, headers...)
+	if err != nil {
 		return nil, err
-	} else if err := json.Unmarshal(b, &r); err != nil {
+	}
+	if err := json.Unmarshal(b, &r); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -101,9 +108,11 @@ func (c *HTTPClient) GetJSONObject(ctx context.Context, url string, headers ...H
 
 func (c *HTTPClient) GetJSONArray(ctx context.Context, url string, headers ...HTTPHeader) ([]interface{}, error) {
 	r := []interface{}{}
-	if b, err := c.Get(ctx, url, headers...); err != nil {
+	b, err := c.Get(ctx, url, headers...)
+	if err != nil {
 		return nil, err
-	} else if err := json.Unmarshal(b, &r); err != nil {
+	}
+	if err := json.Unmarshal(b, &r); err != nil {
 		return nil, err
 	}
 	return r, nil

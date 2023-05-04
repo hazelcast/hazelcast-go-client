@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,33 @@ package rest
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
 type Error struct {
-	Text string
-	Code int
+	text string
+	code int
 }
 
 func NewError(code int, text string) *Error {
 	return &Error{
-		Code: code,
-		Text: text,
+		code: code,
+		text: text,
 	}
+}
+
+func (e Error) Text() string {
+	return e.text
+}
+
+func (e Error) Code() int {
+	return e.code
 }
 
 func NewErrorFromResponse(resp *http.Response) *Error {
 	code := resp.StatusCode
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return NewError(code, "(cannot read error message)")
 	}
@@ -47,5 +55,5 @@ func NewErrorFromResponse(resp *http.Response) *Error {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("HTTP error: %d, %s", e.Code, e.Text)
+	return fmt.Sprintf("HTTP error: %d, %s", e.code, e.text)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -46,13 +46,13 @@ func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.LogAdaptor) *
 
 func (c *DiscoveryClient) DiscoverNodes(ctx context.Context) ([]Address, error) {
 	url := makeCoordinatorURL(c.token)
-	if j, err := c.httpClient.GetJSONArray(ctx, url); err != nil {
+	j, err := c.httpClient.GetJSONArray(ctx, url)
+	if err != nil {
 		return nil, err
-	} else {
-		addrs := extractAddresses(j)
-		c.logger.Trace(func() string { return fmt.Sprintf("cloud addresses: %v", addrs) })
-		return addrs, nil
 	}
+	addrs := extractAddresses(j)
+	c.logger.Trace(func() string { return fmt.Sprintf("cloud addresses: %v", addrs) })
+	return addrs, nil
 }
 
 func extractAddresses(j interface{}) []Address {

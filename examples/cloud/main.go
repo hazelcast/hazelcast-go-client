@@ -28,7 +28,7 @@ import (
 
 const (
 	clusterName     = "PUT-YOUR-CLUSTER-NAME-HERE!"
-	token           = "PUT-YOUR-VIRIIDAN-HERE!"
+	token           = "PUT-YOUR-VIRIDIAN-TOKEN-HERE!"
 	caFilePath      = "/PATH/ca.pem"
 	certFilePath    = "/PATH/cert.pem"
 	keyFilePath     = "/PATH/key.pem"
