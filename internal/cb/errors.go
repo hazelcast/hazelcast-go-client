@@ -51,3 +51,7 @@ func (e NonRetryableError) Is(target error) bool {
 	_, ok := target.(NonRetryableError)
 	return ok
 }
+
+func (e NonRetryableError) Unwrap() error {
+	return e.Err
+}
