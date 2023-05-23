@@ -65,7 +65,7 @@ func main() {
 Requirements:
 
 * Hazelcast Go client is compatible only with Hazelcast 4.x and 5.x.
-* We support two most recent releases of Go, currently 1.17 and up.
+* We support two most recent releases of Go.
 
 In your Go module enabled project, add a dependency to `github.com/hazelcast/hazelcast-go-client`:
 ```shell
@@ -161,7 +161,7 @@ In order to turn on verbose logging, add `ENABLE_TRACE=1` to environment variabl
 
 [Apache 2 License](https://github.com/hazelcast/hazelcast-go-client/blob/master/LICENSE).
 
-Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com) for more information.
 
