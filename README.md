@@ -4,7 +4,7 @@
 
 Hazelcast is an open-source distributed in-memory data store and computation platform that provides a wide variety of distributed data structures and concurrency primitives.
 
-Hazelcast Go client is a way to communicate to Hazelcast 4 and 5 clusters and access the cluster data.
+Hazelcast Go client is a way to communicate with Hazelcast 4 and 5 clusters and access the cluster data.
 
 ## Sample Code
 
@@ -53,7 +53,6 @@ func main() {
 * Additional data structures and simple messaging constructs such as Replicated Map, MultiMap, Queue, List, PNCounter, Set, Topic and others.
 * Support for serverless and traditional web service architectures with Unisocket and Smart operation modes.
 * Go context support for all distributed data structures.
-* [Viridian](https://viridian.hazelcast.com/) integration.
 * SQL support (only on Hazelcast 5.x).
 * External smart client discovery.
 * Hazelcast Management Center integration.
@@ -78,13 +77,6 @@ $ go get github.com/hazelcast/hazelcast-go-client@latest
 Hazelcast Go client requires a working Hazelcast cluster.
 
 Check out our [Get Started](https://hazelcast.com/get-started/) page for options.
-
-### Starting the Client with Viridian
-
-You only need the cluster name and Viridian token to start the client.
-If you haven't already, you can [sign up](https://viridian.hazelcast.com/) for a free Viridian account.
-
-Check out our [Viridian sample](https://github.com/hazelcast/hazelcast-go-client/blob/master/examples/cloud/main.go)
 
 ### Starting the Default Client
 
