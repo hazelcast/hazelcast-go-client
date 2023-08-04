@@ -40,6 +40,10 @@ func TestParseAddr(t *testing.T) {
 		{Addr: "foo", Target: parseAddrTarget{Host: "foo", Port: 0, Err: nil}},
 		{Addr: ":1234", Target: parseAddrTarget{Host: "127.0.0.1", Port: 1234, Err: nil}},
 		{Addr: "", Target: parseAddrTarget{Host: "127.0.0.1", Port: 0, Err: nil}},
+		{Addr: "169.254.172.39", Target: parseAddrTarget{Host: "169.254.172.39", Port: 0, Err: nil}},
+		{Addr: "169.254.172.39:5703", Target: parseAddrTarget{Host: "169.254.172.39", Port: 5703, Err: nil}},
+		{Addr: "fe80::43:ecff:fec9:1683", Target: parseAddrTarget{Host: "fe80::43:ecff:fec9:1683", Port: 0, Err: nil}},
+		{Addr: "[fe80::43:ecff:fec9:1683]:5705", Target: parseAddrTarget{Host: "fe80::43:ecff:fec9:1683", Port: 5705, Err: nil}},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("addr: %s", tc.Addr), func(t *testing.T) {

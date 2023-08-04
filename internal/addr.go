@@ -26,16 +26,12 @@ import (
 const defaultHost = "127.0.0.1"
 
 func ParseAddr(addr string) (string, int, error) {
-	// TODO: refactor this function, it can be written in a better way.
 	if addr == "" || strings.TrimSpace(addr) == "" {
 		return defaultHost, 0, nil
 	}
-	if !strings.Contains(addr, ":") {
-		return addr, 0, nil
-	}
 	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return "", 0, err
+	if err != nil { // return the address itself if port is missing in the address
+		return addr, 0, nil
 	}
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
@@ -44,7 +40,7 @@ func ParseAddr(addr string) (string, int, error) {
 	if host == "" || strings.TrimSpace(host) == "" {
 		host = defaultHost
 	}
-	if portInt < 0 { // port number should be more than 0
+	if portInt < 0 { // port number must be positive value
 		return "", 0, fmt.Errorf("invalid port number: '%d'", portInt)
 	}
 	return host, portInt, nil
