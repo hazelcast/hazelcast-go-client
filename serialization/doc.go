@@ -178,7 +178,7 @@ The table of supported types in compact serialization and their Java counterpart
 	*types.OffsetDateTime     OffsetDateTime
 	[]*types.OffsetDateTime   OffsetDateTime[]
 
-See https://docs.hazelcast.com/hazelcast/5.2/serialization/compact-serialization#supported-types for more information.
+See https://docs.hazelcast.com/hazelcast/latest/serialization/compact-serialization#supported-types for more information.
 
 Compact serialized objects can be used in SQL statements, provided that mappings are created, similar to other serialization formats.
 
@@ -241,7 +241,7 @@ One thing to be careful while evolving the class is to not have any conditional 
 That method must write all the fields available in the current version of the class to the writer, with appropriate field names and types.
 Write method of the serializer is used to extract a schema out of the object, hence any conditional code that may or may not run depending on the object in that method might result in an undefined behavior.
 
-For more information about compact serialization, check out https://docs.hazelcast.com/hazelcast/5.2/serialization/compact-serialization.
+For more information about compact serialization, check out https://docs.hazelcast.com/hazelcast/latest/serialization/compact-serialization.
 
 # Identified Data Serialization
 
