@@ -217,7 +217,7 @@ Using JSON
 
 Two different JSON types are supported, namely "json-flat" and "json"
 
-Checkout https://docs.hazelcast.com/hazelcast/5.1-beta-1/sql/working-with-json for more details.
+Checkout https://docs.hazelcast.com/hazelcast/latest/sql/working-with-json for more details.
 
 1) "json-flat" value format treats top level fields of the json object as separate columns. It does not support nested JSON values.
 
