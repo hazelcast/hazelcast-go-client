@@ -53,7 +53,7 @@ download () {
       log_info "$jar_path already exists, skipping download."
   else
       log_info "Downloading: $jar_path ($artifact)"
-      mvn -q dependency:get -DremoteRepositories=$repo -Dartifact=$artifact -Ddest="$jar_path"
+      mvn -q org.apache.maven.plugins:maven-dependency-plugin:3.6.0:get -DremoteRepositories=$repo -Dartifact=$artifact -Ddest="$jar_path"
       if [ $? -ne 0 ]; then
           log_fatal "Failed downloading $jar_path ($artifact) from $repo"
       fi
