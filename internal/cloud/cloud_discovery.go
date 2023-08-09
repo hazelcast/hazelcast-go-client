@@ -34,18 +34,25 @@ type DiscoveryClient struct {
 	logger     logger.LogAdaptor
 	httpClient *rest.HTTPClient
 	token      string
+	baseURL    string
 }
 
 func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.LogAdaptor) *DiscoveryClient {
+	url := config.ExperimentalAPIBaseURL
+	if url == "" {
+		url = baseAPIURL()
+	}
+	url = strings.TrimRight(url, "/")
 	return &DiscoveryClient{
 		token:      config.Token,
 		httpClient: rest.NewHTTPClient(),
 		logger:     logger,
+		baseURL:    url,
 	}
 }
 
 func (c *DiscoveryClient) DiscoverNodes(ctx context.Context) ([]Address, error) {
-	url := makeCoordinatorURL(c.token)
+	url := makeCoordinatorURL(c.baseURL, c.token)
 	j, err := c.httpClient.GetJSONArray(ctx, url)
 	if err != nil {
 		return nil, err
@@ -69,11 +76,11 @@ func extractAddresses(j interface{}) []Address {
 	return r
 }
 
-func makeCoordinatorURL(token string) string {
-	return fmt.Sprintf("%s/cluster/discovery?token=%s", baseURL(), token)
+func makeCoordinatorURL(baseURL, token string) string {
+	return fmt.Sprintf("%s/cluster/discovery?token=%s", baseURL, token)
 }
 
-func baseURL() string {
+func baseAPIURL() string {
 	url := os.Getenv(envCoordinatorBaseURL)
 	if url == "" {
 		return "https://api.viridian.hazelcast.com"
