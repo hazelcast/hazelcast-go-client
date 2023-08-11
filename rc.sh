@@ -58,7 +58,7 @@ download () {
   else
       log_info "Downloading: $jar_path ($artifact) from: $repo"
       set +e
-      output=$(mvn -q org.apache.maven.plugins:maven-dependency-plugin:3.6.0:get -DremoteRepositories=$repo -Dartifact=$artifact -Dtransitive=false -Ddest="$jar_path" 2>&1)
+      output=$(mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.10:get -DremoteRepositories=$repo -Dartifact=$artifact -Dtransitive=false -Ddest="$jar_path" 2>&1)
       err=$?
       set -e
       if [ $err -ne 0 ]; then
