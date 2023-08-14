@@ -58,7 +58,7 @@ download () {
   else
       log_info "Downloading: $jar_path ($artifact) from: $repo"
       set +e
-      output=$(mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Dtransitive=false -Ddest="$jar_path" 2>&1)
+      output=$(mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.10:get -DremoteRepositories=$repo -Dartifact=$artifact -Dtransitive=false -Ddest="$jar_path" 2>&1)
       err=$?
       set -e
       if [ $err -ne 0 ]; then
@@ -170,7 +170,7 @@ help () {
 
 TIMESTAMP_FMT="+%Y-%m-%d %H:%M:%S"
 PID_FILE="test.pid"
-HZ_VERSION="${HZ_VERSION:-5.1-SNAPSHOT}"
+HZ_VERSION="${HZ_VERSION:-5.1.8-SNAPSHOT}"
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
 HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
 HAZELCAST_RC_VERSION="0.8-SNAPSHOT"
