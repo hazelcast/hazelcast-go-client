@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,10 @@ type CloudConfig struct {
 	Token string `json:",omitempty"`
 	// Enabled enables Hazelcast Cloud integration.
 	Enabled bool `json:",omitempty"`
+	// ExperimentalAPIBaseURL sets the Viridian API base URL.
+	// You generally should leave its value unset.
+	// Note that this configuration may be modified or removed anytime.
+	ExperimentalAPIBaseURL string `json:",omitempty"`
 }
 
 func (h CloudConfig) Clone() CloudConfig {

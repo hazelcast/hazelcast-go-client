@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -34,25 +34,32 @@ type DiscoveryClient struct {
 	logger     logger.LogAdaptor
 	httpClient *rest.HTTPClient
 	token      string
+	baseURL    string
 }
 
 func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.LogAdaptor) *DiscoveryClient {
+	url := config.ExperimentalAPIBaseURL
+	if url == "" {
+		url = defaultBaseAPIURL()
+	}
+	url = strings.TrimRight(url, "/")
 	return &DiscoveryClient{
 		token:      config.Token,
 		httpClient: rest.NewHTTPClient(),
 		logger:     logger,
+		baseURL:    url,
 	}
 }
 
 func (c *DiscoveryClient) DiscoverNodes(ctx context.Context) ([]Address, error) {
-	url := makeCoordinatorURL(c.token)
-	if j, err := c.httpClient.GetJSONArray(ctx, url); err != nil {
+	url := makeCoordinatorURL(c.baseURL, c.token)
+	j, err := c.httpClient.GetJSONArray(ctx, url)
+	if err != nil {
 		return nil, err
-	} else {
-		addrs := extractAddresses(j)
-		c.logger.Trace(func() string { return fmt.Sprintf("cloud addresses: %v", addrs) })
-		return addrs, nil
 	}
+	addrs := extractAddresses(j)
+	c.logger.Trace(func() string { return fmt.Sprintf("cloud addresses: %v", addrs) })
+	return addrs, nil
 }
 
 func extractAddresses(j interface{}) []Address {
@@ -69,11 +76,11 @@ func extractAddresses(j interface{}) []Address {
 	return r
 }
 
-func makeCoordinatorURL(token string) string {
-	return fmt.Sprintf("%s/cluster/discovery?token=%s", baseURL(), token)
+func makeCoordinatorURL(baseURL, token string) string {
+	return fmt.Sprintf("%s/cluster/discovery?token=%s", baseURL, token)
 }
 
-func baseURL() string {
+func defaultBaseAPIURL() string {
 	url := os.Getenv(envCoordinatorBaseURL)
 	if url == "" {
 		return "https://api.viridian.hazelcast.com"

@@ -67,7 +67,7 @@ func TestSerializationImprovements_JavaDate(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetGlobalSerializer(&PanicingGlobalSerializer{})
 	ss := mustSerializationService(iserialization.NewService(config, nil))
-	target := time.Date(2021, 2, 1, 9, 1, 15, 11000, time.Local)
+	target := time.Date(2021, 2, 1, 9, 1, 15, 0, time.Local)
 	data := mustData(ss.ToData(target))
 	value := it.MustValue(ss.ToObject(data))
 	assert.Equal(t, target, value)

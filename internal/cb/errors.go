@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,36 @@ var ErrCircuitOpen = errors.New("circuit open")
 var ErrDeadlineExceeded = errors.New("deadline exceeded")
 
 type NonRetryableError struct {
+	// Err is the wrapper error
 	Err error
+	// Persistent disables unwrapping the error in the CB if true
+	// This is useful to make the error non-retryable in chain of Trys
+	Persistent bool
 }
 
 func WrapNonRetryableError(err error) *NonRetryableError {
-	return &NonRetryableError{err}
+	return &NonRetryableError{Err: err}
+}
+
+func WrapNonRetryableErrorPersistent(err error) *NonRetryableError {
+	return &NonRetryableError{
+		Err:        err,
+		Persistent: true,
+	}
 }
 
 func (n NonRetryableError) Error() string {
 	return n.Err.Error()
 }
 
-func (e NonRetryableError) Is(target error) bool {
+func (n NonRetryableError) Is(target error) bool {
 	if _, ok := target.(*NonRetryableError); ok {
 		return true
 	}
 	_, ok := target.(NonRetryableError)
 	return ok
+}
+
+func (n NonRetryableError) Unwrap() error {
+	return n.Err
 }

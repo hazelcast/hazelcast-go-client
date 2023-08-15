@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License")
 # you may not use this file except in compliance with the License.
@@ -170,7 +170,7 @@ help () {
 
 TIMESTAMP_FMT="+%Y-%m-%d %H:%M:%S"
 PID_FILE="test.pid"
-HZ_VERSION="${HZ_VERSION:-5.1.8-SNAPSHOT}"
+HZ_VERSION="${HZ_VERSION:-5.3.1}"
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
 HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
 HAZELCAST_RC_VERSION="0.8-SNAPSHOT"

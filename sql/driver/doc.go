@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ This driver supports Hazelcast 5.0 and up. Check out the Hazelcast SQL documenta
 
 The documentation for the database/sql package is here: https://pkg.go.dev/database/sql
 
-Enabling Hazelcast SQL
+# Enabling Hazelcast SQL
 
 The SQL support should be enabled in Hazelcast server configuration:
 
@@ -29,7 +29,7 @@ The SQL support should be enabled in Hazelcast server configuration:
 		<jet enabled="true" />
 	</hazelcast>
 
-Creating a Driver Instance Using sql.Open
+# Creating a Driver Instance Using sql.Open
 
 This driver provides two ways to create an instance.
 
@@ -43,9 +43,9 @@ Use hazelcast as the driver name.
 The DSN may be blank. In that case, the default configuration is used.
 Otherwise, the DSN must start with the scheme (hz://) and have the following optional parts:
 
-	- Username and password for the cluster, separated by a column: dave:s3cr3t
-	- Hazelcast member addresses, separated by commas: server1:port1,server2:port2
-	- Options as key=value pairs, separated by ampersand (&). Both the key and value must be URL encoded: cluster.name=dev&ssl=true
+  - Username and password for the cluster, separated by a column: dave:s3cr3t
+  - Hazelcast member addresses, separated by commas: server1:port1,server2:port2
+  - Options as key=value pairs, separated by ampersand (&). Both the key and value must be URL encoded: cluster.name=dev&ssl=true
 
 Username/password part is separated from the address by the at sign (@).
 There should be a question mark (?) between the address(es) and options.
@@ -55,24 +55,24 @@ Here is a full DSN:
 
 The following are the available options:
 
-	- unisocket: A boolean. Enables/disables the unisocket mode. Default: false. Example: unisocket=true
-	- log: One of the following: off, fatal, error, warn, info, debug, trace. Default: info. Example: log=debug
-	- cluster.name: A string. Specifies the cluster name. Default: dev. Example: cluster.name=hzc1
-	- cloud.token: A string. Sets the Hazelcast Cloud token. Example: cloud.token=1234567abcde
-	- stats.period: Duration between sending statistics, which can be parsed by time.Parse.
-	  Use one of the following suffixes: s (seconds), m (minutes), h (hours). Example: stats.period=10s
-	- ssl: A boolean. Enables/disables SSL connections. Defaults: false. Example: ssl=true
-	- ssl.ca.path: The path to the PEM file for the certificate authority. Implies ssl=true. Example: ssl.ca.path=/etc/ssl/ca.pem
-	- ssl.cert.path: The path to the TLS certificate. Implies ssl=true. Example: ssl.cert.path=/etc/ssl/cert.pem
-	- ssl.key.path: The path to the certificate key. Implies ssl=true. Example: ssl.key.path=/etc/ssl/key.pem
-	- ssl.key.password: The optional certificate password. Example: ssl.key.password=m0us3
+  - unisocket: A boolean. Enables/disables the unisocket mode. Default: false. Example: unisocket=true
+  - log: One of the following: off, fatal, error, warn, info, debug, trace. Default: info. Example: log=debug
+  - cluster.name: A string. Specifies the cluster name. Default: dev. Example: cluster.name=hzc1
+  - cloud.token: A string. Sets the Hazelcast Cloud token. Example: cloud.token=1234567abcde
+  - stats.period: Duration between sending statistics, which can be parsed by time.Parse.
+    Use one of the following suffixes: s (seconds), m (minutes), h (hours). Example: stats.period=10s
+  - ssl: A boolean. Enables/disables SSL connections. Defaults: false. Example: ssl=true
+  - ssl.ca.path: The path to the PEM file for the certificate authority. Implies ssl=true. Example: ssl.ca.path=/etc/ssl/ca.pem
+  - ssl.cert.path: The path to the TLS certificate. Implies ssl=true. Example: ssl.cert.path=/etc/ssl/cert.pem
+  - ssl.key.path: The path to the certificate key. Implies ssl=true. Example: ssl.key.path=/etc/ssl/key.pem
+  - ssl.key.password: The optional certificate password. Example: ssl.key.password=m0us3
 
 Some items in the client configuration cannot be set in the DSN, such as serialization factories and SSL configuration.
 You can use the following functions to set those configuration items globally:
 
-	- SetSerializationConfig(...)
-	- SetLoggerConfig(...)
-	- SetSSLConfig(...)
+  - SetSerializationConfig(...)
+  - SetLoggerConfig(...)
+  - SetSSLConfig(...)
 
 Note that, these functions affect only the subsequent sql.Open calls, not the previous ones.
 
@@ -90,7 +90,7 @@ Here's an example:
 	err = driver.SetSerializationConfig(sc2)
 	db4, err := sql.Open("hazelcast", "")
 
-Creating a Driver Instance Using driver.Open
+# Creating a Driver Instance Using driver.Open
 
 It is possible to create a driver instance using an existing Hazelcast client configuration using the driver.Open function.
 All client configuration items, except listeners are supported.
@@ -100,7 +100,7 @@ All client configuration items, except listeners are supported.
 	cfg.Serialization.SetPortableFactories(&MyPortableFactory{})
 	db := driver.Open(cfg)
 
-Executing Queries
+# Executing Queries
 
 database/sql package supports two kinds of queries: The ones returning rows (select statements and a few others) and the rest (insert, update, etc.).
 The former kinds of queries are executed with QueryXXX methods and the latter ones are executed with ExecXXX methods of the sql.DB instance returned from sql.Open or driver.Open.
@@ -136,12 +136,12 @@ Context variants of Query and Exec, such as QueryContext and ExecContext are ful
 They can be used to pass Hazelcast specific parameters, such as the cursor buffer size.
 See the Passing Hazelcast Specific Parameters section below.
 
-Passing Hazelcast-Specific Parameters
+# Passing Hazelcast-Specific Parameters
 
 This driver supports the following extra query parameters that Hazelcast supports:
 
-	- Cursor buffer size: Size of the server-side buffer for rows.
-	- Timeout: Maximum time a query is allowed to execute.
+  - Cursor buffer size: Size of the server-side buffer for rows.
+  - Timeout: Maximum time a query is allowed to execute.
 
 Checkout the documentation below for details.
 
@@ -154,33 +154,33 @@ The extra query parameters are passed in a context augmented using WithCursorBuf
 	// use the parameters above with any methods that uses that context
 	rows, err := db.QueryContext(ctx, "select * from people")
 
-Creating a Mapping
+# Creating a Mapping
 
 To connect to a data source and query it as if it is a table, a mapping should be created.
 Currently, mappings for Map, Kafka and file data sources are supported.
 
 You can read the details about mappings here: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview#mappings
 
-Supported Data Types
+# Supported Data Types
 
 The following data types are supported when inserting/updating.
 The names in parentheses correspond to SQL types:
 
-	- string (varchar)
-	- int8 (tinyint)
-	- int16 (smallint)
-	- int32 (integer)
-	- int64 (bigint)
-	- bool (boolean)
-	- float32 (real)
-	- float64 (double)
-	- types.Decimal (decimal)
-	- time.Time not supported, use one of types.LocalDate, types.LocalTime, types.LocalDateTime or types.OffsetDateTime
-	- types.LocalDate (date)
-	- types.LocalTime (time)
-	- types.LocalDateTime (timestamp)
-	- types.OffsetDateTime (timestamp with time zone)
-	- serialization.JSON (json)
+  - string (varchar)
+  - int8 (tinyint)
+  - int16 (smallint)
+  - int32 (integer)
+  - int64 (bigint)
+  - bool (boolean)
+  - float32 (real)
+  - float64 (double)
+  - types.Decimal (decimal)
+  - time.Time not supported, use one of types.LocalDate, types.LocalTime, types.LocalDateTime or types.OffsetDateTime
+  - types.LocalDate (date)
+  - types.LocalTime (time)
+  - types.LocalDateTime (timestamp)
+  - types.OffsetDateTime (timestamp with time zone)
+  - serialization.JSON (json)
 
 Using Date/Time Types
 
@@ -192,7 +192,7 @@ In order to force using a specific date/time type, create a time.Time value and 
 	dateTimeValue := types.LocalDateTime(t)
 	dateTimeWithTimezoneValue := types.OffsetDateTime(t)
 
-Using Raw Values
+# Using Raw Values
 
 You can directly use one of the supported data types.
 
@@ -213,7 +213,7 @@ Querying rows:
 
 	SELECT __key, this from person
 
-Using JSON
+# Using JSON
 
 Two different JSON types are supported, namely "json-flat" and "json"
 
@@ -272,6 +272,7 @@ Inserting rows:
 
 Querying rows:
 Error handling is omitted to keep the example short.
+
 	// Use serialization.JSON type to scan JSON string.
 	q := fmt.Sprintf(`SELECT this FROM "%s" WHERE CAST(JSON_VALUE(this, '$.age') AS DOUBLE) > ?`, mapName)
 	rows, err := db.Query(q, minAge)
@@ -283,16 +284,16 @@ Error handling is omitted to keep the example short.
 
 Supported JSON related operations:
 
-1. JSON_QUERY returns a json-object/array by the given JSON path.
+ 1. JSON_QUERY returns a json-object/array by the given JSON path.
     JSON_QUERY(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... <extended syntax>)
 
-2. JSON_VALUE returns a primitive value as varchar by the given JSON path.
-	JSON_VALUE(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... )
+ 2. JSON_VALUE returns a primitive value as varchar by the given JSON path.
+    JSON_VALUE(jsonArg VARCHAR|JSON, jsonPath VARCHAR ... )
 
-3. CAST can cast VARCHAR, columns/literals and dynamic params to JSON.
-	CAST(x AS JSON)
+ 3. CAST can cast VARCHAR, columns/literals and dynamic params to JSON.
+    CAST(x AS JSON)
 
-Using Portable
+# Using Portable
 
 Portable example:
 
@@ -339,6 +340,5 @@ Creating a mapping:
 Querying rows:
 
 	SELECT __key, name FROM person WHERE age > 30
-
 */
 package driver

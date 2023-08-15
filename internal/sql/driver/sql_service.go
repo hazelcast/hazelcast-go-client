@@ -91,17 +91,20 @@ func (s *SQLService) QuerySQL(ctx context.Context, query string, params []driver
 	return resp.(*QueryResult), nil
 }
 
-func (s *SQLService) fetch(ctx context.Context, qid itypes.QueryID, conn *cluster.Connection, cbs int32) (*itypes.Page, error) {
+func (s *SQLService) fetch(ctx context.Context, qid itypes.QueryID, conn *cluster.Connection, cbs int32) (itypes.Page, error) {
 	req := codec.EncodeSqlFetchRequest(qid, cbs)
 	resp, err := s.invokeOnConnection(ctx, req, conn)
 	if err != nil {
-		return nil, err
+		return itypes.Page{}, err
 	}
 	page, err := codec.DecodeSqlFetchResponse(resp, s.serializationService)
 	if err != (*sql.Error)(nil) {
-		return nil, ihzerrors.NewSQLError("decoding SQL fetch response", err)
+		return itypes.Page{}, ihzerrors.NewSQLError("decoding SQL fetch response", err)
 	}
-	return page, nil
+	if page == nil {
+		return itypes.Page{}, nil
+	}
+	return *page, nil
 }
 
 func (s *SQLService) closeQuery(ctx context.Context, qid itypes.QueryID, conn *cluster.Connection) error {
@@ -138,7 +141,11 @@ func (s *SQLService) executeSQL(ctx context.Context, query string, resultType by
 		return &ExecResult{UpdateCount: updateCount}, nil
 	}
 	md := itypes.NewRowMetadata(metadata)
-	return NewQueryResult(ctx, qid, md, page, s, conn, cursorBufferSize, infiniteRows)
+	var p itypes.Page
+	if page != nil {
+		p = *page
+	}
+	return NewQueryResult(ctx, qid, md, p, s, conn, cursorBufferSize, infiniteRows)
 }
 
 func (s *SQLService) serializeParams(params []driver.Value) ([]iserialization.Data, error) {

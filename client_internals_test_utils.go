@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,10 @@ func (ci *ClientInternal) SerializationService() *serialization.Service {
 
 func (ci *ClientInternal) Proxies() map[string]interface{} {
 	return ci.client.proxyManager.Proxies()
+}
+
+func (ci *ClientInternal) ListenerBinder() *cluster.ConnectionListenerBinder {
+	return ci.client.proxyManager.serviceBundle.ListenerBinder
 }
 
 func (ci *ClientInternal) NewNearCacheManager(reconInterval, maxMiss int) *inearcache.Manager {

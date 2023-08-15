@@ -398,12 +398,12 @@ func (JavaDateSerializer) ID() int32 {
 }
 
 func (JavaDateSerializer) Read(input serialization.DataInput) interface{} {
-	return time.Unix(0, input.ReadInt64()*1_000)
+	return time.Unix(0, input.ReadInt64()*1_000_000)
 }
 
 func (JavaDateSerializer) Write(output serialization.DataOutput, i interface{}) {
 	t := i.(time.Time)
-	output.WriteInt64(t.UnixNano() / 1000)
+	output.WriteInt64(t.UnixNano() / 1_000_000)
 }
 
 type JavaBigIntegerSerializer struct{}
