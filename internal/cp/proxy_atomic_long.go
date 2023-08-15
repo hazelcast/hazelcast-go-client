@@ -37,7 +37,7 @@ If a network partition occurs, it remains available on at most one side of the p
 AtomicLong implementation does not offer exactly-once / effectively-once execution semantics.
 It goes with at-least-once execution semantics by default and can cause an API call to be committed multiple times in case of CP member failures.
 It can be tuned to offer at-most-once execution semantics.
-See fail-on-indeterminate-operation-state server-side setting: https://docs.hazelcast.com/hazelcast/5.2/cp-subsystem/configuration#global-configuration-options
+See fail-on-indeterminate-operation-state server-side setting: https://docs.hazelcast.com/hazelcast/latest/cp-subsystem/configuration#global-configuration-options
 */
 type AtomicLong struct {
 	*proxy

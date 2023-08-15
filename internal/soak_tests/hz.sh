@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+# Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License")
 # you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ download () {
       log_info "$jar_path already exists, skipping download."
   else
       log_info "Downloading: $jar_path ($artifact)"
-      mvn -q dependency:get -DrepoUrl=$repo -Dartifact=$artifact -Ddest="$jar_path"
+      mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.10:get -DremoteRepositories=$repo -Dartifact=$artifact -Ddest="$jar_path"
       if [ $? -ne 0 ]; then
           log_fatal "Failed downloading $jar_path ($artifact) from $repo"
       fi
