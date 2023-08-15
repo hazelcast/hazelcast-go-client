@@ -91,7 +91,7 @@ func (c *HTTPClient) Get(ctx context.Context, uri string, headers ...HTTPHeader)
 	}
 	// error is unhandled
 	resp.Body.Close()
-	return b, err
+	return b, nil
 }
 
 func (c *HTTPClient) GetJSONObject(ctx context.Context, url string, headers ...HTTPHeader) (map[string]interface{}, error) {
