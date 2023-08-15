@@ -40,7 +40,7 @@ type DiscoveryClient struct {
 func NewDiscoveryClient(config *cluster.CloudConfig, logger logger.LogAdaptor) *DiscoveryClient {
 	url := config.ExperimentalAPIBaseURL
 	if url == "" {
-		url = baseAPIURL()
+		url = defaultBaseAPIURL()
 	}
 	url = strings.TrimRight(url, "/")
 	return &DiscoveryClient{
@@ -80,7 +80,7 @@ func makeCoordinatorURL(baseURL, token string) string {
 	return fmt.Sprintf("%s/cluster/discovery?token=%s", baseURL, token)
 }
 
-func baseAPIURL() string {
+func defaultBaseAPIURL() string {
 	url := os.Getenv(envCoordinatorBaseURL)
 	if url == "" {
 		return "https://api.viridian.hazelcast.com"

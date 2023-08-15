@@ -44,7 +44,7 @@ func (n NonRetryableError) Error() string {
 	return n.Err.Error()
 }
 
-func (e NonRetryableError) Is(target error) bool {
+func (n NonRetryableError) Is(target error) bool {
 	if _, ok := target.(*NonRetryableError); ok {
 		return true
 	}
@@ -52,6 +52,6 @@ func (e NonRetryableError) Is(target error) bool {
 	return ok
 }
 
-func (e NonRetryableError) Unwrap() error {
-	return e.Err
+func (n NonRetryableError) Unwrap() error {
+	return n.Err
 }
