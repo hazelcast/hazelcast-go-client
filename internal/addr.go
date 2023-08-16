@@ -30,8 +30,12 @@ func ParseAddr(addr string) (string, int, error) {
 		return defaultHost, 0, nil
 	}
 	host, port, err := net.SplitHostPort(addr)
-	if err != nil { // return the address itself if port is missing in the address
-		return addr, 0, nil
+	if err != nil {
+		// returns the address itself if port is missing in the address
+		if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
+			return addr, 0, nil
+		}
+		return host, 0, err
 	}
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
@@ -40,7 +44,8 @@ func ParseAddr(addr string) (string, int, error) {
 	if host == "" || strings.TrimSpace(host) == "" {
 		host = defaultHost
 	}
-	if portInt < 0 { // port number must be positive value
+	if portInt < 0 {
+		// the port number must be positive value
 		return "", 0, fmt.Errorf("invalid port number: '%d'", portInt)
 	}
 	return host, portInt, nil

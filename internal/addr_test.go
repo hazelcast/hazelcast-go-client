@@ -18,6 +18,7 @@ package internal_test
 
 import (
 	"fmt"
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,8 +43,10 @@ func TestParseAddr(t *testing.T) {
 		{Addr: "", Target: parseAddrTarget{Host: "127.0.0.1", Port: 0, Err: nil}},
 		{Addr: "169.254.172.39", Target: parseAddrTarget{Host: "169.254.172.39", Port: 0, Err: nil}},
 		{Addr: "169.254.172.39:5703", Target: parseAddrTarget{Host: "169.254.172.39", Port: 5703, Err: nil}},
-		{Addr: "fe80::43:ecff:fec9:1683", Target: parseAddrTarget{Host: "fe80::43:ecff:fec9:1683", Port: 0, Err: nil}},
 		{Addr: "[fe80::43:ecff:fec9:1683]:5705", Target: parseAddrTarget{Host: "fe80::43:ecff:fec9:1683", Port: 5705, Err: nil}},
+		{Addr: "fe80::43:ecff:fec9:1683", Target: parseAddrTarget{Host: "", Port: 0, Err: &net.AddrError{Err: "too many colons in address", Addr: "fe80::43:ecff:fec9:1683"}}},
+		{Addr: "[fe80::43:ecff:fec9:1683", Target: parseAddrTarget{Host: "", Port: 0, Err: &net.AddrError{Err: "missing ']' in address", Addr: "[fe80::43:ecff:fec9:1683"}}},
+		{Addr: "fe80::43:ecff:fec9:1683]:5678", Target: parseAddrTarget{Host: "", Port: 0, Err: &net.AddrError{Err: "too many colons in address", Addr: "fe80::43:ecff:fec9:1683]:5678"}}},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("addr: %s", tc.Addr), func(t *testing.T) {
