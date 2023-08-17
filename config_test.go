@@ -47,7 +47,7 @@ func TestNewConfig_SetAddress(t *testing.T) {
 	assert.Equal(t, []string{"192.168.1.2"}, config.Cluster.Network.Addresses)
 }
 
-//newConfigValidateScenario to validate NewConfig scenarios
+// newConfigValidateScenario to validate NewConfig scenarios
 type newConfigValidateScenario struct {
 	inputAddr         string
 	inputPortRange    *cluster.PortRange

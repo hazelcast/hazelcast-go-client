@@ -36,9 +36,6 @@ func ParseAddr(addr string) (string, int, error) {
 	if err != nil {
 		return host, 0, err
 	}
-	if len(port) == 0 {
-		return host, 0, nil
-	}
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
 		return "", 0, err
