@@ -21,6 +21,9 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 const defaultHost = "127.0.0.1"
@@ -34,11 +37,11 @@ func ParseAddr(addr string) (string, int, error) {
 	}
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
-		return host, 0, err
+		return "", 0, ihzerrors.NewClientError("invalid address", err, hzerrors.ErrInvalidAddress)
 	}
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
-		return "", 0, err
+		return "", 0, hzerrors.ErrInvalidAddress
 	}
 	if host == "" || strings.TrimSpace(host) == "" {
 		host = defaultHost
