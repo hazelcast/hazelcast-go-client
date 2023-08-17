@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -29,26 +29,49 @@ import (
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
+// DefaultCompactDeserializer must be set before the client is created and should not be changed afterwards.
+// DefaultCompactDeserializer is used if a compact deserializer for a type is not found.
+var DefaultCompactDeserializer GenericCompactDeserializer
+
+// DefaultPortableDeserializer must be set before the client is created and should not be changed afterwards.
+// DefaultPortableDeserializer is used if the portable factory of a value is not found.
+var DefaultPortableDeserializer GenericPortableDeserializer
+
+// BuiltinDeserializers must be set before the client is created and should not be changed afterwards.
+var BuiltinDeserializers map[int32]pubserialization.Serializer
+
 // Service serializes user objects to Data and back to Object.
 // Data is the internal representation of binary Data in Hazelcast.
 type Service struct {
 	SerializationConfig  *pubserialization.Config
+	builtinSerializers   map[int32]pubserialization.Serializer
 	registry             map[int32]pubserialization.Serializer
 	portableSerializer   *PortableSerializer
 	identifiedSerializer *IdentifiedDataSerializableSerializer
 	customSerializers    map[reflect.Type]pubserialization.Serializer
+	compactSerializer    *CompactStreamSerializer
 }
 
-func NewService(config *pubserialization.Config) (*Service, error) {
+func NewService(config *pubserialization.Config, schemaCh chan SchemaMsg) (*Service, error) {
 	var err error
-	s := &Service{
-		SerializationConfig: config,
-		registry:            make(map[int32]pubserialization.Serializer),
-		customSerializers:   config.CustomSerializers(),
-	}
-	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion)
+	cs, err := NewCompactStreamSerializer(config.Compact, schemaCh, DefaultCompactDeserializer)
 	if err != nil {
 		return nil, err
+	}
+	s := &Service{
+		SerializationConfig: config,
+		registry:            map[int32]pubserialization.Serializer{},
+		builtinSerializers:  map[int32]pubserialization.Serializer{},
+		customSerializers:   config.CustomSerializers(),
+		compactSerializer:   cs,
+	}
+	s.portableSerializer, err = NewPortableSerializer(s, s.SerializationConfig.PortableFactories(), s.SerializationConfig.PortableVersion, DefaultPortableDeserializer)
+	if err != nil {
+		return nil, err
+	}
+	// copy the builtin deserializers, so other client instances can have different deserializers
+	for k, v := range BuiltinDeserializers {
+		s.builtinSerializers[k] = v
 	}
 	s.registerClassDefinitions(s.portableSerializer, s.SerializationConfig.ClassDefinitions())
 	s.registerCustomSerializers(config.CustomSerializers())
@@ -56,7 +79,21 @@ func NewService(config *pubserialization.Config) (*Service, error) {
 	if err = s.registerIdentifiedFactories(); err != nil {
 		return nil, err
 	}
+	// set the compact, portable and identified deserializers.
+	// we have to set them here, since they depend on this service.
+	s.builtinSerializers[TypeCompact] = s.compactSerializer
+	s.builtinSerializers[TypePortable] = s.portableSerializer
+	s.builtinSerializers[TypeDataSerializable] = s.identifiedSerializer
 	return s, nil
+}
+
+func (s *Service) SchemaService() *SchemaService {
+	return s.compactSerializer.ss
+}
+
+// SetSchemaService is used in tests
+func (s *Service) SetSchemaService(ss *SchemaService) {
+	s.compactSerializer.ss = ss
 }
 
 // ToData serializes an object to a Data.
@@ -68,6 +105,9 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 			err = makeError(rec)
 		}
 	}()
+	if object == nil {
+		return nil, nil
+	}
 	if serData, ok := object.(Data); ok {
 		return serData, nil
 	}
@@ -77,8 +117,8 @@ func (s *Service) ToData(object interface{}) (r Data, err error) {
 	if err != nil {
 		return Data{}, err
 	}
-	dataOutput.WriteInt32(0) // partition
-	dataOutput.WriteInt32(serializer.ID())
+	dataOutput.WriteInt32BigEndian(0) // partition
+	dataOutput.WriteInt32BigEndian(serializer.ID())
 	serializer.Write(dataOutput, object)
 	return dataOutput.buffer[:dataOutput.position], err
 }
@@ -100,7 +140,7 @@ func (s *Service) ToObject(data Data) (r interface{}, err error) {
 	if serializer == nil {
 		serializer, ok = s.registry[typeID]
 		if !ok {
-			return nil, ihzerrors.NewSerializationError(fmt.Sprintf("there is no suitable de-serializer for type %d", typeID), nil)
+			return nil, ihzerrors.NewSerializationError(fmt.Sprintf("serialization.Service.ToObject: there is no suitable de-serializer for type %d", typeID), nil)
 		}
 	}
 	dataInput := NewObjectDataInput(data, DataOffset, s, !s.SerializationConfig.LittleEndian)
@@ -124,7 +164,7 @@ func (s *Service) ReadObject(input pubserialization.DataInput) interface{} {
 	if serializer := s.registry[typeID]; serializer != nil {
 		return serializer.Read(input)
 	}
-	panic(fmt.Sprintf("unknown type ID: %d", typeID))
+	panic(fmt.Sprintf("serialization.Service.ReadObject: there is no suitable de-serializer for type %d", typeID))
 }
 
 func (s *Service) FindSerializerFor(obj interface{}) (pubserialization.Serializer, error) {
@@ -146,6 +186,9 @@ func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Seri
 	if serializer != (pubserialization.Serializer)(nil) {
 		return serializer
 	}
+	if s.compactSerializer.IsRegisteredAsCompact(reflect.TypeOf(obj)) {
+		return s.compactSerializer
+	}
 	if _, ok := obj.(pubserialization.IdentifiedDataSerializable); ok {
 		return s.identifiedSerializer
 	}
@@ -156,77 +199,8 @@ func (s *Service) LookUpDefaultSerializer(obj interface{}) pubserialization.Seri
 }
 
 func (s *Service) lookupBuiltinDeserializer(typeID int32) pubserialization.Serializer {
-	switch typeID {
-	case TypeNil:
-		return nilSerializer
-	case TypePortable:
-		return s.portableSerializer
-	case TypeDataSerializable:
-		return s.identifiedSerializer
-	case TypeBool:
-		return boolSerializer
-	case TypeString:
-		return stringSerializer
-	case TypeByte:
-		return uint8Serializer
-	case TypeUInt16:
-		return uint16Serializer
-	case TypeInt16:
-		return int16Serializer
-	case TypeInt32:
-		return int32Serializer
-	case TypeInt64:
-		return int64Serializer
-	case TypeFloat32:
-		return float32Serializer
-	case TypeFloat64:
-		return float64Serializer
-	case TypeBoolArray:
-		return boolArraySerializer
-	case TypeStringArray:
-		return stringArraySerializer
-	case TypeByteArray:
-		return uint8ArraySerializer
-	case TypeUInt16Array:
-		return uint16ArraySerializer
-	case TypeInt16Array:
-		return int16ArraySerializer
-	case TypeInt32Array:
-		return int32ArraySerializer
-	case TypeInt64Array:
-		return int64ArraySerializer
-	case TypeFloat32Array:
-		return float32ArraySerializer
-	case TypeFloat64Array:
-		return float64ArraySerializer
-	case TypeUUID:
-		return uuidSerializer
-	case TypeJavaDate:
-		return javaDateSerializer
-	case TypeJavaBigInteger:
-		return javaBigIntegerSerializer
-	case TypeJavaDecimal:
-		return javaDecimalSerializer
-	case TypeJSONSerialization:
-		return jsonSerializer
-	case TypeJavaArray:
-		return javaArraySerializer
-	case TypeJavaArrayList:
-		return javaArrayListSerializer
-	case TypeJavaLinkedList:
-		return javaLinkedListSerializer
-	case TypeJavaLocalDate:
-		return javaLocalDateSerializer
-	case TypeJavaLocalTime:
-		return javaLocalTimeSerializer
-	case TypeJavaLocalDateTime:
-		return javaLocalDateTimeSerializer
-	case TypeJavaOffsetDateTime:
-		return javaOffsetDateTimeSerializer
-	case TypeJavaClass:
-		return javaClassSerializer
-	case TypeGobSerialization:
-		return gobSerializer
+	if s, ok := s.builtinSerializers[typeID]; ok {
+		return s
 	}
 	return nil
 }
@@ -289,7 +263,7 @@ func (s *Service) registerIdentifiedFactories() error {
 	for _, f := range s.SerializationConfig.IdentifiedDataSerializableFactories() {
 		fid := f.FactoryID()
 		if _, ok := fs[fid]; ok {
-			return ihzerrors.NewSerializationError("this serializer is already in the registry", nil)
+			return ihzerrors.NewSerializationError("this identified data serializer is already in the registry", nil)
 		}
 		fs[fid] = f
 	}
@@ -381,6 +355,9 @@ func makeError(rec interface{}) error {
 	}
 }
 
+// make sure to update checkNoDefaultSerializer in serialization/compact_config.go
+// if you update the list of default serializers.
+
 var nilSerializer = &NilSerializer{}
 var boolSerializer = &BoolSerializer{}
 var stringSerializer = &StringSerializer{}
@@ -416,3 +393,41 @@ var javaLocalTimeSerializer = &JavaLocalTimeSerializer{}
 var javaLocalDateTimeSerializer = &JavaLocalDateTimeSerializer{}
 var javaOffsetDateTimeSerializer = &JavaOffsetDateTimeSerializer{}
 var gobSerializer = &GobSerializer{}
+
+func init() {
+	BuiltinDeserializers = map[int32]pubserialization.Serializer{
+		TypeNil:                nilSerializer,
+		TypeBool:               boolSerializer,
+		TypeString:             stringSerializer,
+		TypeByte:               uint8Serializer,
+		TypeUInt16:             uint16Serializer,
+		TypeInt16:              int16Serializer,
+		TypeInt32:              int32Serializer,
+		TypeInt64:              int64Serializer,
+		TypeFloat32:            float32Serializer,
+		TypeFloat64:            float64Serializer,
+		TypeBoolArray:          boolArraySerializer,
+		TypeStringArray:        stringArraySerializer,
+		TypeByteArray:          uint8ArraySerializer,
+		TypeUInt16Array:        uint16ArraySerializer,
+		TypeInt16Array:         int16ArraySerializer,
+		TypeInt32Array:         int32ArraySerializer,
+		TypeInt64Array:         int64ArraySerializer,
+		TypeFloat32Array:       float32ArraySerializer,
+		TypeFloat64Array:       float64ArraySerializer,
+		TypeUUID:               uuidSerializer,
+		TypeJavaDate:           javaDateSerializer,
+		TypeJavaBigInteger:     javaBigIntegerSerializer,
+		TypeJavaDecimal:        javaDecimalSerializer,
+		TypeJSONSerialization:  jsonSerializer,
+		TypeJavaArray:          javaArraySerializer,
+		TypeJavaArrayList:      javaArrayListSerializer,
+		TypeJavaLinkedList:     javaLinkedListSerializer,
+		TypeJavaLocalDate:      javaLocalDateSerializer,
+		TypeJavaLocalTime:      javaLocalTimeSerializer,
+		TypeJavaLocalDateTime:  javaLocalDateTimeSerializer,
+		TypeJavaOffsetDateTime: javaOffsetDateTimeSerializer,
+		TypeJavaClass:          javaClassSerializer,
+		TypeGobSerialization:   gobSerializer,
+	}
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -145,6 +145,8 @@ func sanitizedConfig(c Config) Config {
 	c.Network.Addresses = nil
 	c.Cloud = CloudConfig{}
 	c.ConnectionStrategy = ConnectionStrategyConfig{}
+	c.Discovery.Strategy = nil
+	c.Discovery.UsePublicIP = false
 	return c
 }
 

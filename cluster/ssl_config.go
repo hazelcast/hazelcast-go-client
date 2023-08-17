@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
@@ -31,14 +31,17 @@ import (
 // SSLConfig has tls.Config embedded in it so that users can set any field of tls config as they wish.
 type SSLConfig struct {
 	tlsConfig *tls.Config
-	Enabled   bool `json:",omitempty"`
+	// ServerName sets the host name of the server.
+	ServerName string `json:",omitempty"`
+	Enabled    bool   `json:",omitempty"`
 }
 
 func (c *SSLConfig) Clone() SSLConfig {
 	c.ensureTLSConfig()
 	return SSLConfig{
-		Enabled:   c.Enabled,
-		tlsConfig: c.tlsConfig.Clone(),
+		ServerName: c.ServerName,
+		Enabled:    c.Enabled,
+		tlsConfig:  c.tlsConfig.Clone(),
 	}
 }
 
@@ -47,7 +50,9 @@ func (c *SSLConfig) Validate() error {
 	return nil
 }
 
-// SetTLSConfig resets the internal TLS configuration.
+// SetTLSConfig overrides the internal TLS configuration.
+// Use this method only when you want to replace the internal TLS configuration.
+// It should be called before calling any other methods or setting any fields.
 func (c *SSLConfig) SetTLSConfig(tlsConfig *tls.Config) {
 	c.tlsConfig = tlsConfig.Clone()
 }
@@ -63,8 +68,8 @@ func (c *SSLConfig) SetCAPath(path string) error {
 	c.ensureTLSConfig()
 	// XXX: what happens if the path is loaded multiple times?
 	// load CA cert
-	if caCert, err := ioutil.ReadFile(path); err != nil {
-		return ihzerrors.NewIOError("reading CA certificate: %w", err)
+	if caCert, err := os.ReadFile(path); err != nil {
+		return ihzerrors.NewIOError("reading CA certificate", err)
 	} else {
 		caCertPool := x509.NewCertPool()
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
@@ -108,10 +113,10 @@ func (c *SSLConfig) AddClientCertAndEncryptedKeyPath(certPath string, privateKey
 	var privKey *rsa.PrivateKey
 	var cert tls.Certificate
 	var err error
-	if certPEMBlock, err = ioutil.ReadFile(certPath); err != nil {
+	if certPEMBlock, err = os.ReadFile(certPath); err != nil {
 		return fmt.Errorf("reading cert: %w", err)
 	}
-	if privatePEM, err = ioutil.ReadFile(privateKeyPath); err != nil {
+	if privatePEM, err = os.ReadFile(privateKeyPath); err != nil {
 		return fmt.Errorf("reading private key: %w", err)
 	}
 	privatePEMBlock, _ := pem.Decode(privatePEM)
@@ -131,6 +136,8 @@ func (c *SSLConfig) AddClientCertAndEncryptedKeyPath(certPath string, privateKey
 
 func (c *SSLConfig) ensureTLSConfig() {
 	if c.tlsConfig == nil {
-		c.tlsConfig = &tls.Config{}
+		c.tlsConfig = &tls.Config{
+			ServerName: c.ServerName,
+		}
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -215,26 +215,26 @@ func (pw *DefaultPortableWriter) WriteTimestampWithTimezone(fieldName string, t 
 
 func (pw *DefaultPortableWriter) WriteDateArray(fieldName string, a []types.LocalDate) {
 	pw.setPosition(fieldName, int32(serialization.TypeDateArray))
-	ts := (*([]time.Time))(unsafe.Pointer(&a))
-	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableDate)
+	ts := (*[]time.Time)(unsafe.Pointer(&a))
+	pw.writeArrayOfTime(*ts, WritePortableDate)
 }
 
 func (pw *DefaultPortableWriter) WriteTimeArray(fieldName string, a []types.LocalTime) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimeArray))
-	ts := (*([]time.Time))(unsafe.Pointer(&a))
-	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableTime)
+	ts := (*[]time.Time)(unsafe.Pointer(&a))
+	pw.writeArrayOfTime(*ts, WritePortableTime)
 }
 
 func (pw *DefaultPortableWriter) WriteTimestampArray(fieldName string, a []types.LocalDateTime) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimestampArray))
-	ts := (*([]time.Time))(unsafe.Pointer(&a))
-	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableTimestamp)
+	ts := (*[]time.Time)(unsafe.Pointer(&a))
+	pw.writeArrayOfTime(*ts, WritePortableTimestamp)
 }
 
 func (pw *DefaultPortableWriter) WriteTimestampWithTimezoneArray(fieldName string, a []types.OffsetDateTime) {
 	pw.setPosition(fieldName, int32(serialization.TypeTimestampWithTimezoneArray))
-	ts := (*([]time.Time))(unsafe.Pointer(&a))
-	writeArrayOfTime(pw.output.ObjectDataOutput, *ts, WritePortableTimestampWithTimezone)
+	ts := (*[]time.Time)(unsafe.Pointer(&a))
+	pw.writeArrayOfTime(*ts, WritePortableTimestampWithTimezone)
 }
 
 func (pw *DefaultPortableWriter) WriteDecimal(fieldName string, d *types.Decimal) {
@@ -245,7 +245,21 @@ func (pw *DefaultPortableWriter) WriteDecimal(fieldName string, d *types.Decimal
 
 func (pw *DefaultPortableWriter) WriteDecimalArray(fieldName string, ds []types.Decimal) {
 	pw.setPosition(fieldName, int32(serialization.TypeDecimalArray))
-	WriteDecimalArray(pw.output.ObjectDataOutput, ds)
+	arrLen := len(ds)
+	if ds == nil {
+		arrLen = nilArrayLength
+	}
+	pw.output.WriteInt32(int32(arrLen))
+	if arrLen < 1 {
+		return
+	}
+	offset := pw.output.Position()
+	pw.output.WriteZeroBytes(arrLen * Int32SizeInBytes)
+	for i, v := range ds {
+		pos := pw.output.Position()
+		pw.output.PWriteInt32(offset+int32(Int32SizeInBytes*i), pos)
+		WriteDecimal(pw.output.ObjectDataOutput, v)
+	}
 }
 
 func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
@@ -255,7 +269,7 @@ func (pw *DefaultPortableWriter) GetRawDataOutput() serialization.DataOutput {
 		pw.output.PWriteInt32(pw.offset+index*Int32SizeInBytes, pos)
 		pw.raw = true
 	}
-	return pw.output.ObjectDataOutput
+	return pw.output
 }
 
 func (pw *DefaultPortableWriter) End() {
@@ -284,6 +298,24 @@ func (pw *DefaultPortableWriter) writeNullableField(fieldName string, fieldType 
 	pw.output.WriteBool(isNil)
 	if !isNil {
 		f()
+	}
+}
+
+func (pw *DefaultPortableWriter) writeArrayOfTime(ts []time.Time, f func(o serialization.DataOutput, t time.Time)) {
+	arrLen := len(ts)
+	if ts == nil {
+		arrLen = nilArrayLength
+	}
+	pw.output.WriteInt32(int32(arrLen))
+	if arrLen < 1 {
+		return
+	}
+	offset := pw.output.Position()
+	pw.output.WriteZeroBytes(arrLen * Int32SizeInBytes)
+	for i, t := range ts {
+		pos := pw.output.Position()
+		pw.output.PWriteInt32(offset+int32(Int32SizeInBytes*i), pos)
+		f(pw.output.ObjectDataOutput, t)
 	}
 }
 

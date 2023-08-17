@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -805,7 +805,7 @@ func TestMorphingPortableReader_ReadPortable(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID, classDef.ClassID, classDef.Version))
 
@@ -829,7 +829,7 @@ func TestMorphingPortableReader_ReadPortableWithEmptyFieldName(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineer", serialization.TypePortable,
 		classDef.FactoryID, classDef.ClassID, classDef.Version))
 
@@ -1366,11 +1366,11 @@ func TestMorphingPortableReader_ReadPortableArray(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID, classDef.ClassID, classDef.Version))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0)
+	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1395,11 +1395,11 @@ func TestMorphingPortableReader_ReadPortableArrayWithEmptyFieldName(t *testing.T
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	classDef := serialization.NewClassDefinition(2, 1, 3)
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	classDef.AddField(NewFieldDefinition(0, "engineers", serialization.TypePortableArray,
 		classDef.FactoryID, classDef.ClassID, classDef.Version))
 	o := NewPositionalObjectDataOutput(0, nil, false)
-	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0)
+	serializer, err := NewPortableSerializer(service, config.PortableFactories(), 0, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1438,7 +1438,7 @@ func TestNewMorphingPortableReader(t *testing.T) {
 	s := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory2{})
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1447,7 +1447,7 @@ func TestNewMorphingPortableReader(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.PortableVersion = 1
-	service, err = NewService(config)
+	service, err = NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

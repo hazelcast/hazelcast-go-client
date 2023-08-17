@@ -2,7 +2,7 @@
 // +build hazelcastinternal
 
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import (
 	"time"
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
+	pubserialization "github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -43,6 +45,9 @@ type ClientMessageHandler = proto.ClientMessageHandler
 type Frame = proto.Frame
 type ForwardFrameIterator = proto.ForwardFrameIterator
 type Pair = proto.Pair
+type Schema = serialization.Schema
+type GenericCompactDeserializer = serialization.GenericCompactDeserializer
+type GenericPortableDeserializer = serialization.GenericPortableDeserializer
 
 var (
 	NullFrame  = NewFrameWith([]byte{}, IsNullFlag)
@@ -66,6 +71,18 @@ func NewPair(key, value interface{}) Pair {
 	return Pair{Key: key, Value: value}
 }
 
+func SetDefaultCompactDeserializer(ds GenericCompactDeserializer) {
+	serialization.DefaultCompactDeserializer = ds
+}
+
+func SetDefaultPortableDeserializer(ds GenericPortableDeserializer) {
+	serialization.DefaultPortableDeserializer = ds
+}
+
+func SetBuiltinDeserializer(serializer pubserialization.Serializer) {
+	serialization.BuiltinDeserializers[serializer.ID()] = serializer
+}
+
 type InvokeOptions struct {
 	// Handler is the event handler for an invocation.
 	Handler ClientMessageHandler
@@ -73,15 +90,15 @@ type InvokeOptions struct {
 
 // ClientInternal is an accessor for a Client.
 type ClientInternal struct {
-	client *Client
-	proxy  *proxy
+	client  *Client
+	invoker *client.Invoker
 }
 
 // NewClientInternal creates the client internal accessor with the given client.
 func NewClientInternal(c *Client) *ClientInternal {
 	return &ClientInternal{
-		client: c,
-		proxy:  c.proxyManager.invocationProxy,
+		client:  c,
+		invoker: c.proxyManager.invoker,
 	}
 }
 
@@ -108,12 +125,12 @@ func (ci *ClientInternal) ConnectedToMember(uuid types.UUID) bool {
 
 // EncodeData serializes the given value and returns a Data value.
 func (ci *ClientInternal) EncodeData(obj interface{}) (Data, error) {
-	return ci.proxy.convertToData(obj)
+	return ci.client.ic.SerializationService.ToData(obj)
 }
 
 // DecodeData deserializes the given Data and returns a value.
 func (ci *ClientInternal) DecodeData(data Data) (interface{}, error) {
-	return ci.proxy.convertToObject(data)
+	return ci.client.ic.SerializationService.ToObject(data)
 }
 
 // InvokeOnRandomTarget sends the given request to one of the members.
@@ -123,17 +140,21 @@ func (ci *ClientInternal) InvokeOnRandomTarget(ctx context.Context, request *Cli
 	if opts != nil {
 		handler = opts.Handler
 	}
-	return ci.proxy.invokeOnRandomTarget(ctx, request, handler)
+	return ci.invoker.InvokeOnRandomTarget(ctx, request, handler)
 }
 
 // InvokeOnPartition sends the given request to the member which has the given partition ID.
 func (ci *ClientInternal) InvokeOnPartition(ctx context.Context, request *ClientMessage, partitionID int32, opts *InvokeOptions) (*ClientMessage, error) {
-	return ci.proxy.invokeOnPartition(ctx, request, partitionID)
+	return ci.invoker.InvokeOnPartition(ctx, request, partitionID)
 }
 
 // InvokeOnKey sends the given request to the member which corresponds to the given key.
-func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *ClientMessage, keyData Data, opts *InvokeOptions) (*ClientMessage, error) {
-	return ci.proxy.invokeOnKey(ctx, request, keyData)
+func (ci *ClientInternal) InvokeOnKey(ctx context.Context, request *proto.ClientMessage, keyData Data, opts *InvokeOptions) (*proto.ClientMessage, error) {
+	partitionID, err := ci.GetPartitionID(keyData)
+	if err != nil {
+		return nil, err
+	}
+	return ci.invoker.InvokeOnPartition(ctx, request, partitionID)
 }
 
 // InvokeOnMember sends the request to the given member.
@@ -148,57 +169,70 @@ func (ci *ClientInternal) InvokeOnMember(ctx context.Context, request *ClientMes
 		return nil, hzerrors.NewIllegalArgumentError(fmt.Sprintf("member not found: %s", uuid.String()), nil)
 	}
 	now := time.Now()
-	return ci.proxy.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+	return ci.invoker.TryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt > 0 {
 			request = request.Copy()
 		}
-		inv := ci.proxy.invocationFactory.NewMemberBoundInvocation(request, mem, now)
+		inv := ci.invoker.Factory().NewMemberBoundInvocation(request, mem, now)
 		inv.SetEventHandler(handler)
-		if err := ci.proxy.sendInvocation(ctx, inv); err != nil {
+		if err := ci.invoker.SendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}
 		return inv.GetWithContext(ctx)
 	})
 }
 
+// GetPartitionID returns the partition ID for the given Data value.
+// The returned error may be ignored.
+func (ci *ClientInternal) GetPartitionID(data Data) (int32, error) {
+	return ci.client.ic.PartitionService.GetPartitionID(data)
+}
+
+// PartitionCount returns the partition count.
+func (ci *ClientInternal) PartitionCount() int32 {
+	return ci.client.ic.PartitionService.PartitionCount()
+}
+
 const (
-	TypeFieldOffset                   = proto.TypeFieldOffset
-	MessageTypeOffset                 = proto.MessageTypeOffset
-	ByteSizeInBytes                   = proto.ByteSizeInBytes
-	BooleanSizeInBytes                = proto.BooleanSizeInBytes
-	ShortSizeInBytes                  = proto.ShortSizeInBytes
-	CharSizeInBytes                   = proto.CharSizeInBytes
-	IntSizeInBytes                    = proto.IntSizeInBytes
-	FloatSizeInBytes                  = proto.FloatSizeInBytes
-	LongSizeInBytes                   = proto.LongSizeInBytes
-	DoubleSizeInBytes                 = proto.DoubleSizeInBytes
-	UUIDSizeInBytes                   = proto.UUIDSizeInBytes
-	UuidSizeInBytes                   = proto.UuidSizeInBytes // Deprecated
-	EntryListUUIDLongEntrySizeInBytes = proto.EntryListUUIDLongEntrySizeInBytes
-	LocalDateSizeInBytes              = proto.LocalDateSizeInBytes
-	LocalTimeSizeInBytes              = proto.LocalTimeSizeInBytes
-	LocalDateTimeSizeInBytes          = proto.LocalDateTimeSizeInBytes
-	OffsetDateTimeSizeInBytes         = proto.OffsetDateTimeSizeInBytes
-	CorrelationIDFieldOffset          = proto.CorrelationIDFieldOffset
-	CorrelationIDOffset               = proto.CorrelationIDOffset
-	FragmentationIDOffset             = proto.FragmentationIDOffset
-	PartitionIDOffset                 = proto.PartitionIDOffset
-	RequestThreadIdOffset             = proto.RequestThreadIDOffset
-	RequestTtlOffset                  = proto.RequestTTLOffset
-	RequestIncludeValueOffset         = proto.RequestIncludeValueOffset
-	RequestListenerFlagsOffset        = proto.RequestListenerFlagsOffset
-	RequestLocalOnlyOffset            = proto.RequestLocalOnlyOffset
-	RequestReferenceIdOffset          = proto.RequestReferenceIdOffset
-	ResponseBackupAcksOffset          = proto.ResponseBackupAcksOffset
-	UnfragmentedMessage               = proto.UnfragmentedMessage
-	DefaultFlags                      = proto.DefaultFlags
-	BeginFragmentFlag                 = proto.BeginFragmentFlag
-	EndFragmentFlag                   = proto.EndFragmentFlag
-	IsFinalFlag                       = proto.IsFinalFlag
-	BeginDataStructureFlag            = proto.BeginDataStructureFlag
-	EndDataStructureFlag              = proto.EndDataStructureFlag
-	IsNullFlag                        = proto.IsNullFlag
-	IsEventFlag                       = proto.IsEventFlag
-	BackupEventFlag                   = proto.BackupEventFlag
-	SizeOfFrameLengthAndFlags         = proto.SizeOfFrameLengthAndFlags
+	TypeFieldOffset                      = proto.TypeFieldOffset
+	MessageTypeOffset                    = proto.MessageTypeOffset
+	ByteSizeInBytes                      = proto.ByteSizeInBytes
+	BooleanSizeInBytes                   = proto.BooleanSizeInBytes
+	ShortSizeInBytes                     = proto.ShortSizeInBytes
+	CharSizeInBytes                      = proto.CharSizeInBytes
+	IntSizeInBytes                       = proto.IntSizeInBytes
+	FloatSizeInBytes                     = proto.FloatSizeInBytes
+	LongSizeInBytes                      = proto.LongSizeInBytes
+	DoubleSizeInBytes                    = proto.DoubleSizeInBytes
+	UUIDSizeInBytes                      = proto.UUIDSizeInBytes
+	UuidSizeInBytes                      = proto.UuidSizeInBytes // Deprecated
+	EntryListUUIDLongEntrySizeInBytes    = proto.EntryListUUIDLongEntrySizeInBytes
+	EntryListIntegerLongSizeInBytes      = proto.EntryListIntegerLongSizeInBytes
+	EntryListIntegerUUIDEntrySizeInBytes = proto.EntryListIntegerUUIDEntrySizeInBytes
+	LocalDateSizeInBytes                 = proto.LocalDateSizeInBytes
+	LocalTimeSizeInBytes                 = proto.LocalTimeSizeInBytes
+	LocalDateTimeSizeInBytes             = proto.LocalDateTimeSizeInBytes
+	OffsetDateTimeSizeInBytes            = proto.OffsetDateTimeSizeInBytes
+	CorrelationIDFieldOffset             = proto.CorrelationIDFieldOffset
+	CorrelationIDOffset                  = proto.CorrelationIDOffset
+	FragmentationIDOffset                = proto.FragmentationIDOffset
+	PartitionIDOffset                    = proto.PartitionIDOffset
+	RequestThreadIdOffset                = proto.RequestThreadIDOffset
+	RequestTtlOffset                     = proto.RequestTTLOffset
+	RequestIncludeValueOffset            = proto.RequestIncludeValueOffset
+	RequestListenerFlagsOffset           = proto.RequestListenerFlagsOffset
+	RequestLocalOnlyOffset               = proto.RequestLocalOnlyOffset
+	RequestReferenceIdOffset             = proto.RequestReferenceIdOffset
+	ResponseBackupAcksOffset             = proto.ResponseBackupAcksOffset
+	UnfragmentedMessage                  = proto.UnfragmentedMessage
+	DefaultFlags                         = proto.DefaultFlags
+	BeginFragmentFlag                    = proto.BeginFragmentFlag
+	EndFragmentFlag                      = proto.EndFragmentFlag
+	IsFinalFlag                          = proto.IsFinalFlag
+	BeginDataStructureFlag               = proto.BeginDataStructureFlag
+	EndDataStructureFlag                 = proto.EndDataStructureFlag
+	IsNullFlag                           = proto.IsNullFlag
+	IsEventFlag                          = proto.IsEventFlag
+	BackupEventFlag                      = proto.BackupEventFlag
+	SizeOfFrameLengthAndFlags            = proto.SizeOfFrameLengthAndFlags
 )

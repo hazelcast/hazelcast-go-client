@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/hazelcast/hazelcast-go-client/types"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -31,10 +33,11 @@ func TestDefaultSerializer(t *testing.T) {
 		Target interface{}
 	}{
 		{Value: int8(-42), Target: uint8(0xd6)},
+		{Value: types.NewUUIDWith(uint64(1234), uint64(5678)), Target: types.NewUUIDWith(uint64(1234), uint64(5678))},
 	}
 	sc := &serialization.Config{}
 	sc.SetGlobalSerializer(&PanicingGlobalSerializer{})
-	service, err := NewService(sc)
+	service, err := NewService(sc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

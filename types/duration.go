@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,13 @@ import (
 )
 
 type Duration time.Duration
+
+func (d *Duration) ToDuration() time.Duration {
+	if d == nil {
+		return time.Duration(0)
+	}
+	return (time.Duration)(*d)
+}
 
 func (d Duration) String() string {
 	return time.Duration(d).String()

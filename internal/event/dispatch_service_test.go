@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,6 @@ func TestDispatchServiceOrderIsGuaranteed(t *testing.T) {
 }
 
 func TestDispatchServiceAllPublishedAreHandledBeforeClose(t *testing.T) {
-	t.Skipf("flaky test: https://github.com/hazelcast/hazelcast-go-client/issues/683")
 	goroutineCount := 10_000
 	dispatchCount := int32(0)
 	handler := func(event event.Event) {

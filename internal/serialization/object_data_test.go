@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -217,7 +217,7 @@ func TestObjectDataInput_ReadString2(t *testing.T) {
 
 func TestObjectDataInput_ReadObject(t *testing.T) {
 	conf := &serialization.Config{}
-	service, err := NewService(conf)
+	service, err := NewService(conf, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +266,7 @@ func TestObjectDataInput_ReadObject(t *testing.T) {
 
 func TestObjectDataInput_ReadObject_UnknownTypeID(t *testing.T) {
 	defer func() {
-		const target = "unknown type ID: -120"
+		const target = "serialization.Service.ReadObject: there is no suitable de-serializer for type -120"
 		if err := recover(); err == nil {
 			t.Fatal("should have failed")
 		} else if err != target {
@@ -274,7 +274,7 @@ func TestObjectDataInput_ReadObject_UnknownTypeID(t *testing.T) {
 		}
 	}()
 	conf := &serialization.Config{}
-	service, err := NewService(conf)
+	service, err := NewService(conf, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

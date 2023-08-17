@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -247,6 +247,10 @@ func TestReplicatedMap_AddEntryListenerToKeyWithPredicate(t *testing.T) {
 		it.MustValue(m.Put(context.Background(), "k1", "foo"))
 		it.MustValue(m.Put(context.Background(), "k2", "foo"))
 		it.MustValue(m.Put(context.Background(), "k1", "foo2"))
-		it.Eventually(t, func() bool { return atomic.LoadInt32(&callCount) == targetCallCount }, "Call count ", callCount)
+		it.Eventually(t, func() bool {
+			cc := atomic.LoadInt32(&callCount)
+			t.Logf("call count: %d", cc)
+			return cc == targetCallCount
+		})
 	})
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package driver_test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"math/big"
-	"net/url"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -32,6 +31,7 @@ import (
 	hz "github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	"github.com/hazelcast/hazelcast-go-client/logger"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 	"github.com/hazelcast/hazelcast-go-client/types"
@@ -96,18 +96,6 @@ type RecordWithDateTime struct {
 	TimeValue                  *time.Time
 	TimestampValue             *time.Time
 	TimestampWithTimezoneValue *time.Time
-}
-
-func NewRecordWithDateTime(t *time.Time) *RecordWithDateTime {
-	dv := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-	tv := time.Date(0, 1, 1, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	tsv := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	return &RecordWithDateTime{
-		DateValue:                  &dv,
-		TimeValue:                  &tv,
-		TimestampValue:             &tsv,
-		TimestampWithTimezoneValue: t,
-	}
 }
 
 func (r RecordWithDateTime) FactoryID() int32 {
@@ -541,6 +529,48 @@ func TestContextCancelAfterFirstPage(t *testing.T) {
 	})
 }
 
+func TestClusterShutdownDuringQuery(t *testing.T) {
+	skip.If(t, "hz < 5.0")
+	ctx := context.Background()
+	port := it.NextPort()
+	cls := it.StartNewClusterWithConfig(it.MemberCount(), it.SQLXMLConfig(t.Name(), "localhost", port), port)
+	defer cls.Shutdown()
+	config := cls.DefaultConfigWithNoSSL()
+	c, err := hz.StartNewClientWithConfig(ctx, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Shutdown(ctx)
+	db := driver.Open(config)
+	defer db.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+		if v == "2" {
+			cls.Shutdown()
+			go func() {
+				// check if it respects context cancel
+				<-time.After(2 * time.Second)
+				cancel()
+			}()
+		}
+		t.Log(v)
+	}
+	err = rows.Err()
+	if !errors.Is(err, context.Canceled) {
+		t.Fatal("expected context canceled error")
+	}
+}
+
 func TestConcurrentQueries(t *testing.T) {
 	it.SkipIf(t, "hz < 5.0")
 	it.SQLTester(t, func(t *testing.T, client *hz.Client, config *hz.Config, m *hz.Map, mapName string) {
@@ -573,6 +603,38 @@ func TestConcurrentQueries(t *testing.T) {
 		}
 		wg.Wait()
 	})
+}
+
+func TestClusterShutdownWithCancelOnFetchPage(t *testing.T) {
+	skip.If(t, "hz < 5")
+	const timeout = 5 * time.Second
+	port := it.NextPort()
+	tc := it.StartNewClusterWithConfig(1, it.SQLXMLConfig(t.Name(), "localhost", port), port)
+	defer tc.Shutdown()
+	db := driver.Open(tc.DefaultConfigWithNoSSL())
+	// make sure the client connects to the cluster
+	db.Ping()
+	defer db.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	rows, err := db.QueryContext(ctx, "select * from table(generate_stream(1))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	finish := make(chan bool)
+	go func() {
+		for rows.Next() {
+			// shutdown cluster after first page
+			tc.Shutdown()
+		}
+		close(finish)
+	}()
+	select {
+	case <-finish:
+	case <-time.After(timeout + 1*time.Second):
+		t.Fatal("driver did not respect the context timeout")
+	}
 }
 
 func testSQLQuery(t *testing.T, ctx context.Context, keyFmt, valueFmt string, keyFn, valueFn func(i int) interface{}) {
@@ -652,23 +714,6 @@ func populateMap(m *hz.Map, count int, keyFn, valueFn func(i int) interface{}) (
 		return nil, err
 	}
 	return entries, nil
-}
-
-func makeDSN(config *hz.Config) string {
-	ll := logger.InfoLevel
-	if it.TraceLoggingEnabled() {
-		ll = logger.TraceLevel
-	}
-	q := url.Values{}
-	q.Add("cluster.name", config.Cluster.Name)
-	q.Add("unisocket", strconv.FormatBool(config.Cluster.Unisocket))
-	q.Add("log", string(ll))
-	return fmt.Sprintf("hz://%s?%s", config.Cluster.Network.Addresses[0], q.Encode())
-}
-
-func mustDB(db *sql.DB, err error) *sql.DB {
-	it.Must(err)
-	return db
 }
 
 func mustRows(rows *sql.Rows, err error) *sql.Rows {

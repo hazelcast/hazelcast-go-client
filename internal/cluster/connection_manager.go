@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,11 @@ var connectionManagerSubID = event.NextSubscriptionID()
 
 type connectMemberFunc func(ctx context.Context, m *ConnectionManager, addr pubcluster.Address, networkCfg *pubcluster.NetworkConfig) (pubcluster.Address, error)
 
+type RandomTargetInvoker interface {
+	InvokeUrgentOnRandomTarget(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler) (*proto.ClientMessage, error)
+	CB() *cb.CircuitBreaker
+}
+
 type ConnectionManagerCreationBundle struct {
 	Logger               logger.LogAdaptor
 	PartitionService     *PartitionService
@@ -127,12 +132,14 @@ type ConnectionManager struct {
 	clusterService       *Service
 	invocationService    *invocation.Service
 	connMap              *connectionMap
+	doneChMu             *sync.RWMutex
 	doneCh               chan struct{}
 	clusterIDMu          *sync.Mutex
 	clusterID            *types.UUID
 	prevClusterID        *types.UUID
 	failoverService      *FailoverService
 	randGen              *rand.Rand
+	invoker              RandomTargetInvoker
 	clientName           string
 	labels               []string
 	clientUUID           types.UUID
@@ -159,6 +166,7 @@ func NewConnectionManager(bundle ConnectionManagerCreationBundle) *ConnectionMan
 		failoverConfig:       bundle.FailoverConfig,
 		clusterIDMu:          &sync.Mutex{},
 		randGen:              rand.New(rand.NewSource(time.Now().Unix())),
+		doneChMu:             &sync.RWMutex{},
 	}
 	return manager
 }
@@ -174,9 +182,18 @@ func (m *ConnectionManager) SetInvocationService(s *invocation.Service) {
 	m.invocationService = s
 }
 
+func (m *ConnectionManager) SetInvoker(iv RandomTargetInvoker) {
+	m.invoker = iv
+}
+
+func (m *ConnectionManager) ClientUUID() types.UUID {
+	return m.clientUUID
+}
+
 func (m *ConnectionManager) start(ctx context.Context) error {
 	atomic.StoreInt32(&m.state, starting)
 	m.logger.Trace(func() string { return "cluster.ConnectionManager.start" })
+	m.eventDispatcher.Subscribe(EventConnection, connectionManagerSubID, m.handleConnectionEvent)
 	var addr pubcluster.Address
 	var err error
 	if m.smartRouting {
@@ -186,11 +203,14 @@ func (m *ConnectionManager) start(ctx context.Context) error {
 	} else if addr, err = m.startUnisocket(ctx); err != nil {
 		return err
 	}
+	if err = m.sendStateToCluster(ctx); err != nil {
+		return err
+	}
 	m.checkClusterIDChanged()
 	m.eventDispatcher.Publish(NewConnected(addr))
+	m.invocationService.Pause(false)
 	m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateConnected))
 	atomic.StoreInt32(&m.state, ready)
-	m.eventDispatcher.Subscribe(EventConnection, connectionManagerSubID, m.handleConnectionEvent)
 	return nil
 }
 
@@ -281,7 +301,9 @@ func (m *ConnectionManager) Stop() {
 	if !atomic.CompareAndSwapInt32(&m.state, ready, stopped) {
 		return
 	}
+	m.doneChMu.RLock()
 	close(m.doneCh)
+	m.doneChMu.RUnlock()
 	m.connMap.CloseAll(nil)
 }
 
@@ -346,7 +368,9 @@ func (m *ConnectionManager) someNonLiteConnection() *Connection {
 }
 
 func (m *ConnectionManager) reset() {
+	m.doneChMu.Lock()
 	m.doneCh = make(chan struct{})
+	m.doneChMu.Unlock()
 	m.clusterIDMu.Lock()
 	if m.clusterID != nil {
 		m.prevClusterID = m.clusterID
@@ -373,7 +397,7 @@ func (m *ConnectionManager) handleMembersRemoved(e *MembersStateChangedEvent) {
 }
 
 func (m *ConnectionManager) handleConnectionEvent(event event.Event) {
-	if atomic.LoadInt32(&m.state) != ready {
+	if atomic.LoadInt32(&m.state) == stopped {
 		return
 	}
 	e := event.(*ConnectionStateChangedEvent)
@@ -386,6 +410,7 @@ func (m *ConnectionManager) handleConnectionEvent(event event.Event) {
 func (m *ConnectionManager) removeConnection(conn *Connection) int {
 	remaining := m.connMap.RemoveConnection(conn)
 	if remaining == 0 {
+		m.invocationService.Pause(true)
 		m.eventDispatcher.Publish(NewDisconnected())
 		m.eventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateDisconnected))
 	}
@@ -442,7 +467,7 @@ func (m *ConnectionManager) tryConnectCandidateCluster(ctx context.Context, clus
 }
 
 func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *CandidateCluster) (pubcluster.Address, error) {
-	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(cluster)
+	seedAddrs, err := m.clusterService.RefreshedSeedAddrs(ctx, cluster)
 	if err != nil {
 		return "", fmt.Errorf("failed to refresh seed addresses: %w", err)
 	}
@@ -452,8 +477,8 @@ func (m *ConnectionManager) connectCluster(ctx context.Context, cluster *Candida
 	var initialAddr pubcluster.Address
 	for _, addr := range seedAddrs {
 		initialAddr, err = m.tryConnectAddress(ctx, addr, connectMember, cluster.NetworkCfg)
-		if err != nil {
-			continue
+		if err == nil {
+			break
 		}
 	}
 	if initialAddr == "" {
@@ -499,7 +524,7 @@ func (m *ConnectionManager) authenticate(ctx context.Context, conn *Connection) 
 	m.logger.Debug(func() string {
 		return fmt.Sprintf("authentication correlation ID: %d", inv.Request().CorrelationID())
 	})
-	if err := m.invocationService.SendRequest(ctx, inv); err != nil {
+	if err := m.invocationService.SendUrgentRequest(ctx, inv); err != nil {
 		return fmt.Errorf("authenticating: %w", err)
 	}
 	result, err := inv.GetWithContext(ctx)
@@ -554,7 +579,7 @@ func (m *ConnectionManager) processAuthenticationResult(conn *Connection, result
 		m.clusterIDMu.Unlock()
 		if oldConn, ok := m.connMap.GetOrAddConnection(conn, *address); !ok {
 			// there is already a connection to this member
-			m.logger.Warnf("duplicate connection to the same member with UUID: %s", conn.MemberUUID())
+			m.logger.Infof("duplicate connection to the same member with UUID: %s", conn.MemberUUID())
 			conn.close(nil)
 			return oldConn, nil
 		}
@@ -600,12 +625,19 @@ func (m *ConnectionManager) syncConnections() {
 	defer ticker.Stop()
 	for {
 		select {
-		case <-m.doneCh:
+		case <-m.getDoneCh():
 			return
 		case <-ticker.C:
 			m.connectAllMembers(context.Background())
 		}
 	}
+}
+
+func (m *ConnectionManager) getDoneCh() <-chan struct{} {
+	m.doneChMu.RLock()
+	ch := m.doneCh
+	m.doneChMu.RUnlock()
+	return ch
 }
 
 func (m *ConnectionManager) networkConfig() *pubcluster.NetworkConfig {
@@ -663,6 +695,25 @@ func (m *ConnectionManager) tryConnectMember(ctx context.Context, member *pubclu
 		return err
 	}
 	return nil
+}
+
+func (m *ConnectionManager) sendStateToCluster(ctx context.Context) error {
+	m.logger.Trace(func() string {
+		return "cluster.ConnectionManager.sendStateToCluster"
+	})
+	if err := m.sendAllSchemas(ctx, m.serializationService.SchemaService().Schemas()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ConnectionManager) sendAllSchemas(ctx context.Context, schemas []*iserialization.Schema) error {
+	if len(schemas) == 0 {
+		return nil
+	}
+	req := codec.EncodeClientSendAllSchemasRequest(schemas)
+	_, err := m.invoker.InvokeUrgentOnRandomTarget(ctx, req, nil)
+	return err
 }
 
 type connectionMap struct {
@@ -873,17 +924,11 @@ func nonRetryableConnectionErr(err error) bool {
 }
 
 func connectMember(ctx context.Context, m *ConnectionManager, addr pubcluster.Address, networkCfg *pubcluster.NetworkConfig) (pubcluster.Address, error) {
-	var initialAddr pubcluster.Address
-	var err error
-	if _, err = m.ensureConnection(ctx, addr, networkCfg); err != nil {
+	if _, err := m.ensureConnection(ctx, addr, networkCfg); err != nil {
 		m.logger.Errorf("cannot connect to %s: %w", addr.String(), err)
-	} else if initialAddr == "" {
-		initialAddr = addr
-	}
-	if initialAddr == "" {
 		return "", fmt.Errorf("cannot connect to address in the cluster: %w", err)
 	}
-	return initialAddr, nil
+	return addr, nil
 }
 
 func EnumerateAddresses(host string, portRange pubcluster.PortRange) []pubcluster.Address {

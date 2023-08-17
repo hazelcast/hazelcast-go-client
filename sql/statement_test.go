@@ -24,7 +24,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/it/runtime"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 )
 
 type cursorBufferSizeTestCase struct {
@@ -41,16 +41,8 @@ func TestStatement_SetCursorBufferSize(t *testing.T) {
 		{Value: 0, Target: v0},
 		{Value: 1, Target: v1},
 		{Value: 4096, Target: v4096},
-		{Value: -1, ErrString: "setting cursor buffer size: non-negative integer number expected: -1: illegal argument error"},
+		{Value: -1, ErrString: "setting cursor buffer size: non-negative integer expected: illegal argument error"},
 	}
-	if !runtime.Is32BitArch() {
-		v := math.MaxInt32
-		testCases = append(testCases, cursorBufferSizeTestCase{
-			Value:     v + 1,
-			ErrString: "setting cursor buffer size: signed 32-bit integer number expected: 2147483648: illegal argument error",
-		})
-	}
-
 	for _, tc := range testCases {
 		t.Run(strconv.Itoa(tc.Value), func(t *testing.T) {
 			var stmt Statement
@@ -65,6 +57,16 @@ func TestStatement_SetCursorBufferSize(t *testing.T) {
 			assert.Equal(t, tc.Target, stmt.CursorBufferSize())
 		})
 	}
+}
+
+func TestStatement_SetCursorBufferSize_ExpectSigned32Bit(t *testing.T) {
+	skip.If(t, "arch ~ 32bit")
+	v := math.MaxInt32
+	value := v + 1
+	errString := "setting cursor buffer size: integer overflows int32: illegal argument error"
+	var stmt Statement
+	err := stmt.SetCursorBufferSize(value)
+	assert.Equal(t, errString, err.Error())
 }
 
 func TestStatement_SetQueryTimeout(t *testing.T) {

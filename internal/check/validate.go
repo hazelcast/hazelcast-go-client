@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,8 @@ import (
 )
 
 func NonNegativeInt32(n int) (int32, error) {
-	if n < 0 {
-		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("non-negative integer number expected: %d", n), nil)
-	}
-	if n > math.MaxInt32 {
-		return 0, ihzerrors.NewIllegalArgumentError(fmt.Sprintf("signed 32-bit integer number expected: %d", n), nil)
+	if err := ensureNonNegativeInt32(n, hzerrors.ErrIllegalArgument); err != nil {
+		return 0, err
 	}
 	return int32(n), nil
 }
@@ -48,6 +45,31 @@ func EnsureNonNegativeDuration(v *time.Duration, d time.Duration, msg string) er
 func WithinRangeInt32(n, start, end int32) error {
 	if n < start || n > end {
 		return ihzerrors.NewIllegalArgumentError(fmt.Sprintf("number %d is out of range [%d,%d]", n, start, end), nil)
+	}
+	return nil
+}
+
+func NonNegativeInt32Config(n int) error {
+	return ensureNonNegativeInt32(n, hzerrors.ErrInvalidConfiguration)
+}
+
+func NonNegativeInt64Config(n int64) error {
+	return ensureNonNegativeInt64(n, hzerrors.ErrInvalidConfiguration)
+}
+
+func ensureNonNegativeInt32(n int, err error) error {
+	if n < 0 {
+		return fmt.Errorf("non-negative integer expected: %w", err)
+	}
+	if n > math.MaxInt32 {
+		return fmt.Errorf("integer overflows int32: %w", err)
+	}
+	return nil
+}
+
+func ensureNonNegativeInt64(n int64, err error) error {
+	if n < 0 {
+		return fmt.Errorf("non-negative integer expected: %w", err)
 	}
 	return nil
 }

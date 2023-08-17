@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 	var lastUUID types.UUID
 	var request *proto.ClientMessage
 	now := time.Now()
-	return pn.tryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+	return pn.invoker.TryInvoke(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
 		if attempt == 1 {
 			// this is the first failure, time to allocate the excluded set
 			excluded = map[types.UUID]struct{}{}
@@ -213,8 +213,8 @@ func (pn *PNCounter) invokeOnMember(ctx context.Context, makeReq func(target typ
 		}
 		lastUUID = mem.UUID
 		request = makeReq(mem.UUID, clocks)
-		inv := pn.invocationFactory.NewMemberBoundInvocation(request, mem, now)
-		if err := pn.sendInvocation(ctx, inv); err != nil {
+		inv := pn.invoker.Factory().NewMemberBoundInvocation(request, mem, now)
+		if err := pn.invoker.SendInvocation(ctx, inv); err != nil {
 			return nil, err
 		}
 		return inv.GetWithContext(ctx)

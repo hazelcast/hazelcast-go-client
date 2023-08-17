@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -142,7 +143,7 @@ func TestPortableSerializer(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +156,7 @@ func TestPortableSerializer(t *testing.T) {
 
 func TestPortableSerializer_NoFactory(t *testing.T) {
 	config := &serialization.Config{}
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +175,7 @@ func TestPortableSerializerDuplicateFactory(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
 	config.SetPortableFactories(&portableFactory1{})
-	if _, err := NewService(config); err == nil {
+	if _, err := NewService(config, nil); err == nil {
 		t.Fatalf("should have failed")
 	}
 }
@@ -182,7 +183,7 @@ func TestPortableSerializerDuplicateFactory(t *testing.T) {
 func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +197,7 @@ func TestPortableSerializer_NoInstanceCreated(t *testing.T) {
 
 func TestPortableSerializer_NilPortable(t *testing.T) {
 	config := &serialization.Config{}
-	service, _ := NewService(config)
+	service, _ := NewService(config, nil)
 	expectedRet := &student2{}
 	data, _ := service.ToData(expectedRet)
 	_, err := service.ToObject(data)
@@ -323,7 +324,7 @@ func (f *fake) ReadPortable(reader serialization.PortableReader) {
 func TestPortableSerializer2(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
-	service, err := NewService(config)
+	service, err := NewService(config, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,8 +379,8 @@ func TestPortableSerializer2(t *testing.T) {
 func TestPortableSerializer3(t *testing.T) {
 	config := &serialization.Config{}
 	config.SetPortableFactories(&portableFactory1{})
-	service, _ := NewService(config)
-	service2, _ := NewService(config)
+	service, _ := NewService(config, nil)
+	service2, _ := NewService(config, nil)
 	expectedRet := &student{id: 10, age: 22, name: "Furkan Şenharputlu"}
 	data, _ := service.ToData(expectedRet)
 	ret, _ := service2.ToObject(data)
@@ -397,7 +398,7 @@ func TestPortableSerializer4(t *testing.T) {
 	def.AddInt32Field("age")
 	def.AddStringField("name")
 	config1.SetClassDefinitions(def)
-	service, err := NewService(config1)
+	service, err := NewService(config1, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -511,8 +512,8 @@ func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
 	sc := &serialization.Config{}
 	sc.SetPortableFactories(&portableFactory{})
 	sc.PortableVersion = 6
-	ss1, _ := NewService(sc)
-	ss2, _ := NewService(sc)
+	ss1, _ := NewService(sc, nil)
+	ss2, _ := NewService(sc, nil)
 
 	// make sure ss2 cached class definition of child
 	if _, err := ss2.ToData(&child{"Furkan"}); err != nil {
@@ -528,5 +529,133 @@ func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
 	if !reflect.DeepEqual(deserializedParent, p) {
 		t.Error("nested portable version is wrong")
 	}
+}
 
+const (
+	factoryID1 = 1
+	factoryID2 = 2
+)
+
+type MyPortable1 struct {
+	stringField string
+}
+
+func (MyPortable1) FactoryID() (factoryID int32) {
+	return factoryID1
+}
+
+func (MyPortable1) ClassID() (classID int32) {
+	return 1
+}
+
+func (p MyPortable1) WritePortable(writer serialization.PortableWriter) {
+	writer.WriteString("stringField", p.stringField)
+}
+
+func (p *MyPortable1) ReadPortable(reader serialization.PortableReader) {
+	p.stringField = reader.ReadString("stringField")
+}
+
+type MyPortable2 struct {
+	intField int32
+}
+
+func (MyPortable2) FactoryID() (factoryID int32) {
+	return factoryID2
+}
+
+func (MyPortable2) ClassID() (classID int32) {
+	return 1
+}
+
+func (p MyPortable2) WritePortable(writer serialization.PortableWriter) {
+	writer.WriteInt32("intField", p.intField)
+}
+
+func (p *MyPortable2) ReadPortable(reader serialization.PortableReader) {
+	p.intField = reader.ReadInt32("intField")
+}
+
+type MyPortableFactory1 struct{}
+
+func (MyPortableFactory1) Create(classID int32) (instance serialization.Portable) {
+	if classID == 1 {
+		return &MyPortable1{}
+	}
+	return nil
+}
+
+func (MyPortableFactory1) FactoryID() int32 {
+	return factoryID1
+}
+
+type MyPortableFactory2 struct{}
+
+func (MyPortableFactory2) Create(classID int32) (instance serialization.Portable) {
+	if classID == 1 {
+		return &MyPortable2{}
+	}
+	return nil
+}
+
+func (*MyPortableFactory2) FactoryID() int32 {
+	return factoryID2
+}
+
+// ported from: com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassIdInDifferentFactories
+func TestClassesWithSameClassIdInDifferentFactories(t *testing.T) {
+	config := &serialization.Config{}
+	myPortable1Def := serialization.NewClassDefinition(factoryID1, 1, 0)
+	// register string which is located in MyPortable1
+	err := myPortable1Def.AddStringField("stringField")
+	require.NoError(t, err)
+	myPortable2Def := serialization.NewClassDefinition(factoryID2, 1, 0)
+	// register string which is located in MyPortable2
+	err = myPortable2Def.AddInt32Field("intField")
+	require.NoError(t, err)
+	// set config with class definitions
+	config.SetClassDefinitions(myPortable1Def, myPortable2Def)
+	// set config with portable factories
+	config.SetPortableFactories(&MyPortableFactory1{}, &MyPortableFactory2{})
+	service, err := NewService(config, nil)
+	require.NoError(t, err)
+	// serialize MyPortable1
+	object := &MyPortable1{stringField: "test"}
+	data, err := service.ToData(object)
+	require.NoError(t, err)
+	toObject, err := service.ToObject(data)
+	require.NoError(t, err)
+	if !reflect.DeepEqual(object, toObject) {
+		t.Fatalf("got %v want %v", toObject, object)
+	}
+	// serialize MyPortable2
+	object2 := &MyPortable2{intField: 1}
+	data2, err := service.ToData(object2)
+	require.NoError(t, err)
+	toObject2, err := service.ToObject(data2)
+	require.NoError(t, err)
+	if !reflect.DeepEqual(object2, toObject2) {
+		t.Fatalf("got %v want %v", toObject2, object2)
+	}
+}
+
+// ported from: com.hazelcast.internal.serialization.impl.portable.ExplicitClassDefinitionRegistrationTest#test_classesWithSameClassId_andSameFactoryId
+func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			require.True(t, errors.Is(err.(error), hzerrors.ErrHazelcastSerialization))
+		}
+	}()
+	commonFactoryID := int32(1)
+	commonClassID := int32(1)
+	config := &serialization.Config{}
+	p1 := serialization.NewClassDefinition(commonFactoryID, commonClassID, 0)
+	err := p1.AddStringField("stringField")
+	require.NoError(t, err)
+	p2 := serialization.NewClassDefinition(commonFactoryID, commonClassID, 0)
+	err = p1.AddInt32Field("intField")
+	require.NoError(t, err)
+	config.SetClassDefinitions(p1, p2)
+	_, err = NewService(config, nil)
+	require.NoError(t, err)
 }

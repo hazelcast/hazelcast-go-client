@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,6 @@ func (b *ConnectionListenerBinder) Remove(ctx context.Context, id types.UUID) er
 	defer b.regsMu.Unlock()
 	reg, ok := b.regs[id]
 	if !ok {
-		b.regsMu.Unlock()
 		return nil
 	}
 	delete(b.regs, id)
@@ -157,14 +156,6 @@ func (b *ConnectionListenerBinder) sendAddListenerRequests(ctx context.Context, 
 		return nil, nil
 	}
 	now := time.Now()
-	if len(conns) == 1 {
-		inv, corrID, err := b.sendAddListenerRequest(ctx, request, handler, conns[0], now)
-		if err != nil {
-			return nil, err
-		}
-		_, err = inv.GetWithContext(ctx)
-		return []int64{corrID}, err
-	}
 	invs := make([]invocation.Invocation, len(conns))
 	corrIDs := make([]int64, len(conns))
 	for i, conn := range conns {
@@ -185,11 +176,20 @@ func (b *ConnectionListenerBinder) sendAddListenerRequests(ctx context.Context, 
 
 func (b *ConnectionListenerBinder) sendAddListenerRequest(ctx context.Context, request *proto.ClientMessage, handler proto.ClientMessageHandler, conn *Connection, start time.Time) (invocation.Invocation, int64, error) {
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, handler, start)
-	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
+	req := inv.Request()
+	cid, err := b.connectionManager.invoker.CB().TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			req = req.Copy()
+		}
+		if err := b.invocationService.SendRequest(ctx, inv); err != nil {
+			return nil, err
+		}
+		return req.CorrelationID(), nil
+	})
+	if err != nil {
 		return nil, 0, err
 	}
-	correlationID := inv.Request().CorrelationID()
-	return inv, correlationID, nil
+	return inv, cid.(int64), nil
 }
 
 func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Context, request *proto.ClientMessage, conns ...*Connection) error {
@@ -197,14 +197,6 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequests(ctx context.Contex
 		return nil
 	}
 	now := time.Now()
-	if len(conns) == 1 {
-		inv, err := b.sendRemoveListenerRequest(ctx, request, conns[0], now)
-		if err != nil {
-			return err
-		}
-		_, err = inv.GetWithContext(ctx)
-		return err
-	}
 	invs := make([]invocation.Invocation, len(conns))
 	for i, conn := range conns {
 		inv, err := b.sendRemoveListenerRequest(ctx, request, conn, now)
@@ -226,7 +218,14 @@ func (b *ConnectionListenerBinder) sendRemoveListenerRequest(ctx context.Context
 		return fmt.Sprintf("%d: removing listener", conn.connectionID)
 	})
 	inv := b.invocationFactory.NewConnectionBoundInvocation(request, conn, nil, start)
-	if err := b.invocationService.SendRequest(ctx, inv); err != nil {
+	req := inv.Request()
+	_, err := b.connectionManager.invoker.CB().TryContext(ctx, func(ctx context.Context, attempt int) (interface{}, error) {
+		if attempt > 0 {
+			req = req.Copy()
+		}
+		return nil, b.invocationService.SendRequest(ctx, inv)
+	})
+	if err != nil {
 		return nil, err
 	}
 	return inv, nil

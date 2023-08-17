@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import (
 )
 
 const (
+	BitsInAByte        = 8
 	ByteSizeInBytes    = 1
 	BoolSizeInBytes    = 1
 	Uint8SizeInBytes   = 1
@@ -101,8 +102,18 @@ func (o *ObjectDataOutput) WriteByte(v byte) {
 	o.writeByte(v)
 }
 
+func (o *ObjectDataOutput) WriteSignedByte(v int8) {
+	o.EnsureAvailable(ByteSizeInBytes)
+	o.writeSignedByte(v)
+}
+
 func (o *ObjectDataOutput) writeByte(v byte) {
 	o.buffer[o.position] = v
+	o.position += ByteSizeInBytes
+}
+
+func (o *ObjectDataOutput) writeSignedByte(v int8) {
+	o.buffer[o.position] = byte(v)
 	o.position += ByteSizeInBytes
 }
 
@@ -131,6 +142,12 @@ func (o *ObjectDataOutput) WriteInt16(v int16) {
 func (o *ObjectDataOutput) WriteInt32(v int32) {
 	o.EnsureAvailable(Int32SizeInBytes)
 	WriteInt32(o.buffer, o.position, v, o.bo)
+	o.position += Int32SizeInBytes
+}
+
+func (o *ObjectDataOutput) WriteInt32BigEndian(v int32) {
+	o.EnsureAvailable(Int32SizeInBytes)
+	WriteInt32(o.buffer, o.position, v, binary.BigEndian)
 	o.position += Int32SizeInBytes
 }
 
@@ -164,6 +181,19 @@ func (o *ObjectDataOutput) WriteString(v string) {
 
 func (o *ObjectDataOutput) WriteObject(object interface{}) {
 	o.service.WriteObject(o, object)
+}
+
+func (o *ObjectDataOutput) WriteInt8Array(signedByteArray []int8) {
+	if signedByteArray == nil {
+		o.WriteInt32(nilArrayLength)
+		return
+	}
+	length := len(signedByteArray)
+	o.WriteInt32(int32(length))
+	o.EnsureAvailable(length)
+	for _, signedByte := range signedByteArray {
+		o.writeSignedByte(signedByte)
+	}
 }
 
 func (o *ObjectDataOutput) WriteByteArray(v []byte) {
@@ -347,14 +377,30 @@ func (i *ObjectDataInput) ReadByte() byte {
 	return i.readByte()
 }
 
+func (i *ObjectDataInput) ReadSignedByte() int8 {
+	i.AssertAvailable(ByteSizeInBytes)
+	return i.readSignedByte()
+}
+
 func (i *ObjectDataInput) readByte() byte {
 	ret := i.buffer[i.position]
 	i.position += ByteSizeInBytes
 	return ret
 }
 
+func (i *ObjectDataInput) readSignedByte() int8 {
+	ret := i.buffer[i.position]
+	i.position += ByteSizeInBytes
+	return int8(ret)
+}
+
 func (i *ObjectDataInput) ReadByteAtPosition(pos int32) byte {
 	return i.buffer[pos]
+}
+
+func (i *ObjectDataInput) ReadSignedByteAtPosition(pos int32) int8 {
+	ret := i.buffer[pos]
+	return int8(ret)
 }
 
 func (i *ObjectDataInput) ReadBool() bool {
@@ -474,6 +520,18 @@ func (i *ObjectDataInput) ReadByteArray() []byte {
 	}
 	arr := i.buffer[i.position : i.position+length]
 	i.position += length
+	return arr
+}
+
+func (i *ObjectDataInput) ReadInt8Array() []int8 {
+	length := int(i.readInt32())
+	if length == nilArrayLength {
+		return nil
+	}
+	arr := make([]int8, length)
+	for j := 0; j < length; j++ {
+		arr[j] = i.ReadSignedByte()
+	}
 	return arr
 }
 
@@ -653,12 +711,26 @@ func NewPositionalObjectDataOutput(length int, service *Service, bigEndian bool)
 	return &PositionalObjectDataOutput{NewObjectDataOutput(length, service, bigEndian)}
 }
 
+func (p *PositionalObjectDataOutput) WriteObject(object interface{}) {
+	p.service.WriteObject(p, object)
+}
+
 func (p *PositionalObjectDataOutput) PWriteByte(pos int32, v byte) {
 	p.buffer[pos] = v
 }
 
 func (p *PositionalObjectDataOutput) PWriteBool(pos int32, v bool) {
 	WriteBool(p.buffer, pos, v)
+}
+
+func (p *PositionalObjectDataOutput) PWriteBoolBit(pos int32, bitIndex int32, v bool) {
+	b := p.buffer[pos]
+	if v {
+		b = b | (1 << bitIndex)
+	} else {
+		b = b & ^(1 << bitIndex)
+	}
+	p.buffer[pos] = b
 }
 
 func (p *PositionalObjectDataOutput) PWriteUInt16(pos int32, v uint16) {
@@ -793,28 +865,6 @@ func WriteDecimal(o serialization.DataOutput, d types.Decimal) {
 	o.WriteInt32(int32(d.Scale()))
 }
 
-func WriteDecimalArray(o serialization.DataOutput, ds []types.Decimal) {
-	if len(ds) == 0 {
-		o.WriteInt32(nilArrayLength)
-		return
-	}
-	o.WriteInt32(int32(len(ds)))
-	for _, d := range ds {
-		WriteDecimal(o, d)
-	}
-}
-
-func writeArrayOfTime(o serialization.DataOutput, ts []time.Time, f func(o serialization.DataOutput, t time.Time)) {
-	if len(ts) == 0 {
-		o.WriteInt32(nilArrayLength)
-		return
-	}
-	o.WriteInt32(int32(len(ts)))
-	for _, t := range ts {
-		f(o, t)
-	}
-}
-
 func ReadDate(i serialization.DataInput) time.Time {
 	y, m, d := readDate(i)
 	return time.Date(y, m, d, 0, 0, 0, 0, time.Local)
@@ -852,19 +902,6 @@ func ReadDecimal(i serialization.DataInput) types.Decimal {
 	return types.NewDecimal(v, int(scale))
 }
 
-func ReadDecimalArray(i serialization.DataInput) []types.Decimal {
-	var ds []types.Decimal
-	l := i.ReadInt32()
-	if l == nilArrayLength {
-		return ds
-	}
-	ds = make([]types.Decimal, l)
-	for j := 0; j < int(l); j++ {
-		ds[j] = ReadDecimal(i)
-	}
-	return ds
-}
-
 func readDate(i serialization.DataInput) (y int, m time.Month, d int) {
 	y = int(i.ReadInt32())
 	m = time.Month(i.ReadByte())
@@ -878,17 +915,4 @@ func readTime(i serialization.DataInput) (h, m, s, nanos int) {
 	s = int(i.ReadByte())
 	nanos = int(i.ReadInt32())
 	return
-}
-
-func readArrayOfTime(i serialization.DataInput, f func(i serialization.DataInput) time.Time) []time.Time {
-	var ts []time.Time
-	l := i.ReadInt32()
-	if l == nilArrayLength {
-		return ts
-	}
-	ts = make([]time.Time, l)
-	for j := 0; j < int(l); j++ {
-		ts[j] = f(i)
-	}
-	return ts
 }

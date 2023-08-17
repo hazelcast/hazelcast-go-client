@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package hazelcast
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
+
+	icp "github.com/hazelcast/hazelcast-go-client/internal/cp"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
@@ -28,8 +31,11 @@ import (
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
+	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
+	"github.com/hazelcast/hazelcast-go-client/internal/stats"
 	"github.com/hazelcast/hazelcast-go-client/sql"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
@@ -38,6 +44,9 @@ const (
 	// ClientVersion is the semantic versioning compatible client version.
 	ClientVersion = internal.CurrentClientVersion
 )
+
+type AtomicLong = icp.AtomicLong
+type CPSubsystem = icp.Subsystem
 
 // StartNewClient creates and starts a new client with the default configuration.
 // The default configuration is tuned connect to an Hazelcast cluster running on the same computer with the client.
@@ -67,6 +76,11 @@ type Client struct {
 	lifecycleListenerMapMu  *sync.Mutex
 	ic                      *client.Client
 	sqlService              isql.Service
+	cpSubsystem             CPSubsystem
+	nearCacheMgrsMu         *sync.RWMutex
+	nearCacheMgrs           map[string]*inearcache.Manager
+	cfg                     *Config
+	doneCh                  chan struct{}
 }
 
 func newClient(config Config) (*Client, error) {
@@ -74,6 +88,7 @@ func newClient(config Config) (*Client, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
+	var c *Client
 	icc := &client.Config{
 		Name:          config.ClientName,
 		Cluster:       &config.Cluster,
@@ -84,20 +99,70 @@ func newClient(config Config) (*Client, error) {
 		StatsEnabled:  config.Stats.Enabled,
 		StatsPeriod:   time.Duration(config.Stats.Period),
 	}
-	ic, err := client.New(icc)
+	// TODO: size of the channel
+	schemaCh := make(chan serialization.SchemaMsg)
+	ic, err := client.New(icc, schemaCh)
 	if err != nil {
 		return nil, err
 	}
-	c := &Client{
+	c = &Client{
 		ic:                      ic,
 		lifecycleListenerMap:    map[types.UUID]int64{},
 		lifecycleListenerMapMu:  &sync.Mutex{},
 		membershipListenerMap:   map[types.UUID]int64{},
 		membershipListenerMapMu: &sync.Mutex{},
+		nearCacheMgrsMu:         &sync.RWMutex{},
+		nearCacheMgrs:           map[string]*inearcache.Manager{},
+		cfg:                     &config,
+		doneCh:                  make(chan struct{}),
+	}
+	if c.ic.StatsService != nil {
+		c.ic.StatsService.SetNCStatsGetter(func(service string) stats.NearCacheStatsGetter {
+			ncmgr, ok := c.nearCacheMgrs[service]
+			if !ok {
+				return nil
+			}
+			return ncmgr
+		})
 	}
 	c.addConfigEvents(&config)
 	c.createComponents(&config)
+	c.ic.AddBeforeShutdownHandler(c.destroyProxies)
+	c.ic.AddAfterShutdownHandler(c.stopNearCacheManagers)
+	c.ic.AddAfterShutdownHandler(func(ctx context.Context) {
+		close(c.doneCh)
+	})
+	go c.schemaInvoker(schemaCh)
 	return c, nil
+}
+
+func (c *Client) schemaInvoker(ch chan serialization.SchemaMsg) {
+	c.ic.Logger.Debug(func() string {
+		return "Started the schema invoker"
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	for {
+		select {
+		case msg := <-ch:
+			req := codec.EncodeClientFetchSchemaRequest(msg.ID)
+			resp, err := c.ic.Invoker.InvokeOnRandomTarget(ctx, req, nil)
+			if err != nil {
+				c.ic.Logger.Errorf("invoking ClientFetchSchema with schema ID: %d: %s", msg.ID, err)
+				msg.ResponseCh <- nil
+				continue
+			}
+			schema := codec.DecodeClientFetchSchemaResponse(resp)
+			msg.ResponseCh <- schema
+		case <-ctx.Done():
+			c.ic.Logger.Debug(func() string {
+				return "Stopped the schema invoker"
+			})
+			return
+		case <-c.doneCh:
+			cancel()
+		}
+	}
 }
 
 // Name returns client's name
@@ -115,12 +180,37 @@ func (c *Client) GetList(ctx context.Context, name string) (*List, error) {
 	return c.proxyManager.getList(ctx, name)
 }
 
+// GetRingbuffer returns a Ringbuffer instance
+func (c *Client) GetRingbuffer(ctx context.Context, name string) (*Ringbuffer, error) {
+	return c.proxyManager.getRingbuffer(ctx, name)
+}
+
 // GetMap returns a distributed map instance.
 func (c *Client) GetMap(ctx context.Context, name string) (*Map, error) {
 	if c.ic.State() != client.Ready {
 		return nil, hzerrors.ErrClientNotActive
 	}
-	return c.proxyManager.getMap(ctx, name)
+	return c.proxyManager.getMap(ctx, name, func(p *proxy) (interface{}, error) {
+		m := newMap(p)
+		ncc, ok, err := c.cfg.GetNearCache(name)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			// there is no near cache config for this map
+			return m, nil
+		}
+		ncmgr := c.getNearCacheManager(ServiceNameMap)
+		nc := ncmgr.GetOrCreateNearCache(name, ncc)
+		ss := c.ic.SerializationService
+		rt := ncmgr.RepairingTask()
+		m.ncm, err = newNearCacheMap(ctx, nc, ss, rt, c.ic.Logger, name, m.proxy.listenerBinder, m.smart)
+		if err != nil {
+			return nil, err
+		}
+		m.hasNearCache = true
+		return m, nil
+	})
 }
 
 // GetReplicatedMap returns a replicated map instance.
@@ -283,6 +373,11 @@ func (c *Client) SQL() sql.Service {
 	return c.sqlService
 }
 
+// CPSubsystem returns a service to offer a set of in-memory linearizable data structures.
+func (c *Client) CPSubsystem() CPSubsystem {
+	return c.cpSubsystem
+}
+
 func (c *Client) addLifecycleListener(subscriptionID int64, handler LifecycleStateChangeHandler) {
 	c.ic.EventDispatcher.Subscribe(eventLifecycleEventStateChanged, subscriptionID, func(event event.Event) {
 		// This is a workaround to avoid cyclic dependency between internal/cluster and hazelcast package.
@@ -367,7 +462,53 @@ func (c *Client) createComponents(config *Config) {
 		InvocationFactory:    c.ic.InvocationFactory,
 		ListenerBinder:       listenerBinder,
 		Logger:               c.ic.Logger,
+		Invoker:              c.ic.Invoker,
 	}
+	destroyNearCacheFun := func(service, object string) {
+		c.nearCacheMgrsMu.RLock()
+		defer c.nearCacheMgrsMu.RUnlock()
+		ncmgr, ok := c.nearCacheMgrs[service]
+		if !ok {
+			return
+		}
+		ncmgr.DestroyNearCache(object)
+	}
+	proxyManagerServiceBundle.NCMDestroyFn = destroyNearCacheFun
 	c.proxyManager = newProxyManager(proxyManagerServiceBundle)
-	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.cpSubsystem = icp.NewSubsystem(c.ic.SerializationService, c.ic.InvocationFactory, c.ic.InvocationService, &c.ic.Logger)
+	c.sqlService = isql.NewService(c.ic.ConnectionManager, c.ic.SerializationService, c.ic.Invoker, &c.ic.Logger)
+}
+
+func (c *Client) getNearCacheManager(service string) *inearcache.Manager {
+	c.nearCacheMgrsMu.RLock()
+	mgr, ok := c.nearCacheMgrs[service]
+	c.nearCacheMgrsMu.RUnlock()
+	if ok {
+		return mgr
+	}
+	c.nearCacheMgrsMu.Lock()
+	mgr, ok = c.nearCacheMgrs[service]
+	if !ok {
+		ris := c.cfg.NearCacheInvalidation.ReconciliationIntervalSeconds()
+		mis := c.cfg.NearCacheInvalidation.MaxToleratedMissCount()
+		mgr = inearcache.NewManager(c.ic, ris, mis)
+		c.nearCacheMgrs[service] = mgr
+	}
+	c.nearCacheMgrsMu.Unlock()
+	return mgr
+}
+
+func (c *Client) stopNearCacheManagers(ctx context.Context) {
+	c.nearCacheMgrsMu.RLock()
+	for s, m := range c.nearCacheMgrs {
+		c.ic.Logger.Debug(func() string {
+			return fmt.Sprintf("stopping near cache manager for %s", s)
+		})
+		m.Stop()
+	}
+	c.nearCacheMgrsMu.RUnlock()
+}
+
+func (c *Client) destroyProxies(ctx context.Context) {
+	c.proxyManager.destroyProxies(ctx)
 }

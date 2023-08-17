@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/cluster"
+	"github.com/hazelcast/hazelcast-go-client/cluster/discovery"
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
 	"github.com/hazelcast/hazelcast-go-client/internal/cloud"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
@@ -88,25 +89,40 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+type shutdownHandler func(context.Context)
+
 type Client struct {
-	InvocationHandler    invocation.Handler
-	Logger               ilogger.LogAdaptor
-	ConnectionManager    *icluster.ConnectionManager
-	ClusterService       *icluster.Service
-	PartitionService     *icluster.PartitionService
-	ViewListenerService  *icluster.ViewListenerService
-	InvocationService    *invocation.Service
-	InvocationFactory    *icluster.ConnectionInvocationFactory
-	SerializationService *serialization.Service
-	EventDispatcher      *event.DispatchService
-	statsService         *stats.Service
-	heartbeatService     *icluster.HeartbeatService
-	clusterConfig        *cluster.Config
-	name                 string
-	state                int32
+	InvocationHandler      invocation.Handler
+	Logger                 ilogger.LogAdaptor
+	ConnectionManager      *icluster.ConnectionManager
+	ViewListenerService    *icluster.ViewListenerService
+	InvocationService      *invocation.Service
+	InvocationFactory      *icluster.ConnectionInvocationFactory
+	SerializationService   *serialization.Service
+	EventDispatcher        *event.DispatchService
+	StatsService           *stats.Service
+	heartbeatService       *icluster.HeartbeatService
+	clusterConfig          *cluster.Config
+	PartitionService       *icluster.PartitionService
+	ClusterService         *icluster.Service
+	Invoker                *Invoker
+	name                   string
+	beforeShutdownHandlers []shutdownHandler
+	afterShutdownHandlers  []shutdownHandler
+	state                  int32
 }
 
-func New(config *Config) (*Client, error) {
+func (c *Client) AddBeforeShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.beforeShutdownHandlers = append(c.beforeShutdownHandlers, handler)
+}
+
+func (c *Client) AddAfterShutdownHandler(handler func(ctx context.Context)) {
+	// this is supposed to be called during client initialization, so there's no risk of races.
+	c.afterShutdownHandlers = append(c.afterShutdownHandlers, handler)
+}
+
+func New(config *Config, schemaCh chan serialization.SchemaMsg) (*Client, error) {
 	id := atomic.AddInt32(&nextId, 1)
 	name := config.Name
 	if name == "" {
@@ -116,7 +132,7 @@ func New(config *Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	serService, err := serialization.NewService(config.Serialization)
+	serService, err := serialization.NewService(config.Serialization, schemaCh)
 	if err != nil {
 		return nil, err
 	}
@@ -154,8 +170,8 @@ func (c *Client) Start(ctx context.Context) error {
 		return err
 	}
 	c.heartbeatService.Start()
-	if c.statsService != nil {
-		c.statsService.Start()
+	if c.StatsService != nil {
+		c.StatsService.Start()
 	}
 	c.EventDispatcher.Subscribe(icluster.EventCluster, handleClusterEventSubID, c.handleClusterEvent)
 	atomic.StoreInt32(&c.state, Ready)
@@ -171,12 +187,20 @@ func (c *Client) Shutdown(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	// execute registered shutdown handlers
+	for _, f := range c.beforeShutdownHandlers {
+		f(ctx)
+	}
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShuttingDown))
 	c.InvocationService.Stop()
 	c.heartbeatService.Stop()
 	c.ConnectionManager.Stop()
-	if c.statsService != nil {
-		c.statsService.Stop()
+	if c.StatsService != nil {
+		c.StatsService.Stop()
+	}
+	// execute registered shutdown handlers
+	for _, f := range c.afterShutdownHandlers {
+		f(ctx)
 	}
 	atomic.StoreInt32(&c.state, Stopped)
 	c.EventDispatcher.Publish(lifecycle.NewLifecycleStateChanged(lifecycle.StateShutDown))
@@ -240,13 +264,14 @@ func (c *Client) createComponents(config *Config) {
 	it := time.Duration(c.clusterConfig.HeartbeatTimeout)
 	c.heartbeatService = icluster.NewHeartbeatService(connectionManager, c.InvocationFactory, invocationService, c.Logger, iv, it)
 	if config.StatsEnabled {
-		c.statsService = stats.NewService(
+		c.StatsService = stats.NewService(
 			invocationService,
 			c.InvocationFactory,
 			c.EventDispatcher,
 			c.Logger,
 			config.StatsPeriod,
-			c.name)
+			c.name,
+		)
 	}
 	c.ConnectionManager = connectionManager
 	c.ClusterService = clusterService
@@ -256,6 +281,9 @@ func (c *Client) createComponents(config *Config) {
 	c.ViewListenerService = viewListener
 	c.ConnectionManager.SetInvocationService(invocationService)
 	c.ClusterService.SetInvocationService(invocationService)
+	c.Invoker = NewInvoker(c.InvocationFactory, c.InvocationService, &c.Logger)
+	c.ConnectionManager.SetInvoker(c.Invoker)
+	c.addDiscoveryDestroyer()
 }
 
 func (c *Client) handleClusterEvent(event event.Event) {
@@ -275,22 +303,47 @@ func (c *Client) handleClusterEvent(event event.Event) {
 		return
 	}
 	c.Logger.Debug(func() string { return "cluster disconnected, rebooting" })
-	// try to reboot cluster connection
-	c.ConnectionManager.Stop()
-	c.ClusterService.Reset()
-	c.PartitionService.Reset()
-	if err := c.ConnectionManager.Start(ctx); err != nil {
-		c.Logger.Errorf("cannot reconnect to cluster, shutting down: %w", err)
-		// Shutdown is blocking operation which will make sure all the event goroutines are closed.
-		// If we wait here blocking, it will be a deadlock
-		go c.Shutdown(ctx)
+	for {
+		if c.State() != Ready {
+			break
+		}
+		// try to reboot cluster connection
+		c.ConnectionManager.Stop()
+		c.ClusterService.Reset()
+		c.PartitionService.Reset()
+		if err := c.ConnectionManager.Start(ctx); err != nil {
+			c.Logger.Errorf("cannot reconnect to cluster: %w", err)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
 	}
+}
+
+func (c *Client) addDiscoveryDestroyer() {
+	if c.clusterConfig.Discovery.Strategy != nil {
+		c.AddAfterShutdownHandler(func(ctx context.Context) {
+			if destroyer, ok := c.clusterConfig.Discovery.Strategy.(discovery.StrategyDestroyer); ok {
+				c.Logger.Debug(func() string {
+					return "Destroying discovery strategy"
+				})
+				if err := destroyer.Destroy(ctx); err != nil {
+					c.Logger.Errorf("Destroying discovery strategy: %w", err)
+				}
+			}
+		})
+	}
+
 }
 
 func addrProviderTranslator(config *cluster.Config, logger ilogger.LogAdaptor) (icluster.AddressProvider, icluster.AddressTranslator) {
 	if config.Cloud.Enabled {
 		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
 		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)
+	}
+	if config.Discovery.Strategy != nil {
+		a := icluster.NewDiscoveryStrategyAdapter(config.Discovery, logger)
+		return a, a
 	}
 	pr := icluster.NewDefaultAddressProvider(&config.Network)
 	if config.Discovery.UsePublicIP {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -50,12 +50,12 @@ type DispatchService struct {
 }
 
 // NewDispatchService creates a dispatch service with the following properties.
-//1- It is async for the caller of Publish. Meaning Publish will not be blocked.
-//It can be blocked because we don't have infinite channels. The queue size is 1024.
-//2- Events fired from the same thread for the same subscription will be handled in the same order.
-//One will finish, then other will start.
-//3 - If we block an event, it will not block all events, only ones that are related to same subscription.
-//4 - A close after publish in the same thread waits for published item to be handled(finished) .
+// 1- It is async for the caller of Publish. Meaning Publish will not be blocked.
+// It can be blocked because we don't have infinite channels. The queue size is 1024.
+// 2- Events fired from the same thread for the same subscription will be handled in the same order.
+// One will finish, then other will start.
+// 3 - If we block an event, it will not block all events, only ones that are related to same subscription.
+// 4 - A close after publish in the same thread waits for published item to be handled(finished) .
 func NewDispatchService(logger ilogger.LogAdaptor) *DispatchService {
 	service := &DispatchService{
 		subscriptions:   map[string]map[int64]*subscription{},
@@ -114,8 +114,10 @@ func (s *DispatchService) Subscribe(eventName string, subscriptionID int64, hand
 		s.subscriptions[eventName] = handlers
 	}
 	if _, exists := handlers[subscriptionID]; exists {
-		//TODO we need to make sure that this can never happen
-		panic("subscriptionID already exists ")
+		s.logger.Debug(func() string {
+			return fmt.Sprintf("event.DispatchService.Subscribe: another handler already subscribed to ID: %d", subscriptionID)
+		})
+		return
 	}
 	handlers[subscriptionID] = sbs
 }
@@ -154,9 +156,11 @@ func (s *DispatchService) Publish(event Event) bool {
 	s.logger.Trace(func() string {
 		return fmt.Sprintf("event.DispatchService.Publish: %s", event.EventName())
 	})
-	if subs, ok := s.subscriptions[event.EventName()]; ok {
+	if subs, found := s.subscriptions[event.EventName()]; found {
 		for _, sub := range subs {
-			sub.Publish(event)
+			if ok := sub.Publish(event); !ok {
+				return false
+			}
 		}
 	}
 	return true
@@ -189,9 +193,9 @@ func NewSubscription(handler Handler) *subscription {
 	return &sbs
 }
 
-//Stop ends the subscription.
-//It makes sure that any Publish will return false and all successful publishes will end before returning.
-//Stop must not be called inside its own handler, which can cause a deadlock.
+// Stop ends the subscription.
+// It makes sure that any Publish will return false and all successful publishes will end before returning.
+// Stop must not be called inside its own handler, which can cause a deadlock.
 func (s *subscription) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()

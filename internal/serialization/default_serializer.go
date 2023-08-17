@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -387,8 +387,8 @@ func (UUIDSerializer) Read(input serialization.DataInput) interface{} {
 
 func (UUIDSerializer) Write(output serialization.DataOutput, i interface{}) {
 	uuid := i.(types.UUID)
-	output.WriteInt64(int64(uuid.LeastSignificantBits()))
 	output.WriteInt64(int64(uuid.MostSignificantBits()))
+	output.WriteInt64(int64(uuid.LeastSignificantBits()))
 }
 
 type JavaDateSerializer struct{}
@@ -398,12 +398,12 @@ func (JavaDateSerializer) ID() int32 {
 }
 
 func (JavaDateSerializer) Read(input serialization.DataInput) interface{} {
-	return time.Unix(0, input.ReadInt64()*1_000)
+	return time.Unix(0, input.ReadInt64()*1_000_000)
 }
 
 func (JavaDateSerializer) Write(output serialization.DataOutput, i interface{}) {
 	t := i.(time.Time)
-	output.WriteInt64(t.UnixNano() / 1000)
+	output.WriteInt64(t.UnixNano() / 1_000_000)
 }
 
 type JavaBigIntegerSerializer struct{}

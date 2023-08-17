@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ const (
 // QueryResult is not concurrency-safe, except for closing it.
 type QueryResult struct {
 	err              error
-	page             *itype.Page
+	page             itype.Page
 	ss               *SQLService
 	conn             *icluster.Connection
 	doneCh           chan struct{}
@@ -47,6 +47,7 @@ type QueryResult struct {
 	cursorBufferSize int32
 	index            int32
 	state            int32
+	infiniteRows     bool
 }
 
 func (r *QueryResult) Metadata() sql.RowMetadata {
@@ -54,7 +55,7 @@ func (r *QueryResult) Metadata() sql.RowMetadata {
 }
 
 // NewQueryResult creates a new QueryResult.
-func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page *itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32) (*QueryResult, error) {
+func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata, page itype.Page, ss *SQLService, conn *icluster.Connection, cbs int32, infiniteRows bool) (*QueryResult, error) {
 	doneCh := make(chan struct{})
 	qr := &QueryResult{
 		queryID:          qid,
@@ -65,6 +66,7 @@ func NewQueryResult(ctx context.Context, qid itype.QueryID, md itype.RowMetadata
 		doneCh:           doneCh,
 		cursorBufferSize: cbs,
 		index:            0,
+		infiniteRows:     infiniteRows,
 	}
 	// the following goroutine cancels the query when the context is canceled.
 	go func() {
@@ -94,6 +96,10 @@ func (r *QueryResult) Len() int {
 	return r.metadata.ColumnCount()
 }
 
+func (r *QueryResult) InfiniteRows() bool {
+	return r.infiniteRows
+}
+
 // Close notifies the member to release resources for the corresponding query.
 // It can be safely called more than once and it is concurrency-safe.
 // It implements database/sql/Rows interface.
@@ -107,24 +113,30 @@ func (r *QueryResult) Close() error {
 // It implements database/sql/Rows interface.
 // InvocationTimeout field of hazelcast.Config is respected for timeout.
 func (r *QueryResult) Next(dest []driver.Value) error {
-	cols := r.page.Columns
-	if len(cols) == 0 {
+	if len(r.page.Columns) == 0 {
+		r.close()
 		return io.EOF
 	}
-	rowCount := int32(len(cols[0]))
+	rowCount := int32(len(r.page.Columns[0]))
 	if r.index >= rowCount {
 		if r.page.Last {
 			r.close()
 			return io.EOF
 		}
-		if err := r.fetchNextPage(context.Background()); err != nil {
+		ctx, cancel := r.contextWithCancel()
+		defer cancel()
+		if err := r.fetchNextPage(ctx); err != nil {
 			return err
 		}
-		// after fetching next page, the page and its cols change, so have to refresh them
-		cols = r.page.Columns
 	}
-	for i := 0; i < len(cols); i++ {
-		dest[i] = cols[i][r.index]
+	for i := 0; i < len(r.page.Columns); i++ {
+		col := r.page.Columns[i]
+		// TODO: find out the reason for requiring the following fix
+		if len(col) <= int(r.index) {
+			r.close()
+			return io.EOF
+		}
+		dest[i] = col[r.index]
 	}
 	r.index++
 	return nil
@@ -133,7 +145,7 @@ func (r *QueryResult) Next(dest []driver.Value) error {
 func (r *QueryResult) closeQuery() error {
 	if atomic.CompareAndSwapInt32(&r.state, open, closed) {
 		close(r.doneCh)
-		if err := r.ss.closeQuery(r.queryID, r.conn); err != nil {
+		if err := r.ss.closeQuery(context.Background(), r.queryID, r.conn); err != nil {
 			return err
 		}
 	}
@@ -155,6 +167,18 @@ func (r *QueryResult) fetchNextPage(ctx context.Context) error {
 	r.err = err
 	r.index = 0
 	return nil
+}
+
+func (r *QueryResult) contextWithCancel() (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		select {
+		case <-r.doneCh:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	return ctx, cancel
 }
 
 // ExecResult contains the result of an SQL query which doesn't return any rows.

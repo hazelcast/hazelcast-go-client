@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -101,15 +101,9 @@ func (s *Service) SQLMember() *pubcluster.MemberInfo {
 	return s.membersMap.SQLMember()
 }
 
-func (s *Service) RefreshedSeedAddrs(clusterCtx *CandidateCluster) ([]pubcluster.Address, error) {
+func (s *Service) RefreshedSeedAddrs(ctx context.Context, cc *CandidateCluster) ([]pubcluster.Address, error) {
 	s.membersMap.reset()
-	addrSet := NewAddrSet()
-	addrs, err := clusterCtx.AddressProvider.Addresses()
-	if err != nil {
-		return nil, err
-	}
-	addrSet.AddAddrs(addrs)
-	return addrSet.Addrs(), nil
+	return UniqueAddrs(ctx, cc.AddressProvider)
 }
 
 func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo) (pubcluster.Address, error) {
@@ -118,6 +112,10 @@ func (s *Service) TranslateMember(ctx context.Context, m *pubcluster.MemberInfo)
 
 func (s *Service) Reset() {
 	s.membersMap.reset()
+}
+
+func (s *Service) FailoverService() *FailoverService {
+	return s.failoverService
 }
 
 func (s *Service) handleMembersUpdated(conn *Connection, version int32, memberInfos []pubcluster.MemberInfo) {
@@ -153,30 +151,26 @@ func (s *Service) sendMemberListViewRequest(ctx context.Context, conn *Connectio
 	return err
 }
 
-type AddrSet struct {
-	addrs map[string]pubcluster.Address
-}
-
-func NewAddrSet() AddrSet {
-	return AddrSet{addrs: map[string]pubcluster.Address{}}
-}
-
-func (a AddrSet) AddAddr(addr pubcluster.Address) {
-	a.addrs[addr.String()] = addr
-}
-
-func (a AddrSet) AddAddrs(addrs []pubcluster.Address) {
-	for _, addr := range addrs {
-		a.AddAddr(addr)
+// UniqueAddrs return unique addresses while preserving initial order
+func UniqueAddrs(ctx context.Context, ap AddressProvider) ([]pubcluster.Address, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
 	}
-}
-
-func (a AddrSet) Addrs() []pubcluster.Address {
-	addrs := make([]pubcluster.Address, 0, len(a.addrs))
-	for _, addr := range a.addrs {
-		addrs = append(addrs, addr)
+	addrs, err := ap.Addresses(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return addrs
+	l := len(addrs)
+	uniqueSet := make(map[pubcluster.Address]struct{}, l)
+	uniqueAddrs := make([]pubcluster.Address, 0, l)
+	for _, a := range addrs {
+		if _, ok := uniqueSet[a]; ok {
+			continue
+		}
+		uniqueAddrs = append(uniqueAddrs, a)
+		uniqueSet[a] = struct{}{}
+	}
+	return uniqueAddrs, nil
 }
 
 type membersMap struct {

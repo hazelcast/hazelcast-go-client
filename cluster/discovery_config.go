@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,13 @@
 
 package cluster
 
+import "github.com/hazelcast/hazelcast-go-client/cluster/discovery"
+
 type DiscoveryConfig struct {
+	// Strategy is a discovery.Strategy implementation.
+	// See the documentation in the discovery package.
+	Strategy discovery.Strategy `json:",omitempty"`
+	// UsePublicIP causes the client to use the public addresses of members instead of their private addresses, if available.
 	UsePublicIP bool `json:",omitempty"`
 }
 

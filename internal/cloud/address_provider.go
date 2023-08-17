@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ func NewAddressProvider(dc *DiscoveryClient) *AddressProvider {
 	return &AddressProvider{dc: dc}
 }
 
-func (a *AddressProvider) Addresses() ([]pubcluster.Address, error) {
-	addrs, err := a.dc.DiscoverNodes(context.Background())
+func (a *AddressProvider) Addresses(ctx context.Context) ([]pubcluster.Address, error) {
+	addrs, err := a.dc.DiscoverNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
