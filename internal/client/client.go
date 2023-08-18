@@ -337,13 +337,13 @@ func (c *Client) addDiscoveryDestroyer() {
 }
 
 func addrProviderTranslator(config *cluster.Config, logger ilogger.LogAdaptor) (icluster.AddressProvider, icluster.AddressTranslator) {
-	if config.Cloud.Enabled {
-		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
-		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)
-	}
 	if config.Discovery.Strategy != nil {
 		a := icluster.NewDiscoveryStrategyAdapter(config.Discovery, logger)
 		return a, a
+	}
+	if config.Cloud.Enabled {
+		dc := cloud.NewDiscoveryClient(&config.Cloud, logger)
+		return cloud.NewAddressProvider(dc), cloud.NewAddressTranslator(dc)
 	}
 	pr := icluster.NewDefaultAddressProvider(&config.Network)
 	if config.Discovery.UsePublicIP {
