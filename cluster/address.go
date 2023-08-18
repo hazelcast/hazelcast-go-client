@@ -17,14 +17,15 @@
 package cluster
 
 import (
-	"fmt"
+	"net"
+	"strconv"
 )
 
 // Address is the address of a Hazelcast member
 type Address string
 
 func NewAddress(host string, port int32) Address {
-	return Address(fmt.Sprintf("%s:%d", host, port))
+	return Address(net.JoinHostPort(host, strconv.Itoa(int(port))))
 }
 
 func (a Address) String() string {
