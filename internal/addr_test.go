@@ -17,11 +17,13 @@
 package internal_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 )
 
@@ -38,13 +40,22 @@ func TestParseAddr(t *testing.T) {
 	}{
 		{Addr: "foo:1234", Target: parseAddrTarget{Host: "foo", Port: 1234, Err: nil}},
 		{Addr: "foo", Target: parseAddrTarget{Host: "foo", Port: 0, Err: nil}},
+		{Addr: "foo:", Target: parseAddrTarget{Host: "", Port: 0, Err: hzerrors.ErrInvalidAddress}},
 		{Addr: ":1234", Target: parseAddrTarget{Host: "127.0.0.1", Port: 1234, Err: nil}},
 		{Addr: "", Target: parseAddrTarget{Host: "127.0.0.1", Port: 0, Err: nil}},
+		{Addr: "169.254.172.39", Target: parseAddrTarget{Host: "169.254.172.39", Port: 0, Err: nil}},
+		{Addr: "169.254.172.39:5703", Target: parseAddrTarget{Host: "169.254.172.39", Port: 5703, Err: nil}},
+		{Addr: "169.254.172.39:", Target: parseAddrTarget{Host: "", Port: 0, Err: hzerrors.ErrInvalidAddress}},
+		{Addr: "[fe80::43:ecff:fec9:1683]:5705", Target: parseAddrTarget{Host: "fe80::43:ecff:fec9:1683", Port: 5705, Err: nil}},
+		{Addr: "[fe80::43:ecff:fec9:1683]:", Target: parseAddrTarget{Host: "", Port: 0, Err: hzerrors.ErrInvalidAddress}},
+		{Addr: "fe80::43:ecff:fec9:1683", Target: parseAddrTarget{Host: "", Port: 0, Err: hzerrors.ErrInvalidAddress}},
+		{Addr: "[fe80::43:ecff:fec9:1683", Target: parseAddrTarget{Host: "", Port: 0, Err: hzerrors.ErrInvalidAddress}},
+		{Addr: "fe80::43:ecff:fec9:1683]:5678", Target: parseAddrTarget{Host: "", Port: 0, Err: hzerrors.ErrInvalidAddress}},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("addr: %s", tc.Addr), func(t *testing.T) {
 			host, port, err := internal.ParseAddr(tc.Addr)
-			assert.Equal(t, tc.Target.Err, err)
+			assert.True(t, errors.Is(err, tc.Target.Err))
 			assert.Equal(t, tc.Target.Host, host)
 			assert.Equal(t, tc.Target.Port, port)
 		})

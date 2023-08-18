@@ -21,31 +21,43 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 )
 
 const defaultHost = "127.0.0.1"
 
 func ParseAddr(addr string) (string, int, error) {
-	// TODO: refactor this function, it can be written in a better way.
-	if addr == "" || strings.TrimSpace(addr) == "" {
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
 		return defaultHost, 0, nil
 	}
-	if !strings.Contains(addr, ":") {
+	host, port, err := splitHostPort(addr)
+	if err != nil {
+		return "", 0, ihzerrors.NewClientError("", err, hzerrors.ErrInvalidAddress)
+	}
+	if port < 0 || port > 65535 {
+		return "", 0, ihzerrors.NewClientError("port not in valid range", err, hzerrors.ErrInvalidAddress)
+	}
+	return host, port, nil
+}
+
+func splitHostPort(addr string) (host string, port int, err error) {
+	idx := strings.LastIndex(addr, ":")
+	if idx == -1 {
 		return addr, 0, nil
 	}
-	host, port, err := net.SplitHostPort(addr)
+	port, err = strconv.Atoi(addr[idx+1:])
+	if err != nil {
+		return "", 0, fmt.Errorf("invalid port")
+	}
+	host, _, err = net.SplitHostPort(addr)
 	if err != nil {
 		return "", 0, err
 	}
-	portInt, err := strconv.Atoi(port)
-	if err != nil {
-		return "", 0, err
-	}
-	if host == "" || strings.TrimSpace(host) == "" {
+	if host == "" {
 		host = defaultHost
 	}
-	if portInt < 0 { // port number should be more than 0
-		return "", 0, fmt.Errorf("invalid port number: '%d'", portInt)
-	}
-	return host, portInt, nil
+	return host, port, nil
 }
