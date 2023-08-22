@@ -32,6 +32,7 @@ import (
 
 func TestAtomicLong(t *testing.T) {
 	skip.If(t, "enterprise")
+	skip.If(t, "hz < 5")
 	testCases := []struct {
 		name       string
 		f          func(t *testing.T)

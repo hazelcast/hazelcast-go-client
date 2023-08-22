@@ -29,6 +29,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client"
 	"github.com/hazelcast/hazelcast-go-client/internal/it"
+	"github.com/hazelcast/hazelcast-go-client/internal/it/skip"
 	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
 )
@@ -48,6 +49,7 @@ func TestInternalSerializationMethods(t *testing.T) {
 }
 
 func defaultCompactSerializerTest(t *testing.T) {
+	skip.If(t, "hz < 5.1")
 	var sc serialization.Config
 	sc.Compact.SetSerializers(FooCompactSerializer{})
 	tcx := it.MapTestContext{
