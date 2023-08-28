@@ -792,8 +792,7 @@ func DecodeError(msg *proto.ClientMessage) *ihzerrors.ServerError {
 	if len(errorHolders) == 0 {
 		return nil
 	}
-	holder := errorHolders[0]
-	return ihzerrors.NewServerError(holder.ErrorCode, holder.ClassName, holder.Message, holder.StackTraceElements)
+	return ihzerrors.NewServerError(errorHolders)
 }
 
 func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {

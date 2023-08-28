@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
+	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 // StackTraceElement contains stacktrace information for server side exception.
@@ -39,33 +40,30 @@ type StackTraceElement struct {
 }
 
 type ServerError struct {
-	ClassName      string
-	Message        string
-	CauseClassName string
-	StackTrace     []StackTraceElement
-	ErrorCode      int32
-	CauseErrorCode int32
+	errorHolders []proto.ErrorHolder
 }
 
-func NewServerError(errorCode int32, className string, message string, stackTrace []StackTraceElement) *ServerError {
+func NewServerError(errorHolders []proto.ErrorHolder) *ServerError {
 	return &ServerError{
-		ErrorCode:  errorCode,
-		ClassName:  className,
-		Message:    message,
-		StackTrace: stackTrace,
+		errorHolders: errorHolders,
 	}
 }
 
 func (e *ServerError) Error() string {
-	return e.Message
+	return e.lastErrorHolder().Message
 }
 
 func (e *ServerError) String() string {
 	sb := strings.Builder{}
-	for _, trace := range e.StackTrace {
+	eh := e.lastErrorHolder()
+	for _, trace := range eh.StackTraceElements {
 		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
 	}
-	return fmt.Sprintf("got exception from server:\n %s: %s\n %s", e.ClassName, e.Message, sb.String())
+	return fmt.Sprintf("got exception from server:\n %s: %s\n %s", eh.ClassName, eh.Message, sb.String())
+}
+
+func (e *ServerError) lastErrorHolder() proto.ErrorHolder {
+	return e.errorHolders[len(e.errorHolders)-1]
 }
 
 type ClientError struct {
