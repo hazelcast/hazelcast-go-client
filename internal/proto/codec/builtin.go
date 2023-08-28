@@ -785,7 +785,7 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 func DecodeError(msg *proto.ClientMessage) *ihzerrors.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
-	var errorHolders []proto.ErrorHolder
+	var errorHolders []ihzerrors.ErrorHolder
 	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		errorHolders = append(errorHolders, DecodeErrorHolder(frameIterator))
 	})

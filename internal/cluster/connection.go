@@ -337,7 +337,7 @@ func positiveDurationOrMax(duration time.Duration) time.Duration {
 }
 
 func wrapError(err *ihzerrors.ServerError) error {
-	targetErr := convertErrorCodeToError(errorCode(err.ErrorCode))
+	targetErr := convertErrorCodeToError(errorCode(err.ErrorCode()))
 	return ihzerrors.NewClientError(err.String(), err, targetErr)
 }
 

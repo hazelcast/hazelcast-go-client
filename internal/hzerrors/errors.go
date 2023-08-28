@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
-	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
 // StackTraceElement contains stacktrace information for server side exception.
@@ -40,20 +39,24 @@ type StackTraceElement struct {
 }
 
 type ServerError struct {
-	errorHolders []proto.ErrorHolder
+	errorHolders []ErrorHolder
 }
 
-func NewServerError(errorHolders []proto.ErrorHolder) *ServerError {
+func NewServerError(errorHolders []ErrorHolder) *ServerError {
 	return &ServerError{
 		errorHolders: errorHolders,
 	}
 }
 
-func (e *ServerError) Error() string {
+func (e ServerError) ErrorCode() int32 {
+	return e.errorHolders[0].ErrorCode
+}
+
+func (e ServerError) Error() string {
 	return e.lastErrorHolder().Message
 }
 
-func (e *ServerError) String() string {
+func (e ServerError) String() string {
 	sb := strings.Builder{}
 	eh := e.lastErrorHolder()
 	for _, trace := range eh.StackTraceElements {
@@ -62,7 +65,7 @@ func (e *ServerError) String() string {
 	return fmt.Sprintf("got exception from server:\n %s: %s\n %s", eh.ClassName, eh.Message, sb.String())
 }
 
-func (e *ServerError) lastErrorHolder() proto.ErrorHolder {
+func (e ServerError) lastErrorHolder() ErrorHolder {
 	return e.errorHolders[len(e.errorHolders)-1]
 }
 
