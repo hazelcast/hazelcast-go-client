@@ -71,7 +71,10 @@ func (c *SSLConfig) SetCAPath(path string) error {
 	if caCert, err := os.ReadFile(path); err != nil {
 		return ihzerrors.NewIOError("reading CA certificate", err)
 	} else {
-		caCertPool := x509.NewCertPool()
+		var caCertPool = c.tlsConfig.RootCAs
+		if caCertPool == nil {
+			caCertPool = x509.NewCertPool()
+		}
 		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
 			return ihzerrors.NewIOError("error while loading the CA file, make sure the path exits and the format is pem", nil)
 		} else {
