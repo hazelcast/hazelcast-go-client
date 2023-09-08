@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package proto
-
-import "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
+package hzerrors
 
 type ErrorHolder struct {
 	ClassName          string
 	Message            string
-	StackTraceElements []hzerrors.StackTraceElement
+	StackTraceElements []StackTraceElement
 	ErrorCode          int32
 }
 
-func NewErrorHolder(errorCode int32, className, message string, stackTraceElements []hzerrors.StackTraceElement) ErrorHolder {
+func NewErrorHolder(errorCode int32, className, message string, stackTraceElements []StackTraceElement) ErrorHolder {
 	return ErrorHolder{
 		ErrorCode:          errorCode,
 		ClassName:          className,

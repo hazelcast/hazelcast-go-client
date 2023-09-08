@@ -785,15 +785,14 @@ func DecodeString(frameIterator *proto.ForwardFrameIterator) string {
 func DecodeError(msg *proto.ClientMessage) *ihzerrors.ServerError {
 	frameIterator := msg.FrameIterator()
 	frameIterator.Next()
-	var errorHolders []proto.ErrorHolder
+	var errorHolders []ihzerrors.ErrorHolder
 	DecodeListMultiFrame(frameIterator, func(it *proto.ForwardFrameIterator) {
 		errorHolders = append(errorHolders, DecodeErrorHolder(frameIterator))
 	})
 	if len(errorHolders) == 0 {
 		return nil
 	}
-	holder := errorHolders[0]
-	return ihzerrors.NewServerError(holder.ErrorCode, holder.ClassName, holder.Message, holder.StackTraceElements)
+	return ihzerrors.NewServerError(errorHolders)
 }
 
 func NewEndpointQualifier(qualifierType int32, identifier string) pubcluster.EndpointQualifier {

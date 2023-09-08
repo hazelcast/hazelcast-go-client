@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package codec
 
 import (
+	ihzerrors "github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 )
 
@@ -24,7 +25,7 @@ const (
 	ErrorHolderCodecErrorCodeInitialFrameSize = ErrorHolderCodecErrorCodeFieldOffset + proto.IntSizeInBytes
 )
 
-func EncodeErrorHolder(clientMessage *proto.ClientMessage, errorHolder proto.ErrorHolder) {
+func EncodeErrorHolder(clientMessage *proto.ClientMessage, errorHolder ihzerrors.ErrorHolder) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, ErrorHolderCodecErrorCodeInitialFrameSize))
 	FixSizedTypesCodec.EncodeInt(initialFrame.Content, ErrorHolderCodecErrorCodeFieldOffset, int32(errorHolder.ErrorCode))
@@ -37,7 +38,7 @@ func EncodeErrorHolder(clientMessage *proto.ClientMessage, errorHolder proto.Err
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeErrorHolder(frameIterator *proto.ForwardFrameIterator) proto.ErrorHolder {
+func DecodeErrorHolder(frameIterator *proto.ForwardFrameIterator) ihzerrors.ErrorHolder {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -47,5 +48,5 @@ func DecodeErrorHolder(frameIterator *proto.ForwardFrameIterator) proto.ErrorHol
 	message := CodecUtil.DecodeNullableForString(frameIterator)
 	stackTraceElements := DecodeListMultiFrameForStackTraceElement(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
-	return proto.NewErrorHolder(errorCode, className, message, stackTraceElements)
+	return ihzerrors.NewErrorHolder(errorCode, className, message, stackTraceElements)
 }

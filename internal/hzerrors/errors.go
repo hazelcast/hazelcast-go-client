@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -39,33 +39,36 @@ type StackTraceElement struct {
 }
 
 type ServerError struct {
-	ClassName      string
-	Message        string
-	CauseClassName string
-	StackTrace     []StackTraceElement
-	ErrorCode      int32
-	CauseErrorCode int32
+	errorHolders []ErrorHolder
 }
 
-func NewServerError(errorCode int32, className string, message string, stackTrace []StackTraceElement) *ServerError {
+func NewServerError(errorHolders []ErrorHolder) *ServerError {
 	return &ServerError{
-		ErrorCode:  errorCode,
-		ClassName:  className,
-		Message:    message,
-		StackTrace: stackTrace,
+		errorHolders: errorHolders,
 	}
 }
 
-func (e *ServerError) Error() string {
-	return e.Message
+func (e ServerError) ErrorCode() int32 {
+	return e.errorHolders[0].ErrorCode
 }
 
-func (e *ServerError) String() string {
-	sb := strings.Builder{}
-	for _, trace := range e.StackTrace {
-		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
+func (e ServerError) Error() string {
+	return fmt.Sprintf("server error: %s: %s", e.lastErrorHolder().ClassName, e.lastErrorHolder().Message)
+}
+
+func (e ServerError) String() string {
+	var sb strings.Builder
+	for _, h := range e.errorHolders {
+		sb.WriteString(fmt.Sprintf("%s: %s\n", h.ClassName, h.Message))
+		for _, trace := range h.StackTraceElements {
+			sb.WriteString(fmt.Sprintf("\t%s.%s(%s:%d)\n", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
+		}
 	}
-	return fmt.Sprintf("got exception from server:\n %s: %s\n %s", e.ClassName, e.Message, sb.String())
+	return fmt.Sprintf("server error:\n%s", sb.String())
+}
+
+func (e ServerError) lastErrorHolder() ErrorHolder {
+	return e.errorHolders[len(e.errorHolders)-1]
 }
 
 type ClientError struct {
