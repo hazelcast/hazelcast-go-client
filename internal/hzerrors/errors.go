@@ -53,16 +53,18 @@ func (e ServerError) ErrorCode() int32 {
 }
 
 func (e ServerError) Error() string {
-	return e.lastErrorHolder().Message
+	return fmt.Sprintf("server error: %s: %s", e.lastErrorHolder().ClassName, e.lastErrorHolder().Message)
 }
 
 func (e ServerError) String() string {
-	sb := strings.Builder{}
-	eh := e.lastErrorHolder()
-	for _, trace := range eh.StackTraceElements {
-		sb.WriteString(fmt.Sprintf("\n %s.%s(%s:%d)", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
+	var sb strings.Builder
+	for _, h := range e.errorHolders {
+		sb.WriteString(fmt.Sprintf("%s: %s\n"))
+		for _, trace := range h.StackTraceElements {
+			sb.WriteString(fmt.Sprintf("\t%s.%s(%s:%d)", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
+		}
 	}
-	return fmt.Sprintf("got exception from server:\n %s: %s\n %s", eh.ClassName, eh.Message, sb.String())
+	return fmt.Sprintf("server error:\n%s", sb.String())
 }
 
 func (e ServerError) lastErrorHolder() ErrorHolder {
