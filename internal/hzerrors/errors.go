@@ -59,9 +59,9 @@ func (e ServerError) Error() string {
 func (e ServerError) String() string {
 	var sb strings.Builder
 	for _, h := range e.errorHolders {
-		sb.WriteString(fmt.Sprintf("%s: %s\n"))
+		sb.WriteString(fmt.Sprintf("%s: %s\n", h.ClassName, h.Message))
 		for _, trace := range h.StackTraceElements {
-			sb.WriteString(fmt.Sprintf("\t%s.%s(%s:%d)", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
+			sb.WriteString(fmt.Sprintf("\t%s.%s(%s:%d)\n", trace.ClassName, trace.MethodName, trace.FileName, trace.LineNumber))
 		}
 	}
 	return fmt.Sprintf("server error:\n%s", sb.String())
