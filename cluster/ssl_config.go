@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"crypto"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -61,6 +62,27 @@ func (c *SSLConfig) SetTLSConfig(tlsConfig *tls.Config) {
 func (c *SSLConfig) TLSConfig() *tls.Config {
 	c.ensureTLSConfig()
 	return c.tlsConfig.Clone()
+}
+
+// AddCACert adds new CA cert to pool.
+func (c *SSLConfig) AddCACert(cert *x509.Certificate) {
+	c.ensureTLSConfig()
+	if c.tlsConfig.RootCAs == nil {
+		c.tlsConfig.RootCAs = x509.NewCertPool()
+	}
+	c.tlsConfig.RootCAs.AddCert(cert)
+}
+
+// AddClientCertAndEncryptedKey creates a certificate object from cert and key pair and adds to certificates.
+func (c *SSLConfig) AddClientCertAndEncryptedKey(cert *x509.Certificate, privateKey crypto.PrivateKey, leaf *x509.Certificate) error {
+	c.ensureTLSConfig()
+	tlsCert := tls.Certificate{
+		Certificate: [][]byte{cert.Raw},
+		PrivateKey:  privateKey,
+		Leaf:        leaf,
+	}
+	c.tlsConfig.Certificates = append(c.tlsConfig.Certificates, tlsCert)
+	return nil
 }
 
 // SetCAPath sets CA file path.
