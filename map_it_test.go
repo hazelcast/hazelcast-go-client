@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -674,20 +674,23 @@ func mapLoadAllReplacing(t *testing.T) {
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
-		keys := putSampleKeyValues(m, 10)
-		it.Must(m.EvictAll(context.Background()))
-		it.Must(m.LoadAllReplacing(context.Background()))
-		entrySet := it.MustValue(m.GetAll(context.Background(), keys...)).([]types.Entry)
-		if len(keys) != len(entrySet) {
-			t.Fatalf("target len: %d != %d", len(keys), len(entrySet))
-		}
-		it.Must(m.EvictAll(context.Background()))
-		keys = keys[:5]
-		it.Must(m.LoadAllReplacing(context.Background(), keys...))
-		entrySet = it.MustValue(m.GetAll(context.Background(), keys...)).([]types.Entry)
-		if len(keys) != len(entrySet) {
-			t.Fatalf("target len: %d != %d", len(keys), len(entrySet))
-		}
+		ctx := context.Background()
+		keys := putSampleKeyValues(m, 2)
+		// load all keys
+		it.Must(m.EvictAll(ctx))
+		size := it.MustValue(m.Size(ctx))
+		assert.Equal(t, 0, size)
+		it.Must(m.LoadAllReplacing(ctx))
+		size = it.MustValue(m.Size(ctx))
+		assert.Equal(t, 2, size)
+		// load some keys
+		it.Must(m.EvictAll(ctx))
+		size = it.MustValue(m.Size(ctx))
+		assert.Equal(t, 0, size)
+		keys = keys[:1]
+		it.Must(m.LoadAllReplacing(ctx, keys...))
+		size = it.MustValue(m.Size(ctx))
+		assert.Equal(t, 1, size)
 	})
 }
 

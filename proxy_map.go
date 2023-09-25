@@ -1392,12 +1392,13 @@ func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bo
 	return subscriptionID, err
 }
 
-func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interface{}) error {
-	if len(keys) == 0 {
-		return nil
-	}
+func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interface{}) (err error) {
 	if m.hasNearCache {
-		return m.ncm.LoadAll(ctx, m, replaceExisting, keys)
+		defer func() {
+			if err == nil {
+				err = m.ncm.Clear(ctx, m)
+			}
+		}()
 	}
 	return m.loadAllFromRemote(ctx, replaceExisting, keys)
 }
