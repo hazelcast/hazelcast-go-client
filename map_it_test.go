@@ -651,6 +651,7 @@ func mapLoadAllWithoutReplacing(t *testing.T) {
 		return "test-map"
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
+		it.Must(m.Destroy(context.Background()))
 		putSampleKeyValues(m, 2)
 		it.Must(m.EvictAll(context.Background()))
 		it.Must(m.PutTransient(context.Background(), "k0", "new-v0"))
@@ -675,6 +676,7 @@ func mapLoadAllReplacing(t *testing.T) {
 	}
 	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
+		it.Must(m.Destroy(ctx))
 		keys := putSampleKeyValues(m, 2)
 		// load all keys
 		it.Must(m.EvictAll(ctx))
