@@ -34,7 +34,7 @@ jobs:
 
       - name: "Install Go tools"
         run: |
-          go install golang.org/x/tools/...@vv0.16.0
+          go install golang.org/x/tools/...@v0.16.0
           go install honnef.co/go/tools/cmd/staticcheck@v0.4.6
 
       - name: "Go mod tidy"
