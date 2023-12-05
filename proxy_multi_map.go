@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/types"
 )
 
@@ -30,7 +31,7 @@ MultiMap is a distributed map.
 Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast MultiMap with methods like Get and Put.
 For details, see https://docs.hazelcast.com/hazelcast/latest/data-structures/multimap.html
 
-Using Locks
+# Using Locks
 
 You can lock entries in a MultiMap.
 When an entry is locked, only the owner of that lock can access that entry in the cluster until it is unlocked by the owner of force unlocked.
@@ -56,7 +57,6 @@ Once the lock context is created, it can be used to lock/unlock entries and used
 
 As mentioned before, lock context is a regular context.Context which carry a special lock ID.
 You can pass any context.Context to any MultiMap function, but in that case lock ownership between operations using the same hazelcast.Client instance is not possible.
-
 */
 type MultiMap struct {
 	*proxy
@@ -68,11 +68,9 @@ func newMultiMap(p *proxy) *MultiMap {
 
 // NewLockContext augments the passed parent context with a unique lock ID.
 // If passed context is nil, context.Background is used as the parent context.
+// Deprecated: Use hazelcast.NewLockContext() instead.
 func (m *MultiMap) NewLockContext(ctx context.Context) context.Context {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	return context.WithValue(ctx, lockIDKey{}, lockID(m.refIDGen.NextID()))
+	return NewLockContext(ctx)
 }
 
 // Clear deletes all entries one by one and fires related events.
@@ -84,7 +82,7 @@ func (m *MultiMap) Clear(ctx context.Context) error {
 
 // ContainsKey returns true if the map contains an entry with the given key.
 func (m *MultiMap) ContainsKey(ctx context.Context, key interface{}) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
@@ -113,7 +111,7 @@ func (m *MultiMap) ContainsValue(ctx context.Context, value interface{}) (bool, 
 
 // ContainsEntry returns true if the multi-map contains an entry with the given key and value.
 func (m *MultiMap) ContainsEntry(ctx context.Context, key interface{}, value interface{}) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return false, err
@@ -132,7 +130,7 @@ func (m *MultiMap) ContainsEntry(ctx context.Context, key interface{}, value int
 
 // ValueCount returns the number of values that match the given key in the multi-map.
 func (m *MultiMap) ValueCount(ctx context.Context, key interface{}) (int, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return 0, err
@@ -150,7 +148,7 @@ func (m *MultiMap) ValueCount(ctx context.Context, key interface{}) (int, error)
 // the returned value. If the removed value will not be used, delete operation is preferred over remove
 // operation for better performance.
 func (m *MultiMap) Delete(ctx context.Context, key interface{}) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -178,7 +176,7 @@ func (m *MultiMap) ForceUnlock(ctx context.Context, key interface{}) error {
 // This method returns a clone of original value, modifying the returned value does not change the
 // actual value in the multi-map. One should put modified value back to make changes visible to all nodes.
 func (m *MultiMap) Get(ctx context.Context, key interface{}) ([]interface{}, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -296,7 +294,7 @@ func (m *MultiMap) PutAll(ctx context.Context, key interface{}, values ...interf
 
 // Remove deletes all the values corresponding to the given key and returns them as a slice.
 func (m *MultiMap) Remove(ctx context.Context, key interface{}) ([]interface{}, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -311,7 +309,7 @@ func (m *MultiMap) Remove(ctx context.Context, key interface{}) ([]interface{}, 
 
 // RemoveEntry removes the specified value for the given key and returns true if call had an effect.
 func (m *MultiMap) RemoveEntry(ctx context.Context, key interface{}, value interface{}) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return false, err
@@ -365,7 +363,7 @@ func (m *MultiMap) TryLockWithLeaseAndTimeout(ctx context.Context, key interface
 
 // Unlock releases the lock for the specified key.
 func (m *MultiMap) Unlock(ctx context.Context, key interface{}) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -377,7 +375,7 @@ func (m *MultiMap) Unlock(ctx context.Context, key interface{}) error {
 }
 
 func (m *MultiMap) lock(ctx context.Context, key interface{}, ttl int64) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -389,7 +387,7 @@ func (m *MultiMap) lock(ctx context.Context, key interface{}, ttl int64) error {
 }
 
 func (m *MultiMap) put(ctx context.Context, key interface{}, value interface{}) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, valueData, err := m.validateAndSerialize2(key, value); err != nil {
 		return false, err
 	} else {
@@ -403,7 +401,7 @@ func (m *MultiMap) put(ctx context.Context, key interface{}, value interface{}) 
 }
 
 func (m *MultiMap) tryLock(ctx context.Context, key interface{}, lease int64, timeout int64) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {

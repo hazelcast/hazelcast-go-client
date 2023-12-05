@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package types
+package check
 
-type RaftGroupID struct {
-	Name string
-	Id   int64
-	Seed int64
+func Must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func MustValue[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return v
 }

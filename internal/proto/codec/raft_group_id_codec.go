@@ -27,7 +27,7 @@ const (
 	RaftGroupIdCodecIdInitialFrameSize = RaftGroupIdCodecIdFieldOffset + proto.LongSizeInBytes
 )
 
-func EncodeRaftGroupId(clientMessage *proto.ClientMessage, raftGroupId types.RaftGroupId) {
+func EncodeRaftGroupId(clientMessage *proto.ClientMessage, raftGroupId types.RaftGroupID) {
 	clientMessage.AddFrame(proto.BeginFrame.Copy())
 	initialFrame := proto.NewFrame(make([]byte, RaftGroupIdCodecIdInitialFrameSize))
 	FixSizedTypesCodec.EncodeLong(initialFrame.Content, RaftGroupIdCodecSeedFieldOffset, int64(raftGroupId.Seed))
@@ -39,7 +39,7 @@ func EncodeRaftGroupId(clientMessage *proto.ClientMessage, raftGroupId types.Raf
 	clientMessage.AddFrame(proto.EndFrame.Copy())
 }
 
-func DecodeRaftGroupId(frameIterator *proto.ForwardFrameIterator) types.RaftGroupId {
+func DecodeRaftGroupId(frameIterator *proto.ForwardFrameIterator) types.RaftGroupID {
 	// begin frame
 	frameIterator.Next()
 	initialFrame := frameIterator.Next()
@@ -49,7 +49,7 @@ func DecodeRaftGroupId(frameIterator *proto.ForwardFrameIterator) types.RaftGrou
 	name := DecodeString(frameIterator)
 	CodecUtil.FastForwardToEndFrame(frameIterator)
 
-	return types.RaftGroupId{
+	return types.RaftGroupID{
 		Name: name,
 		Id:   id,
 		Seed: seed,

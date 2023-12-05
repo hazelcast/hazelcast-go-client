@@ -43,7 +43,7 @@ type proxy struct {
 	name       string
 	object     string
 	service    string
-	groupID    types.RaftGroupId
+	groupID    types.RaftGroupID
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ func main() {
 	// Let's use go routines to simulate other clients/processes.
 	// "key" is locked by another process, and it terminated before unlocking it.
 	go func() {
-		ctx := m.NewLockContext(ctx)
+		ctx := hazelcast.NewLockContext(ctx)
 		if err := m.Lock(ctx, key); err != nil {
 			panic(err)
 		}
@@ -45,7 +45,7 @@ func main() {
 	}()
 	wg.Wait()
 	// You can still unlock the key, even if you are not the lock owner.
-	lockCtx := m.NewLockContext(ctx)
+	lockCtx := hazelcast.NewLockContext(ctx)
 	if err := m.ForceUnlock(lockCtx, key); err != nil {
 		panic(err)
 	}

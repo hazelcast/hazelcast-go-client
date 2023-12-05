@@ -32,7 +32,7 @@ const (
 
 // Gets the current value.
 
-func EncodeAtomicLongGetRequest(groupId types.RaftGroupId, name string) *proto.ClientMessage {
+func EncodeAtomicLongGetRequest(groupId types.RaftGroupID, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

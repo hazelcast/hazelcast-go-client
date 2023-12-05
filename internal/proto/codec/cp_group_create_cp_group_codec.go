@@ -44,7 +44,7 @@ func EncodeCPGroupCreateCPGroupRequest(proxyName string) *proto.ClientMessage {
 	return clientMessage
 }
 
-func DecodeCPGroupCreateCPGroupResponse(clientMessage *proto.ClientMessage) types.RaftGroupId {
+func DecodeCPGroupCreateCPGroupResponse(clientMessage *proto.ClientMessage) types.RaftGroupID {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()

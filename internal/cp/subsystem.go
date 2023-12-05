@@ -53,3 +53,7 @@ func NewSubsystem(ss *iserialization.Service, cif *cluster.ConnectionInvocationF
 func (c Subsystem) GetAtomicLong(ctx context.Context, name string) (*AtomicLong, error) {
 	return c.proxyFactory.getAtomicLong(ctx, name)
 }
+
+func (c Subsystem) GetAtomicRef(ctx context.Context, name string) (*AtomicRef, error) {
+	return c.proxyFactory.getAtomicRef(ctx, name)
+}

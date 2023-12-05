@@ -19,39 +19,40 @@ package codec
 import (
 	"github.com/hazelcast/hazelcast-go-client/internal/cp/types"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
+	iserialization "github.com/hazelcast/hazelcast-go-client/internal/serialization"
 )
 
 const (
-	AtomicLongGetAndAddCodecRequestMessageType  = int32(0x090600)
-	AtomicLongGetAndAddCodecResponseMessageType = int32(0x090601)
+	AtomicRefCompareAndSetCodecRequestMessageType  = int32(0x0A0200)
+	AtomicRefCompareAndSetCodecResponseMessageType = int32(0x0A0201)
 
-	AtomicLongGetAndAddCodecRequestDeltaOffset      = proto.PartitionIDOffset + proto.IntSizeInBytes
-	AtomicLongGetAndAddCodecRequestInitialFrameSize = AtomicLongGetAndAddCodecRequestDeltaOffset + proto.LongSizeInBytes
+	AtomicRefCompareAndSetCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 
-	AtomicLongGetAndAddResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
+	AtomicRefCompareAndSetResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-// Atomically adds the given value to the current value.
+// Alters the currently stored value by applying a function on it.
 
-func EncodeAtomicLongGetAndAddRequest(groupId types.RaftGroupID, name string, delta int64) *proto.ClientMessage {
+func EncodeAtomicRefCompareAndSetRequest(groupId types.RaftGroupID, name string, oldValue iserialization.Data, newValue iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrameWith(make([]byte, AtomicLongGetAndAddCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
-	FixSizedTypesCodec.EncodeLong(initialFrame.Content, AtomicLongGetAndAddCodecRequestDeltaOffset, delta)
+	initialFrame := proto.NewFrameWith(make([]byte, AtomicRefCompareAndSetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(AtomicLongGetAndAddCodecRequestMessageType)
+	clientMessage.SetMessageType(AtomicRefCompareAndSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeRaftGroupId(clientMessage, groupId)
 	EncodeString(clientMessage, name)
+	EncodeNullableData(clientMessage, oldValue)
+	EncodeNullableData(clientMessage, newValue)
 
 	return clientMessage
 }
 
-func DecodeAtomicLongGetAndAddResponse(clientMessage *proto.ClientMessage) int64 {
+func DecodeAtomicRefCompareAndSetResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
 	initialFrame := frameIterator.Next()
 
-	return FixSizedTypesCodec.DecodeLong(initialFrame.Content, AtomicLongGetAndAddResponseResponseOffset)
+	return DecodeBoolean(initialFrame.Content, AtomicRefCompareAndSetResponseResponseOffset)
 }

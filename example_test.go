@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -445,7 +445,7 @@ func ExampleMap_NewLockContext() {
 		defer wg.Done()
 		intValue := int64(0)
 		// Create a new unique lock context.
-		lockCtx := myMap.NewLockContext(context.Background())
+		lockCtx := hazelcast.NewLockContext(context.Background())
 		// Lock the key.
 		// The key cannot be unlocked without the same lock context.
 		if err := myMap.Lock(lockCtx, key); err != nil {

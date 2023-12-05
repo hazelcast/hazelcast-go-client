@@ -26,6 +26,7 @@ import (
 
 	pubcluster "github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
+	icp "github.com/hazelcast/hazelcast-go-client/internal/cp"
 	"github.com/hazelcast/hazelcast-go-client/internal/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
@@ -191,6 +192,16 @@ func (ci *ClientInternal) GetPartitionID(data Data) (int32, error) {
 // PartitionCount returns the partition count.
 func (ci *ClientInternal) PartitionCount() int32 {
 	return ci.client.ic.PartitionService.PartitionCount()
+}
+
+// Internal AtomicRef methods
+
+func AtomicRefGetData(ctx context.Context, ar *AtomicRef) (Data, error) {
+	return icp.AtomicRefGetData(ctx, ar)
+}
+
+func AtomicRefGetAndSetData(ctx context.Context, ar *AtomicRef, value Data) (Data, error) {
+	return icp.AtomicRefGetAndSetData(ctx, ar, value)
 }
 
 const (

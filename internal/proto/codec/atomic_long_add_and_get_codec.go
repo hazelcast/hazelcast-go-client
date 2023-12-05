@@ -33,7 +33,7 @@ const (
 
 // Atomically adds the given value to the current value.
 
-func EncodeAtomicLongAddAndGetRequest(groupId types.RaftGroupId, name string, delta int64) *proto.ClientMessage {
+func EncodeAtomicLongAddAndGetRequest(groupId types.RaftGroupID, name string, delta int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

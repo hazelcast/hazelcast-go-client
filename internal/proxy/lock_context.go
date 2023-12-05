@@ -14,45 +14,38 @@
  * limitations under the License.
  */
 
-package serialization
+package proxy
 
-import (
-	"encoding/binary"
+import "context"
 
-	"github.com/hazelcast/hazelcast-go-client/internal/murmur"
-)
+type lockID int64
+type lockIDKey struct{}
 
 const (
-	typeOffset       = 4
-	DataOffset       = 8
-	heapDataOverhead = 8
+	defaultLockID = 0
 )
 
-type Data []byte
+var (
+	lockIDGen = NewReferenceIDGenerator(1)
+)
 
-func (d Data) ToByteArray() []byte {
-	return d
+func NewLockContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, lockIDKey{}, lockID(lockIDGen.NextID()))
 }
 
-func (d Data) Type() int32 {
-	if d == nil {
-		return TypeNil
+// ExtractLockID extracts lock ID from the context.
+// If the lock ID is not found, it returns the default lock ID.
+func ExtractLockID(ctx context.Context) int64 {
+	if ctx == nil {
+		return defaultLockID
 	}
-	return int32(binary.BigEndian.Uint32(d[typeOffset:]))
-}
-
-func (d Data) DataSize() int {
-	v := len(d) - heapDataOverhead
-	if v <= 0 {
-		return 0
+	lidv := ctx.Value(lockIDKey{})
+	if lidv == nil {
+		return defaultLockID
 	}
-	return v
-}
-
-func (d Data) PartitionHash() int32 {
-	return murmur.Default3A(d, DataOffset, d.DataSize())
-}
-
-func (d Data) IsNil() bool {
-	return d == nil
+	lid, ok := lidv.(lockID)
+	if !ok {
+		return defaultLockID
+	}
+	return int64(lid)
 }
