@@ -63,9 +63,6 @@ const (
 	leaseUnset         = -1
 )
 
-type lockID int64
-type lockIDKey struct{}
-
 type creationBundle struct {
 	InvocationService    *invocation.Service
 	SerializationService *iserialization.Service
