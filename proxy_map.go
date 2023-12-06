@@ -1417,7 +1417,7 @@ func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
-		refID := iproxy.ExtractLockID(ctx)
+		refID := m.refIDGen.NextID()
 		request := codec.EncodeMapLockRequest(m.name, keyData, lid, ttl, refID)
 		_, err = m.invokeOnKey(ctx, request, keyData)
 		return err
