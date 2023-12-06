@@ -193,11 +193,9 @@ func newMap(p *proxy) *Map {
 
 // NewLockContext augments the passed parent context with a unique lock ID.
 // If passed context is nil, context.Background is used as the parent context.
+// Deprecated: Use hazelcast.NewLockContext() instead.
 func (m *Map) NewLockContext(ctx context.Context) context.Context {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	return context.WithValue(ctx, lockIDKey{}, lockID(m.refIDGen.NextID()))
+	return NewLockContext(ctx)
 }
 
 type MapListener struct {
@@ -503,7 +501,7 @@ func (m *Map) clearFromRemote(ctx context.Context) error {
 }
 
 func (m *Map) containsKeyFromRemote(ctx context.Context, key interface{}) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return false, err
@@ -521,7 +519,7 @@ func (m *Map) evictFromRemote(ctx context.Context, key interface{}) (bool, error
 	if err != nil {
 		return false, err
 	}
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapEvictRequest(m.name, keyData, lid)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -545,7 +543,7 @@ func (m *Map) executeOnKeyFromRemote(ctx context.Context, entryProcessor interfa
 	if err != nil {
 		return nil, err
 	}
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapExecuteOnKeyRequest(m.name, processorData, keyData, lid)
 	resp, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -576,7 +574,7 @@ func (m *Map) executeOnKeysFromRemote(ctx context.Context, entryProcessor interf
 }
 
 func (m *Map) getFromRemote(ctx context.Context, keyData serialization.Data) (interface{}, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapGetRequest(m.name, keyData, lid)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -610,7 +608,7 @@ func (m *Map) getAllFromRemote(ctx context.Context, keyCount int, partitionToKey
 }
 
 func (m *Map) deleteFromRemote(ctx context.Context, key interface{}) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return err
@@ -656,7 +654,7 @@ func (m *Map) putAllFromRemote(ctx context.Context, entries []types.Entry) error
 }
 
 func (m *Map) putWithTTLFromRemote(ctx context.Context, key, value interface{}, ttl int64) (interface{}, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
 	if err != nil {
 		return false, err
@@ -669,7 +667,7 @@ func (m *Map) putWithTTLFromRemote(ctx context.Context, key, value interface{}, 
 	return m.convertToObject(codec.DecodeMapPutResponse(response))
 }
 func (m *Map) putWithMaxIdleFromRemote(ctx context.Context, key, value interface{}, ttl int64, maxIdle int64) (interface{}, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
 	if err != nil {
 		return false, err
@@ -687,7 +685,7 @@ func (m *Map) putTransientWithTTLFromRemote(ctx context.Context, key, value inte
 	if err != nil {
 		return err
 	}
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapPutTransientRequest(m.name, keyData, valueData, lid, ttl)
 	_, err = m.invokeOnKey(ctx, request, keyData)
 	return err
@@ -698,7 +696,7 @@ func (m *Map) putTransientWithTTLAndMaxIdleFromRemote(ctx context.Context, key i
 	if err != nil {
 		return err
 	}
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapPutTransientWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl, maxIdle)
 	_, err = m.invokeOnKey(ctx, request, keyData)
 	return err
@@ -709,7 +707,7 @@ func (m *Map) putIfAbsentWithTTLFromRemote(ctx context.Context, key interface{},
 	if err != nil {
 		return nil, err
 	}
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapPutIfAbsentRequest(m.name, keyData, valueData, lid, ttl)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -723,7 +721,7 @@ func (m *Map) putIfAbsentWithTTLAndMaxIdleFromRemote(ctx context.Context, key in
 	if err != nil {
 		return nil, err
 	}
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapPutIfAbsentWithMaxIdleRequest(m.name, keyData, valueData, lid, ttl.Milliseconds(), maxIdle.Milliseconds())
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -733,7 +731,7 @@ func (m *Map) putIfAbsentWithTTLAndMaxIdleFromRemote(ctx context.Context, key in
 }
 
 func (m *Map) removeFromRemote(ctx context.Context, key interface{}) (interface{}, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
 		return nil, err
@@ -761,7 +759,7 @@ func (m *Map) replaceFromRemote(ctx context.Context, key interface{}, value inte
 	if err != nil {
 		return nil, err
 	}
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	request := codec.EncodeMapReplaceRequest(m.name, keyData, valueData, lid)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
@@ -771,7 +769,7 @@ func (m *Map) replaceFromRemote(ctx context.Context, key interface{}, value inte
 }
 
 func (m *Map) replaceIfSameFromRemote(ctx context.Context, key interface{}, oldValue interface{}, newValue interface{}) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, oldValueData, newValueData, err := m.validateAndSerialize3(key, oldValue, newValue)
 	if err != nil {
 		return false, err
@@ -785,7 +783,7 @@ func (m *Map) replaceIfSameFromRemote(ctx context.Context, key interface{}, oldV
 }
 
 func (m *Map) removeIfSameFromRemote(ctx context.Context, key, value interface{}) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
 	if err != nil {
 		return false, err
@@ -799,7 +797,7 @@ func (m *Map) removeIfSameFromRemote(ctx context.Context, key, value interface{}
 }
 
 func (m *Map) setFromRemote(ctx context.Context, key, value interface{}, ttl int64) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
 	if err != nil {
 		return err
@@ -812,7 +810,7 @@ func (m *Map) setFromRemote(ctx context.Context, key, value interface{}, ttl int
 }
 
 func (m *Map) setWithTTLAndMaxIdleFromRemote(ctx context.Context, key, value interface{}, ttl time.Duration, maxIdle time.Duration) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
 	if err != nil {
 		return err
@@ -824,22 +822,22 @@ func (m *Map) setWithTTLAndMaxIdleFromRemote(ctx context.Context, key, value int
 	return nil
 }
 
-func (m *Map) tryRemoveFromRemote(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
-	lid := extractLockID(ctx)
+func (m *Map) tryRemoveFromRemote(ctx context.Context, key interface{}, timeout int64) (bool, error) {
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	request := codec.EncodeMapTryRemoveRequest(m.name, keyData, lid, timeout)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	return codec.DecodeMapTryRemoveResponse(response), nil
 }
 
 func (m *Map) tryPutFromRemote(ctx context.Context, key interface{}, value interface{}, timeout int64) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	keyData, valueData, err := m.validateAndSerialize2(key, value)
 	if err != nil {
 		return false, err
@@ -905,7 +903,7 @@ func (m *Map) GetEntrySetWithPredicate(ctx context.Context, predicate predicate.
 // GetEntryView returns the SimpleEntryView for the specified key.
 // If there is no entry view for the key, nil is returned.
 func (m *Map) GetEntryView(ctx context.Context, key interface{}) (*types.SimpleEntryView, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return nil, err
 	} else {
@@ -1318,18 +1316,18 @@ func (m *Map) TryPutWithTimeout(ctx context.Context, key interface{}, value inte
 }
 
 // TryRemove tries to remove the given key from this map and returns immediately.
-func (m *Map) TryRemove(ctx context.Context, key interface{}) (interface{}, error) {
+func (m *Map) TryRemove(ctx context.Context, key interface{}) (bool, error) {
 	return m.tryRemove(ctx, key, 0)
 }
 
 // TryRemoveWithTimeout tries to remove the given key from this map and waits until operation is completed or timeout is reached.
-func (m *Map) TryRemoveWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (interface{}, error) {
+func (m *Map) TryRemoveWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (bool, error) {
 	return m.tryRemove(ctx, key, timeout.Milliseconds())
 }
 
 // Unlock releases the lock for the specified key.
 func (m *Map) Unlock(ctx context.Context, key interface{}) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -1415,7 +1413,7 @@ func (m *Map) convertToDataList(keys []interface{}) ([]serialization.Data, error
 }
 
 func (m *Map) lock(ctx context.Context, key interface{}, ttl int64) error {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return err
 	} else {
@@ -1462,7 +1460,7 @@ func (m *Map) putTransientWithTTLAndMaxIdle(ctx context.Context, key interface{}
 }
 
 func (m *Map) tryLock(ctx context.Context, key interface{}, lease int64, timeout int64) (bool, error) {
-	lid := extractLockID(ctx)
+	lid := iproxy.ExtractLockID(ctx)
 	if keyData, err := m.validateAndSerialize(key); err != nil {
 		return false, err
 	} else {
@@ -1517,7 +1515,7 @@ func (m *Map) tryPut(ctx context.Context, key interface{}, value interface{}, ti
 	return m.tryPutFromRemote(ctx, key, value, timeout)
 }
 
-func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
+func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (bool, error) {
 	if m.hasNearCache {
 		return m.ncm.TryRemove(ctx, m, key, timeout)
 	}

@@ -35,7 +35,7 @@ const (
 // Atomically sets the value to the given updated value only if the current
 // value the expected value.
 
-func EncodeAtomicLongCompareAndSetRequest(groupId types.RaftGroupId, name string, expected int64, updated int64) *proto.ClientMessage {
+func EncodeAtomicLongCompareAndSetRequest(groupId types.RaftGroupID, name string, expected int64, updated int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

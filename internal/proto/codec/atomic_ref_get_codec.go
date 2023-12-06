@@ -23,34 +23,33 @@ import (
 )
 
 const (
-	AtomicLongApplyCodecRequestMessageType  = int32(0x090100)
-	AtomicLongApplyCodecResponseMessageType = int32(0x090101)
+	AtomicRefGetCodecRequestMessageType  = int32(0x0A0400)
+	AtomicRefGetCodecResponseMessageType = int32(0x0A0401)
 
-	AtomicLongApplyCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+	AtomicRefGetCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
 )
 
-// Applies a function on the value, the actual stored value will not change
+// Gets the current value.
 
-func EncodeAtomicLongApplyRequest(groupId types.RaftGroupID, name string, function iserialization.Data) *proto.ClientMessage {
+func EncodeAtomicRefGetRequest(groupId types.RaftGroupID, name string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
-	clientMessage.SetRetryable(false)
+	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, AtomicLongApplyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, AtomicRefGetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(AtomicLongApplyCodecRequestMessageType)
+	clientMessage.SetMessageType(AtomicRefGetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeRaftGroupId(clientMessage, groupId)
 	EncodeString(clientMessage, name)
-	EncodeData(clientMessage, function)
 
 	return clientMessage
 }
 
-func DecodeAtomicLongApplyResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeAtomicRefGetResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }

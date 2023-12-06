@@ -58,14 +58,6 @@ func (codecUtil) FastForwardToEndFrame(frameIterator *proto.ForwardFrameIterator
 	}
 }
 
-func (codecUtil) EncodeNullable(message *proto.ClientMessage, value interface{}, encoder Encoder) {
-	if value == nil {
-		message.AddFrame(proto.NullFrame.Copy())
-	} else {
-		encoder(message, value)
-	}
-}
-
 func (codecUtil) EncodeNullableForString(message *proto.ClientMessage, value string) {
 	if strings.TrimSpace(value) == "" {
 		message.AddFrame(proto.NullFrame.Copy())
@@ -91,10 +83,7 @@ func (codecUtil) EncodeNullableForData(message *proto.ClientMessage, data iseria
 }
 
 func (c codecUtil) DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
-	if c.NextFrameIsNullFrame(frameIterator) {
-		return nil
-	}
-	return DecodeData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }
 
 func (c codecUtil) DecodeNullableForAddress(frameIterator *proto.ForwardFrameIterator) *pubcluster.Address {
@@ -145,6 +134,23 @@ func (c codecUtil) DecodeNullableForSimpleEntryView(frameIterator *proto.Forward
 		return nil
 	}
 	return DecodeSimpleEntryView(frameIterator)
+}
+
+// EncodeNullable
+// Deprecated: Use EncodeNullableData instead.
+func EncodeNullable(message *proto.ClientMessage, value iserialization.Data, encoder Encoder) {
+	if value == nil {
+		message.AddFrame(proto.NullFrame.Copy())
+	} else {
+		encoder(message, value)
+	}
+}
+
+func DecodeNullableForData(frameIterator *proto.ForwardFrameIterator) iserialization.Data {
+	if NextFrameIsNullFrame(frameIterator) {
+		return nil
+	}
+	return DecodeData(frameIterator)
 }
 
 func EncodeByteArray(message *proto.ClientMessage, value []byte) {
@@ -350,12 +356,7 @@ func DecodeEntryListIntegerLong(iterator *proto.ForwardFrameIterator) []proto.Pa
 	return result
 }
 
-// fixSizedTypesCodec
-type fixSizedTypesCodec struct{}
-
-var FixSizedTypesCodec fixSizedTypesCodec
-
-func (fixSizedTypesCodec) EncodeBoolean(buffer []byte, offset int32, value bool) {
+func EncodeBoolean(buffer []byte, offset int32, value bool) {
 	if value {
 		buffer[offset] = 1
 	} else {
@@ -363,8 +364,21 @@ func (fixSizedTypesCodec) EncodeBoolean(buffer []byte, offset int32, value bool)
 	}
 }
 
-func (fixSizedTypesCodec) DecodeBoolean(buffer []byte, offset int32) bool {
+func DecodeBoolean(buffer []byte, offset int32) bool {
 	return buffer[offset] == 1
+}
+
+// fixSizedTypesCodec
+type fixSizedTypesCodec struct{}
+
+var FixSizedTypesCodec fixSizedTypesCodec
+
+func (fixSizedTypesCodec) EncodeBoolean(buffer []byte, offset int32, value bool) {
+	EncodeBoolean(buffer, offset, value)
+}
+
+func (fixSizedTypesCodec) DecodeBoolean(buffer []byte, offset int32) bool {
+	return DecodeBoolean(buffer, offset)
 }
 
 func (fixSizedTypesCodec) EncodeByte(buffer []byte, offset int32, value byte) {

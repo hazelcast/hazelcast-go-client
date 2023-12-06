@@ -6,7 +6,7 @@ jobs:
     runs-on: "ubuntu-latest"
     env:
       GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.1"
+      HZ_VERSION: "5.3.6"
     defaults:
       run:
         shell: "bash"
@@ -30,12 +30,12 @@ jobs:
       - name: "Setup Go"
         uses: "actions/setup-go@v2"
         with:
-          go-version: "1.17"
+          go-version: "1.20"
 
       - name: "Install Go tools"
         run: |
-          go install golang.org/x/tools/...@v0.1.11
-          go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
+          go install golang.org/x/tools/...@v0.16.0
+          go install honnef.co/go/tools/cmd/staticcheck@v0.4.6
 
       - name: "Go mod tidy"
         run: |

@@ -22,17 +22,17 @@ import (
 	"sync"
 	"time"
 
-	icp "github.com/hazelcast/hazelcast-go-client/internal/cp"
-
 	"github.com/hazelcast/hazelcast-go-client/cluster"
 	"github.com/hazelcast/hazelcast-go-client/hzerrors"
 	"github.com/hazelcast/hazelcast-go-client/internal"
 	"github.com/hazelcast/hazelcast-go-client/internal/client"
 	icluster "github.com/hazelcast/hazelcast-go-client/internal/cluster"
+	icp "github.com/hazelcast/hazelcast-go-client/internal/cp"
 	"github.com/hazelcast/hazelcast-go-client/internal/event"
 	"github.com/hazelcast/hazelcast-go-client/internal/lifecycle"
 	inearcache "github.com/hazelcast/hazelcast-go-client/internal/nearcache"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto/codec"
+	iproxy "github.com/hazelcast/hazelcast-go-client/internal/proxy"
 	"github.com/hazelcast/hazelcast-go-client/internal/serialization"
 	isql "github.com/hazelcast/hazelcast-go-client/internal/sql"
 	"github.com/hazelcast/hazelcast-go-client/internal/stats"
@@ -46,7 +46,12 @@ const (
 )
 
 type AtomicLong = icp.AtomicLong
+type AtomicRef = icp.AtomicRef
 type CPSubsystem = icp.Subsystem
+
+func NewLockContext(ctx context.Context) context.Context {
+	return iproxy.NewLockContext(ctx)
+}
 
 // StartNewClient creates and starts a new client with the default configuration.
 // The default configuration is tuned connect to an Hazelcast cluster running on the same computer with the client.

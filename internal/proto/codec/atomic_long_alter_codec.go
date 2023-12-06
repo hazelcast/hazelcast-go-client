@@ -34,7 +34,7 @@ const (
 
 // Alters the currently stored value by applying a function on it.
 
-func EncodeAtomicLongAlterRequest(groupId types.RaftGroupId, name string, function iserialization.Data, returnValueType int32) *proto.ClientMessage {
+func EncodeAtomicLongAlterRequest(groupId types.RaftGroupID, name string, function iserialization.Data, returnValueType int32) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

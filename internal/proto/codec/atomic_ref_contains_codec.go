@@ -23,34 +23,35 @@ import (
 )
 
 const (
-	AtomicLongApplyCodecRequestMessageType  = int32(0x090100)
-	AtomicLongApplyCodecResponseMessageType = int32(0x090101)
+	AtomicRefContainsCodecRequestMessageType  = int32(0x0A0300)
+	AtomicRefContainsCodecResponseMessageType = int32(0x0A0301)
 
-	AtomicLongApplyCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+	AtomicRefContainsCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+
+	AtomicRefContainsResponseResponseOffset = proto.ResponseBackupAcksOffset + proto.ByteSizeInBytes
 )
 
-// Applies a function on the value, the actual stored value will not change
+// Checks if the reference contains the value.
 
-func EncodeAtomicLongApplyRequest(groupId types.RaftGroupID, name string, function iserialization.Data) *proto.ClientMessage {
+func EncodeAtomicRefContainsRequest(groupId types.RaftGroupID, name string, value iserialization.Data) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
-	clientMessage.SetRetryable(false)
+	clientMessage.SetRetryable(true)
 
-	initialFrame := proto.NewFrameWith(make([]byte, AtomicLongApplyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, AtomicRefContainsCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(AtomicLongApplyCodecRequestMessageType)
+	clientMessage.SetMessageType(AtomicRefContainsCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeRaftGroupId(clientMessage, groupId)
 	EncodeString(clientMessage, name)
-	EncodeData(clientMessage, function)
+	EncodeNullableData(clientMessage, value)
 
 	return clientMessage
 }
 
-func DecodeAtomicLongApplyResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeAtomicRefContainsResponse(clientMessage *proto.ClientMessage) bool {
 	frameIterator := clientMessage.FrameIterator()
-	// empty initial frame
-	frameIterator.Next()
+	initialFrame := frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeBoolean(initialFrame.Content, AtomicRefContainsResponseResponseOffset)
 }

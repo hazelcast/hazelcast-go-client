@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -37,13 +37,13 @@ func main() {
 	// Let's use go routines to simulate other clients/processes.
 	// "key" will be locked by other process for two seconds.
 	go func() {
-		ctx := m.NewLockContext(ctx)
+		ctx := hazelcast.NewLockContext(ctx)
 		must(m.LockWithLease(ctx, key, 2*time.Second))
 		fmt.Println("[other process] has the lock")
 		wg.Done()
 	}()
 	wg.Wait()
-	lockCtx := m.NewLockContext(ctx)
+	lockCtx := hazelcast.NewLockContext(ctx)
 	// Try to acquire the lock. It fails, key is locked.
 	ok := mustBool(m.TryLock(lockCtx, key))
 	fmt.Printf("operation: TryLock, succeed: %t\n", ok)
@@ -56,7 +56,7 @@ func main() {
 	// Another process may try to acquire lock.
 	wg.Add(1)
 	go func() {
-		ctx := m.NewLockContext(ctx)
+		ctx := hazelcast.NewLockContext(ctx)
 		// Try to acquire lock for a second to hold it for 2 seconds. It fails, we have the lock.
 		ok := mustBool(m.TryLockWithLeaseAndTimeout(ctx, key, 2*time.Second, time.Millisecond))
 		fmt.Printf("[other process] operation: TryLockWithLeaseAndTimeout, succeed: %t\n", ok)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -46,13 +46,13 @@ func TestCodecUtil_FastForwardToEndFrame(t *testing.T) {
 	assert.False(t, iterator.HasNext())
 }
 
-func TestCodecUtil_EncodeNullable(t *testing.T) {
+func TestEncodeNullable(t *testing.T) {
 	//given
 	frame1 := proto.NewFrame([]byte("value-0"))
 	message := proto.NewClientMessage(frame1)
 
 	//when
-	CodecUtil.EncodeNullable(message, "encode-value-1", EncodeString)
+	EncodeNullable(message, iserialization.Data("encode-value-1"), EncodeData)
 
 	//then
 	iterator := message.FrameIterator()
@@ -136,7 +136,7 @@ func TestCodecUtil_EncodeNullable_If_Value_Is_Null_Add_Null_Frame_To_Message(t *
 	message := proto.NewClientMessage(frame1)
 
 	//when
-	CodecUtil.EncodeNullable(message, nil, EncodeString)
+	EncodeNullable(message, nil, EncodeData)
 
 	//then
 	iterator := message.FrameIterator()

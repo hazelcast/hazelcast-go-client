@@ -33,7 +33,7 @@ const (
 
 // Atomically sets the given value and returns the old value.
 
-func EncodeAtomicLongGetAndSetRequest(groupId types.RaftGroupId, name string, newValue int64) *proto.ClientMessage {
+func EncodeAtomicLongGetAndSetRequest(groupId types.RaftGroupID, name string, newValue int64) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 

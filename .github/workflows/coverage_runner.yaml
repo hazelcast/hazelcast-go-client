@@ -32,14 +32,9 @@ jobs:
     if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:         
-      - name: Setup Java
-        uses: actions/setup-java@v1
-        with:
-          java-version: 8
-          
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.17'
+          go-version: '1.20'
 
       - name: Install JDK      
         uses: actions/setup-java@v2
@@ -66,7 +61,7 @@ jobs:
       - name: Test
         env:
           HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-          HZ_VERSION: 5.1
+          HZ_VERSION: 5.3.6
           SSL_ENABLED: 1
           MEMBER_COUNT: 3
         run: |

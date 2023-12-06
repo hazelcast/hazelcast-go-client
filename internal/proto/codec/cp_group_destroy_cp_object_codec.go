@@ -31,7 +31,7 @@ const (
 // Destroys the distributed object with the given name on the requested
 // CP group
 
-func EncodeCPGroupDestroyCPObjectRequest(groupId types.RaftGroupId, serviceName string, objectName string) *proto.ClientMessage {
+func EncodeCPGroupDestroyCPObjectRequest(groupId types.RaftGroupID, serviceName string, objectName string) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(true)
 

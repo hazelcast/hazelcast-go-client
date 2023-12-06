@@ -905,7 +905,7 @@ func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
 				if err != nil {
 					tcx.T.Fatal(err)
 				}
-				require.True(t, v.(bool))
+				require.True(t, v)
 			},
 		},
 		{
@@ -915,7 +915,7 @@ func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
 				if err != nil {
 					tcx.T.Fatal(err)
 				}
-				require.True(t, v.(bool))
+				require.True(t, v)
 			},
 		},
 	}

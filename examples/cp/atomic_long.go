@@ -45,6 +45,9 @@ func main() {
 	}
 	cp := client.CPSubsystem()
 	counter, err := cp.GetAtomicLong(ctx, "counter")
+	if err != nil {
+		panic(err)
+	}
 	val, err := counter.Get(ctx)
 	if err != nil {
 		panic(err)
@@ -85,6 +88,9 @@ func main() {
 	}
 	fmt.Println("counter after AlterAndGet:", val)
 	modified, err := counter.Apply(ctx, &Multiplication{3})
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println(": ", modified)
 }
 

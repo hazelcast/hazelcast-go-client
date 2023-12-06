@@ -23,34 +23,36 @@ import (
 )
 
 const (
-	AtomicLongApplyCodecRequestMessageType  = int32(0x090100)
-	AtomicLongApplyCodecResponseMessageType = int32(0x090101)
+	AtomicRefSetCodecRequestMessageType  = int32(0x0A0500)
+	AtomicRefSetCodecResponseMessageType = int32(0x0A0501)
 
-	AtomicLongApplyCodecRequestInitialFrameSize = proto.PartitionIDOffset + proto.IntSizeInBytes
+	AtomicRefSetCodecRequestReturnOldValueOffset = proto.PartitionIDOffset + proto.IntSizeInBytes
+	AtomicRefSetCodecRequestInitialFrameSize     = AtomicRefSetCodecRequestReturnOldValueOffset + proto.BooleanSizeInBytes
 )
 
-// Applies a function on the value, the actual stored value will not change
+// Atomically sets the given value
 
-func EncodeAtomicLongApplyRequest(groupId types.RaftGroupID, name string, function iserialization.Data) *proto.ClientMessage {
+func EncodeAtomicRefSetRequest(groupId types.RaftGroupID, name string, newValue iserialization.Data, returnOldValue bool) *proto.ClientMessage {
 	clientMessage := proto.NewClientMessageForEncode()
 	clientMessage.SetRetryable(false)
 
-	initialFrame := proto.NewFrameWith(make([]byte, AtomicLongApplyCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	initialFrame := proto.NewFrameWith(make([]byte, AtomicRefSetCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
+	EncodeBoolean(initialFrame.Content, AtomicRefSetCodecRequestReturnOldValueOffset, returnOldValue)
 	clientMessage.AddFrame(initialFrame)
-	clientMessage.SetMessageType(AtomicLongApplyCodecRequestMessageType)
+	clientMessage.SetMessageType(AtomicRefSetCodecRequestMessageType)
 	clientMessage.SetPartitionId(-1)
 
 	EncodeRaftGroupId(clientMessage, groupId)
 	EncodeString(clientMessage, name)
-	EncodeData(clientMessage, function)
+	EncodeNullableData(clientMessage, newValue)
 
 	return clientMessage
 }
 
-func DecodeAtomicLongApplyResponse(clientMessage *proto.ClientMessage) iserialization.Data {
+func DecodeAtomicRefSetResponse(clientMessage *proto.ClientMessage) iserialization.Data {
 	frameIterator := clientMessage.FrameIterator()
 	// empty initial frame
 	frameIterator.Next()
 
-	return CodecUtil.DecodeNullableForData(frameIterator)
+	return DecodeNullableForData(frameIterator)
 }

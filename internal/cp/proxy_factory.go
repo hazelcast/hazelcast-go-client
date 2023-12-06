@@ -31,6 +31,7 @@ import (
 
 const (
 	atomicLongService   = "hz:raft:atomicLongService"
+	atomicRefService    = "hz:raft:atomicRefService"
 	defaultGroupName    = "default"
 	metadataCPGroupName = "metadata"
 )
@@ -66,17 +67,20 @@ func (m *proxyFactory) getOrCreateProxy(ctx context.Context, service string, nam
 		return nil, err
 	}
 	p.groupID = gid
-	if service == atomicLongService {
+	switch service {
+	case atomicLongService:
 		return &AtomicLong{p}, nil
+	case atomicRefService:
+		return &AtomicRef{p}, nil
 	}
 	return nil, hzerrors.NewIllegalArgumentError("requested data structure is not supported by Go Client CP Subsystem", nil)
 }
 
-func (m *proxyFactory) createGroupID(ctx context.Context, p *proxy, proxyName string) (types.RaftGroupId, error) {
+func (m *proxyFactory) createGroupID(ctx context.Context, p *proxy, proxyName string) (types.RaftGroupID, error) {
 	request := codec.EncodeCPGroupCreateCPGroupRequest(proxyName)
 	response, err := p.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
-		return types.RaftGroupId{}, err
+		return types.RaftGroupID{}, err
 	}
 	return codec.DecodeCPGroupCreateCPGroupResponse(response), nil
 }
@@ -124,4 +128,12 @@ func (m *proxyFactory) getAtomicLong(ctx context.Context, name string) (*AtomicL
 		return nil, err
 	}
 	return p.(*AtomicLong), nil
+}
+
+func (m *proxyFactory) getAtomicRef(ctx context.Context, name string) (*AtomicRef, error) {
+	p, err := m.getOrCreateProxy(ctx, atomicRefService, name)
+	if err != nil {
+		return nil, err
+	}
+	return p.(*AtomicRef), nil
 }
