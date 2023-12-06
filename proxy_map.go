@@ -822,16 +822,16 @@ func (m *Map) setWithTTLAndMaxIdleFromRemote(ctx context.Context, key, value int
 	return nil
 }
 
-func (m *Map) tryRemoveFromRemote(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
+func (m *Map) tryRemoveFromRemote(ctx context.Context, key interface{}, timeout int64) (bool, error) {
 	lid := iproxy.ExtractLockID(ctx)
 	keyData, err := m.validateAndSerialize(key)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	request := codec.EncodeMapTryRemoveRequest(m.name, keyData, lid, timeout)
 	response, err := m.invokeOnKey(ctx, request, keyData)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	return codec.DecodeMapTryRemoveResponse(response), nil
 }
@@ -1316,12 +1316,12 @@ func (m *Map) TryPutWithTimeout(ctx context.Context, key interface{}, value inte
 }
 
 // TryRemove tries to remove the given key from this map and returns immediately.
-func (m *Map) TryRemove(ctx context.Context, key interface{}) (interface{}, error) {
+func (m *Map) TryRemove(ctx context.Context, key interface{}) (bool, error) {
 	return m.tryRemove(ctx, key, 0)
 }
 
 // TryRemoveWithTimeout tries to remove the given key from this map and waits until operation is completed or timeout is reached.
-func (m *Map) TryRemoveWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (interface{}, error) {
+func (m *Map) TryRemoveWithTimeout(ctx context.Context, key interface{}, timeout time.Duration) (bool, error) {
 	return m.tryRemove(ctx, key, timeout.Milliseconds())
 }
 
@@ -1515,7 +1515,7 @@ func (m *Map) tryPut(ctx context.Context, key interface{}, value interface{}, ti
 	return m.tryPutFromRemote(ctx, key, value, timeout)
 }
 
-func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (interface{}, error) {
+func (m *Map) tryRemove(ctx context.Context, key interface{}, timeout int64) (bool, error) {
 	if m.hasNearCache {
 		return m.ncm.TryRemove(ctx, m, key, timeout)
 	}
