@@ -57,12 +57,12 @@ func (m *proxyFactory) getOrCreateProxy(ctx context.Context, service string, nam
 	if err != nil {
 		return nil, err
 	}
-	obj, err := objectNameForProxy(nameWithGroup)
+	obj, err := objectNameForProxy(name)
 	if err != nil {
 		return nil, err
 	}
 	p := newProxy(m.ss, m.invFactory, m.is, m.lg, service, name, obj)
-	gid, err := m.createGroupID(ctx, p, nameWithGroup)
+	gid, err := m.createGroupID(ctx, p, name)
 	if err != nil {
 		return nil, err
 	}
