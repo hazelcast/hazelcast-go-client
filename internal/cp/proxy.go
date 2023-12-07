@@ -51,7 +51,7 @@ The exported fields and methods of proxy are in public API so directly accessibl
 Be aware of that while editing the fields and methods of proxy struct.
 */
 
-func newProxy(ss *iserialization.Service, invFactory *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor, svc string, pxy string, obj string) *proxy {
+func newProxy(ss *iserialization.Service, invFactory *cluster.ConnectionInvocationFactory, is *invocation.Service, lg *logger.LogAdaptor, svc string, name string) *proxy {
 	circuitBreaker := cb.NewCircuitBreaker(
 		cb.MaxRetries(math.MaxInt32),
 		cb.MaxFailureCount(10),
@@ -63,8 +63,7 @@ func newProxy(ss *iserialization.Service, invFactory *cluster.ConnectionInvocati
 		invFactory: invFactory,
 		is:         is,
 		lg:         lg,
-		name:       pxy,
-		object:     obj,
+		name:       name,
 		service:    svc,
 		ss:         ss,
 	}
@@ -80,7 +79,7 @@ func (p *proxy) ServiceName() string {
 }
 
 func (p *proxy) Destroy(ctx context.Context) error {
-	request := codec.EncodeCPGroupDestroyCPObjectRequest(p.groupID, p.service, p.object)
+	request := codec.EncodeCPGroupDestroyCPObjectRequest(p.groupID, p.service, p.name)
 	_, err := p.invokeOnRandomTarget(ctx, request, nil)
 	return err
 }
