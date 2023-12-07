@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/hazelcast/hazelcast-go-client/internal/check"
@@ -31,12 +32,13 @@ func TestAtomicRef(t *testing.T) {
 		name string
 		f    func(t *testing.T)
 	}{
+		{name: "atomicRefClear", f: atomicRefClearTest},
 		{name: "atomicRefCompareAndSet", f: atomicRefCompareAndSetTest},
+		{name: "atomicRefContains", f: atomicRefContainsTest},
 		{name: "atomicRefGet", f: atomicRefGetTest},
 		{name: "atomicRefGetAndSet", f: atomicRefGetAndSetTest},
-		{name: "atomicRefContains", f: atomicRefContainsTest},
 		{name: "atomicRefIsNil", f: atomicRefIsNilTest},
-		{name: "atomicRefClear", f: atomicRefClearTest},
+		{name: "atomicRefName", f: atomicRefNametest},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, tc.f)
@@ -111,5 +113,17 @@ func atomicRefClearTest(t *testing.T) {
 		check.Must(tcx.A.Clear(ctx))
 		v = check.MustValue(tcx.A.Get(ctx))
 		require.Equal(t, nil, v)
+	})
+}
+
+func atomicRefNametest(t *testing.T) {
+	name := it.NewUniqueObjectName("atomicref")
+	nameWithGroup := name + "@somegroup"
+	tcx := it.AtomicRefTestContext{
+		T:    t,
+		Name: nameWithGroup,
+	}
+	tcx.Tester(func(tcx *it.AtomicRefTestContext) {
+		assert.Equal(t, tcx.A.Name(), name)
 	})
 }
