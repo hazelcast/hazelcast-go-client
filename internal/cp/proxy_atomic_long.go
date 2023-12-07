@@ -115,7 +115,7 @@ func (a *AtomicLong) Apply(ctx context.Context, function interface{}) (interface
 	if err != nil {
 		return nil, err
 	}
-	request := codec.EncodeAtomicLongApplyRequest(a.groupID, a.object, data)
+	request := codec.EncodeAtomicLongApplyRequest(a.groupID, a.name, data)
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (a *AtomicLong) alter(ctx context.Context, function interface{}, valueType 
 	if err != nil {
 		return nil, err
 	}
-	request := codec.EncodeAtomicLongAlterRequest(a.groupID, a.object, data, valueType)
+	request := codec.EncodeAtomicLongAlterRequest(a.groupID, a.name, data, valueType)
 	response, err := a.invokeOnRandomTarget(ctx, request, nil)
 	if err != nil {
 		return nil, err

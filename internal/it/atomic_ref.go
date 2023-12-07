@@ -26,6 +26,7 @@ import (
 
 type AtomicRefTestContext struct {
 	T       *testing.T
+	Name    string
 	A       *cp.AtomicRef
 	Cluster *TestCluster
 	Client  *hz.Client
@@ -49,8 +50,10 @@ func (tcx *AtomicRefTestContext) Tester(f func(tcx *AtomicRefTestContext)) {
 	if tcx.Client == nil {
 		tcx.Client = getDefaultClient(&config)
 	}
-	name := NewUniqueObjectName("atomicref")
-	ar, err := tcx.Client.CPSubsystem().GetAtomicRef(ctx, name)
+	if tcx.Name == "" {
+		tcx.Name = NewUniqueObjectName("atomicref")
+	}
+	ar, err := tcx.Client.CPSubsystem().GetAtomicRef(ctx, tcx.Name)
 	if err != nil {
 		panic(err)
 	}
