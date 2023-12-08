@@ -47,6 +47,7 @@ const (
 
 type AtomicLong = icp.AtomicLong
 type AtomicRef = icp.AtomicRef
+type CPMap = icp.Map
 type CPSubsystem = icp.Subsystem
 
 func NewLockContext(ctx context.Context) context.Context {
