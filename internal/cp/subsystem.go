@@ -54,6 +54,12 @@ func (c Subsystem) GetAtomicLong(ctx context.Context, name string) (*AtomicLong,
 	return c.proxyFactory.getAtomicLong(ctx, name)
 }
 
+// GetAtomicRef returns the distributed AtomicRef instance with given name.
 func (c Subsystem) GetAtomicRef(ctx context.Context, name string) (*AtomicRef, error) {
 	return c.proxyFactory.getAtomicRef(ctx, name)
+}
+
+// GetMap returns the distributed CPMap instance with given name.
+func (c Subsystem) GetMap(ctx context.Context, name string) (*Map, error) {
+	return c.proxyFactory.getMap(ctx, name)
 }

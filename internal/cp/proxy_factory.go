@@ -32,6 +32,7 @@ import (
 const (
 	atomicLongService   = "hz:raft:atomicLongService"
 	atomicRefService    = "hz:raft:atomicRefService"
+	cpMapService        = "hz:raft:mapService"
 	defaultGroupName    = "default"
 	metadataCPGroupName = "metadata"
 )
@@ -72,6 +73,8 @@ func (m *proxyFactory) getOrCreateProxy(ctx context.Context, service string, nam
 		return &AtomicLong{p}, nil
 	case atomicRefService:
 		return &AtomicRef{p}, nil
+	case cpMapService:
+		return &Map{p}, nil
 	}
 	return nil, hzerrors.NewIllegalArgumentError("requested data structure is not supported by Go Client CP Subsystem", nil)
 }
@@ -136,4 +139,12 @@ func (m *proxyFactory) getAtomicRef(ctx context.Context, name string) (*AtomicRe
 		return nil, err
 	}
 	return p.(*AtomicRef), nil
+}
+
+func (m *proxyFactory) getMap(ctx context.Context, name string) (*Map, error) {
+	p, err := m.getOrCreateProxy(ctx, cpMapService, name)
+	if err != nil {
+		return nil, err
+	}
+	return p.(*Map), nil
 }
