@@ -194,7 +194,7 @@ func (ci *ClientInternal) PartitionCount() int32 {
 	return ci.client.ic.PartitionService.PartitionCount()
 }
 
-// Internal AtomicRef methods
+// Internal AtomicRef functions
 
 func AtomicRefGetData(ctx context.Context, ar *AtomicRef) (Data, error) {
 	return icp.AtomicRefGetData(ctx, ar)
@@ -202,6 +202,20 @@ func AtomicRefGetData(ctx context.Context, ar *AtomicRef) (Data, error) {
 
 func AtomicRefGetAndSetData(ctx context.Context, ar *AtomicRef, value Data) (Data, error) {
 	return icp.AtomicRefGetAndSetData(ctx, ar, value)
+}
+
+// Internal CPMap functions
+
+func CPMapGetData(ctx context.Context, m *CPMap, key Data) (Data, error) {
+	return icp.CPMapGetData(ctx, m, key)
+}
+
+func CPMapPutData(ctx context.Context, m *CPMap, key, value Data) (Data, error) {
+	return icp.CPMapPutData(ctx, m, key, value)
+}
+
+func CPMapRemoveData(ctx context.Context, m *CPMap, key Data) (Data, error) {
+	return icp.CPMapRemoveData(ctx, m, key)
 }
 
 const (
