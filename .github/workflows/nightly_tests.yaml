@@ -11,7 +11,7 @@ jobs:
     strategy:
         matrix:
             os: [ ubuntu-latest ]
-            go_version: [ 1.20, 1.21 ]
+            go_version: [ "1.20", "1.21" ]
         fail-fast: false
     steps:
 
@@ -22,7 +22,7 @@ jobs:
           
       - uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go_version }}
+          go-version: "${{ matrix.go_version }}"
           
       - name: Checkout code
         uses: actions/checkout@v2
