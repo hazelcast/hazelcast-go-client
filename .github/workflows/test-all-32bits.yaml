@@ -7,6 +7,11 @@ jobs:
     env:
       GOPATH: "${{ github.workspace }}"
       HZ_VERSION: "5.3.6"
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        go_version: [ "1.20", "1.21" ]
+      fail-fast: false
     defaults:
       run:
         shell: "bash"
@@ -17,20 +22,28 @@ jobs:
         with:
           path: "$HOME/hazelcast-go-client"
 
-      - name: "Install Dependencies"
-        run: |
-          sudo apt-get update &&\
-          sudo apt-get install -y openjdk-8-jdk-headless maven
-
-      - name: "Start Hazelcast Remote Controller"
-        run: |
-          bash ./rc.sh start
-          sleep 2
-
       - name: "Setup Go"
         uses: "actions/setup-go@v2"
         with:
           go-version: "1.20"
+
+      - name: "Setup JRE"
+        uses: "actions/setup-java@v2"
+        with:
+          distribution: "zulu"
+          java-version: "8"
+
+      - name: "Download RCD (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
+
+      - name: "Start Hazelcast Remote Controller (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          chmod +x rcd-${{ matrix.os }} 
+          ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
+          sleep 10
 
       - name: "Install Go tools"
         run: |
