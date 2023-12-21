@@ -7,6 +7,8 @@ jobs:
   test_client:
     runs-on: ${{ matrix.os }}
     name: Run tests of master on ${{ matrix.os }} with Go ${{ matrix.go_version }}
+    env:
+      HZ_VERSION: "5.3.6"
     if: github.repository == 'hazelcast/hazelcast-go-client'
     strategy:
         matrix:
@@ -14,26 +16,39 @@ jobs:
             go_version: [ "1.20", "1.21" ]
         fail-fast: false
     steps:
-
-      - name: Setup Java
-        uses: actions/setup-java@v1
+      - name: "Checkout Code"
+        uses: "actions/checkout@v2"
         with:
-          java-version: 8
-          
-      - uses: actions/setup-go@v2
+          path: "$HOME/hazelcast-go-client"
+
+      - name: "Setup Go"
+        uses: "actions/setup-go@v2"
         with:
           go-version: "${{ matrix.go_version }}"
           
-      - name: Checkout code
-        uses: actions/checkout@v2
-          
+      - name: "Setup JRE"
+        uses: "actions/setup-java@v2"
+        with:
+          distribution: "zulu"
+          java-version: "8"
+
+      - name: "Download RCD (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
+
+      - name: "Start Hazelcast Remote Controller (Linux/MacOS)"
+        if: "!contains(matrix.os, 'windows')"
+        run: |
+          chmod +x rcd-${{ matrix.os }} 
+          ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
+          sleep 10
+
       - name: Test
         env:
           HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-          HZ_VERSION: 5.3.6
           ENABLE_SSL: 1
           MEMBER_COUNT: 3
         run: |
-          ./rc.sh start
           go mod tidy
           make test-cover
