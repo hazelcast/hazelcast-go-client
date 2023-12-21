@@ -31,10 +31,12 @@ jobs:
     needs: [check_for_membership]
     if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    env:
+      HZ_VERSION: "5.3.6"
     steps:         
-      - uses: actions/setup-go@v2
+      - uses: "actions/setup-go@v2"
         with:
-          go-version: '1.20'
+          go-version: "${{ matrix.go_version }}"
 
       - name: Install JDK      
         uses: actions/setup-java@v2
@@ -60,12 +62,10 @@ jobs:
           
       - name: Test
         env:
-          HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-          HZ_VERSION: 5.3.6
+          HAZELCAST_ENTERPRISE_KEY: "${{ secrets.HAZELCAST_ENTERPRISE_KEY }}"
           SSL_ENABLED: 1
           MEMBER_COUNT: 3
         run: |
-          ./rc.sh start
           go mod tidy
           make test-cover
 

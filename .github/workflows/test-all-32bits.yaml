@@ -9,7 +9,7 @@ jobs:
       HZ_VERSION: "5.3.6"
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ "ubuntu-latest" ]
         go_version: [ "1.20" ]
       fail-fast: false
     defaults:
@@ -25,7 +25,7 @@ jobs:
       - name: "Setup Go"
         uses: "actions/setup-go@v2"
         with:
-          go-version: "${{ matrix.os }}"
+          go-version: "${{ matrix.go_version }}"
 
       - name: "Setup JRE"
         uses: "actions/setup-java@v2"
