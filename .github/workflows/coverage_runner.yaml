@@ -39,10 +39,10 @@ jobs:
           go-version: "${{ matrix.go_version }}"
 
       - name: Install JDK      
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '8'
+          distribution: 'temurin'
+          java-version: '11'
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
