@@ -42,7 +42,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: '11'
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
