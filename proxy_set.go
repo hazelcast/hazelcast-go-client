@@ -30,7 +30,7 @@ import (
 Set is a concurrent, distributed set implementation.
 
 Hazelcast Set is a distributed set which does not allow duplicate elements.
-For details, see: https://docs.hazelcast.com/imdg/latest/data-structures/set.html
+For details, see: https://docs.hazelcast.com/hazelcast/latest/data-structures/set
 */
 type Set struct {
 	*proxy

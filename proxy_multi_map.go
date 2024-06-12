@@ -35,7 +35,7 @@ For details, see https://docs.hazelcast.com/hazelcast/latest/data-structures/mul
 
 You can lock entries in a MultiMap.
 When an entry is locked, only the owner of that lock can access that entry in the cluster until it is unlocked by the owner of force unlocked.
-See https://docs.hazelcast.com/imdg/latest/data-structures/map.html#locking-maps for details, usage is identical.
+See https://docs.hazelcast.com/hazelcast/latest/data-structures/locking-maps for details, usage is identical.
 
 Locks are reentrant.
 The owner of a lock can acquire the lock again without waiting for the lock to be unlocked.
