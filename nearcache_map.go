@@ -254,7 +254,7 @@ func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{})
 	if len(missKeys) == 0 {
 		return entries, nil
 	}
-	keyDatas := make([]serialization.Data, len(keys))
+	keyDatas := make([]serialization.Data, len(missKeys))
 	for i, k := range missKeys {
 		kd, err := ncm.ss.ToData(k)
 		if err != nil {
@@ -262,11 +262,11 @@ func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{})
 		}
 		keyDatas[i] = kd
 	}
-	resMap, err := ncm.getNearCacheReservations(keys, keyDatas)
+	resMap, err := ncm.getNearCacheReservations(missKeys, keyDatas)
 	if err != nil {
 		return nil, err
 	}
-	partitionToKeys, err := m.partitionToKeys(keys, false)
+	partitionToKeys, err := m.partitionToKeys(missKeys, false)
 	if err != nil {
 		return nil, err
 	}
