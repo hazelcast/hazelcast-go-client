@@ -37,7 +37,7 @@ import (
 /*
 Map is a distributed map.
 Hazelcast Go client enables you to perform operations like reading and writing from/to a Hazelcast Map with methods like Get and Put.
-For details, see https://docs.hazelcast.com/imdg/latest/data-structures/map.html
+For details, see https://docs.hazelcast.com/hazelcast/latest/data-structures/map
 
 # Listening for Map Events
 
@@ -75,7 +75,7 @@ Adding an event listener returns a subscription ID, which you can later use to r
 
 You can lock entries in a Map.
 When an entry is locked, only the owner of that lock can access that entry in the cluster until it is unlocked by the owner of force unlocked.
-See https://docs.hazelcast.com/imdg/latest/data-structures/map.html#locking-maps for details.
+See https://docs.hazelcast.com/hazelcast/latest/data-structures/locking-maps for details.
 
 Locks are reentrant.
 The owner of a lock can acquire the lock again without waiting for the lock to be unlocked.

@@ -35,7 +35,7 @@ Queue is not a partitioned data-structure.
 All of the Queue content is stored in a single machine (and in the backup).
 Queue will not scale by adding more members in the cluster.
 
-For details see https://docs.hazelcast.com/imdg/latest/data-structures/queue.html
+For details see https://docs.hazelcast.com/hazelcast/latest/data-structures/queue
 */
 type Queue struct {
 	*proxy
