@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ FlakeIDGenerator is a cluster-wide unique ID generator.
 
 Generated IDs are are k-ordered (roughly ordered) and in the range [0, math.MaxInt64].
 They can be negative only if members are explicitly configured with a future epoch start value.
-For details, see: https://docs.hazelcast.com/imdg/latest/data-structures/flake-id-generator.html
+For details, see: https://docs.hazelcast.com/hazelcast/latest/data-structures/flake-id-generator
 
 Instead of asking cluster for each ID, they are fetched in batches and then served.
 Batch size and expiry duration can be configured via FlakeIDGeneratorConfig.

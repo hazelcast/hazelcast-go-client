@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import (
 Set is a concurrent, distributed set implementation.
 
 Hazelcast Set is a distributed set which does not allow duplicate elements.
-For details, see: https://docs.hazelcast.com/imdg/latest/data-structures/set.html
+For details, see: https://docs.hazelcast.com/hazelcast/latest/data-structures/set
 */
 type Set struct {
 	*proxy

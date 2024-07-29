@@ -34,7 +34,7 @@ import (
 ReplicatedMap is a distributed key-value data structure where the data is replicated to all members in the cluster.
 It provides full replication of entries to all members for high speed access.
 
-See https://docs.hazelcast.com/imdg/latest/data-structures/replicated-map.html for details.
+See https://docs.hazelcast.com/hazelcast/latest/data-structures/replicated-map for details.
 */
 type ReplicatedMap struct {
 	*proxy

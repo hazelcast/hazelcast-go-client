@@ -54,7 +54,7 @@ If you have called the Reset function, a new session is started with the next in
 Note that The CRDT state is kept entirely on non-lite (data) members.
 If there aren't any and the methods here are invoked on a lite member, they will fail with hzerrors.ErrNoDataMember.
 
-For details see https://docs.hazelcast.com/imdg/latest/data-structures/pn-counter.html
+For details see https://docs.hazelcast.com/hazelcast/latest/data-structures/pn-counter
 */
 type PNCounter struct {
 	*proxy

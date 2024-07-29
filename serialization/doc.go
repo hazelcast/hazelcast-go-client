@@ -246,7 +246,7 @@ For more information about compact serialization, check out https://docs.hazelca
 # Identified Data Serialization
 
 Hazelcast recommends implementing the Identified Data serialization for faster serialization of values.
-See https://docs.hazelcast.com/imdg/latest/serialization/implementing-dataserializable.html#identifieddataserializable for details.
+See https://docs.hazelcast.com/hazelcast/latest/serialization/implementing-identifieddataserializable for details.
 
 In order to be able to serialize/deserialize a custom type using Identified Data serialization, the type has to implement the serialization.IdentifiedDataSerializable interface and a factory which creates values of that type.
 The same factory can be used to create values of all Identified Data Serializable types with the same factory ID.
@@ -311,7 +311,7 @@ Hazelcast stores meta information and uses the correct one to serialize and dese
 That enables rolling upgrades without shutting down the cluster.
 
 Also note that portable serialization is totally language independent and is used as the binary protocol between Hazelcast server and clients.
-See https://docs.hazelcast.com/imdg/latest/serialization/implementing-portable-serialization.html for details.
+See https://docs.hazelcast.com/hazelcast/latest/serialization/implementing-identifieddataserializable for details.
 
 In order to be able to serialize/deserialize a custom type using Portable serialization, the type has to implement the serialization.Portable interface and a factory which creates values of that type.
 The same factory can be used to create values of all Portable types with the same factory ID.
@@ -366,7 +366,7 @@ In order to use the factory, you have to register it:
 
 Hazelcast has first class support for JSON.
 You can put/get JSON values and use them in queries.
-See https://docs.hazelcast.com/imdg/latest/query/how-distributed-query-works.html#querying-json-strings for details.
+See https://docs.hazelcast.com/hazelcast/latest/query/predicate-overview#querying-json-strings for details.
 
 The data type which is used during serializing/deserializing JSON data is serialization.JSON.
 It is in fact defined as []byte, but having a separate type helps the client to use the correct type ID when serializing/deserializing the value.
@@ -397,7 +397,7 @@ Just make sure the retrieved value is of type serialization.JSON.
 # Custom Serialization
 
 Hazelcast lets you plug a custom serializer to be used for serialization of values.
-See https://docs.hazelcast.com/imdg/latest/serialization/custom-serialization.html for details.
+See https://docs.hazelcast.com/hazelcast/latest/serialization/custom-serialization for details.
 
 In order to use a custom serializer for a type, the type should implement serialization.Serializer interface.
 Here is an example:

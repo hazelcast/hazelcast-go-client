@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ List is not a partitioned Hazelcast data structure.
 So all the contents of the List are stored in a single machine (and in the backup).
 So, a single List will not scale by adding more members in the cluster.
 
-For details, see https://docs.hazelcast.com/imdg/latest/data-structures/map.html
+For details, see https://docs.hazelcast.com/hazelcast/latest/data-structures/map
 */
 type List struct {
 	*proxy
