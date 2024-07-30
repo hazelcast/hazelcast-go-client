@@ -41,8 +41,8 @@ jobs:
       - name: Install JDK      
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '11'
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
