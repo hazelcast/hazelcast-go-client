@@ -179,6 +179,10 @@ RELEASE_REPO="http://repo1.maven.apache.org/maven2"
 ENTERPRISE_RELEASE_REPO="https://repository.hazelcast.com/release/"
 ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
 
+echo "Java version:"
+java -version
+echo
+
 case "${1:-}" in
   start)
     startRC
