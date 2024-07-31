@@ -32,20 +32,15 @@ jobs:
     if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:         
-      - name: Setup Java
-        uses: actions/setup-java@v1
-        with:
-          java-version: 8
-          
       - uses: actions/setup-go@v2
         with:
           go-version: '1.17'
 
-      - name: Install JDK      
-        uses: actions/setup-java@v2
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '8'
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
