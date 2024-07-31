@@ -181,7 +181,18 @@ ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
 
 echo "Java version:"
 java -version
+which java
+echo "JAVA_HOME: $JAVA_HOME"
 echo
+
+echo "Use Java 17"
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export PATH=$JAVA_HOME/bin:$PATH
+java -version
+which java
+echo "JAVA_HOME: $JAVA_HOME"
+echo
+
 
 case "${1:-}" in
   start)
