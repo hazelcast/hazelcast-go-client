@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -897,7 +897,7 @@ func clientFixConnectionTest(t *testing.T) {
 func clientVersionTest(t *testing.T) {
 	t.Parallel()
 	// adding this test here, so there's no "unused lint warning.
-	assert.Equal(t, "1.4.1", hz.ClientVersion)
+	assert.Equal(t, "1.4.2", hz.ClientVersion)
 }
 
 func clientInvocationTimeoutTest(t *testing.T) {
