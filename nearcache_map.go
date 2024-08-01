@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -246,15 +246,14 @@ func (ncm *nearCacheMap) Get(ctx context.Context, m *Map, key interface{}) (inte
 
 func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{}) ([]types.Entry, error) {
 	// see: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#getAllInternal
-	entries := make([]types.Entry, len(keys))
-	missKeys, err := ncm.populateResultFromNearCache(keys, entries)
+	missKeys, entries, err := ncm.populateResultFromNearCache(keys)
 	if err != nil {
 		return nil, fmt.Errorf("nearCacheMap.GetAll: populating result from near cache: %w", err)
 	}
 	if len(missKeys) == 0 {
 		return entries, nil
 	}
-	keyDatas := make([]serialization.Data, len(keys))
+	keyDatas := make([]serialization.Data, len(missKeys))
 	for i, k := range missKeys {
 		kd, err := ncm.ss.ToData(k)
 		if err != nil {
@@ -262,11 +261,11 @@ func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{})
 		}
 		keyDatas[i] = kd
 	}
-	resMap, err := ncm.getNearCacheReservations(keys, keyDatas)
+	resMap, err := ncm.getNearCacheReservations(missKeys, keyDatas)
 	if err != nil {
 		return nil, err
 	}
-	partitionToKeys, err := m.partitionToKeys(keys, false)
+	partitionToKeys, err := m.partitionToKeys(missKeys, false)
 	if err != nil {
 		return nil, err
 	}
@@ -275,11 +274,11 @@ func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{})
 	if err != nil {
 		return nil, fmt.Errorf("nearCacheMap.GetAll: getting keys from remote: %w", err)
 	}
-	keyCount, err := ncm.populateResultFromRemote(pairs, entries, resMap)
+	entries, err = ncm.populateResultFromRemote(pairs, entries, resMap)
 	if err != nil {
 		return nil, err
 	}
-	return entries[:keyCount], nil
+	return entries, nil
 }
 
 func (ncm *nearCacheMap) LoadAll(ctx context.Context, m *Map, replaceExisting bool, keys []interface{}) error {
@@ -498,27 +497,26 @@ func (ncm *nearCacheMap) handleBatchInvalidationMsg(rth *inearcache.RepairingHan
 	return rth.HandleBatch(keys, sources, partitions, seqs)
 }
 
-func (ncm *nearCacheMap) populateResultFromNearCache(keys []interface{}, entries []types.Entry) ([]interface{}, error) {
+func (ncm *nearCacheMap) populateResultFromNearCache(keys []interface{}) ([]interface{}, []types.Entry, error) {
 	// see: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#populateResultFromNearCache
+	var entries []types.Entry
 	var missKeys []interface{}
-	var i int
 	for _, k := range keys {
 		nk, err := ncm.toNearCacheKey(k)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		cached, ok, err := ncm.getCachedValue(nk, true)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if ok && cached != nil {
-			entries[i] = types.Entry{Key: k, Value: cached}
-			i++
+			entries = append(entries, types.Entry{Key: k, Value: cached})
 			continue
 		}
 		missKeys = append(missKeys, k)
 	}
-	return missKeys, nil
+	return missKeys, entries, nil
 }
 
 func (ncm *nearCacheMap) getNearCacheReservations(keys []interface{}, keyDatas []serialization.Data) (map[inearcache.DataString]keyReservation, error) {
@@ -550,16 +548,15 @@ func (ncm *nearCacheMap) releaseRemainingReservedKeys(rks map[inearcache.DataStr
 	}
 }
 
-func (ncm *nearCacheMap) populateResultFromRemote(pairs []proto.Pair, entries []types.Entry, reservations map[inearcache.DataString]keyReservation) (int, error) {
+func (ncm *nearCacheMap) populateResultFromRemote(pairs []proto.Pair, entries []types.Entry, reservations map[inearcache.DataString]keyReservation) ([]types.Entry, error) {
 	// see: com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy#populateResultFromRemote
 	// assumes entries has max capacity.
 	serialize := ncm.serializeKeys
-	i := len(entries) - len(pairs)
 	for _, p := range pairs {
 		kd := p.Key.(serialization.Data)
 		k, err := ncm.ss.ToObject(kd)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 		e := types.Entry{Key: k}
 		kds := inearcache.DataString(kd)
@@ -573,12 +570,11 @@ func (ncm *nearCacheMap) populateResultFromRemote(pairs []proto.Pair, entries []
 		vd := p.Value.(serialization.Data)
 		v, err := ncm.nc.TryPublishReserved(k, vd, kr.ID)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 		e.Value = v
-		entries[i] = e
-		i++
+		entries = append(entries, e)
 		delete(reservations, kds)
 	}
-	return i, nil
+	return entries, nil
 }
