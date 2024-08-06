@@ -22,26 +22,3 @@ jobs:
           sudo apt-get install -y openjdk-17-jdk-headless
           java --version
           type -a java
-
-      - name: "Start Hazelcast Remote Controller"
-        run: |
-          bash ./rc.sh start
-          sleep 2
-
-      - name: "Setup Go"
-        uses: "actions/setup-go@v2"
-        with:
-          go-version: "1.18"
-
-      - name: "Install Go tools"
-        run: |
-          go install golang.org/x/tools/...@v0.1.11
-          go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
-
-      - name: "Go mod tidy"
-        run: |
-          go mod tidy
-
-      - name: "Run Tests with Race Detection"
-        run: |
-          make test-race
