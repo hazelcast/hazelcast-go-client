@@ -23,7 +23,7 @@ jobs:
         uses: hazelcast/hazelcast-tpm/membership@main
         with:
           organization-name: 'hazelcast'
-          member-name: ${{ github.event.pull_request.head.repo.owner.login }}
+          member-name: ${{ github.actor }}
           token: ${{ secrets.PAT }}
 
   test_client:
