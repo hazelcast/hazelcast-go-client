@@ -83,7 +83,7 @@ func makeCoordinatorURL(baseURL, token string) string {
 func defaultBaseAPIURL() string {
 	url := os.Getenv(envCoordinatorBaseURL)
 	if url == "" {
-		return "https://api.viridian.hazelcast.com"
+		return "https://api.cloud.hazelcast.com"
 	}
 	return url
 }

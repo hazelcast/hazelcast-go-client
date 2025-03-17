@@ -95,8 +95,8 @@ func TestTranslateAddrs(t *testing.T) {
 }
 
 func TestMakeCoordinatorURL(t *testing.T) {
-	url := makeCoordinatorURL("https://api.viridian.hazelcast.com", "TOK")
-	target := "https://api.viridian.hazelcast.com/cluster/discovery?token=TOK"
+	url := makeCoordinatorURL("https://api.cloud.hazelcast.com", "TOK")
+	target := "https://api.cloud.hazelcast.com/cluster/discovery?token=TOK"
 	assert.Equal(t, target, url)
 	url = makeCoordinatorURL("http://test.dev", "TOK")
 	target = "http://test.dev/cluster/discovery?token=TOK"
