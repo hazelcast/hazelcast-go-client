@@ -23,7 +23,7 @@ jobs:
           path: "$HOME/hazelcast-go-client"
 
       - name: "Setup Go"
-        uses: "actions/setup-go@v2"
+        uses: "actions/setup-go@v5"
         with:
           go-version: "${{ matrix.go_version }}"
 
