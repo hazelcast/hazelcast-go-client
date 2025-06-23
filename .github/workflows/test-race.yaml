@@ -13,47 +13,17 @@ jobs:
     defaults:
       run:
         shell: "bash"
-        working-directory: "$HOME/hazelcast-go-client"
+        working-directory: "hazelcast-go-client"
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v4"
         with:
-          path: "$HOME/hazelcast-go-client"
+          path: "hazelcast-go-client"
 
-      - name: Read Config
-        run: cat .github/config.env >> ${GITHUB_ENV}
-
-      - name: "Setup Go"
-        uses: "actions/setup-go@v5"
+      - uses: ./hazelcast-go-client/.github/actions/build
         with:
-          go-version: "${{ matrix.go_version }}"
-
-      - name: "Setup JRE"
-        uses: "actions/setup-java@v4"
-        with:
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: "Download RCD (Linux/MacOS)"
-        if: "!contains(matrix.os, 'windows')"
-        run: |
-          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
-
-      - name: "Start Hazelcast Remote Controller (Linux/MacOS)"
-        if: "!contains(matrix.os, 'windows')"
-        run: |
-          chmod +x rcd-${{ matrix.os }} 
-          ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
-          sleep 10
-
-      - name: "Install Go tools"
-        run: |
-          go install golang.org/x/tools/...@v0.1.11
-          go install honnef.co/go/tools/cmd/staticcheck@2022.1.2
-
-      - name: "Go mod tidy"
-        run: |
-          go mod tidy
+          GO_VERSION: ${{ matrix.go_version }}
+          OS: ${{ matrix.os }}
 
       - name: "Run Tests with Race Detection"
         run: |
