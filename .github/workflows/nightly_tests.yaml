@@ -13,14 +13,21 @@ jobs:
             os: [ ubuntu-latest ]
             go_version: [ "1.20", "1.21" ]
         fail-fast: false
+    defaults:
+      run:
+        shell: "bash"
+        working-directory: "${{ github.workspace }}/hazelcast-go-client"
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v4"
+        with:
+          path: "${{ github.workspace }}/hazelcast-go-client"
 
-      - uses: ./.github/actions/build
+      - uses: ./hazelcast-go-client/.github/actions/build
         with:
           GO_VERSION: ${{ matrix.go_version }}
           OS: ${{ matrix.os }}
+          REPO_PATH: "${{ github.workspace }}/hazelcast-go-client"
 
       - name: Test
         env:

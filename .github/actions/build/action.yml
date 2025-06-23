@@ -5,6 +5,8 @@ inputs:
     required: true
   OS:
     required: true
+  REPO_PATH:
+    required: true
 
 env:
   # Not possible to set this as a default
@@ -16,6 +18,7 @@ runs:
   steps:
     - name: Read Config
       shell: ${{ env.shell }}
+      working-directory: ${{ inputs.REPO_PATH }}
       run: cat .github/config.env >> $GITHUB_ENV
 
     - name: Setup Go
@@ -32,12 +35,14 @@ runs:
     - name: Download RCD (Linux/MacOS)
       if: "!contains(inputs.OS, 'windows')"
       shell: ${{ env.shell }}
+      working-directory: ${{ inputs.REPO_PATH }}
       run: |
         wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ inputs.OS }}
 
     - name: Start Hazelcast Remote Controller (Linux/MacOS)
       if: "!contains(inputs.OS, 'windows')"
       shell: ${{ env.shell }}
+      working-directory: ${{ inputs.REPO_PATH }}
       run: |
         chmod +x rcd-${{ inputs.OS }} 
         ./rcd-${{ inputs.OS }} -version $HZ_VERSION -dir $HOME &
@@ -45,11 +50,13 @@ runs:
 
     - name: Install Go tools
       shell: ${{ env.shell }}
+      working-directory: ${{ inputs.REPO_PATH }}
       run: |
         go install golang.org/x/tools/...@v0.16.0
         go install honnef.co/go/tools/cmd/staticcheck@v0.4.6
 
     - name: Go mod tidy
       shell: ${{ env.shell }}
+      working-directory: ${{ inputs.REPO_PATH }}
       run: |
         go mod tidy

@@ -11,14 +11,21 @@ jobs:
         go_version: [ "1.20" ]
         arch: [ "amd64", "386" ]
       fail-fast: false
+    defaults:
+      run:
+        shell: "bash"
+        working-directory: "${{ github.workspace }}/hazelcast-go-client"
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v4"
+        with:
+          path: "${{ github.workspace }}/hazelcast-go-client"
 
       - uses: ./.github/actions/build
         with:
           GO_VERSION: ${{ matrix.go_version }}
           OS: ${{ matrix.os }}
+          REPO_PATH: "${{ github.workspace }}/hazelcast-go-client"
 
       - name: "Run Checkers"
         run: |
