@@ -5,7 +5,6 @@ jobs:
     runs-on: "ubuntu-latest"
     env:
       GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.3.6"
     strategy:
       matrix:
         os: [ "ubuntu-latest" ]
@@ -21,6 +20,9 @@ jobs:
         with:
           path: "$HOME/hazelcast-go-client"
 
+      - name: Read Config
+        run: cat .github/config.env >> ${GITHUB_ENV}
+
       - name: "Setup Go"
         uses: "actions/setup-go@v5"
         with:
@@ -29,8 +31,8 @@ jobs:
       - name: "Setup JRE"
         uses: "actions/setup-java@v4"
         with:
-          distribution: "zulu"
-          java-version: "17"
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: "Download RCD (Linux/MacOS)"
         if: "!contains(matrix.os, 'windows')"
