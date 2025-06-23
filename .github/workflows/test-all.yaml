@@ -21,7 +21,15 @@ jobs:
         with:
           path: "${{ github.workspace }}/hazelcast-go-client"
 
-      - uses: ./.github/actions/build
+      - name: "Run Checkers"
+        run: |
+          ls .
+
+      - name: "Run Checkers"
+        run: |
+          ls ./hazelcast-go-client
+
+      - uses: ./hazelcast-go-client/.github/actions/build
         with:
           GO_VERSION: ${{ matrix.go_version }}
           OS: ${{ matrix.os }}
