@@ -1,0 +1,55 @@
+name: Build
+
+inputs:
+  GO_VERSION:
+    required: true
+  OS:
+    required: true
+
+env:
+  # Not possible to set this as a default
+  # https://github.com/orgs/community/discussions/46670
+  shell: bash
+
+runs:
+  using: composite
+  steps:
+    - name: Read Config
+      shell: ${{ env.shell }}
+      run: cat .github/config.env >> $GITHUB_ENV
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "${{ inputs.GO_VERSION }}"
+
+    - name: Setup JRE
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{ env.JAVA_DISTRIBUTION }}
+        java-version: ${{ env.JAVA_VERSION }}
+
+    - name: Download RCD (Linux/MacOS)
+      if: "!contains(inputs.OS, 'windows')"
+      shell: ${{ env.shell }}
+      run: |
+        wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ inputs.OS }}
+
+    - name: Start Hazelcast Remote Controller (Linux/MacOS)
+      if: "!contains(inputs.OS, 'windows')"
+      shell: ${{ env.shell }}
+      run: |
+        chmod +x rcd-${{ inputs.OS }} 
+        ./rcd-${{ inputs.OS }} -version $HZ_VERSION -dir $HOME &
+        sleep 10
+
+    - name: Install Go tools
+      shell: ${{ env.shell }}
+      run: |
+        go install golang.org/x/tools/...@v0.16.0
+        go install honnef.co/go/tools/cmd/staticcheck@v0.4.6
+
+    - name: Go mod tidy
+      shell: ${{ env.shell }}
+      run: |
+        go mod tidy

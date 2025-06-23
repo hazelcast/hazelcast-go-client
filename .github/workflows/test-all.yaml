@@ -1,58 +1,24 @@
 
 name: "Test Go Client"
+
 on: ["push", "pull_request"]
 jobs:
   test:
     runs-on: "ubuntu-latest"
-    env:
-      GOPATH: "${{ github.workspace }}"
-      HZ_VERSION: "5.3.6"
     strategy:
       matrix:
         os: [ "ubuntu-latest" ]
         go_version: [ "1.20" ]
+        arch: [ "amd64", "386" ]
       fail-fast: false
-    defaults:
-      run:
-        shell: "bash"
-        working-directory: "$HOME/hazelcast-go-client"
     steps:
       - name: "Checkout Code"
         uses: "actions/checkout@v4"
+
+      - uses: ./.github/actions/build
         with:
-          path: "$HOME/hazelcast-go-client"
-
-      - name: "Setup Go"
-        uses: "actions/setup-go@v5"
-        with:
-          go-version: "${{ matrix.go_version }}"
-
-      - name: "Setup JRE"
-        uses: "actions/setup-java@v4"
-        with:
-          distribution: "zulu"
-          java-version: "17"
-
-      - name: "Download RCD (Linux/MacOS)"
-        if: "!contains(matrix.os, 'windows')"
-        run: |
-          wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ matrix.os }}
-
-      - name: "Start Hazelcast Remote Controller (Linux/MacOS)"
-        if: "!contains(matrix.os, 'windows')"
-        run: |
-          chmod +x rcd-${{ matrix.os }} 
-          ./rcd-${{ matrix.os }} -version $HZ_VERSION -dir $HOME &
-          sleep 10
-
-      - name: "Install Go tools"
-        run: |
-          go install golang.org/x/tools/...@v0.16.0
-          go install honnef.co/go/tools/cmd/staticcheck@v0.4.6
-
-      - name: "Go mod tidy"
-        run: |
-          go mod tidy
+          GO_VERSION: ${{ matrix.go_version }}
+          OS: ${{ matrix.os }}
 
       - name: "Run Checkers"
         run: |
@@ -61,3 +27,5 @@ jobs:
       - name: "Run All Tests"
         run: |
           make test-all
+        env:
+          GOARCH: ${{ matrix.arch }}

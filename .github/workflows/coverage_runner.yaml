@@ -31,9 +31,11 @@ jobs:
     needs: [check_for_membership]
     if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    env:
-      HZ_VERSION: "5.3.6"
-    steps:         
+    steps:
+      - name: Read Config
+        shell: ${{ env.shell }}
+        run: cat .github/config.env >> $GITHUB_ENV
+
       - uses: "actions/setup-go@v5"
         with:
           go-version: "${{ matrix.go_version }}"
@@ -41,8 +43,8 @@ jobs:
       - name: Install JDK      
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
