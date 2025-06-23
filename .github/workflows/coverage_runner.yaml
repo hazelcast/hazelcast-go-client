@@ -46,17 +46,17 @@ jobs:
 
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           
       - name: Checkout repository for push event
         if: github.event_name == 'push'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
               
       - name: Checkout PR coming from community.
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.inputs.pr_number }}/merge
           
