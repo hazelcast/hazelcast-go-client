@@ -11,6 +11,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest" ]
         go_version: [ "1.20" ]
+        arch: [ "amd64", "386" ]
       fail-fast: false
     defaults:
       run:
@@ -61,3 +62,5 @@ jobs:
       - name: "Run All Tests"
         run: |
           make test-all
+        env:
+          GOARCH: ${{ matrix.arch }}
