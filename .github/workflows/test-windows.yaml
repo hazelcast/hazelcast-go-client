@@ -1,0 +1,26 @@
+
+name: "Test Windows"
+on: ["push", "pull_request"]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
+    env:
+      GOPATH: "${{ github.workspace }}"
+      DEFAULT_TIMEOUT: "30s"
+    defaults:
+      run:
+        shell: "bash"
+        working-directory: "hazelcast-go-client"
+    steps:
+      - name: "Checkout Code"
+        uses: "actions/checkout@v2"
+        with:
+          path: "hazelcast-go-client"
+
+      - uses: ./hazelcast-go-client/.github/actions/build
+        with:
+          GO_VERSION: "1.21"
+          OS: ${{ matrix.os }}
