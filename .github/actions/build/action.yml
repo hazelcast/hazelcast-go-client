@@ -8,7 +8,8 @@ env:
 runs:
   using: composite
   steps:
-    - run: echo "Blank Shell = ${GITHUB_REPOSITORY}"
+    - shell:
+      run: echo "Blank Shell = ${GITHUB_REPOSITORY}"
     - shell: ${{ env.shell }}
       run: echo "Shell via env = ${GITHUB_REPOSITORY}"
     - shell: bash
