@@ -9,6 +9,6 @@ runs:
   using: composite
   steps:
     - name: Debug
-      shell: ${{ env.shell }}
+      shell: bash
       run: |
         echo "GITHUB_REPOSITORY is ${GITHUB_REPOSITORY}"
