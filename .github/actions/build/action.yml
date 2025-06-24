@@ -37,6 +37,8 @@ runs:
         echo "root folder is ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
         ls "${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
 
+        echo "GITHUB_REPOSITORY is ${GITHUB_REPOSITORY}"
+
     - name: Read Config
       shell: ${{ env.shell }}
       working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
