@@ -20,6 +20,7 @@ runs:
       run: |
         # Path to the root of the checked-out repo
         # Support execution from non-root directory (e.g. when cloned in a custom subdirectory)
+        echo "GITHUB_ACTION_PATH is ${GITHUB_ACTION_PATH}"
         echo "ROOT_FOLDER=${GITHUB_ACTION_PATH}/../../../" >> ${GITHUB_OUTPUT}
 
     - name: Debug
