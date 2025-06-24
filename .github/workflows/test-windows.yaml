@@ -7,10 +7,19 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
     runs-on: ${{ matrix.os }}
+    env:
+      GOPATH: "${{ github.workspace }}"
+      DEFAULT_TIMEOUT: "30s"
     defaults:
       run:
         shell: "bash"
+        working-directory: "hazelcast-go-client"
     steps:
-      - shell: bash
+      - name: "Checkout Code"
+        uses: "actions/checkout@v2"
+        with:
+          path: "hazelcast-go-client"
+
+      - name: Debug
         run: |
           echo "GITHUB_REPOSITORY is ${GITHUB_REPOSITORY}"
