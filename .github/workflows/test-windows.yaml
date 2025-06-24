@@ -2,10 +2,6 @@
 name: "Test Windows"
 on:
   - pull_request
-env:
-  # Not possible to set this as a default
-  # https://github.com/orgs/community/discussions/46670
-  shell: bash
 jobs:
   test:
     strategy:
