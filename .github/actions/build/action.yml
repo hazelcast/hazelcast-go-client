@@ -22,6 +22,12 @@ runs:
         # Support execution from non-root directory (e.g. when cloned in a custom subdirectory)
         echo "ROOT_FOLDER=${GITHUB_ACTION_PATH}/../../../" >> ${GITHUB_OUTPUT}
 
+    - name: Debug
+      shell: ${{ env.shell }}
+      run: |
+        echo "root folder is ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
+        ls "${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
+
     - name: Read Config
       shell: ${{ env.shell }}
       working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
