@@ -26,6 +26,14 @@ runs:
     - name: Debug
       shell: ${{ env.shell }}
       run: |
+        printenv
+        echo "$GITHUB_CONTEXT"
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+
+    - name: Debug
+      shell: ${{ env.shell }}
+      run: |
         echo "root folder is ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
         ls "${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
 

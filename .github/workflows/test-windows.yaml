@@ -6,7 +6,6 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-      fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       GOPATH: "${{ github.workspace }}"
@@ -21,27 +20,7 @@ jobs:
         with:
           path: "hazelcast-go-client"
 
-      - name: Set ROOT_FOLDER
-        id: get-root-folder
-        run: |
-          # Path to the root of the checked-out repo
-          # Support execution from non-root directory (e.g. when cloned in a custom subdirectory)
-          echo "GITHUB_ACTION_PATH is ${GITHUB_ACTION_PATH}"
-          echo "ROOT_FOLDER=${GITHUB_ACTION_PATH}/../../../" >> ${GITHUB_OUTPUT}
-
-      - name: Debug
-        run: |
-          printenv
-          echo "$GITHUB_CONTEXT"
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-
-      - name: Debug
-        run: |
-          echo "root folder is ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
-          ls "${{ steps.get-root-folder.outputs.ROOT_FOLDER }}"
-
-      - name: Read Config
-        working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
-        run: cat .github/config.env >> ${GITHUB_ENV}
-
+      - uses: ./hazelcast-go-client/.github/actions/build
+        with:
+          GO_VERSION: "1.21"
+          OS: ${{ matrix.os }}
