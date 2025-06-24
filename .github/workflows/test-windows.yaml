@@ -12,9 +12,4 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: "actions/checkout@v2"
-
       - uses: ./.github/actions/build
-
-      - shell: bash
-        run: |
-          echo "GITHUB_REPOSITORY is ${GITHUB_REPOSITORY}"

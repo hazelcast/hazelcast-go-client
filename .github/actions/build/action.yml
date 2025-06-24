@@ -8,7 +8,7 @@ env:
 runs:
   using: composite
   steps:
-    - name: Debug
-      shell: ${{ env.shell }}
-      run: |
-        echo "GITHUB_REPOSITORY is ${GITHUB_REPOSITORY}"
+    - shell: ${{ env.shell }}
+      run: echo "GITHUB_REPOSITORY1 is ${GITHUB_REPOSITORY}"
+    - shell: bash
+      run: echo "GITHUB_REPOSITORY2 is ${GITHUB_REPOSITORY}"
