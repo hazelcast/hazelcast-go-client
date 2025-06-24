@@ -1,11 +1,5 @@
 name: Build
 
-inputs:
-  GO_VERSION:
-    required: true
-  OS:
-    required: true
-
 env:
   # Not possible to set this as a default
   # https://github.com/orgs/community/discussions/46670

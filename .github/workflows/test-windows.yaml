@@ -20,6 +20,8 @@ jobs:
         with:
           path: "hazelcast-go-client"
 
+      - uses: ./hazelcast-go-client/.github/actions/build
+
       - name: Debug
         run: |
           echo "GITHUB_REPOSITORY is ${GITHUB_REPOSITORY}"
