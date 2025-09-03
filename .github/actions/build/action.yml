@@ -1,0 +1,64 @@
+name: Build
+
+inputs:
+  GO_VERSION:
+    required: true
+  OS:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set ROOT_FOLDER
+      shell: bash
+      id: get-root-folder
+      run: |
+        # Path to the root of the checked-out repo
+        # Support execution from non-root directory (e.g. when cloned in a custom subdirectory)
+        echo "ROOT_FOLDER=${GITHUB_ACTION_PATH}/../../../" >> ${GITHUB_OUTPUT}
+
+    - name: Read Config
+      shell: bash
+      working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
+      run: cat .github/config.env >> ${GITHUB_ENV}
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "${{ inputs.GO_VERSION }}"
+        cache-dependency-path: "**/*.sum"
+
+    - name: Setup JRE
+      uses: actions/setup-java@v4
+      with:
+        distribution: ${{ env.JAVA_DISTRIBUTION }}
+        java-version: ${{ env.JAVA_VERSION }}
+
+    - name: Download RCD (Linux/MacOS)
+      if: "!contains(inputs.OS, 'windows')"
+      shell: bash
+      working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
+      run: |
+        wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ inputs.OS }}
+
+    - name: Start Hazelcast Remote Controller (Linux/MacOS)
+      if: "!contains(inputs.OS, 'windows')"
+      shell: bash
+      working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
+      run: |
+        chmod +x rcd-${{ inputs.OS }} 
+        ./rcd-${{ inputs.OS }} -version $HZ_VERSION -dir $HOME &
+        sleep 10
+
+    - name: Install Go tools
+      shell: bash
+      working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
+      run: |
+        go install golang.org/x/tools/...@v0.16.0
+        go install honnef.co/go/tools/cmd/staticcheck@v0.4.6
+
+    - name: Go mod tidy
+      shell: bash
+      working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
+      run: |
+        go mod tidy

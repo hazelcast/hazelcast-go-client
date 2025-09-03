@@ -31,34 +31,35 @@ jobs:
     needs: [check_for_membership]
     if: github.event_name == 'push' || needs.check_for_membership.outputs.check-result == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    env:
-      HZ_VERSION: "5.3.6"
     steps:         
-      - uses: "actions/setup-go@v2"
+      - uses: "actions/setup-go@v5"
         with:
           go-version: "${{ matrix.go_version }}"
 
-      - name: Install JDK      
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
       - name: Checkout code for PR
         if: github.event_name == 'pull_request_target'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.pull_request.number }}/merge
           
       - name: Checkout repository for push event
         if: github.event_name == 'push'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
               
       - name: Checkout PR coming from community.
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.inputs.pr_number }}/merge
+
+      - name: Read Config
+        run: cat .github/config.env >> ${GITHUB_ENV}
+
+      - name: Install JDK      
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
           
       - name: Test
         env:
@@ -71,20 +72,26 @@ jobs:
 
       - name: Publish results to Codecov for PR coming from hazelcast organization
         if: ${{ github.event_name == 'pull_request_target' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
           override_pr: ${{ github.event.pull_request.number }}
+          fail_ci_if_error: true
 
       - name: Publish results to Codecov for Push
         if: ${{ github.event_name == 'push' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
+          fail_ci_if_error: true
         
       - name: Publish result to Codecov for PR coming from community
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
           override_pr: ${{ github.event.inputs.pr_number }}
+          fail_ci_if_error: true
