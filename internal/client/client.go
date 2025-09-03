@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -300,6 +300,14 @@ func (c *Client) handleClusterEvent(event event.Event) {
 		// Shutdown is blocking operation which will make sure all the event goroutines are closed.
 		// If we wait here blocking, it will be a deadlock
 		go c.Shutdown(ctx)
+		return
+	}
+	ac := len(c.ConnectionManager.ActiveConnections())
+	if ac > 0 {
+		c.Logger.Debug(func() string {
+			return fmt.Sprintf("there are %d active connections, canceled the reboot", ac)
+		})
+		c.InvocationService.Pause(false)
 		return
 	}
 	c.Logger.Debug(func() string { return "cluster disconnected, rebooting" })
