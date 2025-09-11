@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -51,6 +52,8 @@ const (
 	open int32 = iota
 	closed
 )
+
+var errIOTimeout = errors.New("i/o timeout")
 
 type ResponseHandler func(msg *proto.ClientMessage)
 
@@ -154,6 +157,15 @@ func (c *Connection) createSocket(networkCfg *pubcluster.NetworkConfig, address 
 
 func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration) (*net.TCPConn, error) {
 	if conn, err := net.DialTimeout("tcp", addr.String(), conTimeout); err != nil {
+		// remove the DeadlineExceeded error, since it causes an early exit from the circuit breaker
+		// see: internal/cb/circuitbreaker.go:112 (if err == nil || contextErr(err))
+		if errors.Is(err, context.DeadlineExceeded) {
+			var oe *net.OpError
+			if errors.As(err, &oe) {
+				oe.Err = errIOTimeout
+			}
+			err = oe
+		}
 		return nil, err
 	} else {
 		tcpConn := conn.(*net.TCPConn)
