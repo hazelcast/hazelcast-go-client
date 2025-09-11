@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ func TestClient(t *testing.T) {
 		{name: "LifecycleEvents", f: clientLifecycleEventsTest},
 		{name: "MemberEvents", f: clientMemberEventsTest},
 		{name: "Name", f: clientNameTest},
+		{name: "NetDialTimeout", f: netDialTimeoutTest},
 		{name: "PortRangeAllAddresses", f: clientPortRangeAllAddressesTest},
 		{name: "PortRangeMultipleAddresses", f: clientPortRangeMultipleAddressesTest},
 		{name: "PortRangeSingleAddress", f: clientPortRangeSingleAddressTest},
@@ -1097,6 +1098,23 @@ func clusterConnectionToMultipleAddrsTest(t *testing.T) {
 			require.NoError(t, err)
 			it.Must(client.Shutdown(nil))
 		})
+	}
+}
+
+func netDialTimeoutTest(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		time.Sleep(2 * time.Second)
+		cancel()
+	}()
+	var config hz.Config
+	// setting a non-existent address
+	config.Cluster.Network.SetAddresses("192.168.4.2:6011")
+	config.Cluster.Network.ConnectionTimeout = types.Duration(1 * time.Second)
+	_, err := hz.StartNewClientWithConfig(ctx, config)
+	if errors.Is(err, context.DeadlineExceeded) {
+		t.Fatal("not supposed to get a DeadlineExceeded error")
 	}
 }
 
