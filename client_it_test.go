@@ -898,7 +898,7 @@ func clientFixConnectionTest(t *testing.T) {
 func clientVersionTest(t *testing.T) {
 	t.Parallel()
 	// adding this test here, so there's no "unused lint warning.
-	assert.Equal(t, "1.4.2", hz.ClientVersion)
+	assert.Equal(t, "1.4.3", hz.ClientVersion)
 }
 
 func clientInvocationTimeoutTest(t *testing.T) {
