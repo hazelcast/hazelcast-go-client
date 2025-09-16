@@ -41,7 +41,7 @@ log_fatal () {
   local msg=$1
   local ts
   ts=$(date "$TIMESTAMP_FMT")
-  echo "$ts FATAL: $msg"
+  printf "$ts FATAL: $msg"
   exit 1
 }
 
@@ -81,21 +81,21 @@ downloadRC () {
 downloadTests () {
   local jar_path="hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar"
   local artifact="com.hazelcast:hazelcast:${HAZELCAST_TEST_VERSION}:jar:tests"
-  download "$SNAPSHOT_REPO" "$jar_path" "$artifact"
+  download "${enterprise_repo}" "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
 downloadHazelcast () {
   local jar_path="hazelcast-${HZ_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast:${HZ_VERSION}"
-  download "${repo}" "$jar_path" "$artifact"
+  download "${enterprise_repo}" "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
 downloadSQL () {
   local jar_path="hazelcast-sql-${HZ_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast-sql:${HZ_VERSION}"
-  download "${repo}" "$jar_path" "$artifact" ignore
+  download "${enterprise_repo}" "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
@@ -109,7 +109,7 @@ downloadHazelcastEnterprise () {
 downloadTestsEnterprise () {
   local jar_path="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}-tests.jar"
   local artifact="com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}:jar:tests"
-  download "${enterprise_repo}" "$jar_path" "$artifact"
+  download "${enterprise_repo}" "$jar_path" "$artifact" ignore
   classpath="$classpath:$jar_path"
 }
 
@@ -178,6 +178,12 @@ SNAPSHOT_REPO="https://oss.sonatype.org/content/repositories/snapshots"
 RELEASE_REPO="http://repo1.maven.apache.org/maven2"
 ENTERPRISE_RELEASE_REPO="https://repository.hazelcast.com/release/"
 ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
+
+echo "Java version:"
+java -version
+which java
+echo "JAVA_HOME: $JAVA_HOME"
+
 
 case "${1:-}" in
   start)
