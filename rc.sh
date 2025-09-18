@@ -74,7 +74,7 @@ download () {
 downloadRC () {
   local jar_path="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION}"
-  download "$SNAPSHOT_REPO" "$jar_path" "$artifact"
+  download "$ENTERPRISE_SNAPSHOT_REPO" "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
@@ -175,7 +175,7 @@ HAZELCAST_TEST_VERSION=${HZ_VERSION}
 HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
 HAZELCAST_RC_VERSION="0.8-SNAPSHOT"
 SNAPSHOT_REPO="https://oss.sonatype.org/content/repositories/snapshots"
-RELEASE_REPO="http://repo1.maven.apache.org/maven2"
+RELEASE_REPO="https://repo.maven.apache.org/maven2"
 ENTERPRISE_RELEASE_REPO="https://repository.hazelcast.com/release/"
 ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
 
