@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -70,8 +70,7 @@ func getClient(ctx context.Context) *hazelcast.Client {
 }
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx := context.TODO()
 	client := getClient(ctx)
 	m, err := client.GetMap(ctx, "sample-map")
 	if err != nil {
