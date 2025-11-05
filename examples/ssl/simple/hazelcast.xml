@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License")
   ~ you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@
             </factory-class-name>
             <properties>
                 <property name="protocol">TLSv1.2</property>
-                <property name="keyStore">/var/git/dev/Projects/hazelcast-go-client/examples/ssl/etc/server.keystore</property>
+                <property name="keyStore">etc/server.keystore</property>
                 <property name="keyStorePassword">123456</property>
-                <property name="trustStore">/var/git/dev/Projects/hazelcast-go-client/examples/ssl/etc/server.truststore</property>
+                <property name="trustStore">etc/server.truststore</property>
                 <property name="trustStorePassword">123456</property>
             </properties>
         </ssl>
