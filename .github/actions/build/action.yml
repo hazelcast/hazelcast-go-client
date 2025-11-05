@@ -39,7 +39,7 @@ runs:
       shell: bash
       working-directory: ${{ steps.get-root-folder.outputs.ROOT_FOLDER }}
       run: |
-        wget https://rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ inputs.OS }}
+        wget https://client-rcd-download.s3.us-east-2.amazonaws.com/rcd-${{ inputs.OS }}
 
     - name: Start Hazelcast Remote Controller (Linux/MacOS)
       if: "!contains(inputs.OS, 'windows')"
