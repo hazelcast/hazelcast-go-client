@@ -193,7 +193,7 @@ If you don't want to receive any distributed object events, use client.RemoveDis
 
 # Running SQL Queries
 
-The client supports two ways of SQL queries:
+The client supports two ways of performing SQL queries:
  1. Using the [Client.SQL] service
  2. Using the [database/sql] compatible [github.com/hazelcast/hazelcast-go-client/sql/driver] driver
 
