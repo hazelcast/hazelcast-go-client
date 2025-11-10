@@ -256,7 +256,7 @@ You can enable statistics by setting config.Stats.Enabled to true.
 Optionally, the period of statistics collection can be set using config.Stats.Period setting.
 The labels set in configuration appear in the Management Center console:
 
-	config := hazelcast.Config{}
+	var config hazelcast.Config
 	config.SetLabels("fast-cache", "staging")
 	config.Stats.Enabled = true
 	config.Stats.Period = 1 * time.Second
