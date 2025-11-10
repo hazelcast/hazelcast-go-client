@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -1391,9 +1391,6 @@ func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bo
 }
 
 func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interface{}) error {
-	if len(keys) == 0 {
-		return nil
-	}
 	if m.hasNearCache {
 		return m.ncm.LoadAll(ctx, m, replaceExisting, keys)
 	}
