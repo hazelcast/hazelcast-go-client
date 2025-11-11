@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -320,6 +320,7 @@ func (m *Map) AddInterceptor(ctx context.Context, interceptor interface{}) (stri
 }
 
 // Aggregate runs the given aggregator and returns the result.
+// See [aggregate] for a list of supported aggregate functions.
 func (m *Map) Aggregate(ctx context.Context, agg aggregate.Aggregator) (interface{}, error) {
 	aggData, err := m.validateAndSerializeAggregate(agg)
 	if err != nil {
@@ -331,6 +332,8 @@ func (m *Map) Aggregate(ctx context.Context, agg aggregate.Aggregator) (interfac
 
 // AggregateWithPredicate runs the given aggregator and returns the result.
 // The result is filtered with the given predicate.
+// See [aggregate] for a list of supported aggregate functions.
+// See [predicate] for a list of predicates.
 func (m *Map) AggregateWithPredicate(ctx context.Context, agg aggregate.Aggregator, pred predicate.Predicate) (interface{}, error) {
 	aggData, err := m.validateAndSerializeAggregate(agg)
 	if err != nil {
@@ -438,6 +441,7 @@ func (m *Map) ExecuteOnKeys(ctx context.Context, entryProcessor interface{}, key
 }
 
 // ExecuteOnEntriesWithPredicate applies the user defined EntryProcessor to all the entries in the map which satisfies the predicate.
+// See [predicate] for a list of predicates.
 func (m *Map) ExecuteOnEntriesWithPredicate(ctx context.Context, entryProcessor interface{}, pred predicate.Predicate) ([]types.Entry, error) {
 	processorData, err := m.validateAndSerialize(entryProcessor)
 	if err != nil {
@@ -887,6 +891,7 @@ func (m *Map) GetEntrySet(ctx context.Context) ([]types.Entry, error) {
 }
 
 // GetEntrySetWithPredicate returns a clone of the mappings contained in this map.
+// See [predicate] for a list of predicates.
 func (m *Map) GetEntrySetWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]types.Entry, error) {
 	if predData, err := m.validateAndSerialize(predicate); err != nil {
 		return nil, err
@@ -962,6 +967,7 @@ func (m *Map) GetKeySet(ctx context.Context) ([]interface{}, error) {
 }
 
 // GetKeySetWithPredicate returns keys contained in this map.
+// See [predicate] for a list of predicates.
 func (m *Map) GetKeySetWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]interface{}, error) {
 	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
 		return nil, err
@@ -986,6 +992,7 @@ func (m *Map) GetValues(ctx context.Context) ([]interface{}, error) {
 }
 
 // GetValuesWithPredicate returns a list clone of the values contained in this map.
+// See [predicate] for a list of predicates.
 func (m *Map) GetValuesWithPredicate(ctx context.Context, predicate predicate.Predicate) ([]interface{}, error) {
 	if predicateData, err := m.validateAndSerializePredicate(predicate); err != nil {
 		return nil, err
