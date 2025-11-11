@@ -169,6 +169,26 @@ Here are all configuration items with their default values:
 
 Checkout the nearcache package for the documentation about the Near Cache.
 
+# Distributed Data Structures
+
+Hazelcast Go Client supports the following data structures:
+
+  - [List]: A distributed collection that allows duplicate elements and preserves the order of elements. More information at: [Hazelcast List].
+  - [Map]: Contains key-value pairs that are partitioned across a cluster. More information at: [Hazelcast Map].
+  - [MultiMap]: A specialized map where you can store multiple values under a single key. More information at: [Hazelcast MultiMap].
+  - [PNCounter]: (Positive-Negative Counter) is a lightweight CRDT where each Hazelcast instance can increment and decrement the counter value and these updates are propagated to all replicas. More information at: [Hazelcast PN counter].
+  - [Queue]: Enables all cluster members and clients to interact with it; you can add an item in one cluster member and remove it from another member or a client. More information at: [Hazelcast Queue].
+  - [ReplicatedMap]: A distributed key-value data structure where the data is replicated to all members in the cluster. More information at: [Replicated Map].
+  - [Ringbuffer]: A replicated but not partitioned data structure that stores its data in a ring-like structure. More information at: [Hazelcast Ringbuffer].
+  - [Set]: A distributed collection that contains no duplicate elements and does not preserve the order of elements. More information at: [Hazelcast Set].
+  - [Topic]: A data structure that implements publish/subscribe (pub/sub) messaging model. More information at: [Hazelcast Topic].
+
+Additionally, the following CP distributed data structures:
+
+  - [github.com/hazelcast/hazelcast-go-client/internal/cp.AtomicLong]: A distributed implementation of java.util.concurrent.atomic.AtomicLong. More information at: [Hazelcast AtomicLong].
+  - [github.com/hazelcast/hazelcast-go-client/internal/cp.AtomicRef]: A distributed version of the java.util.concurrent.atomic.AtomicReference. More information at: [Hazelcast AtomicReference].
+  - [github.com/hazelcast/hazelcast-go-client/internal/cp.Map]: A distributed implementation of a minimal key-value interface with CP guarantees. More information at: [Hazelcast CPMap].
+
 # Listening for Distributed Object Events
 
 You can listen to creation and destroy events of distributed objects by attaching a listener to the client.
@@ -262,6 +282,18 @@ The labels set in configuration appear in the Management Center console:
 	config.Stats.Period = 1 * time.Second
 	client, err := hazelcast.StartNewClientWithConfig(config)
 
+[Hazelcast CPMap]: https://docs.hazelcast.com/hazelcast/latest/data-structures/cpmap
+[Hazelcast AtomicReference]: https://docs.hazelcast.com/hazelcast/latest/data-structures/iatomicreference
+[Hazelcast AtomicLong]: https://docs.hazelcast.com/hazelcast/latest/data-structures/iatomiclong
+[Hazelcast Topic]: https://docs.hazelcast.com/hazelcast/latest/data-structures/topic
+[Hazelcast Set]: https://docs.hazelcast.com/hazelcast/latest/data-structures/set
+[Hazelcast Ringbuffer]: https://docs.hazelcast.com/hazelcast/latest/data-structures/ringbuffer
+[Replicated Map]: https://docs.hazelcast.com/hazelcast/latest/data-structures/replicated-map
+[Hazelcast PN counter]: https://docs.hazelcast.com/hazelcast/latest/data-structures/pn-counter
+[Hazelcast MultiMap]: https://docs.hazelcast.com/hazelcast/latest/data-structures/multimap
+[Hazelcast List]: https://docs.hazelcast.com/hazelcast/latest/data-structures/list
+[Hazelcast Queue]: https://docs.hazelcast.com/hazelcast/latest/data-structures/queue
+[Hazelcast Map]: https://docs.hazelcast.com/hazelcast/latest/data-structures/map
 [Mappings]: https://docs.hazelcast.com/hazelcast/latest/sql/sql-overview#mappings
 */
 package hazelcast
