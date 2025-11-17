@@ -55,11 +55,10 @@ download () {
   if [ -f "$jar_path" ]; then
       log_info "$jar_path already exists, skipping download."
   else
-      if [[ "${artifact}" == *-SNAPSHOT ]]
-      then
-        repo=${ENTERPRISE_SNAPSHOT_REPO}
+      if [[ "${artifact}" == *-SNAPSHOT ]]; then
+          repo=${ENTERPRISE_SNAPSHOT_REPO}
       else
-        repo=${ENTERPRISE_RELEASE_REPO}
+          repo=${ENTERPRISE_RELEASE_REPO}
       fi
       
       log_info "Downloading: $jar_path ($artifact) from: $repo"
