@@ -46,16 +46,21 @@ log_fatal () {
 }
 
 download () {
-  local repo=$1
-  local jar_path=$2
-  local artifact=$3
+  local jar_path=$1
+  local artifact=$2
   # Set this to anything in the caller to ignore the download error
-  local ignore_err=${4:-}
+  local ignore_err=${3:-}
   local err
   local output
   if [ -f "$jar_path" ]; then
       log_info "$jar_path already exists, skipping download."
   else
+      if [[ "${artifact}" == *-SNAPSHOT ]]; then
+          repo=${ENTERPRISE_SNAPSHOT_REPO}
+      else
+          repo=${ENTERPRISE_RELEASE_REPO}
+      fi
+      
       log_info "Downloading: $jar_path ($artifact) from: $repo"
       set +e
       output=$(mvn -q org.apache.maven.plugins:maven-dependency-plugin:2.10:get -DremoteRepositories=$repo -Dartifact=$artifact -Dtransitive=false -Ddest="$jar_path" 2>&1)
@@ -74,57 +79,48 @@ download () {
 downloadRC () {
   local jar_path="hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION}"
-  download "$ENTERPRISE_SNAPSHOT_REPO" "$jar_path" "$artifact"
+  download "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
 downloadTests () {
   local jar_path="hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar"
   local artifact="com.hazelcast:hazelcast:${HAZELCAST_TEST_VERSION}:jar:tests"
-  download "${enterprise_repo}" "$jar_path" "$artifact"
+  download "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
 downloadHazelcast () {
   local jar_path="hazelcast-${HZ_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast:${HZ_VERSION}"
-  download "${enterprise_repo}" "$jar_path" "$artifact"
+  download "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
 downloadSQL () {
   local jar_path="hazelcast-sql-${HZ_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast-sql:${HZ_VERSION}"
-  download "${enterprise_repo}" "$jar_path" "$artifact"
+  download "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
 downloadHazelcastEnterprise () {
   local jar_path="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar"
   local artifact="com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}"
-  download "${enterprise_repo}" "$jar_path" "$artifact"
+  download "$jar_path" "$artifact"
   classpath="$classpath:$jar_path"
 }
 
 downloadTestsEnterprise () {
   local jar_path="hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}-tests.jar"
   local artifact="com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}:jar:tests"
-  download "${enterprise_repo}" "$jar_path" "$artifact" ignore
+  download "$jar_path" "$artifact" ignore
   classpath="$classpath:$jar_path"
 }
 
 startRC () {
   if [ -f "$PID_FILE" ]; then
     log_fatal "PID file $PID_FILE exists. Is there an another instance of Hazelcast Remote Controller running?"
-  fi
-
-  if [[ "${HZ_VERSION}" == *-SNAPSHOT ]]
-  then
-    repo=${SNAPSHOT_REPO}
-    enterprise_repo=${ENTERPRISE_SNAPSHOT_REPO}
-  else
-    repo=${RELEASE_REPO}
-    enterprise_repo=${ENTERPRISE_RELEASE_REPO}
   fi
 
   classpath=""
@@ -174,8 +170,6 @@ HZ_VERSION="${HZ_VERSION:-5.3.1}"
 HAZELCAST_TEST_VERSION=${HZ_VERSION}
 HAZELCAST_ENTERPRISE_VERSION=${HZ_VERSION}
 HAZELCAST_RC_VERSION="0.8-SNAPSHOT"
-SNAPSHOT_REPO="https://oss.sonatype.org/content/repositories/snapshots"
-RELEASE_REPO="https://repo.maven.apache.org/maven2"
 ENTERPRISE_RELEASE_REPO="https://repository.hazelcast.com/release/"
 ENTERPRISE_SNAPSHOT_REPO="https://repository.hazelcast.com/snapshot/"
 
