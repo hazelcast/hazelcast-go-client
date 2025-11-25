@@ -16,7 +16,7 @@ jobs:
         working-directory: "hazelcast-go-client"
     steps:
       - name: "Checkout Code"
-        uses: "actions/checkout@v5"
+        uses: "actions/checkout@v6"
         with:
           path: "hazelcast-go-client"
 
