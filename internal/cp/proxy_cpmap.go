@@ -55,6 +55,9 @@ func (m *Map) Get(ctx context.Context, key any) (any, error) {
 		return nil, err
 	}
 	vd, err := CPMapGetData(ctx, m, kd)
+	if err != nil {
+		return nil, err
+	}
 	return m.ss.ToObject(vd)
 }
 
@@ -84,6 +87,9 @@ func (m *Map) Remove(ctx context.Context, key any) (any, error) {
 		return nil, err
 	}
 	vd, err := CPMapRemoveData(ctx, m, kd)
+	if err != nil {
+		return nil, err
+	}
 	return m.ss.ToObject(vd)
 }
 
@@ -119,6 +125,9 @@ func (m *Map) CompareAndSet(ctx context.Context, key, expectedValue, newValue an
 	}
 	req := codec.EncodeCPMapCompareAndSetRequest(m.groupID, m.name, kd, ed, nd)
 	resp, err := m.invokeOnRandomTarget(ctx, req, nil)
+	if err != nil {
+		return false, err
+	}
 	ok := codec.DecodeCPMapCompareAndSetResponse(resp)
 	return ok, nil
 }
