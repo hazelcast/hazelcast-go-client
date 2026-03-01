@@ -34,7 +34,7 @@ jobs:
     permissions:
       id-token: write
     steps:         
-      - uses: "actions/setup-go@v5"
+      - uses: "actions/setup-go@v6"
         with:
           go-version: "${{ matrix.go_version }}"
 
