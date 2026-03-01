@@ -1398,9 +1398,6 @@ func (m *Map) addEntryListener(ctx context.Context, flags int32, includeValue bo
 }
 
 func (m *Map) loadAll(ctx context.Context, replaceExisting bool, keys ...interface{}) error {
-	if len(keys) == 0 {
-		return nil
-	}
 	if m.hasNearCache {
 		return m.ncm.LoadAll(ctx, m, replaceExisting, keys)
 	}
