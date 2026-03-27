@@ -23,7 +23,7 @@ runs:
       run: cat .github/config.env >> ${GITHUB_ENV}
 
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: "${{ inputs.GO_VERSION }}"
         cache-dependency-path: "**/*.sum"
