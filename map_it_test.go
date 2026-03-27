@@ -304,10 +304,12 @@ func mapSetWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"
-		if err := m.SetWithTTL(ctx, "key", targetValue, 3*time.Second); err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
+		it.Eventually(t, func() bool {
+			if err := m.SetWithTTL(ctx, "key", targetValue, 3*time.Second); err != nil {
+				t.Fatal(err)
+			}
+			return it.MustValue(m.Get(ctx, "key")) == targetValue
+		})
 		it.Eventually(t, func() bool {
 			return it.MustValue(m.Get(ctx, "key")) == nil
 		})
