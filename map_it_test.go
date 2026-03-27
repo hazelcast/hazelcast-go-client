@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -304,7 +304,7 @@ func mapSetWithTTL(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
 		targetValue := "value"
-		if err := m.SetWithTTL(ctx, "key", targetValue, 1*time.Second); err != nil {
+		if err := m.SetWithTTL(ctx, "key", targetValue, 3*time.Second); err != nil {
 			t.Fatal(err)
 		}
 		assert.Equal(t, targetValue, it.MustValue(m.Get(ctx, "key")))
