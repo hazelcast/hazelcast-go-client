@@ -22,8 +22,9 @@ jobs:
         id: composite
         uses: hazelcast/hazelcast-tpm/membership@main
         with:
+          organization-name: 'hazelcast'
           member-name: ${{ github.actor }}
-          token: ${{ github.token }}
+          token: ${{ secrets.PAT }}
 
   test_client:
     name: Run code coverage and upload to Codecov
