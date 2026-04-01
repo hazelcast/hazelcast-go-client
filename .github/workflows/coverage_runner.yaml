@@ -23,7 +23,7 @@ jobs:
         uses: hazelcast/hazelcast-tpm/membership@main
         with:
           member-name: ${{ github.actor }}
-          token: ${{ github.token }}
+          token: ${{ secrets.GH_TOKEN }}
 
   test_client:
     name: Run code coverage and upload to Codecov
