@@ -23,13 +23,13 @@ runs:
       run: cat .github/config.env >> ${GITHUB_ENV}
 
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: "${{ inputs.GO_VERSION }}"
         cache-dependency-path: "**/*.sum"
 
     - name: Setup JRE
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: ${{ env.JAVA_DISTRIBUTION }}
         java-version: ${{ env.JAVA_VERSION }}

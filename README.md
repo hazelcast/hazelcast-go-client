@@ -118,7 +118,7 @@ $ go get -u golang.org/x/tools/...`
 
 ## Support
 
-Join us at [Go Client channel](https://hazelcastcommunity.slack.com/channels/go-client) or [Hazelcast at Google Groups](https://groups.google.com/g/hazelcast).
+Join us at [Go Client channel](https://hazelcastcommunity.slack.com/channels/go-client).
 
 ## Running the tests
 
@@ -153,7 +153,7 @@ In order to turn on verbose logging, add `ENABLE_TRACE=1` to environment variabl
 
 [Apache 2 License](https://github.com/hazelcast/hazelcast-go-client/blob/master/LICENSE).
 
-Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2025, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com) for more information.
 
