@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -126,6 +126,26 @@ func AssertEquals(t *testing.T, target, value interface{}) {
 	if !reflect.DeepEqual(target, value) {
 		t.Log(string(debug.Stack()))
 		t.Fatalf("target: %#v != %#v", target, value)
+	}
+}
+
+func TesterWithCluster(t *testing.T, f func(t *testing.T, cluster *TestCluster)) {
+	ensureRemoteController(false)
+	runner := func(t *testing.T, smart bool) {
+		port := NextPort()
+		cls := StartNewClusterWithOptions(t.Name(), port, 1)
+		defer cls.Shutdown()
+		f(t, cls)
+	}
+	if SmartEnabled() {
+		t.Run("Smart Client", func(t *testing.T) {
+			runner(t, true)
+		})
+	}
+	if NonSmartEnabled() {
+		t.Run("Non-Smart Client", func(t *testing.T) {
+			runner(t, false)
+		})
 	}
 }
 
@@ -420,17 +440,12 @@ func xmlConfig(clusterName string, port int) string {
             <network>
                <port>%d</port>
             </network>
-			<map name="test-map">
+			<map name="map-with-store-replacing">
 				<map-store enabled="true">
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>
 			</map>
-			<map name="test-map-smart">
-				<map-store enabled="true">
-					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
-				</map-store>
-			</map>
-			<map name="test-map-unisocket">
+			<map name="map-with-store-not-replacing">
 				<map-store enabled="true">
 					<class-name>com.hazelcast.client.test.SampleMapStore</class-name>
 				</map-store>

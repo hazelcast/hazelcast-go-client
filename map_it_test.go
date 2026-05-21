@@ -85,8 +85,6 @@ func TestMap(t *testing.T) {
 		{name: "GetValues", f: mapGetValues},
 		{name: "GetValuesWithPredicate", f: mapGetValuesWithPredicate},
 		{name: "IsEmptySize", f: mapIsEmptySize},
-		{name: "LoadAllReplacing", f: mapLoadAllReplacing, noParallel: true},
-		{name: "LoadAllWithoutReplacing", f: mapLoadAllWithoutReplacing, noParallel: true},
 		{name: "Lock", f: mapLock},
 		{name: "LockWithLease", f: mapLockWithLease},
 		{name: "MapSetGet1000", f: mapMapSetGet1000},
@@ -643,69 +641,6 @@ func mapFlush(t *testing.T) {
 		if err := m.Flush(context.Background()); err != nil {
 			t.Fatal(err)
 		}
-	})
-}
-
-func mapLoadAllWithoutReplacing(t *testing.T) {
-	// NOTE: do not parallelize this test, it uses a static map name.
-	makeMapName := func(_ ...string) string {
-		// the map name for this test should be static.
-		return "test-map"
-	}
-	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
-		ctx := context.Background()
-		putSampleKeyValues(m, 2)
-		// when no keys are provided, all keys must be loaded
-		it.Must(m.EvictAll(ctx))
-		it.Must(m.PutTransient(ctx, "k0new", "new-v0"))
-		it.Must(m.PutTransient(ctx, "k1", "new-v1")) // not replaced
-		it.Must(m.LoadAllWithoutReplacing(ctx))
-		assert.Equal(t, 3, it.MustValue(m.Size(ctx)))
-		targetEntrySet := []types.Entry{
-			{Key: "k0", Value: "v0"},
-			{Key: "k0new", Value: "new-v0"},
-			{Key: "k1", Value: "new-v1"},
-		}
-		entrySet := it.MustValue(m.GetAll(ctx, "k0", "k0new", "k1")).([]types.Entry)
-		if !entriesEqualUnordered(targetEntrySet, entrySet) {
-			t.Fatalf("target %#v != %#v", targetEntrySet, entrySet)
-		}
-		// if some keys are provided, only those keys must be loaded
-		it.Must(m.EvictAll(ctx))
-		it.Must(m.PutTransient(ctx, "k0new", "new-v0"))
-		it.Must(m.PutTransient(ctx, "k1", "new-v1")) // not replaced
-		it.Must(m.LoadAllWithoutReplacing(ctx, "k0new", "k1"))
-		assert.Equal(t, 2, it.MustValue(m.Size(ctx)))
-		targetEntrySet = []types.Entry{
-			{Key: "k0new", Value: "new-v0"},
-			{Key: "k1", Value: "new-v1"},
-		}
-		entrySet = it.MustValue(m.GetAll(ctx, "k0new", "k1")).([]types.Entry)
-		if !entriesEqualUnordered(targetEntrySet, entrySet) {
-			t.Fatalf("target %#v != %#v", targetEntrySet, entrySet)
-		}
-	})
-}
-
-func mapLoadAllReplacing(t *testing.T) {
-	// NOTE: do not parallelize this test, it uses a static map name.
-	makeMapName := func(_ ...string) string {
-		// the map name for this test should be static.
-		return "test-map"
-	}
-	it.MapTesterWithConfigAndName(t, makeMapName, nil, func(t *testing.T, m *hz.Map) {
-		ctx := context.Background()
-		keys := putSampleKeyValues(m, 10)
-		// when no keys are provided, all keys must be loaded
-		it.Must(m.EvictAll(context.Background()))
-		it.Must(m.LoadAllReplacing(context.Background()))
-		assert.Equal(t, 10, it.MustValue(m.Size(ctx)))
-		// if some keys are provided, only those keys must be loaded
-		it.Must(m.EvictAll(ctx))
-		assert.Equal(t, 0, it.MustValue(m.Size(ctx)))
-		keys = keys[:5]
-		it.Must(m.LoadAllReplacing(ctx, keys...))
-		assert.Equal(t, 5, it.MustValue(m.Size(ctx)))
 	})
 }
 
@@ -1649,6 +1584,63 @@ func mapMapSetGetLargePayload(t *testing.T) {
 		if !assert.Equal(t, payload, v) {
 			t.FailNow()
 		}
+	})
+}
+
+func TestMapLoadAll(t *testing.T) {
+	// This is a separate test from other Map tests, since it must run against a cluster with a single member.
+	// That's a limitation of the underlying SampleMapStore used for tests.
+	it.TesterWithCluster(t, func(t *testing.T, cluster *it.TestCluster) {
+		ctx := t.Context()
+		client := it.MustClient(hz.StartNewClientWithConfig(ctx, cluster.DefaultConfig()))
+		t.Run("replacing", func(t *testing.T) {
+			m := it.MustValue(client.GetMap(ctx, "map-with-store-replacing")).(*hz.Map)
+			keys := putSampleKeyValues(m, 10)
+			// when no keys are provided, all keys must be loaded
+			it.Must(m.EvictAll(ctx))
+			it.Must(m.LoadAllReplacing(ctx))
+			assert.Equal(t, 10, it.MustValue(m.Size(ctx)))
+			// if some keys are provided, only those keys must be loaded
+			it.Must(m.EvictAll(ctx))
+			assert.Equal(t, 0, it.MustValue(m.Size(ctx)))
+			keys = keys[:5]
+			it.Must(m.LoadAllReplacing(ctx, keys...))
+			assert.Equal(t, 5, it.MustValue(m.Size(ctx)))
+		})
+		t.Run("without-replacing", func(t *testing.T) {
+			ctx := t.Context()
+			m := it.MustValue(client.GetMap(ctx, "map-with-store-not-replacing")).(*hz.Map)
+			putSampleKeyValues(m, 2)
+			// when no keys are provided, all keys must be loaded
+			it.Must(m.EvictAll(ctx))
+			it.Must(m.PutTransient(ctx, "k0new", "new-v0"))
+			it.Must(m.PutTransient(ctx, "k1", "new-v1")) // not replaced
+			it.Must(m.LoadAllWithoutReplacing(ctx))
+			assert.Equal(t, 3, it.MustValue(m.Size(ctx)))
+			targetEntrySet := []types.Entry{
+				{Key: "k0", Value: "v0"},
+				{Key: "k0new", Value: "new-v0"},
+				{Key: "k1", Value: "new-v1"},
+			}
+			entrySet := it.MustValue(m.GetAll(ctx, "k0", "k0new", "k1")).([]types.Entry)
+			if !entriesEqualUnordered(targetEntrySet, entrySet) {
+				t.Fatalf("target %#v != %#v", targetEntrySet, entrySet)
+			}
+			// if some keys are provided, only those keys must be loaded
+			it.Must(m.EvictAll(ctx))
+			it.Must(m.PutTransient(ctx, "k0new", "new-v0"))
+			it.Must(m.PutTransient(ctx, "k1", "new-v1")) // not replaced
+			it.Must(m.LoadAllWithoutReplacing(ctx, "k0new", "k1"))
+			assert.Equal(t, 2, it.MustValue(m.Size(ctx)))
+			targetEntrySet = []types.Entry{
+				{Key: "k0new", Value: "new-v0"},
+				{Key: "k1", Value: "new-v1"},
+			}
+			entrySet = it.MustValue(m.GetAll(ctx, "k0new", "k1")).([]types.Entry)
+			if !entriesEqualUnordered(targetEntrySet, entrySet) {
+				t.Fatalf("target %#v != %#v", targetEntrySet, entrySet)
+			}
+		})
 	})
 }
 
