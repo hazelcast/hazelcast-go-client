@@ -1591,7 +1591,7 @@ func TestMapLoadAll(t *testing.T) {
 	// This is a separate test from other Map tests, since it must run against a cluster with a single member.
 	// That's a limitation of the underlying SampleMapStore used for tests.
 	it.TesterWithCluster(t, func(t *testing.T, cluster *it.TestCluster) {
-		ctx := t.Context()
+		ctx := context.Background()
 		client := it.MustClient(hz.StartNewClientWithConfig(ctx, cluster.DefaultConfig()))
 		t.Run("replacing", func(t *testing.T) {
 			m := it.MustValue(client.GetMap(ctx, "map-with-store-replacing")).(*hz.Map)
@@ -1608,7 +1608,7 @@ func TestMapLoadAll(t *testing.T) {
 			assert.Equal(t, 5, it.MustValue(m.Size(ctx)))
 		})
 		t.Run("without-replacing", func(t *testing.T) {
-			ctx := t.Context()
+			ctx := context.Background()
 			m := it.MustValue(client.GetMap(ctx, "map-with-store-not-replacing")).(*hz.Map)
 			putSampleKeyValues(m, 2)
 			// when no keys are provided, all keys must be loaded
