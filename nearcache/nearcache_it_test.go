@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -856,43 +856,45 @@ func TestAfterExecuteOnKeysKeysAreInvalidatedFromNearCache(t *testing.T) {
 }
 
 func TestAfterLoadAllWithDefinedKeysNearCacheIsInvalidated(t *testing.T) {
-	// see: com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheTest#testAfterLoadAllWithDefinedKeysNearCacheIsInvalidated
-	// NOTE: do not parallize this test, it uses a static map name.
-	testCases := []struct {
-		name string
-		f    func(ctx context.Context, tcx it.MapTestContext, keys []interface{}) error
-	}{
-		{
-			name: "LoadAllWithoutReplacing",
-			f: func(ctx context.Context, tcx it.MapTestContext, keys []interface{}) error {
-				return tcx.M.LoadAllWithoutReplacing(ctx, keys...)
+	it.TesterWithCluster(t, func(t *testing.T, cluster *it.TestCluster) {
+		ctx := context.Background()
+		testCases := []struct {
+			name string
+			f    func(ctx context.Context, tcx it.MapTestContext, keys []interface{}) error
+		}{
+			{
+				name: "not-replacing",
+				f: func(ctx context.Context, tcx it.MapTestContext, keys []interface{}) error {
+					return tcx.M.LoadAllWithoutReplacing(ctx, keys...)
+				},
 			},
-		},
-		{
-			name: "LoadAllReplacing",
-			f: func(ctx context.Context, tcx it.MapTestContext, keys []interface{}) error {
-				return tcx.M.LoadAllReplacing(ctx, keys...)
+			{
+				name: "replacing",
+				f: func(ctx context.Context, tcx it.MapTestContext, keys []interface{}) error {
+					return tcx.M.LoadAllReplacing(ctx, keys...)
+				},
 			},
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatBinary, true)
-			// note that the following is hardcoded
-			tcx.MapName = "test-map"
-			tcx.Tester(func(tcx it.MapTestContext) {
-				t := tcx.T
-				const mapSize = 1000
-				ctx := context.Background()
-				keys := populateMapWithString(tcx, mapSize)
-				populateNearCacheWithString(tcx, mapSize)
-				if err := tc.f(ctx, tcx, keys); err != nil {
-					t.Fatal(err)
-				}
-				require.Equal(t, int64(0), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+		}
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				tcx := newNearCacheMapTestContextWithExpiration(t, nearcache.InMemoryFormatBinary, true)
+				tcx.Cluster = cluster
+				cfg := cluster.DefaultConfig()
+				tcx.Config = &cfg
+				tcx.MapName = "map-with-store-" + tc.name
+				tcx.Tester(func(tcx it.MapTestContext) {
+					t := tcx.T
+					const mapSize = 1000
+					keys := populateMapWithString(tcx, mapSize)
+					populateNearCacheWithString(tcx, mapSize)
+					if err := tc.f(ctx, tcx, keys); err != nil {
+						t.Fatal(err)
+					}
+					require.Equal(t, int64(0), tcx.M.LocalMapStats().NearCacheStats.OwnedEntryCount)
+				})
 			})
-		})
-	}
+		}
+	})
 }
 
 func TestAfterTryRemoveNearCacheIsInvalidated(t *testing.T) {
