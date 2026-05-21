@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2024, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -270,7 +270,7 @@ func (ncm *nearCacheMap) GetAll(ctx context.Context, m *Map, keys []interface{})
 		return nil, err
 	}
 	defer ncm.releaseRemainingReservedKeys(resMap)
-	pairs, err := m.getAllFromRemote(ctx, len(missKeys), partitionToKeys)
+	pairs, err := m.getAllPairsFromRemote(ctx, len(missKeys), partitionToKeys)
 	if err != nil {
 		return nil, fmt.Errorf("nearCacheMap.GetAll: getting keys from remote: %w", err)
 	}

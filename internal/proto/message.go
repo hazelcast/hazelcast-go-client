@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ func NewClientMessageForEncode() *ClientMessage {
 	// initial backing array size is kept large enough
 	// for basic outbound messages, like map.Set()
 	return &ClientMessage{Frames: make([]Frame, 0, 4)}
+}
+
+func NewClientMessageForEncodeWithSize(size int) *ClientMessage {
+	return &ClientMessage{Frames: make([]Frame, 0, size)}
 }
 
 func NewClientMessageForDecode(frame Frame) *ClientMessage {
@@ -185,6 +189,16 @@ func (it *ForwardFrameIterator) HasNext() bool {
 
 func (it *ForwardFrameIterator) PeekNext() Frame {
 	return it.frames[it.next]
+}
+
+func (it *ForwardFrameIterator) FrameCountUntilDatastructureEnd() int {
+	for i := it.next; i < len(it.frames); i++ {
+		if it.frames[i].IsEndFrame() {
+			ret := i - it.next + 1
+			return ret
+		}
+	}
+	return 0
 }
 
 type Frame struct {

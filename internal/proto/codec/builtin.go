@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -270,7 +270,7 @@ func DecodeEntryListForStringAndEntryListIntegerLong(it *proto.ForwardFrameItera
 }
 
 func DecodeEntryListForDataAndData(frameIterator *proto.ForwardFrameIterator) []proto.Pair {
-	result := make([]proto.Pair, 0)
+	result := make([]proto.Pair, 0, frameIterator.FrameCountUntilDatastructureEnd())
 	frameIterator.Next()
 	for !CodecUtil.NextFrameIsDataStructureEndFrame(frameIterator) {
 		key := DecodeData(frameIterator)

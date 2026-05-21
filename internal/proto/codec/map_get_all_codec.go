@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ const (
 // of these request messages for filling a request for a key set if the keys belong to different partitions.
 
 func EncodeMapGetAllRequest(name string, keys []iserialization.Data) *proto.ClientMessage {
-	clientMessage := proto.NewClientMessageForEncode()
+	clientMessage := proto.NewClientMessageForEncodeWithSize(4 + len(keys))
 	clientMessage.SetRetryable(false)
 
 	initialFrame := proto.NewFrameWith(make([]byte, MapGetAllCodecRequestInitialFrameSize), proto.UnfragmentedMessage)
