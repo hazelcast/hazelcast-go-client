@@ -375,7 +375,7 @@ func ExampleMap_AddListenerWithPredicateAndKey() {
 	}
 }
 
-func ExampleMap_NewLockContext() {
+func Example_newLockContext() {
 	// lockAndIncrement locks the given key, reads the value from it and sets back the incremented value.
 	lockAndIncrement := func(myMap *hazelcast.Map, key string, wg *sync.WaitGroup) {
 		// Signal completion before this goroutine exits.
