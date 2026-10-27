@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -179,69 +179,6 @@ func ExampleMap_Aggregate() {
 		log.Fatal(err)
 	}
 	fmt.Println(result)
-}
-
-func ExampleMap_AddEntryListener() {
-	// error handling was omitted for brevity
-	ctx := context.TODO()
-	client, err := hazelcast.StartNewClient(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	entryListenerConfig := hazelcast.MapEntryListenerConfig{
-		IncludeValue: true,
-	}
-	m, err := client.GetMap(ctx, "somemap")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// enable receiving entry added events
-	entryListenerConfig.NotifyEntryAdded(true)
-	// enable receiving entry removed events
-	entryListenerConfig.NotifyEntryRemoved(true)
-	// enable receiving entry updated events
-	entryListenerConfig.NotifyEntryUpdated(true)
-	// enable receiving entry evicted events
-	entryListenerConfig.NotifyEntryEvicted(true)
-	// enable receiving entry loaded events
-	entryListenerConfig.NotifyEntryLoaded(true)
-	subscriptionID, err := m.AddEntryListener(ctx, entryListenerConfig, func(event *hazelcast.EntryNotified) {
-		switch event.EventType {
-		// this is an entry added event
-		case hazelcast.EntryAdded:
-			fmt.Println("Entry Added:", event.Key)
-		// this is an entry removed event
-		case hazelcast.EntryRemoved:
-			fmt.Println("Entry Removed:", event.Key)
-		// this is an entry updated event
-		case hazelcast.EntryUpdated:
-			fmt.Println("Entry Updated:", event.Key)
-		// this is an entry evicted event
-		case hazelcast.EntryEvicted:
-			fmt.Println("Entry Evicted:", event.Key)
-		// this is an entry loaded event
-		case hazelcast.EntryLoaded:
-			fmt.Println("Entry Loaded:", event.Key)
-		}
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	// performing modifications on the map entries
-	key := strconv.Itoa(int(time.Now().Unix()))
-	if err := m.Set(ctx, key, "1"); err != nil {
-		log.Fatal(err)
-	}
-	if err := m.Set(ctx, key, "2"); err != nil {
-		log.Fatal(err)
-	}
-	if err := m.Delete(ctx, key); err != nil {
-		log.Fatal(err)
-	}
-	// you can use the subscriptionID later to remove the event listener.
-	if err := m.RemoveEntryListener(ctx, subscriptionID); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func ExampleMap_AddListener() {

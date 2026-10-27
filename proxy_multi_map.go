@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ The lock context is a regular context.Context which carry a special value that u
 Once the lock context is created, it can be used to lock/unlock entries and used with any function that is lock aware, such as Put.
 
 	m, err := client.GetMultiMap(ctx, "my-map")
-	lockCtx := m.NewLockContext(ctx)
+	lockCtx := NewLockContext(ctx)
 	// block acquiring the lock
 	err = m.Lock(lockCtx, "some-key")
 	// pass lock context to use the locked entry
@@ -64,13 +64,6 @@ type MultiMap struct {
 
 func newMultiMap(p *proxy) *MultiMap {
 	return &MultiMap{proxy: p}
-}
-
-// NewLockContext augments the passed parent context with a unique lock ID.
-// If passed context is nil, context.Background is used as the parent context.
-// Deprecated: Use hazelcast.NewLockContext() instead.
-func (m *MultiMap) NewLockContext(ctx context.Context) context.Context {
-	return NewLockContext(ctx)
 }
 
 // Clear deletes all entries one by one and fires related events.

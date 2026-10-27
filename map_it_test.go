@@ -654,7 +654,7 @@ func mapLock(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				intValue := int64(0)
-				lockCtx := cm.NewLockContext(context.Background())
+				lockCtx := hz.NewLockContext(context.Background())
 				if err := cm.Lock(lockCtx, key); err != nil {
 					panic(err)
 				}
@@ -683,7 +683,7 @@ func mapLock(t *testing.T) {
 
 func mapForceUnlock(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, cm *hz.Map) {
-		lockCtx := cm.NewLockContext(context.Background())
+		lockCtx := hz.NewLockContext(context.Background())
 		if err := cm.Lock(lockCtx, "k1"); err != nil {
 			t.Fatal(err)
 		}
@@ -814,16 +814,11 @@ func mapEntryNotifiedEvent(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		const totalCallCount = int32(100)
 		callCount := int32(0)
-		handler := func(event *hz.EntryNotified) {
-			if event.EventType == hz.EntryAdded {
+		subscriptionID, err := m.AddListener(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
 				atomic.AddInt32(&callCount, 1)
-			}
-		}
-		listenerConfig := hz.MapEntryListenerConfig{
-			IncludeValue: true,
-		}
-		listenerConfig.NotifyEntryAdded(true)
-		subscriptionID, err := m.AddEntryListener(context.Background(), listenerConfig, handler)
+			},
+		}, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -907,18 +902,11 @@ func mapEntryNotifiedEventWithAddListener(t *testing.T) {
 func mapEntryNotifiedEventToKey(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
-		handler := func(event *hz.EntryNotified) {
-			if event.EventType != hz.EntryAdded {
-				t.Fatalf("unexpected event type: %v", event.EventType)
-			}
-			atomic.AddInt32(&callCount, 1)
-		}
-		listenerConfig := hz.MapEntryListenerConfig{
-			IncludeValue: true,
-			Key:          "k1",
-		}
-		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(context.Background(), listenerConfig, handler); err != nil {
+		if _, err := m.AddListenerWithKey(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, "k1", true); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put(context.Background(), "k1", "v1"))
@@ -961,18 +949,11 @@ func mapEntryNotifiedEventWithPredicate(t *testing.T) {
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		const totalCallCount = int32(100)
 		callCount := int32(0)
-		handler := func(event *hz.EntryNotified) {
-			if event.EventType != hz.EntryAdded {
-				t.Fatalf("unexpected event type: %v", event.EventType)
-			}
-			atomic.AddInt32(&callCount, 1)
-		}
-		listenerConfig := hz.MapEntryListenerConfig{
-			IncludeValue: true,
-			Predicate:    predicate.Equal("A", "foo"),
-		}
-		listenerConfig.NotifyEntryAdded(true)
-		subID, err := m.AddEntryListener(context.Background(), listenerConfig, handler)
+		subID, err := m.AddListenerWithPredicate(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, predicate.Equal("A", "foo"), true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1028,19 +1009,11 @@ func mapEntryNotifiedEventToKeyAndPredicate(t *testing.T) {
 	}
 	it.MapTesterWithConfig(t, cbCallback, func(t *testing.T, m *hz.Map) {
 		callCount := int32(0)
-		handler := func(event *hz.EntryNotified) {
-			if event.EventType != hz.EntryAdded {
-				t.Fatalf("unexpected event type: %v", event.EventType)
-			}
-			atomic.AddInt32(&callCount, 1)
-		}
-		listenerConfig := hz.MapEntryListenerConfig{
-			IncludeValue: true,
-			Key:          "k1",
-			Predicate:    predicate.Equal("A", "foo"),
-		}
-		listenerConfig.NotifyEntryAdded(true)
-		if _, err := m.AddEntryListener(context.Background(), listenerConfig, handler); err != nil {
+		if _, err := m.AddListenerWithPredicateAndKey(context.Background(), hz.MapListener{
+			EntryAdded: func(event *hz.EntryNotified) {
+				atomic.AddInt32(&callCount, 1)
+			},
+		}, predicate.Equal("A", "foo"), "k1", true); err != nil {
 			t.Fatal(err)
 		}
 		it.MustValue(m.Put(context.Background(), "k1", &it.SamplePortable{A: "foo", B: 10}))
@@ -1181,12 +1154,12 @@ func mapTryLock(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(context.Background())
+			ctx := hz.NewLockContext(context.Background())
 			it.Must(m.Lock(ctx, key))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(context.Background())
+		mainCtx := hz.NewLockContext(context.Background())
 		b, err := m.TryLock(mainCtx, key)
 		if err != nil {
 			t.Fatal(err)
@@ -1201,12 +1174,12 @@ func mapLockWithLease(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(context.Background())
+			ctx := hz.NewLockContext(context.Background())
 			it.Must(m.LockWithLease(ctx, key, 100*time.Millisecond))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(context.Background())
+		mainCtx := hz.NewLockContext(context.Background())
 		err := m.Lock(mainCtx, key)
 		if err != nil {
 			t.Fatal(err)
@@ -1220,14 +1193,14 @@ func mapTryLockWithLease(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(context.Background())
+			ctx := hz.NewLockContext(context.Background())
 			if b := it.MustValue(m.TryLockWithLease(ctx, key, 100*time.Millisecond)); b != true {
 				panic("unexpected value")
 			}
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(context.Background())
+		mainCtx := hz.NewLockContext(context.Background())
 		err := m.Lock(mainCtx, key)
 		if err != nil {
 			t.Fatal(err)
@@ -1241,12 +1214,12 @@ func mapTryLockWithTimeout(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(context.Background())
+			ctx := hz.NewLockContext(context.Background())
 			it.Must(m.Lock(ctx, key))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(context.Background())
+		mainCtx := hz.NewLockContext(context.Background())
 		b, err := m.TryLockWithTimeout(mainCtx, key, 100*time.Millisecond)
 		if err != nil {
 			t.Fatal(err)
@@ -1261,12 +1234,12 @@ func mapTryLockWithLeaseAndTimeout(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(context.Background())
+			ctx := hz.NewLockContext(context.Background())
 			it.Must(m.Lock(ctx, key))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(context.Background())
+		mainCtx := hz.NewLockContext(context.Background())
 		b, err := m.TryLockWithLeaseAndTimeout(mainCtx, key, 100*time.Millisecond, 200*time.Millisecond)
 		if err != nil {
 			t.Fatal(err)
@@ -1445,13 +1418,13 @@ func mapAddInterceptor(t *testing.T) {
 
 func mapTryPut(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		ctx1 := m.NewLockContext(context.Background())
+		ctx1 := hz.NewLockContext(context.Background())
 		if err := m.Lock(ctx1, "foo"); err != nil {
 			t.Fatal(err)
 		}
 		defer m.Unlock(ctx1, "foo")
 		// TryPut with a different lock context returns false
-		ctx2 := m.NewLockContext(context.Background())
+		ctx2 := hz.NewLockContext(context.Background())
 		ok, err := m.TryPut(ctx2, "foo", "bar")
 		if err != nil {
 			t.Fatal(err)
@@ -1468,12 +1441,12 @@ func mapTryPut(t *testing.T) {
 
 func mapTryPutWithTimeout(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		ctx1 := m.NewLockContext(context.Background())
+		ctx1 := hz.NewLockContext(context.Background())
 		if err := m.Lock(ctx1, "foo"); err != nil {
 			t.Fatal(err)
 		}
 		// TryPut with a different lock context returns false
-		ctx2 := m.NewLockContext(context.Background())
+		ctx2 := hz.NewLockContext(context.Background())
 		ok, err := m.TryPutWithTimeout(ctx2, "foo", "bar", 1*time.Second)
 		if err != nil {
 			t.Fatal(err)
@@ -1497,7 +1470,7 @@ func mapTryPutWithTimeout(t *testing.T) {
 
 func mapTryRemove(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		ctx1 := m.NewLockContext(context.Background())
+		ctx1 := hz.NewLockContext(context.Background())
 		if _, err := m.Put(ctx1, "foo", "bar"); err != nil {
 			t.Fatal(err)
 		}
@@ -1505,7 +1478,7 @@ func mapTryRemove(t *testing.T) {
 			t.Fatal(err)
 		}
 		// TryRemove with a different lock context returns false
-		ctx2 := m.NewLockContext(context.Background())
+		ctx2 := hz.NewLockContext(context.Background())
 		ok, err := m.TryRemove(ctx2, "foo")
 		if err != nil {
 			t.Fatal(err)
@@ -1522,7 +1495,7 @@ func mapTryRemove(t *testing.T) {
 
 func mapTryRemoveWithTimeout(t *testing.T) {
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
-		ctx1 := m.NewLockContext(context.Background())
+		ctx1 := hz.NewLockContext(context.Background())
 		if _, err := m.Put(ctx1, "foo", "bar"); err != nil {
 			t.Fatal(err)
 		}
@@ -1530,7 +1503,7 @@ func mapTryRemoveWithTimeout(t *testing.T) {
 			t.Fatal(err)
 		}
 		// TryRemove with a different lock context returns false
-		ctx2 := m.NewLockContext(context.Background())
+		ctx2 := hz.NewLockContext(context.Background())
 		ok, err := m.TryRemoveWithTimeout(ctx2, "foo", 1*time.Second)
 		if err != nil {
 			t.Fatal(err)

@@ -87,7 +87,7 @@ The lock context is a regular context.Context which carry a special value that u
 Once the lock context is created, it can be used to lock/unlock entries and used with any function that is lock aware, such as Put.
 
 	m, err := client.GetMap(ctx, "my-map")
-	lockCtx := m.NewLockContext(ctx)
+	lockCtx := NewLockContext(ctx)
 	// block acquiring the lock
 	err = m.Lock(lockCtx, "some-key")
 	// pass lock context to use the locked entry
@@ -189,13 +189,6 @@ type Map struct {
 
 func newMap(p *proxy) *Map {
 	return &Map{proxy: p}
-}
-
-// NewLockContext augments the passed parent context with a unique lock ID.
-// If passed context is nil, context.Background is used as the parent context.
-// Deprecated: Use hazelcast.NewLockContext() instead.
-func (m *Map) NewLockContext(ctx context.Context) context.Context {
-	return NewLockContext(ctx)
 }
 
 type MapListener struct {
@@ -1659,30 +1652,6 @@ type MapEntryListenerConfig struct {
 	IncludeValue bool
 }
 
-// NotifyEntryAdded enables receiving an entry event when an entry is added.
-// Deprecated: See AddEntryListener's deprecation notice.
-func (c *MapEntryListenerConfig) NotifyEntryAdded(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryAdded), enable)
-}
-
-// NotifyEntryRemoved enables receiving an entry event when an entry is removed.
-// Deprecated: See AddEntryListener's deprecation notice.
-func (c *MapEntryListenerConfig) NotifyEntryRemoved(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryRemoved), enable)
-}
-
-// NotifyEntryUpdated enables receiving an entry event when an entry is updated.
-// Deprecated: See AddEntryListener's deprecation notice.
-func (c *MapEntryListenerConfig) NotifyEntryUpdated(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryUpdated), enable)
-}
-
-// NotifyEntryEvicted enables receiving an entry event when an entry is evicted.
-// Deprecated: See AddEntryListener's deprecation notice.
-func (c *MapEntryListenerConfig) NotifyEntryEvicted(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryEvicted), enable)
-}
-
 // NotifyEntryExpired enables receiving an entry event when an entry is expired.
 // Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryExpired(enable bool) {
@@ -1711,12 +1680,6 @@ func (c *MapEntryListenerConfig) NotifyEntryMerged(enable bool) {
 // Deprecated: See AddEntryListener's deprecation notice.
 func (c *MapEntryListenerConfig) NotifyEntryInvalidated(enable bool) {
 	flagsSetOrClear(&c.flags, int32(EntryInvalidated), enable)
-}
-
-// NotifyEntryLoaded enables receiving an entry event when an entry is loaded.
-// Deprecated: See AddEntryListener's deprecation notice.
-func (c *MapEntryListenerConfig) NotifyEntryLoaded(enable bool) {
-	flagsSetOrClear(&c.flags, int32(EntryLoaded), enable)
 }
 
 type LocalMapStats struct {
