@@ -1637,14 +1637,6 @@ func (as attributeSet) Attrs() []string {
 	return attrs
 }
 
-// MapEntryListenerConfig contains configuration for a map entry listener.
-type MapEntryListenerConfig struct {
-	Predicate    predicate.Predicate
-	Key          interface{}
-	flags        int32
-	IncludeValue bool
-}
-
 type LocalMapStats struct {
 	NearCacheStats nearcache.Stats
 }
