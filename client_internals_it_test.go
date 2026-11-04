@@ -2,7 +2,7 @@
 // +build hazelcastinternal,hazelcastinternaltest
 
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -151,11 +151,11 @@ func clientInternalNotReceivedInvocationTest(t *testing.T) {
 }
 
 func addEntryListener(ctx context.Context, m *hz.Map, counter *int64) {
-	lc := hz.MapEntryListenerConfig{}
-	lc.NotifyEntryAdded(true)
-	it.MustValue(m.AddEntryListener(ctx, lc, func(event *hz.EntryNotified) {
-		atomic.AddInt64(counter, 1)
-	}))
+	it.MustValue(m.AddListener(ctx, hz.MapListener{
+		EntryAdded: func(event *hz.EntryNotified) {
+			atomic.AddInt64(counter, 1)
+		},
+	}, false))
 }
 
 func addListener(ctx context.Context, m *hz.Map, counter *int64) {

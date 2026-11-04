@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -221,7 +221,7 @@ func TestMultiMap_Lock(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				intValue := int64(0)
-				lockCtx := cm.NewLockContext(ctx)
+				lockCtx := hz.NewLockContext(ctx)
 				if err := cm.Lock(lockCtx, key); err != nil {
 					panic(err)
 				}
@@ -254,7 +254,7 @@ func TestMultiMap_Lock(t *testing.T) {
 func TestMultiMap_ForceUnlockLock(t *testing.T) {
 	it.MultiMapTester(t, func(t *testing.T, cm *hz.MultiMap) {
 		ctx := context.Background()
-		lockCtx := cm.NewLockContext(ctx)
+		lockCtx := hz.NewLockContext(ctx)
 		if err := cm.Lock(lockCtx, "k1"); err != nil {
 			t.Fatal(err)
 		}
@@ -315,12 +315,12 @@ func TestMultiMap_TryLock(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(ctx)
+			ctx := hz.NewLockContext(ctx)
 			it.Must(m.Lock(ctx, key))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(ctx)
+		mainCtx := hz.NewLockContext(ctx)
 		b, err := m.TryLock(mainCtx, key)
 		if err != nil {
 			t.Fatal(err)
@@ -336,12 +336,12 @@ func TestMultiMap_LockWithLease(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(ctx)
+			ctx := hz.NewLockContext(ctx)
 			it.Must(m.LockWithLease(ctx, key, 100*time.Millisecond))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(ctx)
+		mainCtx := hz.NewLockContext(ctx)
 		err := m.Lock(mainCtx, key)
 		if err != nil {
 			t.Fatal(err)
@@ -356,14 +356,14 @@ func TestMultiMap_TryLockWithLease(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(ctx)
+			ctx := hz.NewLockContext(ctx)
 			if b := it.MustValue(m.TryLockWithLease(ctx, key, 100*time.Millisecond)); b != true {
 				panic("unexpected value")
 			}
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(ctx)
+		mainCtx := hz.NewLockContext(ctx)
 		err := m.Lock(mainCtx, key)
 		if err != nil {
 			t.Fatal(err)
@@ -378,12 +378,12 @@ func TestMultiMap_TryLockWithTimeout(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(ctx)
+			ctx := hz.NewLockContext(ctx)
 			it.Must(m.Lock(ctx, key))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(ctx)
+		mainCtx := hz.NewLockContext(ctx)
 		b, err := m.TryLockWithTimeout(mainCtx, key, 100*time.Millisecond)
 		if err != nil {
 			t.Fatal(err)
@@ -399,12 +399,12 @@ func TestMultiMap_TryLockWithLeaseAndTimeout(t *testing.T) {
 		wg.Add(1)
 		const key = "foo"
 		go func() {
-			ctx := m.NewLockContext(ctx)
+			ctx := hz.NewLockContext(ctx)
 			it.Must(m.Lock(ctx, key))
 			wg.Done()
 		}()
 		wg.Wait()
-		mainCtx := m.NewLockContext(ctx)
+		mainCtx := hz.NewLockContext(ctx)
 		b, err := m.TryLockWithLeaseAndTimeout(mainCtx, key, 100*time.Millisecond, 200*time.Millisecond)
 		if err != nil {
 			t.Fatal(err)

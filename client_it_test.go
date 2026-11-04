@@ -364,17 +364,12 @@ func clientEventOrderTest(t *testing.T) {
 			var state int32
 			checkers = append(checkers, &state)
 		}
-		// init listener conf
-		var c hz.MapEntryListenerConfig
-		c.NotifyEntryAdded(true)
-		c.NotifyEntryRemoved(true)
 		var tasks sync.WaitGroup
 		// add and remove are separate tasks
 		tasks.Add(len(checkers) * 2)
-		it.MustValue(m.AddEntryListener(ctx, c, func(e *hz.EntryNotified) {
-			state := checkers[e.Key.(int64)]
-			switch e.EventType {
-			case hz.EntryAdded:
+		it.MustValue(m.AddListener(ctx, hz.MapListener{
+			EntryAdded: func(e *hz.EntryNotified) {
+				state := checkers[e.Key.(int64)]
 				if !atomic.CompareAndSwapInt32(state, noPrevEvent, noPrevEvent) {
 					panic("order is not preserved")
 				}
@@ -384,13 +379,15 @@ func clientEventOrderTest(t *testing.T) {
 					panic("order is not preserved")
 				}
 				tasks.Done()
-			case hz.EntryRemoved:
+			},
+			EntryRemoved: func(e *hz.EntryNotified) {
+				state := checkers[e.Key.(int64)]
 				if !atomic.CompareAndSwapInt32(state, addEvent, removeEvent) {
 					panic("order is not preserved")
 				}
 				tasks.Done()
-			}
-		}))
+			},
+		}, false))
 		for i := range checkers {
 			tmp := i
 			go func(index int) {
@@ -406,10 +403,6 @@ func clientEventHandlingOrderTest(t *testing.T) {
 	t.Parallel()
 	it.MapTester(t, func(t *testing.T, m *hz.Map) {
 		ctx := context.Background()
-		var lc hz.MapEntryListenerConfig
-		lc.IncludeValue = true
-		lc.NotifyEntryAdded(true)
-		lc.NotifyEntryRemoved(true)
 		const iterationCount = 5000
 		const eventCount = iterationCount * 2
 		var (
@@ -426,7 +419,10 @@ func clientEventHandlingOrderTest(t *testing.T) {
 			mut.Unlock()
 			wg.Done()
 		}
-		it.MustValue(m.AddEntryListener(ctx, lc, handler))
+		it.MustValue(m.AddListener(ctx, hz.MapListener{
+			EntryAdded:   handler,
+			EntryRemoved: handler,
+		}, true))
 		for i := 0; i < iterationCount; i++ {
 			it.Must(m.Set(ctx, "sameKey", i))
 			it.MustValue(m.Remove(ctx, "sameKey"))
