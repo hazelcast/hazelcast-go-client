@@ -1189,11 +1189,6 @@ func (m *Map) RemoveAll(ctx context.Context, predicate predicate.Predicate) erro
 	return m.removeAllFromRemote(ctx, predicate)
 }
 
-// RemoveEntryListener removes the specified entry listener.
-func (m *Map) RemoveEntryListener(ctx context.Context, subscriptionID types.UUID) error {
-	return m.listenerBinder.Remove(ctx, subscriptionID)
-}
-
 // RemoveListener removes the specified entry listener.
 func (m *Map) RemoveListener(ctx context.Context, subscriptionID types.UUID) error {
 	return m.listenerBinder.Remove(ctx, subscriptionID)

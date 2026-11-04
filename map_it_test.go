@@ -833,7 +833,7 @@ func mapEntryNotifiedEvent(t *testing.T) {
 			return cc == totalCallCount
 		})
 		atomic.StoreInt32(&callCount, 0)
-		if err := m.RemoveEntryListener(context.Background(), subscriptionID); err != nil {
+		if err := m.RemoveListener(context.Background(), subscriptionID); err != nil {
 			t.Fatal(err)
 		}
 		// Clear the map to get entry added events
