@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -227,7 +227,7 @@ func (m *membersMap) Update(members []pubcluster.MemberInfo, version int32) (add
 			// there is a change in the cluster
 			v, err := LargerGroupMajorMinorVersion(members)
 			if err != nil {
-				m.logger.Warnf(err.Error())
+				m.logger.Warnf("%v", err.Error())
 			}
 			m.majorityMajorMinor = v
 		}
