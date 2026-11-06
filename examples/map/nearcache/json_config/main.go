@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ func main() {
 	}
 	var config Config
 	if err := config.LoadFromPath(os.Args[1]); err != nil {
-		bye(err.Error())
+		bye("%v", err.Error())
 	}
 	ctx := context.Background()
 	client, err := hazelcast.StartNewClientWithConfig(ctx, config.Client)
