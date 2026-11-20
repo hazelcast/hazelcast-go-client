@@ -128,6 +128,7 @@ Here are all configuration items with their default values:
 	cc.Network.SSL.SetTLSConfig(&tls.Config{})
 	cc.Network.ConnectionTimeout = types.Duration(5 * time.Second)
 	cc.Network.SetPortRange(5701, 5703)
+	cc.Network.NoDelay = false
 
 	cc.Security.Credentials.Username = ""
 	cc.Security.Credentials.Password = ""

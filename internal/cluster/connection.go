@@ -138,7 +138,7 @@ func (c *Connection) sendProtocolStarter() error {
 
 func (c *Connection) createSocket(networkCfg *pubcluster.NetworkConfig, address pubcluster.Address) (net.Conn, error) {
 	conTimeout := positiveDurationOrMax(time.Duration(networkCfg.ConnectionTimeout))
-	if socket, err := c.dialToAddressWithTimeout(address, conTimeout); err != nil {
+	if socket, err := c.dialToAddressWithTimeout(address, conTimeout, networkCfg.NoDelay); err != nil {
 		return nil, err
 	} else {
 		if !networkCfg.SSL.Enabled {
@@ -155,7 +155,7 @@ func (c *Connection) createSocket(networkCfg *pubcluster.NetworkConfig, address 
 	}
 }
 
-func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration) (*net.TCPConn, error) {
+func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeout time.Duration, noDelay bool) (*net.TCPConn, error) {
 	if conn, err := net.DialTimeout("tcp", addr.String(), conTimeout); err != nil {
 		// remove the DeadlineExceeded error, since it causes an early exit from the circuit breaker
 		// see: internal/cb/circuitbreaker.go:112 (if err == nil || contextErr(err))
@@ -169,7 +169,7 @@ func (c *Connection) dialToAddressWithTimeout(addr pubcluster.Address, conTimeou
 		return nil, err
 	} else {
 		tcpConn := conn.(*net.TCPConn)
-		if err = tcpConn.SetNoDelay(false); err != nil {
+		if err = tcpConn.SetNoDelay(noDelay); err != nil {
 			c.logger.Warnf("error setting tcp no delay: %v", err)
 		}
 		if err = tcpConn.SetReadBuffer(socketBufferSize); err != nil {

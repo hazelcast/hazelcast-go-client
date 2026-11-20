@@ -44,6 +44,7 @@ func TestConfig(t *testing.T) {
 		{name: "DefaultConfig", f: configDefaultConfigTest},
 		{name: "SetLabels", f: configSetLabelsTest},
 		{name: "Clone", f: configCloneTest},
+		{name: "NetworkNoDelay", f: configNetworkNoDelayTest},
 		{name: "NewConfigSetAddress", f: configNewConfigSetAddressTest},
 		{name: "NewConfigValidate", f: configNewConfigValidateTest},
 		{name: "UnMarshalDefaultJSONConfig", f: configUnMarshalDefaultJSONConfigTest},
@@ -123,6 +124,20 @@ func configCloneTest(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(newCfg.FlakeIDGenerators, cfg.FlakeIDGenerators))
 	assert.True(t, reflect.DeepEqual(newCfg.Labels, cfg.Labels))
 	assert.True(t, reflect.DeepEqual(newCfg.ClientName, cfg.ClientName))
+}
+
+func configNetworkNoDelayTest(t *testing.T) {
+	var config hazelcast.Config
+	require.NoError(t, config.Validate())
+	assert.False(t, config.Cluster.Network.NoDelay)
+	assert.False(t, config.Clone().Cluster.Network.NoDelay)
+	require.NoError(t, json.Unmarshal([]byte(`{"Cluster": {"Network": {"NoDelay": true}}}`), &config))
+	require.NoError(t, config.Validate())
+	assert.True(t, config.Cluster.Network.NoDelay)
+	assert.True(t, config.Clone().Cluster.Network.NoDelay)
+	bytes, err := json.Marshal(config)
+	require.NoError(t, err)
+	assert.Contains(t, string(bytes), `"NoDelay":true`)
 }
 
 func configNewConfigSetAddressTest(t *testing.T) {
@@ -547,6 +562,7 @@ func checkDefault(t *testing.T, c *hazelcast.Config) {
 	assert.Equal(t, false, c.Cluster.Network.SSL.Enabled)
 	assert.NotNil(t, c.Cluster.Network.SSL.TLSConfig())
 	assert.Equal(t, types.Duration(5*time.Second), c.Cluster.Network.ConnectionTimeout)
+	assert.Equal(t, false, c.Cluster.Network.NoDelay)
 
 	assert.Equal(t, "", c.Cluster.Security.Credentials.Username)
 	assert.Equal(t, "", c.Cluster.Security.Credentials.Password)

@@ -37,6 +37,11 @@ type NetworkConfig struct {
 	Addresses         []string       `json:",omitempty"`
 	PortRange         PortRange      `json:",omitempty"`
 	ConnectionTimeout types.Duration `json:",omitempty"`
+	// NoDelay disables Nagle's algorithm (sets TCP_NODELAY) on the sockets the client opens to the members.
+	// Setting it avoids waiting for acknowledgements of previous segments before sending small messages, which reduces latency.
+	//
+	// Default is false.
+	NoDelay bool `json:",omitempty"`
 }
 
 type PortRange struct {
@@ -57,6 +62,7 @@ func (c *NetworkConfig) Clone() NetworkConfig {
 	return NetworkConfig{
 		Addresses:         addrs,
 		ConnectionTimeout: c.ConnectionTimeout,
+		NoDelay:           c.NoDelay,
 		SSL:               c.SSL.Clone(),
 		PortRange:         c.PortRange.Clone(),
 	}
